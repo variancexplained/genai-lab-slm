@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : AppInsight                                                                          #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.12.3                                                                              #
+# Filename   : /jbook/_toc copy.yml                                                                #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john@variancexplained.com                                                           #
+# URL        : https://github.com/variancexplained/appinsight                                      #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Friday May 3rd 2024 07:28:53 pm                                                     #
+# Modified   : Friday May 31st 2024 02:42:01 pm                                                    #
+# ------------------------------------------------------------------------------------------------ #
+# License    : MIT License                                                                         #
+# Copyright  : (c) 2024 John James                                                                 #
+# ================================================================================================ #
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: front
+parts:
+- caption: Introduction
+  numbered: 3
+  chapters:
+  - file: 00_intro
+- caption: Data
+  numbered: 3
+  chapters:
+  - file: 01_data/00_intro
+  - file: 01_data/01_dqa
+  - file: 01_data/02_clean
+  - file: 01_data/03_feature
+  - file: 01_data/04_text_prep
+  - file: 01_data/05_precomp
+- caption: Exploratory Data Analysis
+  numbered: 3
+  chapters:
+  - file: 02_eda/00_intro
+  - file: 02_eda/01_data_dist
+  - file: 02_eda/02_temporal
+  - file: 02_eda/03_user
+  - file: 02_eda/04_app
+  - file: 02_eda/05_category
+  - file: 02_eda/06_relations
+  - file: 02_eda/07_outlier
+  - file: 02_eda/08_conclusion
+- caption: Sentiment Analysis
+  numbered: 3
+  chapters:
+  - file: 03_sent/00_intro
+- caption: Topic Modeling
+  numbered: 3
+  chapters:
+  - file: 04_topic/00_intro
+- caption: Advanced Analytics
+  numbered: 3
+  chapters:
+  - file: 05_advanced/00_intro
+  - file: 05_advanced/01_deep
+  - file: 05_advanced/02_graph
+  - file: 05_advanced/03_nlp
+  - file: 05_advanced/04_sent
+  - file: 05_advanced/05_topic
+  - file: 05_advanced/06_genai
+- caption: Insights & Discoveries
+  numbered: 3
+  chapters:
+  - file: 06_insights/00_intro
+  - file: 06_insights/01_market
+  - file: 06_insights/02_unmet
+  - file: 06_insights/04_nov8
+- caption: Conclusions & Future Directions
+  numbered: 3
+  chapters:
+  - file: 07_conclusion/00_intro
+  - file: 07_conclusion/01_limitations
+  - file: 07_conclusion/02_future
+  - file: 07_conclusion/03_final

@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : AppInsight                                                                          #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.12.3                                                                              #
+# Filename   : /jbook/_toc.yml                                                                     #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john@variancexplained.com                                                           #
+# URL        : https://github.com/variancexplained/appinsight                                      #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Friday May 3rd 2024 07:28:53 pm                                                     #
+# Modified   : Thursday June 27th 2024 03:27:57 am                                                 #
+# ------------------------------------------------------------------------------------------------ #
+# License    : MIT License                                                                         #
+# Copyright  : (c) 2024 John James                                                                 #
+# ================================================================================================ #
+# Table of contents
+# Learn more at https://jupyterbook.org/customize/toc.html
+
+format: jb-book
+root: 00_intro
+parts:
+- caption: AppVoC Dataset
+  numbered: 3
+  chapters:
+  - file: 00_data/00_intro
+- caption: AppVoC Dataset Preparation
+  numbered: 3
+  chapters:
+  - file: 01_data/00_intro
+  - file: 01_data/01_norm
+  - file: 01_data/02_dqa
+  - file: 01_data/03_clean
+  - file: 01_data/04_features
+  - file: 01_data/05_text_prep
+  - file: 01_data/06_metrics
+  - file: 01_data/07_conclusion
+- caption: Exploratory Data Analysis
+  numbered: 3
+  chapters:
+  - file: 02_eda/00_intro
+  - file: 02_eda/01_overview

@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : AppInsight                                                                          #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.10.12                                                                             #
+# Filename   : /config/dev.yml                                                                     #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john.james.ai.studio@gmail.com                                                      #
+# URL        : https://github.com/variancexplained/appinsight                                      #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Thursday April 20th 2023 01:19:19 pm                                                #
+# Modified   : Friday June 28th 2024 02:35:35 pm                                                   #
+# ------------------------------------------------------------------------------------------------ #
+# License    : MIT License                                                                         #
+# Copyright  : (c) 2023 John James                                                                 #
+# ================================================================================================ #
+env: dev
+logging:
+  disable_existing_loggers: false
+  formatters:
+    console:
+      datefmt: '%m/%d/%Y %I:%M:%S %p'
+      format: '[%(message)s'
+    file:
+      datefmt: '%m/%d/%Y %I:%M:%S %p'
+      format: '[%(asctime)s] [%(levelname)s] [%(name)s] [%(module)s] [%(funcName)s]
+        : %(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: console
+      level: DEBUG
+      stream: ext://sys.stderr
+    file:
+      backupCount: 0
+      class: logging.handlers.TimedRotatingFileHandler
+      filename: logs/dev.log
+      formatter: file
+      interval: 1
+      level: DEBUG
+      when: midnight
+  root:
+    handlers:
+    - console
+    - file
+    level: INFO
+  version: 1
+
+# ------------------------------------------------------------------------------------------------ #
+database:
+  sqlite:
+    url: sqlite:///data/dev/09_db/sqlite.db
+    filepath: data/dev/09_db/sqlite.db
+    pool_size: 5 # Default for non-concurrent applications
+    max_overflow: 10 # Allow temporary connections beyond pool_size if needed
+
+dataset:
+  frac: 0.01
+  random_state: 22
