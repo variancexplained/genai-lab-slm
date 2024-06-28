@@ -1,0 +1,6 @@
+[run]
+source = appinsight
+omit =
+    tests/*
+    autoapp.py
+

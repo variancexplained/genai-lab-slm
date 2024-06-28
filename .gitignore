@@ -1,0 +1,82 @@
+*.py[cod]
+
+# C extensions
+*.so
+
+# Coverage
+*.coverage
+.coverage.*
+
+# Cache
+cache/
+
+# Packages
+*.egg
+*.egg-info
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Data
+data/**/*.*
+*.pkl
+*.parquet
+*.txt
+reviews_dataset
+tests/data/*.*
+
+# Logs
+logs/*.*
+
+# Models
+models
+
+# Wandb
+wandb
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Complexity
+output/*.html
+output/*/index.html
+
+# Sphinx
+docs/_build
+
+.webassets-cache
+
+# Virtualenvs
+env/
+
+# npm
+/node_modules/
+
+# webpack-built files
+/appinsight/static/build/
+
+# Configuration
+.env
+
+# Development database
+*.db
