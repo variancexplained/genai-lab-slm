@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday June 29th 2024 02:40:49 am                                                 #
+# Modified   : Saturday June 29th 2024 12:08:40 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -723,20 +723,8 @@ class DetectProfanityTask(DataQualityAssessmentTask):
             pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains profanity.
 
         """
-        # Split data into chunks
-        chunks = np.array_split(data, self._n_jobs or 1)
-        self._logger.debug(f"Data split into {len(chunks)} chunks")
-
-        # Process chunks in parallel using joblib
-        results = Parallel(n_jobs=self._n_jobs)(
-            delayed(process_chunk_profanity)(
-                chunk, self._text_column, self.new_column_name
-            )
-            for chunk in tqdm(chunks)
-        )
-
-        # Concatenate the processed chunks
-        return pd.Series(results, name=self.new_column_name)
+        result = data[self._text_column].parallel_apply(detect_profanity)
+        return result.rename(self.new_column_name)
 
 
 # ------------------------------------------------------------------------------------------------ #
