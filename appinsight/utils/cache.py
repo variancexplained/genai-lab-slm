@@ -11,12 +11,13 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday June 5th 2024 05:40:02 am                                                 #
-# Modified   : Thursday June 6th 2024 02:43:24 pm                                                  #
+# Modified   : Saturday June 29th 2024 01:19:15 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
+import logging
 import shelve
 from functools import wraps
 
@@ -72,34 +73,145 @@ def cachenow(max_size=100, evict_size=5):
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                                      CACHE MANAGER                                               #
+# ------------------------------------------------------------------------------------------------ #
 class CacheManager:
-    def __init__(self, shelf_file):
-        self.shelf_file = shelf_file
+    def __init__(self, name: str, env_mgr_cls: type[EnvManager] = EnvManager):
+        self._name = name
+        self._env_mgr = env_mgr_cls()
+        self._env = self._env_mgr.get_environment()
+        self._shelf_file = os.path.join("cache", self._env, self._name)
         self._create_cache_directory()
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def _create_cache_directory(self):
-        os.makedirs(os.path.dirname(self.shelf_file), exist_ok=True)
+        os.makedirs(os.path.dirname(self._shelf_file), exist_ok=True)
 
     def add_item(self, key, value):
-        with shelve.open(self.shelf_file) as cache:
-            cache[key] = value
+        try:
+            with shelve.open(self._shelf_file) as cache:
+                cache[key] = value
+        except FileNotFoundError as fe:
+            self._logger.exception(
+                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
+            )
+            raise
+        except Exception as e:
+            self._logger.exception(
+                f"Exception occurred while adding item to cache.\n{e}"
+            )
+            raise
+
+    def exists(self, key: str) -> bool:
+        """Returns existence of key in cache
+
+        Args:
+            key (str): Key of item in cache.
+        """
+        try:
+            with shelve.open(self._shelf_file) as cache:
+                return key in cache
+        except FileNotFoundError as fe:
+            self._logger.exception(
+                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
+            )
+            raise
+        except Exception as e:
+            self._logger.exception(f"Exception occurred while reading cache.\n{e}")
+            raise
 
     def get_item(self, key):
-        with shelve.open(self.shelf_file) as cache:
-            return cache.get(key)
+        try:
+            with shelve.open(self._shelf_file) as cache:
+                return cache.get(key)
+        except FileNotFoundError as fe:
+            self._logger.exception(
+                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
+            )
+            raise
+        except Exception as e:
+            self._logger.exception(f"Exception occurred while reading cache.\n{e}")
+            raise
 
     def remove_item(self, key):
-        with shelve.open(self.shelf_file) as cache:
-            if key in cache:
-                del cache[key]
+        try:
+            with shelve.open(self._shelf_file) as cache:
+                if key in cache:
+                    del cache[key]
+        except FileNotFoundError as fe:
+            self._logger.exception(
+                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
+            )
+            raise
+        except Exception as e:
+            self._logger.exception(
+                f"Exception occurred while removing item from cache.\n{e}"
+            )
+            raise
 
     def clear_cache(self):
-        with shelve.open(self.shelf_file) as cache:
-            cache.clear()
+        try:
+            with shelve.open(self._shelf_file) as cache:
+                for key in cache:
+                    del cache[key]
+        except FileNotFoundError as fe:
+            self._logger.exception(
+                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
+            )
+            raise
+        except Exception as e:
+            self._logger.exception(f"Exception occurred while clearing cache.\n{e}")
+            raise
 
-    def prune_cache(self, max_size):
-        with shelve.open(self.shelf_file) as cache:
-            if len(cache) > max_size:
-                # Implement your eviction policy here
-                # For example, remove the least recently used items
-                pass
+
+# ------------------------------------------------------------------------------------------------ #
+#                                      CACHE ITERATOR                                              #
+# ------------------------------------------------------------------------------------------------ #
+class CacheIterator:
+    def __init__(self, name: str, env_mgr_cls: type[EnvManager] = EnvManager):
+        self._name = name
+        self._env_mgr = env_mgr_cls()
+        self._env = self._env_mgr.get_environment()
+        self._shelf_file = os.path.join("cache", self._env, self._name)
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+        self._index = 0
+        self._keys = self._get_keys()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._index < len(self._keys):
+            try:
+                with shelve.open(self._shelf_file) as cache:
+                    value = cache[self._keys[self._index]]
+            except FileNotFoundError as fe:
+                self._logger.exception(
+                    f"Shelve file {self._shelf_file} does not exist.\n{fe}"
+                )
+                raise
+            except Exception as e:
+                self._logger.exception(
+                    f"Exception occurred while reading from cache.\n{e}"
+                )
+                raise
+            self._index += 1
+            return value
+        else:
+            raise StopIteration
+
+    def _get_keys(self) -> list:
+        try:
+            with shelve.open(self._shelf_file) as cache:
+                return [key for key in cache]
+        except FileNotFoundError as fe:
+            self._logger.exception(
+                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
+            )
+            raise
+        except Exception as e:
+            self._logger.exception(
+                f"Exception occurred while removing item from cache.\n{e}"
+            )
+            raise

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 23rd 2024 02:05:34 pm                                                  #
-# Modified   : Friday June 28th 2024 04:15:24 pm                                                   #
+# Modified   : Friday June 28th 2024 09:02:30 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,12 +20,10 @@
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime
-import shelve
 from typing import Any, Dict
 
 from appinsight.utils.datetime import convert_seconds_to_hms
 from appinsight.utils.print import Printer
-from appinsight.utils.env import EnvManager
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -90,24 +88,3 @@ class Task(ABC):
         Returns:
             Any: The result of executing the task.
         """
-
-    def reset_cache(self):
-        # Get the current environment
-        env = EnvManager().get_environment()
-        # Set the shelve file
-        shelf_file = f"cache/{env}/cache"
-        # Check if the shelve file exists
-        try:
-            # Open the shelve file
-            with shelve.open(shelf_file) as cache:
-                # Get the class name
-                class_name = type(self).__name__
-                # Iterate over cache keys
-                keys_to_remove = [key for key in cache.keys() if class_name in key]
-                # Remove keys from the cache
-                for key in keys_to_remove:
-                    del cache[key]
-        except Exception as e:
-            msg = f"Exception occurred in reset_cache.\n{e}"
-            self.logger.exception(msg)
-            raise RuntimeError(msg)

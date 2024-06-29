@@ -11,27 +11,25 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
+# Modified   : Saturday June 29th 2024 02:13:38 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Assessment Module"""
+from __future__ import annotations
 import os
 import re
-from dotenv import load_dotenv
 import warnings
 from dataclasses import dataclass
-import shelve
 from typing import AnyStr, List, Optional, Union
 
+import dask
 from joblib import Parallel, delayed
 from tqdm import tqdm
-import dask.dataframe as dd
-from dask.distributed import Client
-from dask.diagnostics import Profiler, ResourceProfiler, CacheProfiler, ProgressBar
 import emoji
 import fasttext
+from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
@@ -41,6 +39,7 @@ from appinsight.data_prep import log_exceptions, task_profiler
 from appinsight.data_prep.base import Preprocessor
 from appinsight.data_prep.io import ReadTask, WriteTask
 from appinsight.utils.base import Reader, Writer
+from appinsight.utils.cache import CacheManager, CacheIterator
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import DatasetRepo
 from appinsight.workflow.config import StageConfig
@@ -49,11 +48,11 @@ from appinsight.workflow.task import Task
 
 
 # ------------------------------------------------------------------------------------------------ #
-pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
+pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
-# ------------------------------------------------------------------------------------------------ #
-load_dotenv()
+fasttext.FastText.eprint = lambda x: None
+dask.config.set({"logging.distributed": "error"})
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -66,9 +65,9 @@ class DQAConfig(StageConfig):
     source_filename: str = None
     target_directory: str = "02_dqa/reviews"
     target_filename: str = None
+    cache_name: str = "dqa"
     partition_cols: str = "category"
-    n_jobs: int = 12
-    n_partitions: int = 50
+    n_jobs: int = 18
     force: bool = False
 
 
@@ -101,6 +100,7 @@ class DataQualityAssessment(Preprocessor):
         target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
         dsm_cls: type[DatasetRepo] = DatasetRepo,
+        cache_mgr_cls: type[CacheManager] = CacheManager,
         fastmode: bool = False,
     ) -> None:
         """Initializes the DataQualityPipeline with data."""
@@ -112,7 +112,7 @@ class DataQualityAssessment(Preprocessor):
             pipeline_cls=pipeline_cls,
             dsm_cls=dsm_cls,
         )
-        self._fastmode = fastmode
+        self._cache_mgr = cache_mgr_cls(name=self.config.cache_name)
         self._pipeline = self.create_pipeline()
 
     def overview(self) -> pd.DataFrame:
@@ -154,6 +154,12 @@ class DataQualityAssessment(Preprocessor):
             partition_cols=self.config.partition_cols,
         )
 
+        # Instantiate DQA initializer
+        init = DQAInitTask(sort_by="id")
+
+        # Instantiate DQA Finalizer
+        finalizer = DQAFinalizeTask(cache_name=self.config.cache_name)
+
         # Instantiate duplicate checkers
         dup1 = DetectDuplicateRowTask(new_column_name="is_duplicate")
         dup2 = DetectDuplicateRowTask(
@@ -193,7 +199,6 @@ class DataQualityAssessment(Preprocessor):
         # Instantiate a profanity check
         profanity = DetectProfanityTask(
             n_jobs=self.config.n_jobs,
-            n_partitions=self.config.n_partitions,
             new_column_name="has_profanity",
         )
         # Instantiate email, URL, and phone number detection in review text.
@@ -201,26 +206,84 @@ class DataQualityAssessment(Preprocessor):
         urls = DetectURLTask(new_column_name="contains_url")
         phones = DetectPhoneNumberTask(new_column_name="contains_phone_number")
 
-        # Add tasks to pipeline...
+        # Add tasks to pipeline, starting with the lower resource intensive tasks.
         pipe.add_task(load)
+        pipe.add_task(init)
         pipe.add_task(dup1)
         pipe.add_task(dup2)
         pipe.add_task(null)
         pipe.add_task(out_vote_sum)
         pipe.add_task(out_vote_count)
-        pipe.add_task(lang_review)
-        pipe.add_task(lang_app_name)
         pipe.add_task(emoji)
         pipe.add_task(chars)
         pipe.add_task(dates)
         pipe.add_task(ratings)
-        if not self._fastmode:
-            pipe.add_task(profanity)
         pipe.add_task(emails)
         pipe.add_task(urls)
         pipe.add_task(phones)
+        # Add resource moderate tasks.
+        pipe.add_task(lang_review)
+        pipe.add_task(lang_app_name)
+        # Add resource intensive task
+        pipe.add_task(profanity)
+        # Finalizer
+        pipe.add_task(finalizer)
         pipe.add_task(save)
         return pipe
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                  DQA INIT TASK                                                   #
+# ------------------------------------------------------------------------------------------------ #
+class DQAInitTask(Task):
+    """Initializes the data for the data quality assessment
+
+    Args:
+        sort_by (str): The column to sort by.
+    """
+
+    def __init__(self, sort_by: str = "id") -> None:
+        super().__init__()
+        self._sort_by = sort_by
+
+    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Performs the task
+
+        Args:
+            data (pd.DataFrame): Data to be assessed.
+        """
+        data = data.reset_index().set_index(keys=[self._sort_by])
+        data = data.sort_index(ascending=True)
+        return data.reset_index()
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                  DQA FINALIZE TASK                                               #
+# ------------------------------------------------------------------------------------------------ #
+class DQAFinalizeTask(Task):
+    """Finalizes the data for the data quality assessment
+
+    Args:
+        cache_mgr_cls (type[CacheManager]): Cache manager class.
+    """
+
+    def __init__(
+        self,
+        cache_iter_cls: type[CacheIterator] = CacheIterator,
+        cache_name: str = "dqa",
+    ) -> None:
+        super().__init__()
+        self._cache_iter = cache_iter_cls(name=cache_name)
+
+    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Performs the task
+
+        Args:
+            data (pd.DataFrame): Data to be assessed.
+        """
+        for column in self._cache_iter:
+            data = pd.concat([data, column], axis=1)
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -235,13 +298,15 @@ class DataQualityAssessmentTask(Task):
 
     PREFIX = "dqa_"
 
-    def __init__(self, new_column_name: str):
+    def __init__(
+        self,
+        new_column_name: str,
+        cache_mgr_cls: type[CacheManager] = CacheManager,
+        cache_name: str = "dqa",
+    ):
         super().__init__()
         self._new_column_name = f"{self.PREFIX}{new_column_name}"
-        # Cache related variables and operations
-        self._cache_key = self.__class__.__name__.lower()
-        self._cache_filepath = f"cache/{os.getenv('ENV')}/dqa"
-        os.makedirs(os.path.dirname(self._cache_filepath), exist_ok=True)
+        self._cache = cache_mgr_cls(name=cache_name)
 
     @property
     def new_column_name(self) -> str:
@@ -255,35 +320,16 @@ class DataQualityAssessmentTask(Task):
             data (pd.DataFrame): Data to be assessed.
         """
         self.start_task()
-        # Try to obtain the result from cache.
-        try:
-            result = self._get_cache(key=self._cache_key)
-            data = pd.concat([data, result.rename(self.new_column_name)], axis=1)
-
-        # Otherwise, obtain result by executing the task, then save result to cache.
-        except KeyError:
-            data = self.execute_task(data=data)
-            self._cache(key=self._cache_key, value=data[self.new_column_name])
-
-        except Exception as e:
-            self._logger.exception(
-                f"Exception occurred while executing {self.__class__.__name__}\n{e}"
-            )
-            raise
+        # Execute the underlying task if the result does not exist in the cache.
+        if not self._cache.exists(key=self.new_column_name):
+            result = self.execute_task(data=data)
+            self._cache.add_item(key=self.new_column_name, value=result)
         self.stop_task()
         return data
 
-    def _cache(self, key: str, value: pd.Series) -> None:
-        """Caches a result"""
-        with shelve.open(self._cache_filepath) as cache:
-            cache[key] = value
 
-    def _get_cache(self, key: str) -> pd.Series:
-        """Gets cached result"""
-        with shelve.open(self._cache_filepath) as cache:
-            return cache[key]
-
-
+# ------------------------------------------------------------------------------------------------ #
+#                               DETECT DUPLICATE ROW TASK                                          #
 # ------------------------------------------------------------------------------------------------ #
 class DetectDuplicateRowTask(DataQualityAssessmentTask):
     """A task to mark duplicate rows in a DataFrame.
@@ -313,22 +359,21 @@ class DetectDuplicateRowTask(DataQualityAssessmentTask):
     @log_exceptions()
     def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        Mark duplicate rows in the DataFrame.
+        Returns a binary series indicating the rows that contain duplicate values.
 
         Parameters:
             data (pd.DataFrame): The input DataFrame.
 
         Returns:
-            pd.DataFrame: The DataFrame with an additional column indicating whether each row is a duplicate.
+            result (pd.Series): A series of binary indicator values.
         """
         # Check for duplicates.
-        data[self.new_column_name] = data.duplicated(
-            subset=self._column_names, keep="first"
-        )
-
-        return data
+        result = data.duplicated(subset=self._column_names, keep="first")
+        return result.rename(self.new_column_name)
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                 DATA NULL VALUES TASK                                            #
 # ------------------------------------------------------------------------------------------------ #
 class DetectNullValuesTask(DataQualityAssessmentTask):
     """A task to mark incomplete rows in a DataFrame.
@@ -356,11 +401,12 @@ class DetectNullValuesTask(DataQualityAssessmentTask):
             pd.DataFrame: The DataFrame with an additional column indicating whether each row is incomplete.
         """
 
-        data[self.new_column_name] = data.isnull().values.any(axis=1)
+        result = data.isnull().values.any(axis=1)
+        return pd.Series(data=result, name=self.new_column_name)
 
-        return data
 
-
+# ------------------------------------------------------------------------------------------------ #
+#                            DETECT NON-ENGLISH TASK                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Standalone function for processing a chunk
 def process_chunk(chunk, text_column, new_column, model_path):
@@ -428,9 +474,11 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
         )
 
         # Concatenate the processed chunks
-        return pd.concat(results, ignore_index=True, axis=0)
+        return pd.Series(results, ignore_index=True, name=self.new_column_name, axis=0)
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                  DETECT EMOJI TASK                                               #
 # ------------------------------------------------------------------------------------------------ #
 class DetectEmojiTask(DataQualityAssessmentTask):
     def __init__(
@@ -460,11 +508,9 @@ class DetectEmojiTask(DataQualityAssessmentTask):
 
         """
 
-        data[self.new_column_name] = data[self._text_column].parallel_apply(
-            self._contains_emoji
-        )
+        result = data[self._text_column].parallel_apply(self._contains_emoji)
 
-        return data
+        return result.rename(self.new_column_name)
 
     @staticmethod
     def _contains_emoji(text):
@@ -479,6 +525,8 @@ class DetectEmojiTask(DataQualityAssessmentTask):
         return any(char in emoji.EMOJI_DATA for char in text)
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                            DETECT SPECIAL CHARACTERS TASK                                        #
 # ------------------------------------------------------------------------------------------------ #
 class DetectSpecialCharacterTask(DataQualityAssessmentTask):
     def __init__(
@@ -515,11 +563,11 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
 
         """
 
-        data[self.new_column_name] = data[self._text_column].parallel_apply(
+        result = data[self._text_column].parallel_apply(
             self._contains_excessive_special_chars
         )
 
-        return data
+        return result.rename(self.new_column_name)
 
     def _contains_excessive_special_chars(self, text):
         """Detects if the given text contains an excessive number of special characters.
@@ -536,6 +584,8 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
         )
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                               DETECT INVALID DATES TASK                                          #
 # ------------------------------------------------------------------------------------------------ #
 class DetectInvalidDatesTask(DataQualityAssessmentTask):
     def __init__(self, new_column_name: str = "date_invalid"):
@@ -561,9 +611,9 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
 
         """
 
-        data[self.new_column_name] = data["date"].parallel_apply(self._date_invalid)
+        result = data["date"].parallel_apply(self._date_invalid)
 
-        return data
+        return result.rename(self.new_column_name)
 
     def _date_invalid(self, date: np.datetime64) -> bool:
         """Indicates whether the rating is on the five point scale."""
@@ -572,6 +622,8 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
         return date < np.datetime64("2007") or date > np.datetime64("2024")
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                               DETECT INVALID RATINGS TASK                                        #
 # ------------------------------------------------------------------------------------------------ #
 class DetectInvalidRatingsTask(DataQualityAssessmentTask):
     def __init__(self, new_column_name: str = "rating_invalid"):
@@ -597,9 +649,9 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
 
         """
 
-        data[self.new_column_name] = data["rating"].parallel_apply(self._rating_invalid)
+        result = data["rating"].parallel_apply(self._rating_invalid)
 
-        return data
+        return result.rename(self.new_column_name)
 
     def _rating_invalid(self, rating: int) -> bool:
         """Indicates whether the rating is on the five point scale."""
@@ -607,13 +659,40 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                                 DETECT PROFANITY                                                 #
+# ------------------------------------------------------------------------------------------------ #
+def detect_profanity(text):
+    """
+    Detects if the given text contains any profanity.
+
+    Args:
+        text (str): The text to be analyzed.
+
+    Returns:
+        bool: True if the text contains profanity, False otherwise.
+    """
+    try:
+        return predict([text])[0] == 1
+    except Exception as e:
+        print(f"Error in profanity detection: {e}")
+        return False
+
+
+# ------------------------------------------------------------------------------------------------ #
 class DetectProfanityTask(DataQualityAssessmentTask):
+    """Detects profanity in the designated column of a dataframe.
+
+    Note: This class leverages the multiprocessing module. To avoid unintended behavior and
+    recursively spawning processes, this should be executed with the __main__ shield. This
+    is not strictly required in a WSL2 virtual machine, but should be refactored behind
+    a __main__  shield for cross-platform portability.
+    """
+
     def __init__(
         self,
         text_column: str = "content",
         new_column_name: str = "has_profanity",
         n_jobs: int = 12,
-        n_partitions: int = 50,
     ):
         """
         Initializes the DetectProfanityTask with the column names.
@@ -627,10 +706,6 @@ class DetectProfanityTask(DataQualityAssessmentTask):
         super().__init__(new_column_name=new_column_name)
         self._text_column = text_column
         self._n_jobs = n_jobs
-        self._n_partitions = n_partitions
-        # Start a Dask client for a local environment using processes
-        client = Client(processes=True, n_workers=n_jobs, threads_per_worker=1)
-        print("Dask dashboard available at:", client.dashboard_link)
 
     @task_profiler()
     @log_exceptions()
@@ -645,47 +720,20 @@ class DetectProfanityTask(DataQualityAssessmentTask):
             pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains profanity.
 
         """
+        # Extract the text column
+        texts = data[self._text_column].tolist()
 
-        # Convert pandas to Dask
-        df = dd.from_pandas(data, npartitions=self._n_partitions)
+        # Create a pool of processes
+        with Pool(processes=self._n_jobs) as pool:
+            # Map the detect_profanity function to the texts
+            results = tqdm(pool.map(detect_profanity, texts), total=len(self._n_jobs))
 
-        # Use dask apply
-        result = df[self._text_column].apply(
-            self._contains_profanity, meta=(self._text_column, "bool")
-        )
-
-        # Persist result to avoid recomputation
-        with Profiler() as prof, ResourceProfiler() as rprof, CacheProfiler() as cprof, ProgressBar():
-            result = result.compute()
-
-        data[self.new_column_name] = result
-
-        # Visualize profiling results
-        prof.visualize()
-        rprof.visualize()
-        cprof.visualize()
-
-        return data
-
-    @staticmethod
-    def _contains_profanity(text):
-        """
-        Detects if the given text contains any profanity.
-
-        Args:
-            text (str): The text to be analyzed.
-
-        Returns:
-            bool: True if the text contains profanity, False otherwise.
-        """
-        try:
-            return predict([text])[0] == 1
-        except Exception as e:
-            # Use a simple print statement for error logging in parallel function
-            print(f"Error in profanity detection: {e}")
-            return False
+        # Create and return the named pandas series
+        return pd.Series(results, name=self.new_column_name)
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                  DETECT EMAIL TASK                                               #
 # ------------------------------------------------------------------------------------------------ #
 class DetectEmailTask(DataQualityAssessmentTask):
     def __init__(
@@ -714,10 +762,8 @@ class DetectEmailTask(DataQualityAssessmentTask):
 
         """
 
-        data[self.new_column_name] = data[self._text_column].parallel_apply(
-            self._contains_email
-        )
-        return data
+        result = data[self._text_column].parallel_apply(self._contains_email)
+        return result.rename(self.new_column_name)
 
     @staticmethod
     def _contains_email(text):
@@ -734,6 +780,8 @@ class DetectEmailTask(DataQualityAssessmentTask):
         return bool(re.search(email_pattern, text))
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                  DETECT URL TASK                                                 #
 # ------------------------------------------------------------------------------------------------ #
 class DetectURLTask(DataQualityAssessmentTask):
     """Detects the presence of URLs in a text column.
@@ -763,10 +811,8 @@ class DetectURLTask(DataQualityAssessmentTask):
 
         """
 
-        data[self.new_column_name] = data[self._text_column].parallel_apply(
-            self._contains_url
-        )
-        return data
+        result = data[self._text_column].parallel_apply(self._contains_url)
+        return result.rename(self.new_column_name)
 
     @staticmethod
     def _contains_url(text):
@@ -783,6 +829,8 @@ class DetectURLTask(DataQualityAssessmentTask):
         return bool(re.search(url_pattern, text))
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                               DETECT PHONE NUMBER TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
 class DetectPhoneNumberTask(DataQualityAssessmentTask):
     """Detects the presence of phone numbers in a text column.
@@ -814,10 +862,8 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
 
         """
 
-        data[self.new_column_name] = data[self._text_column].parallel_apply(
-            self._contains_phone_number
-        )
-        return data
+        result = data[self._text_column].parallel_apply(self._contains_phone_number)
+        return result.rename(self.new_column_name)
 
     @staticmethod
     def _contains_phone_number(text):
@@ -834,6 +880,9 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
         return bool(re.search(phone_number_pattern, text))
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                               DETECT OUTLIERS TASK                                               #
+# ------------------------------------------------------------------------------------------------ #
 class DetectOutliersTask(DataQualityAssessmentTask):
     def __init__(self, column_name: str, new_column_name: str):
         """Detects outliers in vote sum, vote count, and review length columns.
@@ -858,9 +907,9 @@ class DetectOutliersTask(DataQualityAssessmentTask):
 
         """
 
-        data = self._check_outliers(data)
+        result = self._check_outliers(data)
 
-        return data
+        return pd.Series(data=result, name=self.new_column_name)
 
     def _check_outliers(self, data: pd.DataFrame):
         """
@@ -882,10 +931,10 @@ class DetectOutliersTask(DataQualityAssessmentTask):
         upper = q3 + (1.5 * iqr)
 
         # Flag observations
-        data[self.new_column_name] = np.where(
+        result = np.where(
             (data[self._column_name] < lower) | (data[self._column_name] > upper),
             True,
             False,
         )
 
-        return data
+        return result
