@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday June 29th 2024 02:13:38 am                                                 #
+# Modified   : Saturday June 29th 2024 02:40:49 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,12 +24,10 @@ import warnings
 from dataclasses import dataclass
 from typing import AnyStr, List, Optional, Union
 
-import dask
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import emoji
 import fasttext
-from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
@@ -52,7 +50,6 @@ pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
 fasttext.FastText.eprint = lambda x: None
-dask.config.set({"logging.distributed": "error"})
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -474,7 +471,7 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
         )
 
         # Concatenate the processed chunks
-        return pd.Series(results, ignore_index=True, name=self.new_column_name, axis=0)
+        return pd.Series(results, name=self.new_column_name)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -661,6 +658,12 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 DETECT PROFANITY                                                 #
 # ------------------------------------------------------------------------------------------------ #
+# Standalone function for processing a chunk
+def process_chunk_profanity(chunk, text_column, new_column):
+    chunk[new_column] = chunk[text_column].apply(lambda text: detect_profanity(text))
+    return chunk
+
+
 def detect_profanity(text):
     """
     Detects if the given text contains any profanity.
@@ -720,15 +723,19 @@ class DetectProfanityTask(DataQualityAssessmentTask):
             pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains profanity.
 
         """
-        # Extract the text column
-        texts = data[self._text_column].tolist()
+        # Split data into chunks
+        chunks = np.array_split(data, self._n_jobs or 1)
+        self._logger.debug(f"Data split into {len(chunks)} chunks")
 
-        # Create a pool of processes
-        with Pool(processes=self._n_jobs) as pool:
-            # Map the detect_profanity function to the texts
-            results = tqdm(pool.map(detect_profanity, texts), total=len(self._n_jobs))
+        # Process chunks in parallel using joblib
+        results = Parallel(n_jobs=self._n_jobs)(
+            delayed(process_chunk_profanity)(
+                chunk, self._text_column, self.new_column_name
+            )
+            for chunk in tqdm(chunks)
+        )
 
-        # Create and return the named pandas series
+        # Concatenate the processed chunks
         return pd.Series(results, name=self.new_column_name)
 
 
