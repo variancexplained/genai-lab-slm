@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday June 6th 2024 02:45:51 pm                                                  #
-# Modified   : Saturday June 29th 2024 02:28:18 pm                                                 #
+# Modified   : Saturday June 29th 2024 05:13:18 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 
 import pytest
 
-from appinsight.utils.cache import cachenow, CacheIterator, CacheManager
+from appinsight.utils.cache import cachenow, CacheIterator, Cache
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -155,7 +155,7 @@ class TestCacheIter:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cm = CacheManager(name="test")
+        cm = Cache(name="test")
         for i in range(10):
             key = f"item-{i}"
             value = f"value-{i}"

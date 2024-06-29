@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday June 5th 2024 05:40:02 am                                                 #
-# Modified   : Saturday June 29th 2024 04:46:30 pm                                                 #
+# Modified   : Saturday June 29th 2024 05:13:17 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -75,7 +75,7 @@ def cachenow(max_size=100, evict_size=5):
 # ------------------------------------------------------------------------------------------------ #
 #                                      CACHE MANAGER                                               #
 # ------------------------------------------------------------------------------------------------ #
-class CacheManager:
+class Cache:
     def __init__(self, name: str, env_mgr_cls: type[EnvManager] = EnvManager):
         self._name = name
         self._env_mgr = env_mgr_cls()
