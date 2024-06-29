@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Thursday June 6th 2024 04:04:14 pm                                                  #
+# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.file import IOService
-from appinsight.utils.io import PandasReader, PandasWriter
+from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.print import Printer
 from appinsight.utils.repo import DatasetRepo
 from appinsight.workflow.config import StageConfig
@@ -48,10 +48,11 @@ class CleanConfig(StageConfig):
     """Class encapsulating the configuration for the data cleaning stage."""
 
     name: str = "DataCleaner"
-    source_directory: str = "02_dqa"
-    source_filename: str = "reviews.pkl"
-    target_directory: str = "03_clean"
-    target_filename: str = "reviews.pkl"
+    source_directory: str = "02_dqa/reviews"
+    source_filename: str = None
+    target_directory: str = "03_clean/reviews"
+    target_filename: str = None
+    partition_cols: str = "category"
     force: bool = False
     impact_to_remove: list = field(default_factory=lambda: ["Critical", "High"])
     config: pd.DataFrame = None
@@ -92,9 +93,9 @@ class DataCleaner(Preprocessor):
     def __init__(
         self,
         config: StageConfig,
-        source_reader_cls: type[Reader] = PandasReader,
-        target_writer_cls: type[Writer] = PandasWriter,
-        target_reader_cls: type[Reader] = PandasReader,
+        source_reader_cls: type[Reader] = FileReader,
+        target_writer_cls: type[Writer] = FileWriter,
+        target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
         dsm_cls: type[DatasetRepo] = DatasetRepo,
     ) -> None:
@@ -139,6 +140,7 @@ class DataCleaner(Preprocessor):
             directory=self.config.target_directory,
             filename=self.config.target_filename,
             writer_cls=self.target_writer_cls,
+            partition_cols=self.config.partition_cols,
         )
         clean = DataCleaningTask(issues_to_remove=self.config.get_issues_to_remove())
 

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 23rd 2024 02:38:23 pm                                                  #
-# Modified   : Friday June 28th 2024 04:20:33 pm                                                   #
+# Modified   : Friday June 28th 2024 07:29:31 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,8 +37,8 @@ def convert_seconds_to_hms(sec: float) -> str:
 
     # Determine unit of time to report.
     if x[0] != "0":
-        return f"{x[0]} Hours {x[1]} Minutes {round(x[2],2)} Seconds"
+        return f"{x[0]} Hours {x[1]} Minutes {x[2]} Seconds"
     elif x[1] != "0":
-        return f"{x[1]} Minutes {round(x[2],2)} Seconds"
+        return f"{x[1]} Minutes {x[2]} Seconds"
     else:
-        return f"{round(x[2],2)} Seconds"
+        return f"{x[2]} Seconds"

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 27th 2024 11:38:53 am                                                    #
-# Modified   : Thursday June 20th 2024 02:10:45 pm                                                 #
+# Modified   : Friday June 28th 2024 07:36:54 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -94,8 +94,15 @@ class DatasetRepo(Repo):
         return os.path.exists(filepath)
 
     def get_filepath(self, directory: str, filename: str) -> str:
-        """Returns the filepath for the current environment."""
+        """Returns the filepath for the current environment.
+
+        Args:
+            directory (str): The folder for the given environment.
+            filename (Union[str,None]): Optional filename within the given directory.
+        """
         env = self.efm.get_environment()
         directory = os.path.join(self.basedir, env, directory)
-        filename = f"{filename}"
-        return os.path.join(directory, filename)
+        if filename is None:
+            return directory
+        else:
+            return os.path.join(directory, filename)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday June 1st 2024 09:15:02 pm                                                  #
-# Modified   : Tuesday June 4th 2024 12:10:40 pm                                                   #
+# Modified   : Friday June 28th 2024 06:50:20 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ import pytest
 from pyspark.sql import DataFrame
 
 from appinsight.data_prep.text_prep import TextPrepConfig, TextPreprocessor
-from appinsight.utils.io import PandasReader, PySparkReader, PySparkWriter
+from appinsight.utils.io import FileReader, PySparkReader, PySparkWriter
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -52,7 +52,7 @@ class TestTextPreprocessingTask:  # pragma: no cover
         prep = TextPreprocessor(
             config=config,
             spark=spark_nlp_session,
-            source_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
             target_writer_cls=PySparkWriter,
             target_reader_cls=PySparkReader,
         )
@@ -81,7 +81,7 @@ class TestTextPreprocessingTask:  # pragma: no cover
         prep = TextPreprocessor(
             config=config,
             spark=spark_session,
-            source_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
             target_writer_cls=PySparkWriter,
             target_reader_cls=PySparkReader,
         )

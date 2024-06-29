@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Thursday June 27th 2024 05:46:21 am                                                 #
+# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,7 +30,7 @@ from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.cast import CastPandas
-from appinsight.utils.io import PandasReader, PandasWriter
+from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import DatasetRepo
 from appinsight.workflow.config import StageConfig
 from appinsight.workflow.pipeline import Pipeline
@@ -46,10 +46,11 @@ class NormalizeConfig(StageConfig):
     """Data processing configuration for the Normalize"""
 
     name: str = "Normalize"
-    source_directory: str = "00_raw"
-    source_filename: str = "reviews.pkl"
-    target_directory: str = "01_normalized"
-    target_filename: str = "reviews.pkl"
+    source_directory: str = "00_raw/reviews"
+    source_filename: str = None
+    target_directory: str = "01_norm/reviews"
+    target_filename: str = None
+    partition_cols: str = "category"
     text_column: str = "content"
     force: bool = False
     encoding_sample: float = 0.01
@@ -93,9 +94,9 @@ class Normalize(Preprocessor):
     def __init__(
         self,
         config: NormalizeConfig,
-        source_reader_cls: type[Reader] = PandasReader,
-        target_writer_cls: type[Writer] = PandasWriter,
-        target_reader_cls: type[Reader] = PandasReader,
+        source_reader_cls: type[Reader] = FileReader,
+        target_writer_cls: type[Writer] = FileWriter,
+        target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
         dsm_cls: type[DatasetRepo] = DatasetRepo,
     ) -> None:
@@ -128,6 +129,7 @@ class Normalize(Preprocessor):
             directory=self.config.target_directory,
             filename=self.config.target_filename,
             writer_cls=self.target_writer_cls,
+            partition_cols=self.config.partition_cols,
         )
         normalize = NormalizeDataTask(
             datatypes=self.config.datatypes,

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Sunday June 16th 2024 03:15:26 pm                                                   #
+# Modified   : Friday June 28th 2024 07:34:26 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,7 +33,7 @@ from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.convert import ToPandas, ToSpark
-from appinsight.utils.io import PandasReader, PandasWriter
+from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import DatasetRepo
 from appinsight.utils.tempfile import TempFileMgr
 from appinsight.workflow.config import StageConfig
@@ -51,8 +51,8 @@ load_dotenv()
 class MetricsConfig(StageConfig):
     """Base class for configuration"""
 
-    source_directory: str = "04_features"
-    source_filename: str = "reviews.pkl"
+    source_directory: str = "04_features/reviews"
+    source_filename: str = None
     target_directory: str = "06_metrics"
     force: bool = False
 
@@ -110,9 +110,9 @@ class Metrics(Preprocessor):
         config: MetricsConfig,
         spark: SparkSession,
         metrics_task_cls: type[MetricsTask],
-        source_reader_cls: type[Reader] = PandasReader,
-        target_writer_cls: type[Writer] = PandasWriter,
-        target_reader_cls: type[Reader] = PandasReader,
+        source_reader_cls: type[Reader] = FileReader,
+        target_writer_cls: type[Writer] = FileWriter,
+        target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
         dsm_cls: type[DatasetRepo] = DatasetRepo,
         tempfile_manager_cls: type[TempFileMgr] = TempFileMgr,

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 02:19:12 am                                                 #
-# Modified   : Tuesday June 4th 2024 11:39:24 pm                                                   #
+# Modified   : Friday June 28th 2024 06:50:20 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import pandas as pd
 import pytest
 from pyspark.sql import DataFrame, SparkSession
 
-from appinsight.utils.io import PandasReader, PandasWriter, PySparkReader, PySparkWriter
+from appinsight.utils.io import FileReader, FileWriter, PySparkReader, PySparkWriter
 from appinsight.utils.repo import DatasetRepo
 
 # ------------------------------------------------------------------------------------------------ #
@@ -50,7 +50,7 @@ class TestPandas:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        reader = PandasReader()
+        reader = FileReader()
         df = reader.read(filepath="data/test/03_clean/reviews.pkl")
         assert isinstance(df, pd.DataFrame)
 
@@ -72,7 +72,7 @@ class TestPandas:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         filepath = "tests/data/test_pandas_write.pkl"
-        writer = PandasWriter()
+        writer = FileWriter()
         writer.write(filepath=filepath, data=data_raw)
         assert os.path.exists(filepath)
 

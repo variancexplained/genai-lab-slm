@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday June 1st 2024 09:15:02 pm                                                  #
-# Modified   : Tuesday June 4th 2024 12:10:40 pm                                                   #
+# Modified   : Friday June 28th 2024 06:50:20 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from appinsight.data_prep.metrics import (
     CategoryMetricsTask,
     Metrics,
 )
-from appinsight.utils.io import PandasReader, PandasWriter
+from appinsight.utils.io import FileReader, FileWriter
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -64,9 +64,9 @@ class TestMetricsCategory:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=CategoryMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)
@@ -94,9 +94,9 @@ class TestMetricsCategory:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=CategoryMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)
@@ -130,9 +130,9 @@ class TestMetricsApp:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=AppMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)
@@ -160,9 +160,9 @@ class TestMetricsApp:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=AppMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)
@@ -196,9 +196,9 @@ class TestMetricsAuthor:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=AuthorMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)
@@ -226,9 +226,9 @@ class TestMetricsAuthor:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=AuthorMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)
@@ -262,9 +262,9 @@ class TestMetricsCategoryAuthor:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=CategoryAuthorMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)
@@ -292,9 +292,9 @@ class TestMetricsCategoryAuthor:  # pragma: no cover
             config=config,
             spark=spark_session,
             metrics_task_cls=CategoryAuthorMetricsTask,
-            source_reader_cls=PandasReader,
-            target_writer_cls=PandasWriter,
-            target_reader_cls=PandasReader,
+            source_reader_cls=FileReader,
+            target_writer_cls=FileWriter,
+            target_reader_cls=FileReader,
         )
         df = metrics.execute()
         assert isinstance(df, pd.DataFrame)

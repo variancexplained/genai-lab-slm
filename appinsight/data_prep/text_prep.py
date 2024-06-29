@@ -11,13 +11,12 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 19th 2024 09:08:01 pm                                                    #
-# Modified   : Sunday June 16th 2024 03:15:26 pm                                                   #
+# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Stage 2: Data Preparation Module"""
-import logging
 import os
 import warnings
 from dataclasses import dataclass
@@ -43,10 +42,9 @@ from appinsight.data_prep.base import Preprocessor
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
-from appinsight.infrastructure.spark.manager import SparkSessionManager
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.convert import ToSpark
-from appinsight.utils.io import PandasReader, PySparkReader, PySparkWriter
+from appinsight.utils.io import FileReader, PySparkReader, PySparkWriter
 from appinsight.utils.repo import DatasetRepo
 from appinsight.workflow.config import StageConfig
 from appinsight.workflow.pipeline import Pipeline as Pipe
@@ -73,10 +71,11 @@ TRANSFORMED_COLUMNS = [
 @dataclass
 class TextPrepConfig(StageConfig):
     name: str = "TextPreprocessor"
-    source_directory: str = "04_features"
-    source_filename: str = "reviews.pkl"
-    target_directory: str = "05_nlp"
-    target_filename: str = "reviews.pkl"
+    source_directory: str = "04_features/reviews"
+    source_filename: str = None
+    target_directory: str = "05_nlp/reviews"
+    target_filename: str = None
+    partition_cols: str = "category"
     force: bool = False
     text_col: str = "content"
     wordlist: str = None
@@ -84,7 +83,7 @@ class TextPrepConfig(StageConfig):
     def __post_init__(self) -> None:
         self.wordlist = os.getenv("REFERENCE_WORDLIST")
         if self.wordlist is None:
-            msg = f"No wordlist reference filepath designated in the .env file."
+            msg = "No wordlist reference filepath designated in the .env file."
             raise RuntimeError(msg)
 
 
@@ -113,7 +112,7 @@ class TextPreprocessor(Preprocessor):
         self,
         config: TextPrepConfig,
         spark: SparkSession,
-        source_reader_cls: type[Reader] = PandasReader,
+        source_reader_cls: type[Reader] = FileReader,
         target_writer_cls: type[Writer] = PySparkWriter,
         target_reader_cls: type[Reader] = PySparkReader,
         pipeline_cls: type[Pipe] = Pipe,
@@ -161,6 +160,7 @@ class TextPreprocessor(Preprocessor):
             directory=self.config.target_directory,
             filename=self.config.target_filename,
             writer_cls=self.target_writer_cls,
+            partition_cols=self.config.partition_cols,
         )
 
         # Add tasks to pipeline...

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday June 1st 2024 07:16:33 pm                                                  #
-# Modified   : Thursday June 27th 2024 07:34:27 am                                                 #
+# Modified   : Friday June 28th 2024 06:50:19 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from appinsight.utils.base import Reader, Writer
-from appinsight.utils.io import PandasReader, PandasWriter
+from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import DatasetRepo
 from appinsight.workflow.config import StageConfig
 from appinsight.workflow.pipeline import Pipeline
@@ -47,9 +47,9 @@ class Preprocessor(ABC):
     def __init__(
         self,
         config: StageConfig,
-        source_reader_cls: type[Reader] = PandasReader,
-        target_writer_cls: type[Writer] = PandasWriter,
-        target_reader_cls: type[Reader] = PandasReader,
+        source_reader_cls: type[Reader] = FileReader,
+        target_writer_cls: type[Writer] = FileWriter,
+        target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
         dsm_cls: type[DatasetRepo] = DatasetRepo,
         **kwargs,

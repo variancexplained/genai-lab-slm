@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Friday June 28th 2024 04:21:36 pm                                                   #
+# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,7 +41,7 @@ from appinsight.data_prep import log_exceptions, task_profiler
 from appinsight.data_prep.base import Preprocessor
 from appinsight.data_prep.io import ReadTask, WriteTask
 from appinsight.utils.base import Reader, Writer
-from appinsight.utils.io import PandasReader, PandasWriter
+from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import DatasetRepo
 from appinsight.workflow.config import StageConfig
 from appinsight.workflow.pipeline import Pipeline
@@ -62,10 +62,11 @@ class DQAConfig(StageConfig):
     """Class encapsulating the configuration for data quality assessment stage."""
 
     name: str = "DataQualityAssessment"
-    source_directory: str = "01_normalized"
-    source_filename: str = "reviews.pkl"
-    target_directory: str = "02_dqa"
-    target_filename: str = "reviews.pkl"
+    source_directory: str = "01_norm/reviews"
+    source_filename: str = None
+    target_directory: str = "02_dqa/reviews"
+    target_filename: str = None
+    partition_cols: str = "category"
     n_jobs: int = 12
     n_partitions: int = 50
     force: bool = False
@@ -95,9 +96,9 @@ class DataQualityAssessment(Preprocessor):
     def __init__(
         self,
         config: DQAConfig,
-        source_reader_cls: type[Reader] = PandasReader,
-        target_writer_cls: type[Writer] = PandasWriter,
-        target_reader_cls: type[Reader] = PandasReader,
+        source_reader_cls: type[Reader] = FileReader,
+        target_writer_cls: type[Writer] = FileWriter,
+        target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
         dsm_cls: type[DatasetRepo] = DatasetRepo,
         fastmode: bool = False,
@@ -150,6 +151,7 @@ class DataQualityAssessment(Preprocessor):
             directory=self.config.target_directory,
             filename=self.config.target_filename,
             writer_cls=self.target_writer_cls,
+            partition_cols=self.config.partition_cols,
         )
 
         # Instantiate duplicate checkers

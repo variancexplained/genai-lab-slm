@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:55:39 am                                                 #
-# Modified   : Wednesday June 5th 2024 12:19:17 am                                                 #
+# Modified   : Friday June 28th 2024 08:24:35 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,21 +29,22 @@ from appinsight.utils.file import IOService
 # ------------------------------------------------------------------------------------------------ #
 #                                         PANDAS READER                                            #
 # ------------------------------------------------------------------------------------------------ #
-class PandasReader(Reader):
+class FileReader(Reader):
     """Reads pandas DataFrame from file.
 
     Args:
         io (type[IOService]):
     """
 
-    def __init__(self, io: type[IOService] = IOService) -> None:
+    def __init__(self, io_cls: type[IOService] = IOService, **kwargs) -> None:
         super().__init__()
-        self._io = io
+        self._io = io_cls()
+        self._kwargs = kwargs
 
     def read(self, filepath: str) -> pd.DataFrame:
         """Reads Pandas DataFrames from various file formats."""
         try:
-            return self._io.read(filepath=filepath)
+            return self._io.read(filepath=filepath, **self._kwargs)
         except FileNotFoundError as fe:
             msg = f"File was not found at {filepath}\n{fe}"
             self.logger.exception(msg)
@@ -58,21 +59,22 @@ class PandasReader(Reader):
 # ------------------------------------------------------------------------------------------------ #
 #                                         PANDAS WRITER                                            #
 # ------------------------------------------------------------------------------------------------ #
-class PandasWriter(Writer):
+class FileWriter(Writer):
     """Writes a pandas DataFrame to file.
 
     Args:
         dsm (DatasetRepo): Dataset Manager responsible for files in environments.
     """
 
-    def __init__(self, io: type[IOService] = IOService) -> None:
+    def __init__(self, io_cls: type[IOService] = IOService, **kwargs) -> None:
         super().__init__()
-        self._io = io
+        self._io = io_cls()
+        self._kwargs = kwargs
 
     def write(self, data: pd.DataFrame, filepath: str) -> pd.DataFrame:
         """Writes Pandas DataFrames in various file formats."""
         try:
-            return self._io.write(data=data, filepath=filepath)
+            return self._io.write(data=data, filepath=filepath, **self._kwargs)
         except Exception as e:
             msg = f"Exception occurred while writing to {filepath}.\n{e}"
             self.logger.exception(msg)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Friday June 28th 2024 08:46:42 am                                                   #
+# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from appinsight.data_prep.base import Preprocessor
 from appinsight.data_prep.io import ReadTask, WriteTask
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.cast import CastPandas
-from appinsight.utils.io import PandasReader, PandasWriter
+from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import DatasetRepo
 from appinsight.workflow.config import StageConfig
 from appinsight.workflow.pipeline import Pipeline
@@ -54,10 +54,11 @@ class FeatureEngineeringConfig(StageConfig):
     """Encapsulates the configuration for feature engineering."""
 
     name: str = "FeatureEngineering"
-    source_directory: str = "03_clean"
-    source_filename: str = "reviews.pkl"
-    target_directory: str = "04_features"
-    target_filename: str = "reviews.pkl"
+    source_directory: str = "03_clean/reviews"
+    source_filename: str = None
+    target_directory: str = "04_features/reviews"
+    target_filename: str = None
+    partition_cols: str = "category"
     force: bool = False
     hash_size: int = 10
     features_to_drop: List = field(default_factory=lambda: ["category_id"])
@@ -104,9 +105,9 @@ class FeatureEngineer(Preprocessor):
     def __init__(
         self,
         config: StageConfig,
-        source_reader_cls: type[Reader] = PandasReader,
-        target_writer_cls: type[Writer] = PandasWriter,
-        target_reader_cls: type[Reader] = PandasReader,
+        source_reader_cls: type[Reader] = FileReader,
+        target_writer_cls: type[Writer] = FileWriter,
+        target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
         dsm_cls: type[DatasetRepo] = DatasetRepo,
     ) -> None:
@@ -139,6 +140,7 @@ class FeatureEngineer(Preprocessor):
             directory=self.config.target_directory,
             filename=self.config.target_filename,
             writer_cls=self.target_writer_cls,
+            partition_cols=self.config.partition_cols,
         )
         parse = ParseDatesTask()
 

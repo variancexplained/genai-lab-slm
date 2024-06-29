@@ -1,4 +1,4 @@
-Your proposed workflow for text analytics appears comprehensive and well-structured. Here’s a refined version of the steps, integrating the concepts of data preparation, feature extraction, EDA, and advanced text analysis:
+Your proposed workflow for text analytics appears comprehensive and well-structured. Here's a refined version of the steps, integrating the concepts of data preparation, feature extraction, EDA, and advanced text analysis:
 
 ### Workflow for Text Analytics
 1. **Data Preparation**

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday April 28th 2024 12:15:31 am                                                  #
-# Modified   : Thursday June 20th 2024 09:44:06 am                                                 #
+# Modified   : Friday June 28th 2024 07:54:38 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,6 +21,8 @@ import json
 import logging
 import os
 import pickle
+import pyarrow as pa
+import pyarrow.parquet as pq
 import tarfile
 from abc import ABC, abstractmethod
 from typing import Any, List, Union
@@ -273,13 +275,57 @@ class PickleIO(IO):  # pragma: no cover
 class ParquetIO(IO):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> Any:
-        """Reads using pandas API."""
-        return pd.read_parquet(path=filepath)
+        """Reads using pyarrow API.
+
+        Args:
+            filepath (str): Can be a file or directory path.
+
+        """
+        return pq.read_table(source=filepath).to_pandas()
 
     @classmethod
-    def _write(cls, filepath: str, data: pd.DataFrame, **kwargs) -> None:
-        """Writes a parquet file using pandas API."""
-        data.to_parquet(path=filepath)
+    def _write(
+        cls,
+        filepath: str,
+        data: pd.DataFrame,
+        partition_cols: Union[str, list] = None,
+        row_group_size: int = 1073741824,
+        existing_data_behavior: str = "delete_matching",
+        **kwargs,
+    ) -> None:
+        """Writes a parquet file using pyarrow API.
+
+        Args:
+            filepath (str): Can be a directory or file path.
+            data (pd.DataFrame): Pandas DataFrame
+            partition_cols (Union[str,list]): String or iterable specifying the column(s) by
+                which to partition the dataset. If not None, filepath is interpreted as the root directory for the dataset.
+            row_group_size (int): The size of each parquet row group in bytes. Apache
+                recommends a row group size of 1GB.
+            existing_data_behavior (str): Controls how the dataset will handle data that already
+                exists in the destination. The default behaviour is 'delete_matching'.        'overwrite_or_ignore' will ignore any existing data and will overwrite files with the same name as an output file. Other existing files will be ignored. This behavior, in combination with a unique basename_template for each write, will allow for an append workflow. 'error' will raise an error if any data exists in the destination.         'delete_matching' is useful when you are writing a partitioned dataset. The first time each partition directory is encountered the entire directory will be deleted. This allows you to overwrite old partitions completely.
+
+        """
+        table = pa.Table.from_pandas(data)
+        partition_cols = (
+            partition_cols if isinstance(partition_cols, list) else [partition_cols]
+        )
+
+        if partition_cols is None:
+            pq.write_table(
+                table=table,
+                where=filepath,
+                row_group_size=row_group_size,
+                existing_data_behavior=existing_data_behavior,
+            )
+        else:
+            pq.write_to_dataset(
+                table=table,
+                root_path=filepath,
+                partition_cols=partition_cols,
+                row_group_size=row_group_size,
+                existing_data_behavior=existing_data_behavior,
+            )
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -349,6 +395,7 @@ class IOService:  # pragma: no cover
         "xlsx": ExcelIO,
         "xls": ExcelIO,
         "parquet": ParquetIO,
+        "": ParquetIO,  # If no filepath, assumed to be Parquet IO that supports reading and writing from and to directories.
     }
     _logger = logging.getLogger(
         f"{__module__}.{__name__}",
@@ -379,6 +426,7 @@ class IOService:  # pragma: no cover
             msg = "File type {} is not supported.".format(file_format)
             cls._logger.exception(msg)
             raise ValueError(msg) from exc
+
 
 # ------------------------------------------------------------------------------------------------ #
 #                                  TAR GZ HANDLER                                                  #

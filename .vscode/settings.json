@@ -1,8 +1,9 @@
 {
     "jupyter.notebookFileRoot": "${workspaceFolder}",
+    "[python]": {
+        "editor.showUnused": false,
+    },
     "psi-header.config": {
-        
-
         "forceToTop": true,
         "blankLinesAfter": 1,
         "spacesBetweenYears": false,
@@ -15,17 +16,32 @@
         "creationDateZero": "asIs"
     },
     "psi-header.changes-tracking": {
-
-
-
         "isActive": true,
         "modAuthor": "Modified By:",
         "modDate": "Modified:",
         "modDateFormat": "dddd MMMM Do YYYY hh:mm:ss a",
-        "include": ["python", "shellscript","yaml", "sql", "ini", "cpp"],
-        "includeGlob": ["./**/*/.py"],
-        "exclude": ["markdown", "json", "jsonc", "sh", "sql", ".bash_profile"],
-        "excludeGlob": ["./**/*/ignoreme.*"],
+        "include": [
+            "python",
+            "shellscript",
+            "yaml",
+            "sql",
+            "ini",
+            "cpp"
+        ],
+        "includeGlob": [
+            "./**/*/.py"
+        ],
+        "exclude": [
+            "markdown",
+            "json",
+            "jsonc",
+            "sh",
+            "sql",
+            ".bash_profile"
+        ],
+        "excludeGlob": [
+            "./**/*/ignoreme.*"
+        ],
         "autoHeader": "autoSave",
         "enforceHeader": true,
         "replace": [
@@ -35,17 +51,28 @@
         "updateLicenseVariables": false
     },
     "psi-header.variables": [
-
-        ["projectCreationYear", "2024"],
-        ["url", "https://github.com/variancexplained/appinsight"],
-        ["projectname", "AppInsight"],
-        ["version", "0.1.0"],
-        ["pythonversion","3.12.3"]
+        [
+            "projectCreationYear",
+            "2024"
+        ],
+        [
+            "url",
+            "https://github.com/variancexplained/appinsight"
+        ],
+        [
+            "projectname",
+            "AppInsight"
+        ],
+        [
+            "version",
+            "0.1.0"
+        ],
+        [
+            "pythonversion",
+            "3.12.3"
+        ]
     ],
     "psi-header.lang-config": [
-
-
-
         {
             "language": "python",
             "begin": "# ================================================================================================ #",
@@ -86,7 +113,6 @@
         }
     ],
     "psi-header.templates": [
-
         {
             "language": "python",
             "template": [
@@ -104,7 +130,6 @@
                 "------------------------------------------------------------------------------------------------",
                 "License    : <<licensename>>",
                 "Copyright  : (c) <<yeartoyear(fc, now)>> <<copyrightHolder>>"
-
             ]
         },
         {
@@ -120,5 +145,4 @@
             "mapTo": "python"
         }
     ],
-
 }
