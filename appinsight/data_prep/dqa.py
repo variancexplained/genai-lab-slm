@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday June 29th 2024 12:08:40 pm                                                 #
+# Modified   : Saturday June 29th 2024 04:57:44 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,6 +37,7 @@ from appinsight.data_prep import log_exceptions, task_profiler
 from appinsight.data_prep.base import Preprocessor
 from appinsight.data_prep.io import ReadTask, WriteTask
 from appinsight.utils.base import Reader, Writer
+from appinsight.utils.data import split_dataframe
 from appinsight.utils.cache import CacheManager, CacheIterator
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import DatasetRepo
@@ -270,7 +271,8 @@ class DQAFinalizeTask(Task):
         cache_name: str = "dqa",
     ) -> None:
         super().__init__()
-        self._cache_iter = cache_iter_cls(name=cache_name)
+        self._cache_name = cache_name
+        self._cache_iter_cls = cache_iter_cls
 
     def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Performs the task
@@ -278,8 +280,16 @@ class DQAFinalizeTask(Task):
         Args:
             data (pd.DataFrame): Data to be assessed.
         """
-        for column in self._cache_iter:
+        cache_iter = self._cache_iter_cls(name=self._cache_name)
+        for column in cache_iter:
+            self._logger.debug(
+                f"Obtaining {column.name} from cache with {len(column)} rows."
+            )
             data = pd.concat([data, column], axis=1)
+            self._logger.debug(f"Data now has {data.shape[1]} columns.")
+
+        self._logger.debug(f"Final Data Head: \n{data.head()}")
+        self._logger.debug(f"Final Data Tail: \n{data.tail()}")
         return data
 
 
@@ -321,6 +331,11 @@ class DataQualityAssessmentTask(Task):
         if not self._cache.exists(key=self.new_column_name):
             result = self.execute_task(data=data)
             self._cache.add_item(key=self.new_column_name, value=result)
+
+        else:
+            self._logger.debug(
+                f"Cache for {self.new_column_name} already exists. Skipping task."
+            )
         self.stop_task()
         return data
 
@@ -408,10 +423,7 @@ class DetectNullValuesTask(DataQualityAssessmentTask):
 # Standalone function for processing a chunk
 def process_chunk(chunk, text_column, new_column, model_path):
     model = fasttext.load_model(model_path)  # Load the model in each worker
-    chunk[new_column] = chunk[text_column].apply(
-        lambda text: is_non_english(text, model)
-    )
-    return chunk
+    return chunk[text_column].apply(lambda text: is_non_english(text, model))
 
 
 # Standalone function to determine if text is non-English
@@ -459,7 +471,7 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
         """
 
         # Split data into chunks
-        chunks = np.array_split(data, self._n_jobs or 1)
+        chunks = split_dataframe(data=data, n=self._n_jobs)
         self._logger.debug(f"Data split into {len(chunks)} chunks")
 
         # Process chunks in parallel using joblib
@@ -471,7 +483,8 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
         )
 
         # Concatenate the processed chunks
-        return pd.Series(results, name=self.new_column_name)
+        result = pd.concat(results, axis=0)
+        return result.rename(self.new_column_name)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -604,7 +617,7 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
             data (pd.DataFrame): A pandas DataFrame containing the data to be processed.
 
         Returns:
-            pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains profanity.
+            pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains invalid dates.
 
         """
 
@@ -642,7 +655,7 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
             data (pd.DataFrame): A pandas DataFrame containing the data to be processed.
 
         Returns:
-            pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains profanity.
+            pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains invalid ratings.
 
         """
 
@@ -658,12 +671,6 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 DETECT PROFANITY                                                 #
 # ------------------------------------------------------------------------------------------------ #
-# Standalone function for processing a chunk
-def process_chunk_profanity(chunk, text_column, new_column):
-    chunk[new_column] = chunk[text_column].apply(lambda text: detect_profanity(text))
-    return chunk
-
-
 def detect_profanity(text):
     """
     Detects if the given text contains any profanity.
@@ -723,7 +730,17 @@ class DetectProfanityTask(DataQualityAssessmentTask):
             pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains profanity.
 
         """
-        result = data[self._text_column].parallel_apply(detect_profanity)
+        chunks = split_dataframe(data=data, n=100)
+        self._logger.debug(f"Data split into {len(chunks)} chunks")
+
+        results = [
+            chunk.parallel_apply(
+                lambda row: detect_profanity(row[self._text_column]), axis=1
+            )
+            for chunk in tqdm(chunks)
+        ]
+        # Concatenate the processed chunks
+        result = pd.concat(results, axis=0)
         return result.rename(self.new_column_name)
 
 

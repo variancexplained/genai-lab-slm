@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday June 27th 2024 11:03:38 am                                                 #
+# Modified   : Saturday June 29th 2024 02:20:38 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,7 +33,12 @@ from appinsight.utils.file import IOService
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = ["data/**/*.*"]
+collect_ignore_glob = [
+    "data/**/*.*",
+    "tests/test_analysis/*.*",
+    "tests/test_data/*.*",
+    "tests/test_infrastructure/*.*",
+]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #

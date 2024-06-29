@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday June 5th 2024 05:40:02 am                                                 #
-# Modified   : Saturday June 29th 2024 01:19:15 am                                                 #
+# Modified   : Saturday June 29th 2024 04:46:30 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -83,6 +83,7 @@ class CacheManager:
         self._shelf_file = os.path.join("cache", self._env, self._name)
         self._create_cache_directory()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._logger.debug(f"Instantiated the {name} cache manager.")
 
     def _create_cache_directory(self):
         os.makedirs(os.path.dirname(self._shelf_file), exist_ok=True)
@@ -91,6 +92,7 @@ class CacheManager:
         try:
             with shelve.open(self._shelf_file) as cache:
                 cache[key] = value
+            self._logger.debug(f"Added key: {key} Value contains {len(value)} items.")
         except FileNotFoundError as fe:
             self._logger.exception(
                 f"Shelve file {self._shelf_file} does not exist.\n{fe}"
@@ -174,6 +176,7 @@ class CacheIterator:
         self._env = self._env_mgr.get_environment()
         self._shelf_file = os.path.join("cache", self._env, self._name)
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._logger.debug(f"Instantiated the {name} cache iterator.")
 
         self._index = 0
         self._keys = self._get_keys()

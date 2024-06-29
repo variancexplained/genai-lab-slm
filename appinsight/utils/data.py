@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday April 28th 2024 12:48:08 am                                                  #
-# Modified   : Thursday June 27th 2024 03:42:46 am                                                 #
+# Modified   : Saturday June 29th 2024 03:50:51 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -178,3 +178,25 @@ class DataClass(ABC):
         """Returns the project in DataFrame format"""
         d = self.as_dict()
         return pd.DataFrame(data=d, index=[0])
+
+
+def split_dataframe(data, n):
+    """
+    Split the DataFrame into n+1 chunks where the last chunk has len(data) % n rows.
+
+    Args:
+        data (pd.DataFrame): The DataFrame to be split.
+        n (int): The number of chunks to split the DataFrame into.
+
+    Returns:
+        List[pd.DataFrame]: A list of DataFrame chunks.
+    """
+    chunk_size = len(data) // n
+    remainder = len(data) % n
+
+    chunks = [data.iloc[i * chunk_size : (i + 1) * chunk_size] for i in range(n)]
+
+    if remainder > 0:
+        chunks.append(data.iloc[n * chunk_size :])
+
+    return chunks
