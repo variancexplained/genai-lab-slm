@@ -31,7 +31,7 @@ The message was: Cell execution timed out.
 Here is a preview of the cell contents:
 -------------------
 # Instantiate the dataset repository
-dsr = DatasetRepo()
+dsr = ReviewRepo()
 df = dsr.read(directory=DATASET_DIR,filename=DATASET_FILENAME)
 # Instantiate the dataset overview class, summarizing the entire dataset.
 dso = DatasetOverview(data=df)

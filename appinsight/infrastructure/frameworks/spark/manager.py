@@ -4,20 +4,23 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/infrastructure/spark/manager.py                                         #
+# Filename   : /appinsight/infrastructure/frameworks/spark/manager.py                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday June 3rd 2024 02:27:56 am                                                    #
-# Modified   : Monday June 3rd 2024 02:38:06 am                                                    #
+# Modified   : Sunday June 30th 2024 05:06:55 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Spark Session Manager Task"""
-from appinsight.infrastructure.spark.factory import SparkSession, SparkSessionFactory
+from appinsight.infrastructure.frameworks.spark.factory import (
+    SparkSession,
+    SparkSessionFactory,
+)
 
 
 # ------------------------------------------------------------------------------------------------ #

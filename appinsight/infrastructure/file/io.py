@@ -4,38 +4,43 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/utils/file.py                                                           #
+# Filename   : /appinsight/infrastructure/file/io.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday April 28th 2024 12:15:31 am                                                  #
-# Modified   : Friday June 28th 2024 07:54:38 pm                                                   #
+# Modified   : Sunday June 30th 2024 06:54:58 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+from __future__ import annotations
+
 import codecs
 import json
 import logging
 import os
 import pickle
-import pyarrow as pa
-import pyarrow.parquet as pq
 import tarfile
 from abc import ABC, abstractmethod
 from typing import Any, List, Union
 
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 import yaml
+
+from appinsight.infrastructure.utils.env import EnvManager
+
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, unused-argument
 # ------------------------------------------------------------------------------------------------ #
-
-
-class IO(ABC):  # pragma: no cover
+#                                       IO BASE                                                    #
+# ------------------------------------------------------------------------------------------------ #
+class IOBase(ABC):  # pragma: no cover
     _logger = logging.getLogger(
         f"{__module__}.{__name__}",
     )
@@ -66,7 +71,7 @@ class IO(ABC):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class ExcelIO(IO):  # pragma: no cover
+class ExcelIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(
         cls,
@@ -112,7 +117,7 @@ class ExcelIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class CSVIO(IO):  # pragma: no cover
+class CSVIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(
         cls,
@@ -163,7 +168,7 @@ class CSVIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class TSVIO(IO):  # pragma: no cover
+class TSVIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(
         cls,
@@ -212,7 +217,7 @@ class TSVIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class YamlIO(IO):  # pragma: no cover
+class YamlIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> dict:
         with open(filepath, "r", encoding="utf-8") as f:
@@ -241,7 +246,7 @@ class YamlIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class PickleIO(IO):  # pragma: no cover
+class PickleIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> Any:
         with open(filepath, "rb") as f:
@@ -272,7 +277,7 @@ class PickleIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class ParquetIO(IO):  # pragma: no cover
+class ParquetIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> Any:
         """Reads using pyarrow API.
@@ -333,7 +338,7 @@ class ParquetIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class HtmlIO(IO):  # pragma: no cover
+class HtmlIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> Any:
         """Read the raw html."""
@@ -351,7 +356,7 @@ class HtmlIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class JsonIO(IO):  # pragma: no cover
+class JsonIO(IOBase):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> Any:
         """Read the parsed dictionary from a json file."""
@@ -426,6 +431,162 @@ class IOService:  # pragma: no cover
             msg = "File type {} is not supported.".format(file_format)
             cls._logger.exception(msg)
             raise ValueError(msg) from exc
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                         IO                                                       #
+# ------------------------------------------------------------------------------------------------ #
+class IO(ABC):
+    """Abstract base class for file IO."""
+
+    def __init__(
+        self,
+        env_mgr_cls: type[EnvManager] = EnvManager,
+        io_cls: type[IOService] = IOService,
+    ) -> None:
+        """
+        Initializes the IO class with an environment manager.
+
+        Args:
+            env_mgr_cls (type[EnvManager], optional): Class for managing environments. Defaults to EnvManager.
+        """
+        self._io = io_cls()
+        self._env_mgr = env_mgr_cls()
+
+    def read(self, directory: str, filename: str = None) -> Any:
+        """
+        Reads data from the specified file or directory.
+
+        Args:
+            directory (str): The folder for the given environment.
+            filename (str, optional): Optional filename within the given directory.
+
+        Returns:
+            Any: Data read from the file.
+        """
+        filepath = self.get_filepath(directory=directory, filename=filename)
+        return self._io.read(filepath=filepath)
+
+    def write(self, directory: str, data: Any, filename: str = None) -> None:
+        """
+        Writes data to the specified file or directory.
+
+        Args:
+            directory (str): The folder for the given environment.
+            data (Any): Data to write to the file.
+            filename (str, optional): Optional filename within the given directory.
+        """
+        filepath = self.get_filepath(directory=directory, filename=filename)
+        self._io.write(filepath=filepath, data=data)
+
+    def exists(self, directory: str, filename: str = None) -> bool:
+        """
+        Checks if the specified file or directory exists.
+
+        Args:
+            directory (str): The folder for the given environment.
+            filename (str, optional): Optional filename within the given directory.
+
+        Returns:
+            bool: True if the file or directory exists, False otherwise.
+        """
+        filepath = self.get_filepath(directory=directory, filename=filename)
+        return os.path.exists(filepath)
+
+    @abstractmethod
+    def get_filepath(self, *args, **kwargs) -> str:
+        """
+        Returns the filepath for the specified directory and optional filename.
+
+        Returns:
+            str: The complete filepath.
+        """
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                       DATA IO                                                    #
+# ------------------------------------------------------------------------------------------------ #
+class DatasetIO(IO):
+    """Class responsible for IO of datasets"""
+
+    __basedir = "data"
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def get_filepath(self, directory: str, filename: Union[str, None] = None) -> str:
+        """
+        Returns the filepath for the specified directory and optional filename.
+
+        Args:
+            directory (str): The folder for the given environment.
+            filename (Union[str, None], optional): Optional filename within the given directory.
+
+        Returns:
+            str: The complete filepath.
+        """
+        env = self._env_mgr.get_environment()
+        directory = os.path.join(self.__basedir, env, directory)
+        if filename is None:
+            return directory
+        else:
+            return os.path.join(directory, filename)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                      MODEL IO                                                    #
+# ------------------------------------------------------------------------------------------------ #
+class ModelIO(IO):
+    """Class responsible for IO of models"""
+
+    __basedir = "models"
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def get_filepath(self, directory: str, filename: Union[str, None] = None) -> str:
+        """
+        Returns the filepath for the specified directory and optional filename.
+
+        Args:
+            directory (str): The folder for the given environment.
+            filename (Union[str, None], optional): Optional filename within the given directory.
+
+        Returns:
+            str: The complete filepath.
+        """
+        env = self._env_mgr.get_environment()
+        directory = os.path.join(self.__basedir, env, directory)
+        if filename is None:
+            return directory
+        else:
+            return os.path.join(directory, filename)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                      MODEL IO                                                    #
+# ------------------------------------------------------------------------------------------------ #
+class ConfigIO(IO):
+    """Class responsible for IO of models"""
+
+    __basedir = "config"
+
+    def __init__(self) -> None:
+        super().__init__()
+
+    def get_filepath(self) -> str:
+        """
+        Returns the filepath for the specified directory and optional filename.
+
+        Args:
+            directory (str): The folder for the given environment.
+            filename (Union[str, None], optional): Optional filename within the given directory.
+
+        Returns:
+            str: The complete filepath.
+        """
+        env = self._env_mgr.get_environment()
+        return os.path.join(self.__basedir, f"{env}.yml")
 
 
 # ------------------------------------------------------------------------------------------------ #

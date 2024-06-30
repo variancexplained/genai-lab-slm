@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday June 29th 2024 02:20:38 pm                                                 #
+# Modified   : Sunday June 30th 2024 05:06:55 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,9 +26,9 @@ from dotenv import load_dotenv
 from pyspark.sql.types import DoubleType, LongType, StringType, TimestampNTZType
 
 from appinsight.container import AppInsightContainer
+from appinsight.infrastructure.file.io import IOService
 from appinsight.infrastructure.profiling.profile import TaskProfile
-from appinsight.infrastructure.spark.factory import SparkSessionFactory
-from appinsight.utils.file import IOService
+from appinsight.infrastructure.frameworks.spark.factory import SparkSessionFactory
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

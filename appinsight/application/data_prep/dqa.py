@@ -4,47 +4,46 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/data_prep/dqa.py                                                        #
+# Filename   : /appinsight/application/data_prep/dqa.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday June 29th 2024 05:20:07 pm                                                 #
+# Modified   : Sunday June 30th 2024 05:07:33 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Assessment Module"""
 from __future__ import annotations
+
 import os
 import re
 import warnings
 from dataclasses import dataclass
 from typing import AnyStr, List, Optional, Union
 
-from joblib import Parallel, delayed
-from tqdm import tqdm
 import emoji
 import fasttext
 import numpy as np
 import pandas as pd
+from joblib import Parallel, delayed
 from pandarallel import pandarallel
 from profanity_check import predict
+from tqdm import tqdm
 
+from appinsight.analysis.base import Analysis
+from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep import log_exceptions, task_profiler
-from appinsight.data_prep.base import Preprocessor
 from appinsight.data_prep.io import ReadTask, WriteTask
+from appinsight.infrastructure.utils.cache import Cache, CacheIterator
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.data import split_dataframe
-from appinsight.utils.cache import Cache, CacheIterator
 from appinsight.utils.io import FileReader, FileWriter
-from appinsight.utils.repo import DatasetRepo
-from appinsight.workflow.config import StageConfig
-from appinsight.workflow.pipeline import Pipeline
+from appinsight.utils.repo import ReviewRepo
 from appinsight.workflow.task import Task
-
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
@@ -53,6 +52,8 @@ warnings.filterwarnings("ignore")
 fasttext.FastText.eprint = lambda x: None
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                 DATA QUALITY CONFIG                                              #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class DQAConfig(StageConfig):
@@ -70,7 +71,9 @@ class DQAConfig(StageConfig):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataQualityAssessment(Preprocessor):
+#                              DATA QUALITY ASSESSMENT                                             #
+# ------------------------------------------------------------------------------------------------ #
+class DataQualityAssessment(PipelineBuilder):
     """Data quality assessment class.
 
     This class constructs and executes a pipeline to detect data quality issues
@@ -84,7 +87,7 @@ class DataQualityAssessment(Preprocessor):
     Args:
         config (DQAConfig): Configuration for the data quality assessment stage.
         pipeline_cls type[Pipeline]: Pipeline class to instantiate
-        dsm_cls (type[DatasetRepo]): Manages dataset IO
+        review_repo_cls (type[ReviewRepo]): Manages dataset IO
         source_reader_cls (type[Reader]): Class for reading the source data.
         target_writer_cls (type[Writer]): Class for writing the target data
         target_reader_cls (type[Reader]): Class for reading the target data.
@@ -97,7 +100,7 @@ class DataQualityAssessment(Preprocessor):
         target_writer_cls: type[Writer] = FileWriter,
         target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
-        dsm_cls: type[DatasetRepo] = DatasetRepo,
+        review_repo_cls: type[ReviewRepo] = ReviewRepo,
         cache_cls: type[Cache] = Cache,
         fastmode: bool = False,
     ) -> None:
@@ -108,7 +111,7 @@ class DataQualityAssessment(Preprocessor):
             target_writer_cls=target_writer_cls,
             target_reader_cls=target_reader_cls,
             pipeline_cls=pipeline_cls,
-            dsm_cls=dsm_cls,
+            review_repo_cls=review_repo_cls,
         )
         self._cache = cache_cls(name=self.config.cache_name)
         self._pipeline = self.create_pipeline()

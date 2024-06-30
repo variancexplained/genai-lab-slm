@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 26th 2024 04:28:43 pm                                                    #
-# Modified   : Thursday June 27th 2024 05:07:17 am                                                 #
+# Modified   : Sunday June 30th 2024 04:18:18 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,9 +26,9 @@ from dotenv import load_dotenv
 
 from appinsight.infrastructure.database.base import DAL
 from appinsight.infrastructure.database.db import SQLiteDB
+from appinsight.infrastructure.file.io import IOService
 from appinsight.infrastructure.profiling.profile import TaskProfile, TaskProfileDTO
-from appinsight.utils.env import EnvManager
-from appinsight.utils.file import IOService
+from appinsight.infrastructure.utils.env import EnvManager
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

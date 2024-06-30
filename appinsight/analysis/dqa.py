@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 2nd 2024 08:36:42 pm                                                    #
-# Modified   : Thursday June 27th 2024 06:42:37 am                                                 #
+# Modified   : Sunday June 30th 2024 05:07:54 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,12 +30,12 @@ from pandarallel import pandarallel
 from profanity_check import predict
 
 from appinsight.analysis.base import Analysis
+from appinsight.infrastructure.file.io import IOService
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
-from appinsight.utils.cache import cachenow
-from appinsight.utils.file import IOService
+from appinsight.infrastructure.utils.cache import cachenow
 from appinsight.utils.format import format_numerics
-from appinsight.utils.repo import DatasetRepo
+from appinsight.utils.repo import ReviewRepo
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=8, verbose=0)
@@ -65,7 +65,7 @@ class DataQualityAnalysis(Analysis):
         text_column: str = "content",
         duplicate_column: str = "id",
         excessive_special_chars_threshold: float = 0.3,
-        repo: Type[DatasetRepo] = DatasetRepo,
+        repo: Type[ReviewRepo] = ReviewRepo,
     ) -> None:
         super().__init__()
         self._data = None

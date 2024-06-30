@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday May 25th 2024 03:48:28 am                                                  #
-# Modified   : Thursday June 27th 2024 04:18:14 am                                                 #
+# Modified   : Sunday June 30th 2024 04:18:22 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,9 +28,9 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from appinsight.container import AppInsightContainer
+from appinsight.infrastructure.file.io import IOService
 from appinsight.utils.datetime import convert_seconds_to_hms
-from appinsight.utils.file import IOService
-from appinsight.utils.repo import DatasetRepo
+from appinsight.utils.repo import ReviewRepo
 
 # ------------------------------------------------------------------------------------------------ #
 filepath = "data/reviews.pkl"
@@ -65,7 +65,7 @@ def setup_application(container: AppInsightContainer, df: pd.DataFrame):
 # ------------------------------------------------------------------------------------------------ #
 def build_datasets(force, container) -> None:
     """Constructs the raw and normalized datasets"""
-    repo = DatasetRepo()
+    repo = ReviewRepo()
     if force or not repo.exists(directory="00_raw", filename="reviews.pkl"):
         filepath = repo.get_filepath(directory="00_raw", filename="reviews.pkl")
         try:
@@ -76,7 +76,7 @@ def build_datasets(force, container) -> None:
         # Build raw dataset
         setup = container.dataset.setup()
         dataset = setup.execute(data=df)
-        DatasetRepo().write(directory="00_raw", filename="reviews.pkl", data=dataset)
+        ReviewRepo().write(directory="00_raw", filename="reviews.pkl", data=dataset)
 
 
 # ------------------------------------------------------------------------------------------------ #

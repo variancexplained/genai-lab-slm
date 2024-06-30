@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 27th 2024 11:49:45 am                                                    #
-# Modified   : Tuesday June 4th 2024 11:39:24 pm                                                   #
+# Modified   : Sunday June 30th 2024 02:39:46 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from appinsight.utils.repo import DatasetRepo
+from appinsight.utils.repo import ReviewRepo
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -47,7 +47,7 @@ class TestDataManager:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dm = DatasetRepo()
+        dm = ReviewRepo()
         ds = dm.read(directory="00_raw", filename="reviews.pkl")
         assert isinstance(ds, pd.DataFrame)
         # ---------------------------------------------------------------------------------------- #
@@ -67,7 +67,7 @@ class TestDataManager:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dm = DatasetRepo()
+        dm = ReviewRepo()
         dm.write(directory="02_dqa", filename="test_data.pkl", data=data_raw)
         os.path.exists(FILEPATH)
 

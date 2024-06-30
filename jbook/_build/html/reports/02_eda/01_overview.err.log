@@ -15,7 +15,7 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-repo = DatasetRepo()
+repo = ReviewRepo()
 df = repo.read(directory=DIRECTORY, filename=FILENAME)
 ------------------
 
@@ -23,10 +23,10 @@ df = repo.read(directory=DIRECTORY, filename=FILENAME)
 [0;31m---------------------------------------------------------------------------[0m
 [0;31mFileNotFoundError[0m                         Traceback (most recent call last)
 Cell [0;32mIn[4], line 2[0m
-[1;32m      1[0m repo [38;5;241m=[39m DatasetRepo()
+[1;32m      1[0m repo [38;5;241m=[39m ReviewRepo()
 [0;32m----> 2[0m df [38;5;241m=[39m [43mrepo[49m[38;5;241;43m.[39;49m[43mread[49m[43m([49m[43mdirectory[49m[38;5;241;43m=[39;49m[43mDIRECTORY[49m[43m,[49m[43m [49m[43mfilename[49m[38;5;241;43m=[39;49m[43mFILENAME[49m[43m)[49m
 
-File [0;32m~/projects/appinsight/appinsight/utils/repo.py:84[0m, in [0;36mDatasetRepo.read[0;34m(self, directory, filename)[0m
+File [0;32m~/projects/appinsight/appinsight/utils/repo.py:84[0m, in [0;36mReviewRepo.read[0;34m(self, directory, filename)[0m
 [1;32m     82[0m [38;5;250m[39m[38;5;124;03m"""Reads data so designated."""[39;00m
 [1;32m     83[0m filepath [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39mget_filepath(directory[38;5;241m=[39mdirectory, filename[38;5;241m=[39mfilename)
 [0;32m---> 84[0m [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mio[49m[38;5;241;43m.[39;49m[43mread[49m[43m([49m[43mfilepath[49m[38;5;241;43m=[39;49m[43mfilepath[49m[43m)[49m

@@ -11,22 +11,23 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 09:31:08 pm                                                  #
-# Modified   : Thursday June 27th 2024 02:52:39 am                                                 #
+# Modified   : Sunday June 30th 2024 05:07:41 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """AppVoC Dataset Overview Module"""
 import os
+
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
 from appinsight.analysis.base import Analysis
-from appinsight.utils.cache import cachenow
+from appinsight.infrastructure.file.io import IOService
+from appinsight.infrastructure.utils.cache import cachenow
 from appinsight.utils.print import Printer
-from appinsight.utils.file import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 sns.set_style("whitegrid")

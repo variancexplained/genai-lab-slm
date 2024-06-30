@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Friday June 28th 2024 08:26:24 pm                                                   #
+# Modified   : Sunday June 30th 2024 03:10:20 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.io import FileReader, FileWriter
-from appinsight.utils.repo import DatasetRepo
+from appinsight.utils.repo import ReviewRepo
 from appinsight.utils.tempfile import TempFileMgr
 from appinsight.workflow.task import Task
 
@@ -46,12 +46,12 @@ class ReadTask(Task):
         directory: str,
         filename: str,
         reader_cls: type[Reader] = FileReader,
-        dsm_cls: type[DatasetRepo] = DatasetRepo,
+        review_repo_cls: type[ReviewRepo] = ReviewRepo,
         **kwargs,
     ) -> None:
         super().__init__()
         self._reader = reader_cls(**kwargs)
-        self._dsm = dsm_cls()
+        self._review_repo = review_repo_cls()
         self._directory = directory
         self._filename = filename
         self._kwargs = kwargs
@@ -62,7 +62,7 @@ class ReadTask(Task):
         """Executes the load operation for the pandas DataFrame"""
 
         self._logger.debug("Executing ReadTask")
-        filepath = self._dsm.get_filepath(
+        filepath = self._review_repo.get_filepath(
             directory=self._directory, filename=self._filename
         )
         self._logger.debug(f"Reading from {filepath}")
@@ -88,14 +88,14 @@ class WriteTask(Task):
         directory: str,
         filename: str,
         writer_cls: type[Writer] = FileWriter,
-        dsm_cls: type[DatasetRepo] = DatasetRepo,
+        review_repo_cls: type[ReviewRepo] = ReviewRepo,
         **kwargs,
     ) -> None:
         super().__init__()
         self._writer = writer_cls(**kwargs)
         self._directory = directory
         self._filename = filename
-        self._dsm = dsm_cls()
+        self._review_repo = review_repo_cls()
         self._kwargs = kwargs
 
     @task_profiler()
@@ -108,7 +108,7 @@ class WriteTask(Task):
         """
         self._logger.debug("Executing WriteTask")
 
-        filepath = self._dsm.get_filepath(
+        filepath = self._review_repo.get_filepath(
             directory=self._directory, filename=self._filename
         )
         self._logger.debug(f"Writing to {filepath}")

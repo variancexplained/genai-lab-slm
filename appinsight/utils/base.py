@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:30:18 am                                                 #
-# Modified   : Wednesday June 5th 2024 04:52:36 am                                                 #
+# Modified   : Sunday June 30th 2024 04:18:06 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from pyspark.sql import DataFrame
 
-from appinsight.utils.env import EnvManager
-from appinsight.utils.repo import DatasetRepo
+from appinsight.infrastructure.utils.env import EnvManager
+from appinsight.utils.repo import ReviewRepo
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -56,12 +56,12 @@ class Reader(ABC):
     """Abstract base class for reader utilities.
 
     Args:
-        dsm (DatasetRepo): Dataset Manager responsible for files in environments.
+        review_repo (ReviewRepo): Dataset Manager responsible for files in environments.
     """
 
-    def __init__(self, dsm: DatasetRepo = DatasetRepo, **kwargs) -> None:
+    def __init__(self, review_repo: ReviewRepo = ReviewRepo, **kwargs) -> None:
         super().__init__()
-        self.dsm = dsm
+        self.review_repo = review_repo
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @abstractmethod
@@ -74,12 +74,12 @@ class Writer(ABC):
     """Abstract base class for writer utilities.
 
     Args:
-        dsm (DatasetRepo): Dataset Manager responsible for files in environments.
+        review_repo (ReviewRepo): Dataset Manager responsible for files in environments.
     """
 
-    def __init__(self, dsm: DatasetRepo = DatasetRepo, **kwargs) -> None:
+    def __init__(self, review_repo: ReviewRepo = ReviewRepo, **kwargs) -> None:
         super().__init__()
-        self.dsm = dsm
+        self.review_repo = review_repo
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @abstractmethod

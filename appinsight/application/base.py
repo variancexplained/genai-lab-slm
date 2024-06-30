@@ -4,26 +4,44 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/workflow/task.py                                                        #
+# Filename   : /appinsight/application/base.py                                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Thursday May 23rd 2024 02:05:34 pm                                                  #
-# Modified   : Friday June 28th 2024 09:02:30 pm                                                   #
+# Created    : Saturday June 1st 2024 07:16:33 pm                                                  #
+# Modified   : Sunday June 30th 2024 03:45:08 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Task Base Class Module"""
+"""Abstract Base Classes for the Application Layer"""
+from __future__ import annotations
+
 import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict
 
 from appinsight.utils.datetime import convert_seconds_to_hms
-from appinsight.utils.print import Printer
+
+# ------------------------------------------------------------------------------------------------ #
+#                                       STAGE CONFIG                                               #
+# ------------------------------------------------------------------------------------------------ #
+
+
+@dataclass
+class StageConfig(ABC):
+    """Abstract base class for data preprocessing stage configurations."""
+
+    name: str = None
+    source_directory: str = None
+    source_filename: str = None
+    target_directory: str = None
+    target_filename: str = None
+    force: bool = False
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -36,7 +54,6 @@ class Task(ABC):
         self._stop = None
         self._runtime = None
         self._metrics = None
-        self._printer = Printer()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property

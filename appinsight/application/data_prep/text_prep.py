@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/data_prep/text_prep.py                                                  #
+# Filename   : /appinsight/application/data_prep/text_prep.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 19th 2024 09:08:01 pm                                                    #
-# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
+# Modified   : Sunday June 30th 2024 03:33:06 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,16 +38,15 @@ from sparknlp.annotator import (
 )
 from sparknlp.base import DocumentAssembler, Finisher
 
-from appinsight.data_prep.base import Preprocessor
+from appinsight.application.base import Pipeline as Pipe
+from appinsight.application.base import PipelineBuilder, StageConfig
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.convert import ToSpark
 from appinsight.utils.io import FileReader, PySparkReader, PySparkWriter
-from appinsight.utils.repo import DatasetRepo
-from appinsight.workflow.config import StageConfig
-from appinsight.workflow.pipeline import Pipeline as Pipe
+from appinsight.utils.repo import ReviewRepo
 from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
@@ -70,7 +69,7 @@ TRANSFORMED_COLUMNS = [
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class TextPrepConfig(StageConfig):
-    name: str = "TextPreprocessor"
+    name: str = "TextPipelineBuilder"
     source_directory: str = "04_features/reviews"
     source_filename: str = None
     target_directory: str = "05_nlp/reviews"
@@ -90,7 +89,7 @@ class TextPrepConfig(StageConfig):
 # ------------------------------------------------------------------------------------------------ #
 #                                 TEXT PREPROCESSOR                                                #
 # ------------------------------------------------------------------------------------------------ #
-class TextPreprocessor(Preprocessor):
+class TextPipelineBuilder(PipelineBuilder):
     """Encapsulates the text preprocessing pipeline
 
     Attributes:
@@ -100,7 +99,7 @@ class TextPreprocessor(Preprocessor):
         config (TextPrepConfig): Configuration for text preprocessor.
         spark (SparkSession): Spark session
         pipeline_cls type[Pipeline]: Pipeline class to instantiate
-        dsm_cls (type[DatasetRepo]): Manages dataset IO
+        review_repo_cls (type[ReviewRepo]): Manages dataset IO
         source_reader_cls (type[Reader]): Class for reading the source data.
         target_writer_cls (type[Writer]): Class for writing the target data
         target_reader_cls (type[Reader]): Class for reading the target data.
@@ -116,7 +115,7 @@ class TextPreprocessor(Preprocessor):
         target_writer_cls: type[Writer] = PySparkWriter,
         target_reader_cls: type[Reader] = PySparkReader,
         pipeline_cls: type[Pipe] = Pipe,
-        dsm_cls: type[DatasetRepo] = DatasetRepo,
+        review_repo_cls: type[ReviewRepo] = ReviewRepo,
         converter_cls: type[Converter] = ToSpark,
     ) -> None:
         """Initializes the DataQualityPipeline with data."""
@@ -126,7 +125,7 @@ class TextPreprocessor(Preprocessor):
             target_writer_cls=target_writer_cls,
             target_reader_cls=target_reader_cls,
             pipeline_cls=pipeline_cls,
-            dsm_cls=dsm_cls,
+            review_repo_cls=review_repo_cls,
         )
         self._spark = spark
         self._converter_cls = converter_cls
@@ -151,7 +150,7 @@ class TextPreprocessor(Preprocessor):
         conv = ConvertTask(converter_cls=self._converter_cls, spark=self._spark)
 
         # Text processing pipeline
-        text = TextPreprocessorTask(
+        text = TextPipelineBuilderTask(
             wordlist=self.config.wordlist, text_col=self.config.text_col
         )
 
@@ -172,7 +171,7 @@ class TextPreprocessor(Preprocessor):
 
     def read_endpoint(self) -> Union[pd.DataFrame, DataFrame]:
         """Reads and returns the target data."""
-        filepath = self.dsm.get_filepath(
+        filepath = self.review_repo.get_filepath(
             directory=self.config.target_directory, filename=self.config.target_filename
         )
         try:
@@ -191,7 +190,7 @@ class TextPreprocessor(Preprocessor):
 # ------------------------------------------------------------------------------------------------ #
 
 
-class TextPreprocessorTask(Task):
+class TextPipelineBuilderTask(Task):
     """
     A class to preprocess text data for natural language processing tasks.
 

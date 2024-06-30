@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday June 6th 2024 02:45:51 pm                                                  #
-# Modified   : Saturday June 29th 2024 05:13:18 pm                                                 #
+# Modified   : Sunday June 30th 2024 05:07:21 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 
 import pytest
 
-from appinsight.utils.cache import cachenow, CacheIterator, Cache
+from appinsight.infrastructure.utils.cache import Cache, CacheIterator, cachenow
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

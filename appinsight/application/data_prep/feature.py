@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/data_prep/feature.py                                                    #
+# Filename   : /appinsight/application/data_prep/feature.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Friday June 28th 2024 07:52:27 pm                                                   #
+# Modified   : Sunday June 30th 2024 03:46:39 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,15 +29,13 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from pandarallel import pandarallel
 from textstat import textstat
 
+from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep import log_exceptions, task_profiler
-from appinsight.data_prep.base import Preprocessor
 from appinsight.data_prep.io import ReadTask, WriteTask
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.cast import CastPandas
 from appinsight.utils.io import FileReader, FileWriter
-from appinsight.utils.repo import DatasetRepo
-from appinsight.workflow.config import StageConfig
-from appinsight.workflow.pipeline import Pipeline
+from appinsight.utils.repo import ReviewRepo
 from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
@@ -86,7 +84,7 @@ class FeatureEngineeringConfig(StageConfig):
 # ------------------------------------------------------------------------------------------------ #
 #                               FEATURE ENGINEERING                                                #
 # ------------------------------------------------------------------------------------------------ #
-class FeatureEngineer(Preprocessor):
+class FeatureEngineer(PipelineBuilder):
     """Encapsulates the feature engineering tasks
 
     Attributes:
@@ -95,7 +93,7 @@ class FeatureEngineer(Preprocessor):
     Args:
         config (StageConfig): Configuration for the subclass stage.
         pipeline_cls type[Pipeline]: Pipeline class to instantiate
-        dsm_cls (type[DatasetRepo]): Manages dataset IO
+        review_repo_cls (type[ReviewRepo]): Manages dataset IO
         source_reader_cls (type[Reader]): Class for reading the source data.
         target_writer_cls (type[Writer]): Class for writing the target data
         target_reader_cls (type[Reader]): Class for reading the target data.
@@ -109,7 +107,7 @@ class FeatureEngineer(Preprocessor):
         target_writer_cls: type[Writer] = FileWriter,
         target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
-        dsm_cls: type[DatasetRepo] = DatasetRepo,
+        review_repo_cls: type[ReviewRepo] = ReviewRepo,
     ) -> None:
         """Initializes the DataQualityPipeline with data."""
         super().__init__(
@@ -118,7 +116,7 @@ class FeatureEngineer(Preprocessor):
             target_writer_cls=target_writer_cls,
             target_reader_cls=target_reader_cls,
             pipeline_cls=pipeline_cls,
-            dsm_cls=dsm_cls,
+            review_repo_cls=review_repo_cls,
         )
 
     def create_pipeline(self) -> Pipeline:

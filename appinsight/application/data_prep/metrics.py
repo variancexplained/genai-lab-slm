@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/data_prep/metrics.py                                                    #
+# Filename   : /appinsight/application/data_prep/metrics.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Friday June 28th 2024 07:34:26 pm                                                   #
+# Modified   : Sunday June 30th 2024 03:46:39 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,17 +27,15 @@ from dotenv import load_dotenv
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sparkFunc
 
-from appinsight.data_prep.base import Preprocessor
+from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.convert import ToPandas, ToSpark
 from appinsight.utils.io import FileReader, FileWriter
-from appinsight.utils.repo import DatasetRepo
+from appinsight.utils.repo import ReviewRepo
 from appinsight.utils.tempfile import TempFileMgr
-from appinsight.workflow.config import StageConfig
-from appinsight.workflow.pipeline import Pipeline
 from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
@@ -84,7 +82,7 @@ class CategoryAuthorMetricsConfig(MetricsConfig):
 # ------------------------------------------------------------------------------------------------ #
 #                                          METRICS                                                 #
 # ------------------------------------------------------------------------------------------------ #
-class Metrics(Preprocessor):
+class Metrics(PipelineBuilder):
     """Encapsulates the pre-compute pipeline
 
     Attributes:
@@ -95,7 +93,7 @@ class Metrics(Preprocessor):
         spark (SparkSession): Spark session.
         metrics_task_cls (type[MetricsTask]): Precomputation metrics Task class
         pipeline_cls type[Pipeline]: Pipeline class to instantiate
-        dsm_cls (type[DatasetRepo]): Manages dataset IO
+        review_repo_cls (type[ReviewRepo]): Manages dataset IO
         source_reader_cls (type[Reader]): Class for reading the source data.
         target_writer_cls (type[Writer]): Class for writing the target data
         target_reader_cls (type[Reader]): Class for reading the target data.
@@ -114,7 +112,7 @@ class Metrics(Preprocessor):
         target_writer_cls: type[Writer] = FileWriter,
         target_reader_cls: type[Reader] = FileReader,
         pipeline_cls: type[Pipeline] = Pipeline,
-        dsm_cls: type[DatasetRepo] = DatasetRepo,
+        review_repo_cls: type[ReviewRepo] = ReviewRepo,
         tempfile_manager_cls: type[TempFileMgr] = TempFileMgr,
         to_pandas_cls: type[ToPandas] = ToPandas,
         to_spark_cls: type[ToSpark] = ToSpark,
@@ -126,7 +124,7 @@ class Metrics(Preprocessor):
             target_writer_cls=target_writer_cls,
             target_reader_cls=target_reader_cls,
             pipeline_cls=pipeline_cls,
-            dsm_cls=dsm_cls,
+            review_repo_cls=review_repo_cls,
         )
         self._metrics_task_cls = metrics_task_cls
         self._to_pandas_cls = to_pandas_cls

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 27th 2024 11:38:53 am                                                    #
-# Modified   : Friday June 28th 2024 07:36:54 pm                                                   #
+# Modified   : Sunday June 30th 2024 04:18:13 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ import os
 from abc import ABC, abstractmethod
 from typing import Any, Type
 
-from appinsight.utils.env import EnvManager
-from appinsight.utils.file import IOService
+from appinsight.infrastructure.file.io import IOService
+from appinsight.infrastructure.utils.env import EnvManager
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -61,13 +61,13 @@ class Repo(ABC):
 
     @abstractmethod
     def exists(self, **kwargs) -> str:
-        """Returns the filepath for the current environment."""
+        """Returns the existence of a ."""
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                      DATASET REPO                                                #
 # ------------------------------------------------------------------------------------------------ #
-class DatasetRepo(Repo):
+class ReviewRepo(Repo):
 
     def __init__(self) -> None:
         super().__init__()

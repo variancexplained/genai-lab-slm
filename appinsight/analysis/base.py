@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday June 4th 2024 11:21:31 pm                                                   #
-# Modified   : Thursday June 20th 2024 09:14:38 pm                                                 #
+# Modified   : Sunday June 30th 2024 04:18:10 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ import logging
 import shelve
 from abc import ABC
 
-from appinsight.utils.env import EnvManager
+from appinsight.infrastructure.utils.env import EnvManager
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -31,7 +31,7 @@ class Analysis(ABC):
     """Abstract base class for analysis classes
 
     Args:
-        repo_cls: (Type[DatasetRepo]): Repository of datasets.
+        repo_cls: (Type[ReviewRepo]): Repository of datasets.
     """
 
     def __init__(self) -> None:

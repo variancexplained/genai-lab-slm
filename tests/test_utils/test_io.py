@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 02:19:12 am                                                 #
-# Modified   : Friday June 28th 2024 06:50:20 pm                                                   #
+# Modified   : Sunday June 30th 2024 02:39:46 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pytest
 from pyspark.sql import DataFrame, SparkSession
 
 from appinsight.utils.io import FileReader, FileWriter, PySparkReader, PySparkWriter
-from appinsight.utils.repo import DatasetRepo
+from appinsight.utils.repo import ReviewRepo
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

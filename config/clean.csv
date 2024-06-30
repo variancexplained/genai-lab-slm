@@ -10,7 +10,7 @@ dqa_has_invalid_date,Invalid Dates,High
 dqa_has_profanity,Profanity,High
 dqa_contains_email,Contains Email Address(es),High
 dqa_contains_phone_number,Contains Phone Number(s),High
-dqa_has_emojis,Emojis,Low
-dqa_contains_url,Contains URL(s),Low
 dqa_vote_sum_outlier,Contains Vote Sum Outliers,Medium
 dqa_vote_count_outlier,Contains Vote Count Outliers,Medium
+dqa_has_emojis,Emojis,Low
+dqa_contains_url,Contains URL(s),Low

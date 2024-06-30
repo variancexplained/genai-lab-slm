@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/workflow/__init__.py                                                    #
+# Filename   : /appinsight/data_prep/__init__.py                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday May 31st 2024 02:53:12 am                                                    #
+# Created    : Thursday May 30th 2024 10:08:45 am                                                  #
+# Modified   : Sunday June 30th 2024 02:49:02 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #

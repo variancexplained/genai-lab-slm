@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 26th 2024 01:45:37 am                                                    #
-# Modified   : Wednesday June 5th 2024 12:19:06 am                                                 #
+# Modified   : Sunday June 30th 2024 04:18:16 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,8 @@ from typing import Any, Optional
 import pandas as pd
 import psutil
 
+from appinsight.infrastructure.file.io import IOService
 from appinsight.infrastructure.profiling.profile import TaskProfile
-from appinsight.utils.file import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 

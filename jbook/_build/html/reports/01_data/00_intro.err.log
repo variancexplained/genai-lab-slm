@@ -15,8 +15,8 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-dsm = DatasetRepo()
-df = dsm.read(directory="01_normalized",filename="reviews.pkl")
+review_repo = ReviewRepo()
+df = review_repo.read(directory="01_normalized",filename="reviews.pkl")
 ov = DatasetOverview(data=df)
 ov.overview
 ------------------
@@ -25,12 +25,12 @@ ov.overview
 [0;31m---------------------------------------------------------------------------[0m
 [0;31mFileNotFoundError[0m                         Traceback (most recent call last)
 Cell [0;32mIn[3], line 2[0m
-[1;32m      1[0m dsm [38;5;241m=[39m DatasetRepo()
-[0;32m----> 2[0m df [38;5;241m=[39m [43mdsm[49m[38;5;241;43m.[39;49m[43mread[49m[43m([49m[43mdirectory[49m[38;5;241;43m=[39;49m[38;5;124;43m"[39;49m[38;5;124;43m01_normalized[39;49m[38;5;124;43m"[39;49m[43m,[49m[43mfilename[49m[38;5;241;43m=[39;49m[38;5;124;43m"[39;49m[38;5;124;43mreviews.pkl[39;49m[38;5;124;43m"[39;49m[43m)[49m
+[1;32m      1[0m review_repo [38;5;241m=[39m ReviewRepo()
+[0;32m----> 2[0m df [38;5;241m=[39m [43mreview_repo[49m[38;5;241;43m.[39;49m[43mread[49m[43m([49m[43mdirectory[49m[38;5;241;43m=[39;49m[38;5;124;43m"[39;49m[38;5;124;43m01_normalized[39;49m[38;5;124;43m"[39;49m[43m,[49m[43mfilename[49m[38;5;241;43m=[39;49m[38;5;124;43m"[39;49m[38;5;124;43mreviews.pkl[39;49m[38;5;124;43m"[39;49m[43m)[49m
 [1;32m      3[0m ov [38;5;241m=[39m DatasetOverview(data[38;5;241m=[39mdf)
 [1;32m      4[0m ov[38;5;241m.[39moverview
 
-File [0;32m~/projects/appinsight/appinsight/utils/repo.py:84[0m, in [0;36mDatasetRepo.read[0;34m(self, directory, filename)[0m
+File [0;32m~/projects/appinsight/appinsight/utils/repo.py:84[0m, in [0;36mReviewRepo.read[0;34m(self, directory, filename)[0m
 [1;32m     82[0m [38;5;250m[39m[38;5;124;03m"""Reads data so designated."""[39;00m
 [1;32m     83[0m filepath [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39mget_filepath(directory[38;5;241m=[39mdirectory, filename[38;5;241m=[39mfilename)
 [0;32m---> 84[0m [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mio[49m[38;5;241;43m.[39;49m[43mread[49m[43m([49m[43mfilepath[49m[38;5;241;43m=[39;49m[43mfilepath[49m[43m)[49m

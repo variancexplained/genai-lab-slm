@@ -967,7 +967,7 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">explorify.eda.visualize.visualizer</span> <span class="kn">import</span> <span class="n">Visualizer</span>
 <span class="kn">from</span> <span class="nn">appinsight.analysis.overview</span> <span class="kn">import</span> <span class="n">DatasetOverview</span><span class="p">,</span> <span class="n">FilesetOverview</span>
-<span class="kn">from</span> <span class="nn">appinsight.utils.repo</span> <span class="kn">import</span> <span class="n">DatasetRepo</span>
+<span class="kn">from</span> <span class="nn">appinsight.utils.repo</span> <span class="kn">import</span> <span class="n">ReviewRepo</span>
 <span class="kn">from</span> <span class="nn">appinsight.utils.file</span> <span class="kn">import</span> <span class="n">IOService</span>
 <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s1">&#39;display.max_colwidth&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </pre>
@@ -1305,7 +1305,7 @@
                         <div class="highlight-ipython3 notranslate">
                           <div class="highlight">
                             <pre><span></span><span class="c1"># Instantiate the dataset repository</span>
-<span class="n">dsr</span> <span class="o">=</span> <span class="n">DatasetRepo</span><span class="p">()</span>
+<span class="n">dsr</span> <span class="o">=</span> <span class="n">ReviewRepo</span><span class="p">()</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">dsr</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">DATASET_DIR</span><span class="p">,</span><span class="n">filename</span><span class="o">=</span><span class="n">DATASET_FILENAME</span><span class="p">)</span>
 <span class="c1"># Instantiate the dataset overview class, summarizing the entire dataset.</span>
 <span class="n">dso</span> <span class="o">=</span> <span class="n">DatasetOverview</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">)</span>

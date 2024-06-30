@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 04:58:00 am                                                 #
-# Modified   : Tuesday June 4th 2024 11:39:24 pm                                                   #
+# Modified   : Sunday June 30th 2024 03:10:20 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,7 +38,7 @@ from pyspark.sql.types import (
 
 from appinsight.utils.cast import CastPandas, CastPySpark
 from appinsight.utils.convert import ToSpark
-from appinsight.utils.repo import DatasetRepo
+from appinsight.utils.repo import ReviewRepo
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -63,9 +63,9 @@ class TestCast:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         DIRECTORY = "02_cast"
         FILENAME = "cast_reviews.csv"
-        dsm = DatasetRepo()
-        dsm.write(data=data_raw, directory=DIRECTORY, filename=FILENAME)
-        df1 = dsm.read(directory=DIRECTORY, filename=FILENAME)
+        review_repo = ReviewRepo()
+        review_repo.write(data=data_raw, directory=DIRECTORY, filename=FILENAME)
+        df1 = review_repo.read(directory=DIRECTORY, filename=FILENAME)
         cast = CastPandas()
         df2 = cast.apply(data=df1, datatypes=pandas_schema)
         logging.info(df2.info())

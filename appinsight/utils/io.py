@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:55:39 am                                                 #
-# Modified   : Friday June 28th 2024 08:24:35 pm                                                   #
+# Modified   : Sunday June 30th 2024 04:18:15 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ import os
 import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
+from appinsight.infrastructure.file.io import IOService
 from appinsight.utils.base import Reader, Writer
-from appinsight.utils.file import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -63,7 +63,7 @@ class FileWriter(Writer):
     """Writes a pandas DataFrame to file.
 
     Args:
-        dsm (DatasetRepo): Dataset Manager responsible for files in environments.
+        review_repo (ReviewRepo): Dataset Manager responsible for files in environments.
     """
 
     def __init__(self, io_cls: type[IOService] = IOService, **kwargs) -> None:
