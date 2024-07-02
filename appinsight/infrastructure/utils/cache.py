@@ -4,24 +4,23 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/utils/cache.py                                                          #
+# Filename   : /appinsight/infrastructure/utils/cache.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday June 5th 2024 05:40:02 am                                                 #
-# Modified   : Sunday June 30th 2024 04:17:59 am                                                   #
+# Modified   : Monday July 1st 2024 10:55:23 pm                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import logging
-import os
-import shelve
 from functools import wraps
+from typing import Any
 
-from appinsight.infrastructure.utils.env import EnvManager
+from appinsight.infrastructure.persist.object.kvs import KVS
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -30,10 +29,10 @@ def cachenow(max_size=100, evict_size=5):
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            # Get the current environment
-            env = EnvManager().get_environment()
-            # Set the shelve file
-            shelf_file = f"cache/{env}/cache"
+            # Obtain the KVS (key/value store)
+            department = "cache"
+            name = "cachenow"
+            kvs = KVS(department=department, name=name)
             # Generate a cache key based on class name, function name, and arguments
             if isinstance(func, property):
                 class_name = type(self).__name__
@@ -43,26 +42,17 @@ def cachenow(max_size=100, evict_size=5):
                 cache_key = f"{class_name}_{func.__name__}_{args}_{kwargs}"
             # Check if 'force' is in kwargs
             force = kwargs.pop("force", False)
-            # Create a directory for the cache
-            os.makedirs(os.path.dirname(shelf_file), exist_ok=True)
-            # Open the shelve file
-            with shelve.open(shelf_file) as cache:
-                # Check if the result is already cached
-                if cache_key in cache and not force:
-                    # Move the cached item to the end (most recently used)
-                    value = cache.pop(cache_key)
-                    cache[cache_key] = value
-                    return value
-                else:
-                    # Call the original function
-                    result = func(self, *args, **kwargs)
-                    # Cache the result
-                    cache[cache_key] = result
-                    # Check if eviction is needed
-                    if max_size is not None and len(cache) > max_size:
-                        # Remove the least recently used item
-                        cache.popitem(last=False)
-                    return result
+
+            # Check if the result is already cached
+            if kvs.exists(key=cache_key) and not force:
+                # Return the cached value
+                return kvs.read(key=cache_key)
+            else:
+                # Call the original function
+                result = func(self, *args, **kwargs)
+                # Cache the result
+                kvs.create(key=cache_key, value=result)
+                return result
 
         # Check if the function is a method of a class
         if isinstance(func, property):
@@ -76,145 +66,97 @@ def cachenow(max_size=100, evict_size=5):
 #                                      CACHE MANAGER                                               #
 # ------------------------------------------------------------------------------------------------ #
 class Cache:
-    def __init__(self, name: str, env_mgr_cls: type[EnvManager] = EnvManager):
+    """Represents a cache interface using a key-value store (KVS).
+
+    This class provides methods to interact with a cache implemented using a key-value store.
+    It delegates all cache operations to an underlying KVS instance.
+
+    Args:
+        name (str): The name of the cache instance.
+        kvs_cls (type[KVS], optional): Class of the key-value store to use. Defaults to KVS.
+
+    Properties:
+        kvs (KVS): Exposes the underlying KVS instance to leverage as an iterator.
+
+    Methods:
+        add_item(key: Any, value: Any) -> None:
+            Adds a key-value pair to the cache.
+
+        exists(key: str) -> bool:
+            Checks if a key exists in the cache.
+
+        get_item(key: Any):
+            Retrieves an item from the cache by its key.
+
+        remove_item(key):
+            Removes an item from the cache by its key.
+
+        clear_cache():
+            Clears all items from the cache.
+
+    Examples:
+        >>> cache = Cache(name='example_cache')
+        >>> cache.add_item('key1', 'value1')
+        >>> cache.exists('key1')
+        True
+        >>> cache.get_item('key1')
+        'value1'
+        >>> cache.remove_item('key1')
+        >>> cache.clear_cache()
+
+    """
+
+    __department = "cache"
+
+    def __init__(self, name: str, kvs_cls: type[KVS] = KVS):
         self._name = name
-        self._env_mgr = env_mgr_cls()
-        self._env = self._env_mgr.get_environment()
-        self._shelf_file = os.path.join("cache", self._env, self._name)
-        self._create_cache_directory()
+        self._kvs = kvs_cls(department=self.__department, name=name)
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self._logger.debug(f"Instantiated the {name} cache manager.")
 
-    def _create_cache_directory(self):
-        os.makedirs(os.path.dirname(self._shelf_file), exist_ok=True)
+    @property
+    def kvs(self) -> KVS:
+        """Exposes the underlying KVS to allow callers to leverage KVS as an iterator."""
+        return self._kvs
 
-    def add_item(self, key, value):
-        try:
-            with shelve.open(self._shelf_file) as cache:
-                cache[key] = value
-            self._logger.debug(f"Added key: {key} Value contains {len(value)} items.")
-        except FileNotFoundError as fe:
-            self._logger.exception(
-                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
-            )
-            raise
-        except Exception as e:
-            self._logger.exception(
-                f"Exception occurred while adding item to cache.\n{e}"
-            )
-            raise
-
-    def exists(self, key: str) -> bool:
-        """Returns existence of key in cache
+    def add_item(self, key: Any, value: Any) -> None:
+        """Adds a key-value pair to the cache.
 
         Args:
-            key (str): Key of item in cache.
+            key (Any): The key to add to the cache.
+            value (Any): The value associated with the key.
         """
-        try:
-            with shelve.open(self._shelf_file) as cache:
-                return key in cache
-        except FileNotFoundError as fe:
-            self._logger.exception(
-                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
-            )
-            raise
-        except Exception as e:
-            self._logger.exception(f"Exception occurred while reading cache.\n{e}")
-            raise
+        self._kvs.create(key=key, value=value)
 
-    def get_item(self, key):
-        try:
-            with shelve.open(self._shelf_file) as cache:
-                return cache.get(key)
-        except FileNotFoundError as fe:
-            self._logger.exception(
-                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
-            )
-            raise
-        except Exception as e:
-            self._logger.exception(f"Exception occurred while reading cache.\n{e}")
-            raise
+    def exists(self, key: str) -> bool:
+        """Returns True if the key exists in the cache, otherwise False.
+
+        Args:
+            key (str): The key to check for existence in the cache.
+
+        Returns:
+            bool: True if the key exists, False otherwise.
+        """
+        return self._kvs.exists(key=key)
+
+    def get_item(self, key: Any):
+        """Retrieves the value associated with the given key from the cache.
+
+        Args:
+            key (Any): The key whose associated value is to be retrieved.
+
+        Returns:
+            Any: The value associated with the key.
+        """
+        return self._kvs.read(key=key)
 
     def remove_item(self, key):
-        try:
-            with shelve.open(self._shelf_file) as cache:
-                if key in cache:
-                    del cache[key]
-        except FileNotFoundError as fe:
-            self._logger.exception(
-                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
-            )
-            raise
-        except Exception as e:
-            self._logger.exception(
-                f"Exception occurred while removing item from cache.\n{e}"
-            )
-            raise
+        """Removes the item associated with the given key from the cache.
+
+        Args:
+            key: The key of the item to be removed from the cache.
+        """
+        self._kvs.delete(key=key)
 
     def clear_cache(self):
-        try:
-            with shelve.open(self._shelf_file) as cache:
-                for key in cache:
-                    del cache[key]
-        except FileNotFoundError as fe:
-            self._logger.exception(
-                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
-            )
-            raise
-        except Exception as e:
-            self._logger.exception(f"Exception occurred while clearing cache.\n{e}")
-            raise
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                      CACHE ITERATOR                                              #
-# ------------------------------------------------------------------------------------------------ #
-class CacheIterator:
-    def __init__(self, name: str, env_mgr_cls: type[EnvManager] = EnvManager):
-        self._name = name
-        self._env_mgr = env_mgr_cls()
-        self._env = self._env_mgr.get_environment()
-        self._shelf_file = os.path.join("cache", self._env, self._name)
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self._logger.debug(f"Instantiated the {name} cache iterator.")
-
-        self._index = 0
-        self._keys = self._get_keys()
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self._index < len(self._keys):
-            try:
-                with shelve.open(self._shelf_file) as cache:
-                    value = cache[self._keys[self._index]]
-            except FileNotFoundError as fe:
-                self._logger.exception(
-                    f"Shelve file {self._shelf_file} does not exist.\n{fe}"
-                )
-                raise
-            except Exception as e:
-                self._logger.exception(
-                    f"Exception occurred while reading from cache.\n{e}"
-                )
-                raise
-            self._index += 1
-            return value
-        else:
-            raise StopIteration
-
-    def _get_keys(self) -> list:
-        try:
-            with shelve.open(self._shelf_file) as cache:
-                return [key for key in cache]
-        except FileNotFoundError as fe:
-            self._logger.exception(
-                f"Shelve file {self._shelf_file} does not exist.\n{fe}"
-            )
-            raise
-        except Exception as e:
-            self._logger.exception(
-                f"Exception occurred while removing item from cache.\n{e}"
-            )
-            raise
+        """Clears all items from the cache."""
+        self._kvs.reset()
