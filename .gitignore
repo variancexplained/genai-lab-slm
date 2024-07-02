@@ -29,7 +29,6 @@ data/**/*.*
 *.pkl
 *.parquet
 *.txt
-reviews_dataset
 tests/data/*.*
 
 # Logs

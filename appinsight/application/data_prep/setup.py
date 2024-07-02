@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/data_prep/setup.py                                                      #
+# Filename   : /appinsight/application/data_prep/setup.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 03:17:23 pm                                                   #
-# Modified   : Thursday June 27th 2024 04:15:42 am                                                 #
+# Modified   : Monday July 1st 2024 12:30:18 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 
-from appinsight.workflow.task import Task
+from appinsight.application.base import Task
 
 # ------------------------------------------------------------------------------------------------ #
 warnings.simplefilter(action="ignore", category=FutureWarning)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:55:39 am                                                 #
-# Modified   : Sunday June 30th 2024 04:18:15 am                                                   #
+# Modified   : Monday July 1st 2024 12:29:35 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import os
 import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
-from appinsight.infrastructure.file.io import IOService
+from appinsight.infrastructure.persist.file.io import IOService
 from appinsight.utils.base import Reader, Writer
 
 

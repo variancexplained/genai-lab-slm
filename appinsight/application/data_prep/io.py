@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/data_prep/io.py                                                         #
+# Filename   : /appinsight/application/data_prep/io.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Sunday June 30th 2024 03:10:20 am                                                   #
+# Modified   : Monday July 1st 2024 12:31:03 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,13 +20,13 @@
 import pandas as pd
 from pyspark.sql import DataFrame
 
+from appinsight.application.base import Task
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import ReviewRepo
 from appinsight.utils.tempfile import TempFileMgr
-from appinsight.workflow.task import Task
 
 
 # ------------------------------------------------------------------------------------------------ #

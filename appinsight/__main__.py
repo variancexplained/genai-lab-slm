@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday May 25th 2024 03:48:28 am                                                  #
-# Modified   : Sunday June 30th 2024 04:18:22 am                                                   #
+# Modified   : Monday July 1st 2024 12:28:41 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,7 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from appinsight.container import AppInsightContainer
-from appinsight.infrastructure.file.io import IOService
+from appinsight.infrastructure.persist.file.io import IOService
 from appinsight.utils.datetime import convert_seconds_to_hms
 from appinsight.utils.repo import ReviewRepo
 
@@ -95,7 +95,7 @@ def build_dependencies(env: str):
     container.init_resources()
     container.wire(
         packages=[
-            "appinsight.infrastructure.database",
+            "appinsight.infrastructure.persist.database",
             "appinsight.infrastructure.profiling",
         ],
     )  # Wire the current module

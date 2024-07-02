@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/infrastructure/database/base.py                                         #
+# Filename   : /appinsight/infrastructure/persist/database/base.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday May 25th 2024 03:16:08 am                                                  #
-# Modified   : Friday May 31st 2024 02:53:38 am                                                    #
+# Modified   : Sunday June 30th 2024 10:27:07 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -70,6 +70,22 @@ class Database(ABC):
             params (dict): Parameters for the SQL command
 
         Returns (int): Number of rows updated/deleted.
+        """
+
+    @abstractmethod
+    def create(self, query: str, params: dict = None) -> int:
+        """
+        Executes an SQL insert that modifies the database.
+
+        Args:
+            query (str): The SQL command.
+            params (dict, optional): Parameters for the SQL command.
+
+        Returns:
+            int: Last row id
+
+        Raises:
+            SQLAlchemyError: If the command execution fails.
         """
 
     @abstractmethod

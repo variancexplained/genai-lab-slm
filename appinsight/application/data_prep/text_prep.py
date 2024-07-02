@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 19th 2024 09:08:01 pm                                                    #
-# Modified   : Sunday June 30th 2024 03:33:06 am                                                   #
+# Modified   : Monday July 1st 2024 12:31:03 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,7 +39,7 @@ from sparknlp.annotator import (
 from sparknlp.base import DocumentAssembler, Finisher
 
 from appinsight.application.base import Pipeline as Pipe
-from appinsight.application.base import PipelineBuilder, StageConfig
+from appinsight.application.base import PipelineBuilder, StageConfig, Task
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.profiling.decorator import task_profiler
@@ -47,7 +47,6 @@ from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.convert import ToSpark
 from appinsight.utils.io import FileReader, PySparkReader, PySparkWriter
 from appinsight.utils.repo import ReviewRepo
-from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 nltk.download("stopwords")

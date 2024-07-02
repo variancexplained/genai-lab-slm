@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 27th 2024 05:35:10 am                                                    #
-# Modified   : Friday May 31st 2024 02:52:55 am                                                    #
+# Modified   : Monday July 1st 2024 12:28:41 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,8 @@ import os
 from datetime import datetime
 
 import pytest
-from appinsight.infrastructure.database.dba import SQLiteDBA
+
+from appinsight.infrastructure.persist.database.dba import SQLiteDBA
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

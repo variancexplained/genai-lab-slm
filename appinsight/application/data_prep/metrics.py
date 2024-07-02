@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Sunday June 30th 2024 03:46:39 am                                                   #
+# Modified   : Monday July 1st 2024 12:31:04 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sparkFunc
 
+from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
 from appinsight.infrastructure.logging import log_exceptions
@@ -36,7 +37,6 @@ from appinsight.utils.convert import ToPandas, ToSpark
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import ReviewRepo
 from appinsight.utils.tempfile import TempFileMgr
-from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

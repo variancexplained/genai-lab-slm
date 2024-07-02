@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Sunday June 30th 2024 05:07:33 am                                                   #
+# Modified   : Monday July 1st 2024 12:31:04 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,6 +35,7 @@ from profanity_check import predict
 from tqdm import tqdm
 
 from appinsight.analysis.base import Analysis
+from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep import log_exceptions, task_profiler
 from appinsight.data_prep.io import ReadTask, WriteTask
@@ -43,7 +44,6 @@ from appinsight.utils.base import Reader, Writer
 from appinsight.utils.data import split_dataframe
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import ReviewRepo
-from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)

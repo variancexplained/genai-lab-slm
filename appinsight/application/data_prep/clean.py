@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Sunday June 30th 2024 04:18:30 am                                                   #
+# Modified   : Monday July 1st 2024 12:31:03 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,16 +23,16 @@ from dataclasses import dataclass, field
 import pandas as pd
 from dotenv import load_dotenv
 
+from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep.io import ReadTask, WriteTask
-from appinsight.infrastructure.file.io import IOService
 from appinsight.infrastructure.logging import log_exceptions
+from appinsight.infrastructure.persist.file.io import IOService
 from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.print import Printer
 from appinsight.utils.repo import ReviewRepo
-from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

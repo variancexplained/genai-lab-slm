@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Sunday June 30th 2024 03:46:39 am                                                   #
+# Modified   : Monday July 1st 2024 12:31:04 am                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,6 +29,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from pandarallel import pandarallel
 from textstat import textstat
 
+from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep import log_exceptions, task_profiler
 from appinsight.data_prep.io import ReadTask, WriteTask
@@ -36,7 +37,6 @@ from appinsight.utils.base import Reader, Writer
 from appinsight.utils.cast import CastPandas
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import ReviewRepo
-from appinsight.workflow.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 nltk.download("punkt")
