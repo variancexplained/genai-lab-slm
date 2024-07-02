@@ -11,14 +11,13 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 05:01:39 am                                                    #
-# Modified   : Monday July 1st 2024 05:08:29 am                                                    #
+# Modified   : Tuesday July 2nd 2024 03:27:28 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Repo Interface Module"""
 from abc import ABC, abstractmethod
-from typing import Union
 
 import pandas as pd
 
@@ -29,6 +28,11 @@ from appinsight.domain.base import Entity
 class Repo(ABC):
     """Abstract base class defining the interface for repositories."""
 
+    @property
+    @abstractmethod
+    def registry(self) -> pd.DataFrame:
+        """Returns a DataFrame of repository contents."""
+
     @abstractmethod
     def add(self, entity: Entity) -> None:
         """Adds an entity to the repository."""
@@ -36,10 +40,6 @@ class Repo(ABC):
     @abstractmethod
     def get(self, oid: int) -> Entity:
         """Returns an item from the repository."""
-
-    @abstractmethod
-    def find(self, *args, **kwargs) -> Union[None, pd.DataFrame]:
-        """Returns a DataFrame of results from the repository"""
 
     @abstractmethod
     def remove(self, *args, **kwargs) -> None:

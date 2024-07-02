@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 01:00:14 am                                                    #
-# Modified   : Monday July 1st 2024 05:59:38 am                                                    #
+# Modified   : Tuesday July 2nd 2024 03:17:11 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,7 +38,7 @@ class Dataset(Entity):
         name: str,
         description: str,
         stage: str,
-        phase: str = "PREP",
+        phase: str,
         content: pd.DataFrame = None,
         creator: str = None,
     ) -> None:
@@ -57,7 +57,7 @@ class Dataset(Entity):
         self._cols = None
 
         if self._content is not None:
-            self._populate_content_metadata(content=content)
+            self._populate_content_metadata()
 
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -80,7 +80,8 @@ class Dataset(Entity):
     def content(self, content: pd.DataFrame) -> None:
         """Sets the dataset content"""
         self._content = content
-        self._populate_content_metadata(content=content)
+        self._validate_content()
+        self._populate_content_metadata()
 
     @property
     def name(self) -> str:
@@ -88,39 +89,9 @@ class Dataset(Entity):
         return self._name
 
     @property
-    def phase(self) -> str:
-        """Returns the phase in which the entity was created."""
-        return self._phase
-
-    @property
     def stage(self) -> str:
         """Returns the stage in which the entity was created."""
         return self._stage
-
-    @property
-    def size(self) -> str:
-        """Returns the size of content in bytes."""
-        return self._size
-
-    @property
-    def nrows(self) -> int:
-        """Returns the number or rows in the dataset."""
-        return self._nrows
-
-    @property
-    def ncols(self) -> int:
-        """Returns the number or rows in the dataset."""
-        return self._ncols
-
-    @property
-    def creator(self) -> str:
-        """Class creating the dataset."""
-        return self._creator
-
-    @property
-    def created(self) -> str:
-        """Creation datetime."""
-        return self._created
 
     @classmethod
     def from_config(cls, config: DatasetConfig) -> Dataset:
@@ -133,10 +104,9 @@ class Dataset(Entity):
         )
 
     @classmethod
-    def from_df(cls, df: pd.DataFrame) -> Dataset:
+    def from_repo(cls, df: pd.DataFrame, content: pd.DataFrame) -> Dataset:
         """Instantiate a Dataset from a DataFrame."""
-        df = df.iloc[0]
-        return cls(
+        dataset = cls(
             oid=df["oid"],
             name=df["name"],
             description=df["description"],
@@ -148,33 +118,42 @@ class Dataset(Entity):
             ncols=df["ncols"],
             size=df["size"],
         )
+        dataset.content = content
+        dataset.validate()
+        return dataset
 
-    def to_df(self) -> pd.DataFrame:
-        """Returns the object variables in a DataFrame."""
+    def to_dict(self) -> pd.DataFrame:
+        """Returns the object variables in a dictionary format."""
         self.validate()
-        d = {
+        return {
             "name": self._name,
             "description": self._description,
             "phase": self._phase,
             "stage": self._stage,
+            "size": self._size,
             "created": self._created,
             "creator": self._creator,
             "nrows": self._nrows,
             "ncols": self._ncols,
-            "size": self._size,
         }
-        return pd.DataFrame(data=d, index=[0])
 
-    def _populate_content_metadata(self, content: pd.DataFrame) -> None:
+    def _populate_content_metadata(self) -> None:
         """Sets content related variables."""
-        self._nrows = len(content)
-        self._ncols = content.shape[0]
-        self._size = content.memory_usage(deep=True)
-        self._cols = content.columns
+        self._nrows = len(self._content)
+        self._ncols = self._content.shape[0]
+        self._size = self._content.memory_usage(deep=True)
+        self._cols = self._content.columns
 
     def validate(self) -> None:
         """Validates construction parameters."""
-        # Validate content
+
+        self._validate_content()
+        self._validate_stage()
+        self._validate_phase()
+        self._validate_creator()
+
+    def _validate_content(self) -> None:
+        """Ensures content is a non-empty pandas DataFrame."""
         if not isinstance(self._content, pd.DataFrame):
             msg = "Content is not a valid DataFrame object."
             self._logger.exception(msg)
@@ -186,20 +165,23 @@ class Dataset(Entity):
             self._logger.exception(msg)
             raise ValueError(msg)
 
-        # Validate stage
+    def _validate_stage(self) -> None:
+        """Ensures stage is valid."""
         if self._stage not in Stage.__members__.keys():
             msg = f"Stage {self._stage} is invalid."
             self._logger.exception(msg)
             raise ValueError(msg)
 
-        # Validate phase
+    def _validate_phase(self) -> None:
+        """Ensures phase is valid"""
         if self._phase not in Phase.__members__.keys():
             msg = f"Phase {self._phase} is invalid."
             self._logger.exception(msg)
             raise ValueError(msg)
 
-        # Validate creator
+    def _validate_creator(self) -> None:
+        """Ensures creator is non-empty"""
         if self._creator is None:
             msg = "Creator is None"
             self._logger.exception(msg)
-            raise TypeError(msg)
+            raise ValueError(msg)

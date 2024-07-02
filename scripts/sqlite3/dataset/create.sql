@@ -1,4 +1,3 @@
---- DROP TABLE IF EXISTS dataset;
 CREATE TABLE IF NOT EXISTS dataset (
     oid INTEGER NOT NULL,    
     name VARCHAR(32),
@@ -10,5 +9,7 @@ CREATE TABLE IF NOT EXISTS dataset (
     ncols INTEGER,    
     creator VARCHAR(32),
     created BIGINT,    
+    directory VARCHAR(64),    
+    filename VARCHAR(64),
     PRIMARY KEY(oid)
 );

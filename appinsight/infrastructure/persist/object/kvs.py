@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 10:27:18 pm                                                   #
-# Modified   : Monday July 1st 2024 11:58:13 pm                                                    #
+# Modified   : Tuesday July 2nd 2024 12:22:53 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,6 +26,7 @@ from appinsight.infrastructure.persist.file.io import IOService
 from appinsight.infrastructure.utils.env import EnvManager
 
 
+# ------------------------------------------------------------------------------------------------ #
 class KVS:
     """Manages access to key/value (department) store for the project.
 

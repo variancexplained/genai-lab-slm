@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 09:55:53 pm                                                   #
-# Modified   : Monday July 1st 2024 05:40:38 am                                                    #
+# Modified   : Tuesday July 2nd 2024 04:59:58 am                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,10 +19,12 @@
 """File System Module"""
 import logging
 import os
+import shutil
 from typing import Any
 
 from appinsight.infrastructure.persist.base import Persistence
 from appinsight.infrastructure.persist.file.io import IOService
+from appinsight.infrastructure.utils.env import EnvManager
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -32,42 +34,64 @@ class FileSystem(Persistence):
     def __init__(
         self,
         io_cls: type[IOService] = IOService,
+        env_mgr_cls: type[EnvManager] = EnvManager,
     ) -> None:
         super().__init__()
         self._io = io_cls()
+        self._env_mgr = env_mgr_cls()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def create(self, filepath: str, data: Any) -> None:
+    def create(self, data: Any, directory: str, filename: str = None, **kwargs) -> None:
         """Creates data on the file system
 
         Args:
-            filepath (str): Path to the file
+            directory (str): Directory to which the data is to be saved.
+            filename (str): Name of file. Optional.
             data (Any): Data to be saved to file.
-        """
-        self._io.write(filepath=filepath, data=data)
 
-    def read(self, filepath) -> Any:
+        Returns:
+            str: The filepath to which the data was saved.
+        """
+        filepath = self._create_path(directory=directory, filename=filename)
+        if os.path.exists(filepath):
+            msg = f"File {filepath} cannot be created. It already exists."
+            self._logger.exception(msg)
+            raise FileExistsError(msg)
+
+        self._io.write(filepath=filepath, data=data, kwargs=kwargs)
+
+    def read(self, directory: str, filename: str = None) -> Any:
         """Reads file from disk
 
         Args:
             filepath (str): Filepath from which to read the data.
 
         """
+        filepath = self._create_path(directory=directory, filename=filename)
+        return self._io.read(filepath=filepath)
 
-    def delete(self, filepath) -> None:
+    def delete(self, directory: str, filename: str = None) -> None:
         """Removes a file from the filesystem
 
         Args:
             filepath (str): Filepath from which to read the data.
 
         """
-        delete = input(
-            f"You don't really want to delete {filepath}. Pop 'Y' if you do."
-        )
-        if "Y" == delete:
-            try:
-                os.remove(filepath)
-            except FileNotFoundError as e:
-                msg = f"File {filepath} was not found.\n{e}"
-                self._logger.exception(msg)
-                raise
+        filepath = self._create_path(directory=directory, filename=filename)
+
+        try:
+            os.remove(filepath)
+        except FileNotFoundError as e:
+            msg = f"File {filepath} was not found.\n{e}"
+            self._logger.exception(msg)
+            raise
+        except OSError:
+            shutil.rmtree(filepath)
+
+    def _create_path(self, directory: str, filename: str = None) -> str:
+        """Creates a path (directory or file) based on current environment."""
+        env = self._env_mgr.get_environment()
+        if filename is not None:
+            return os.path.join("data", env, directory, filename)
+        else:
+            return os.path.join("data", env, directory)
