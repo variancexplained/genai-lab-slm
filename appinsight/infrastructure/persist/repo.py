@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 05:08:52 am                                                    #
-# Modified   : Tuesday July 2nd 2024 04:53:54 am                                                   #
+# Modified   : Tuesday July 2nd 2024 12:32:10 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,7 +31,19 @@ from appinsight.infrastructure.utils.config import DatasetConfig
 
 # ------------------------------------------------------------------------------------------------ #
 class DatasetRepo(Repo):
-    """Abstract base class defining the interface for repositories."""
+    """
+    Abstract base class defining the interface for repositories.
+
+    Attributes:
+        registry (pd.DataFrame): Returns the repository registry.
+
+    Examples:
+        >>> repo = DatasetRepo()
+        >>> dataset = Dataset(name="example", content=pd.DataFrame())
+        >>> added_dataset = repo.add(dataset)
+        >>> retrieved_dataset = repo.get(added_dataset.oid)
+        >>> repo.remove(added_dataset.oid)
+    """
 
     def __init__(
         self,
@@ -39,6 +51,14 @@ class DatasetRepo(Repo):
         db_cls: type[SQLiteDB] = SQLiteDB,
         config_cls: type[DatasetConfig] = DatasetConfig,
     ) -> None:
+        """
+        Initializes the DatasetRepo with file system, database, and configuration classes.
+
+        Args:
+            fs_cls (type[FileSystem]): The FileSystem class to use. Default is FileSystem.
+            db_cls (type[SQLiteDB]): The SQLiteDB class to use. Default is SQLiteDB.
+            config_cls (type[DatasetConfig]): The DatasetConfig class to use. Default is DatasetConfig.
+        """
         super().__init__()
         self._fs = fs_cls()
         self._db = db_cls()
@@ -47,48 +67,77 @@ class DatasetRepo(Repo):
 
     @property
     def registry(self) -> pd.DataFrame:
-        """Returns the repository registry"""
+        """Returns the repository registry."""
         return self._get_registry()
 
     def add(self, dataset: Dataset) -> Dataset:
-        """Adds an dataset to the repository.
+        """
+        Adds a dataset to the repository.
 
         Args:
             dataset (Dataset): The Dataset object to be added.
 
-        Returns the dataset with an object id.
+        Returns:
+            Dataset: The dataset with an object id.
+
+        Examples:
+            >>> repo = DatasetRepo()
+            >>> dataset = Dataset(name="example", content=pd.DataFrame())
+            >>> added_dataset = repo.add(dataset)
+            >>> print(added_dataset.oid)
         """
         dataset.validate()
-        directory, filename = self._persist_content(dataset=dataset)
+        directory, filename = self._get_location(stage=dataset.stage, name=dataset.name)
+        self._persist_content(
+            directory=directory, filename=filename, content=dataset.content
+        )
         dataset.oid = self._persist_metadata(
             dataset=dataset, directory=directory, filename=filename
         )
         return dataset
 
     def get(self, oid: int) -> Dataset:
-        """Returns an item from the repository."""
-        # Obtain metadata from the database.
-        df = self._get_metadata(oid)
-        # Obtain content
-        content = self._fs.read(directory=df["directory"], filename=df["filename"])
-        # Constitute the dataset object
-        return Dataset.from_repo(df=df, content=content)
-
-    def remove(self, oid: int) -> None:
-        """Removes an entity from the repository.
+        """
+        Returns a dataset from the repository by object id.
 
         Args:
-            oid (int): The object id.
+            oid (int): The object id of the dataset.
+
+        Returns:
+            Dataset: The dataset object.
+
+        Examples:
+            >>> repo = DatasetRepo()
+            >>> dataset = repo.get(1)
+            >>> print(dataset.name)
+        """
+        dataset = self._get_metadata(oid)
+        directory, filename = self._get_location(
+            stage=dataset["stage"], name=dataset["name"]
+        )
+        dataset["content"] = self._fs.read(directory=directory, filename=filename)
+        return Dataset(**dataset)
+
+    def remove(self, oid: int) -> None:
+        """
+        Removes a dataset from the repository by object id.
+
+        Args:
+            oid (int): The object id of the dataset.
+
+        Examples:
+            >>> repo = DatasetRepo()
+            >>> repo.remove(1)
         """
         delete = input(
             "This will remove all metadata and content from the repository. Do you wish to proceed? [yes/no]"
         )
         if delete.lower() == "yes":
-            # Obtain the metadata containing directory and filename for the object
-            df = self._get_metadata(oid)
-            # Delete the content from the file.
-            self._fs.delete(directory=df["directory"], filename=df["filename"])
-            # Remove the item from the database.
+            dataset = self._get_metadata(oid)
+            directory, filename = self._get_location(
+                stage=dataset["stage"], name=dataset["name"]
+            )
+            self._fs.delete(directory=directory, filename=filename)
             query = "DELETE FROM dataset WHERE oid = ?;"
             params = (oid,)
             self._db.command(query=query, params=params)
@@ -96,41 +145,35 @@ class DatasetRepo(Repo):
         else:
             print(f"Remove of dataset {oid} aborted.")
 
-    def _get_metadata(self, oid: int) -> pd.DataFrame:
-        """Returns metadata from the database."""
+    def _get_metadata(self, oid: int) -> dict:
+        """Returns metadata from the database as a dictionary."""
         query = """SELECT * FROM dataset WHERE oid = ?;"""
         params = (oid,)
         df = self._db.query(query=query, params=params)
-        self._validate_db_result(df)
-        df = df.iloc[0]
-        return df
+        try:
+            return df.iloc[0].to_dict()
+        except IndexError as ie:
+            msg = f"Metadata for oid: {oid} not found.\n{ie}"
+            self._logger.exception(msg)
+            raise ValueError(msg)
 
     def _get_registry(self) -> pd.DataFrame:
-        """Returns the registry"""
+        """Returns the registry."""
         query = """SELECT * FROM dataset;"""
         return self._db.query(query=query)
 
-    def _persist_content(self, dataset: Dataset) -> None:
-        """Persists the dataset content to file."""
-        directory, filename = self._get_location(dataset=dataset)
-
+    def _persist_content(
+        self, directory: str, filename: str, content: pd.DataFrame
+    ) -> None:
         save_kwargs = self._config.get_save_kwargs()
-
-        # Persist the content, returning the filepath
         self._fs.create(
-            data=dataset.content,
-            directory=directory,
-            filename=filename,
-            kwargs=save_kwargs,
+            data=content, directory=directory, filename=filename, kwargs=save_kwargs
         )
-        return directory, filename
 
     def _persist_metadata(self, dataset: Dataset, directory: str, filename: str) -> int:
         """Persists metadata to the database."""
-
-        query = """INSERT INTO dataset (name, description, phase, stage, size, nrows, ncols, directory, filename, creator, created)
-        VALUES
-        (?,?,?,?,?,?,?,?,?,?);"""
+        query = """INSERT INTO dataset (name, description, phase, stage, size, nrows, ncols, creator, created)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
         data = dataset.to_dict()
         params = (
             data["name"],
@@ -140,28 +183,14 @@ class DatasetRepo(Repo):
             data["size"],
             data["nrows"],
             data["ncols"],
-            directory,
-            filename,
             data["creator"],
             data["created"],
         )
         return self._db.create(query=query, params=params)
 
-    def _validate_db_result(self, df: pd.DataFrame) -> None:
-        """Ensures the database result is a valid, non-empty dataframe"""
-        if not isinstance(df, pd.DataFrame):
-            msg = "Error occurred while reading from the database."
-            raise RuntimeError(msg)
-        elif len(df) == 0:
-            msg = "No records found for the query"
-            raise RuntimeError(msg)
-
-    def _get_location(self, dataset: Dataset) -> tuple[str, str]:
+    def _get_location(self, stage: str, name: str) -> tuple[str, str]:
         """Returns the directory and filename for the dataset."""
-        # Obtain the file extension from the dataset from config.
+        directory = Stage[stage]
         file_ext = self._config.get_file_ext()
-        # Obtain the directory for the dataset stage.
-        directory = Stage[dataset.stage]
-        # Filename is the dataset name with the file extension from config.
-        filename = f"{dataset.name}{file_ext}"
+        filename = f"{name}{file_ext}"
         return directory, filename
