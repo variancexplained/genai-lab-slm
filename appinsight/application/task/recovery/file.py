@@ -4,50 +4,38 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/config/setup/database.py                                    #
+# Filename   : /appinsight/application/task/recovery/file.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday July 3rd 2024 09:30:00 am                                                 #
-# Modified   : Wednesday July 3rd 2024 11:29:03 am                                                 #
+# Created    : Wednesday July 3rd 2024 03:15:18 pm                                                 #
+# Modified   : Wednesday July 3rd 2024 03:25:49 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Application Layer - Setup -  Database Configuration Module."""
-import os
-from collections import defaultdict
-from dataclasses import dataclass, field
+"""Application Layer File Recover Task"""
+import logging
 
-from dotenv import load_dotenv
-
-from appinsight.application.config.base import AppConfig
-
-# ------------------------------------------------------------------------------------------------ #
-load_dotenv()
+from appinsight.application.base import Task
+from appinsight.infrastructure.recovery.file import FileRecovery
 
 
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
-class DBSetupPipelineConfig(AppConfig):
-    """Contains the database configuration
+class FileBackupTask(Task):
+    def __init__(
+        self,
+        backup_source: str,
+        name: str,
+        file_recovery_cls: type[FileRecovery] = FileRecovery,
+    ) -> None:
+        super().__init__()
+        self._backup_source = backup_source
+        self._name = name
+        self._file_recovery = file_recovery_cls()
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    The file containing the configuration is stored in the .env file keyed
-    by this class name. The config is read into the config member as
-    a dictionary containing the configurations for the backup, profile,
-    and dataset tables.
-
-    """
-
-    config: defaultdict[dict] = field(default_factory=lambda: defaultdict(dict))
-
-    def __post_init__(self) -> None:
-        # Configuration file names are organized by the classes that use them.
-        config_file_key = self.__class__.__name__.upper()
-        # Obtain the config file
-        filepath = os.getenv(config_file_key)
-        # Set the config for the command.
-        with open(file=filepath) as file:
-            self.config = file.read()
+    def execute_task(self) -> None:
+        self._file_recovery.backup(backup_source=self._backup_source, name=self._name)

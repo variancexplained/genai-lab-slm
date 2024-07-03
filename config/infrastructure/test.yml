@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Wednesday July 3rd 2024 09:51:18 am                                                 #
+# Modified   : Wednesday July 3rd 2024 02:51:35 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -77,9 +77,9 @@ kvs:
 # ------------------------------------------------------------------------------------------------ #
 recovery:
   db: 
-    backup: workspace/test/recovery/db
-    restore: workspace/test/db/sqlite.db
+    backup_source: workspace/test/db/sqlite.db
+    backup_directory: workspace/test/recovery/db    
   file: 
     default_source: data/test
     backup_directory: workspace/test/recovery/data    
-    default_: data/test
+    

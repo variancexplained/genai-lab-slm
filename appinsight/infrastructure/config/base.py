@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 05:08:20 am                                                   #
-# Modified   : Tuesday July 2nd 2024 10:25:39 pm                                                   #
+# Modified   : Wednesday July 3rd 2024 12:44:32 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,19 +39,33 @@ class Config(ABC):
         io_cls: type[IOService] = IOService,
     ) -> None:
         """
-        Initializes the IO class with an environment manager.
+        Initializes the IO class with an environment manager and an IOService class.
 
         Args:
             env_mgr_cls (type[EnvManager], optional): Class for managing environments. Defaults to EnvManager.
         """
-        load_dotenv()
+        # Instantiate an IOService and ENV Manager instances.
         self._io = io_cls()
         self._env_mgr = env_mgr_cls()
-        self._config = self.read()
+        # Load the environment variables from the .env file
+        load_dotenv()
+        # Set the key with which the config file will be obtained from the environment
+        self._config_key = self.__class__.__name__.upper()
+        # Get the config filepath for the environment, read the config filepath
+        # and set the config property
+        self._config = self._read()
 
-    def read(self) -> dict:
+    @property
+    def config(self) -> str:
+        return self._config
+
+    def _read(self) -> dict:
         """Reads the underlying configuration file."""
+        # Obtain the current environment from the environment variable
         env = self._env_mgr.get_environment()
-        basedir = os.getenv(key="CONFIG_DIRECTORY")
-        filepath = os.path.join(basedir, f"{env}.yml")
-        return self._io.read(filepath=filepath)
+        # Grab the config filepath from env variables.
+        config_base_filepath = os.getenv(key=self._config_key)
+        # Construct the path to the config file for the environment.
+        config_filepath = os.path.join(config_base_filepath, f"{env}.yml")
+        # Return the configuation for the environment
+        return self._io.read(filepath=config_filepath)
