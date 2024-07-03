@@ -4,33 +4,15 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /config/application/setup/database.yaml                                             #
+# Filename   : /appinsight/infrastructure/config/setup/__init__.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday July 3rd 2024 09:50:52 am                                                 #
-# Modified   : Wednesday July 3rd 2024 04:40:22 pm                                                 #
+# Created    : Wednesday July 3rd 2024 04:02:51 pm                                                 #
+# Modified   : Wednesday July 3rd 2024 04:02:56 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-# ------------------------------------------------------------------------------------------------ #
-setup:
-  database:
-    profile:
-      force: False
-      exists: scripts/sqlite3/profile/exists.sql
-      drop: scripts/sqlite3/profile/drop.sql
-      create: scripts/sqlite3/profile/create.sql
-    backup:
-      force: False
-      exists: scripts/sqlite3/backup/exists.sql
-      drop: scripts/sqlite3/backup/drop.sql
-      create: scripts/sqlite3/backup/create.sql    
-    dataset:
-      force: False
-      exists: scripts/sqlite3/dataset/exists.sql
-      drop: scripts/sqlite3/dataset/drop.sql
-      create: scripts/sqlite3/dataset/create.sql    

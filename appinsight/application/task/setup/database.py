@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/task/setup/dataset.py                                       #
+# Filename   : /appinsight/application/task/setup/database.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday July 3rd 2024 08:20:30 am                                                 #
-# Modified   : Wednesday July 3rd 2024 03:11:59 pm                                                 #
+# Modified   : Wednesday July 3rd 2024 04:05:51 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,20 +25,13 @@ from appinsight.infrastructure.persist.database.base import Database
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DatasetDBSetupTask(Task):
+class DBSetupTask(Task):
     """Executes the DDL to setup a dataset table.
 
-    The DatasetDBSetupTask gets a configuration object for the table, containing the sql for
-    three subtasks:
-        exists: Evaluate existence of a table in the database
-        drop: Drops the existing table, if it exists.
-        create: Creates the table.
-
-    The table is created if it doesn't exist, or the force parameter is True. Before the
-    table is created, any existing table is backed up.
+    The table is created if it doesn't exist, or the force parameter is True.
 
     Args:
-        config (dict): Dictionary containing the filepaths to the exists, drop
+        config (DBConfig): Dictionary containing the filepaths to the exists, drop
             and create DDL statemeents.
         db (Database): A database object to process the DDL statements.
 

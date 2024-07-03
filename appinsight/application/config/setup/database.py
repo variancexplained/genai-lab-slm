@@ -11,43 +11,25 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday July 3rd 2024 09:30:00 am                                                 #
-# Modified   : Wednesday July 3rd 2024 11:29:03 am                                                 #
+# Modified   : Wednesday July 3rd 2024 04:56:56 pm                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Application Layer - Setup -  Database Configuration Module."""
-import os
-from collections import defaultdict
-from dataclasses import dataclass, field
-
-from dotenv import load_dotenv
+from dataclasses import dataclass
 
 from appinsight.application.config.base import AppConfig
-
-# ------------------------------------------------------------------------------------------------ #
-load_dotenv()
+from appinsight.application.config.setup.backup import BackupDBSetupConfig
+from appinsight.application.config.setup.dataset import DatasetDBSetupConfig
+from appinsight.application.config.setup.profile import ProfileDBSetupConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class DBSetupPipelineConfig(AppConfig):
-    """Contains the database configuration
+    """Contains the database configuration for the DBSetupPipeline"""
 
-    The file containing the configuration is stored in the .env file keyed
-    by this class name. The config is read into the config member as
-    a dictionary containing the configurations for the backup, profile,
-    and dataset tables.
-
-    """
-
-    config: defaultdict[dict] = field(default_factory=lambda: defaultdict(dict))
-
-    def __post_init__(self) -> None:
-        # Configuration file names are organized by the classes that use them.
-        config_file_key = self.__class__.__name__.upper()
-        # Obtain the config file
-        filepath = os.getenv(config_file_key)
-        # Set the config for the command.
-        with open(file=filepath) as file:
-            self.config = file.read()
+    profile: ProfileDBSetupConfig
+    backup: BackupDBSetupConfig
+    dataset: DatasetDBSetupConfig
