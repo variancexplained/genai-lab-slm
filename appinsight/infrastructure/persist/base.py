@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 09:57:47 pm                                                   #
-# Modified   : Sunday June 30th 2024 10:01:38 pm                                                   #
+# Modified   : Tuesday July 2nd 2024 05:15:05 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,7 +36,3 @@ class Persistence(ABC):
     @abstractmethod
     def delete(self, *args, **kwargs) -> None:
         """Deletes data from persistence."""
-
-    @abstractmethod
-    def list(self, *args, **kwargs) -> None:
-        """Lists data in persistence."""

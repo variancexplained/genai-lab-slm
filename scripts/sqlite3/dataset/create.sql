@@ -8,8 +8,6 @@ CREATE TABLE IF NOT EXISTS dataset (
     nrows INTEGER,
     ncols INTEGER,    
     creator VARCHAR(32),
-    created BIGINT,    
-    directory VARCHAR(64),    
-    filename VARCHAR(64),
+    created TIMESTAMP,    
     PRIMARY KEY(oid)
 );

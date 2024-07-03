@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 09:55:53 pm                                                   #
-# Modified   : Tuesday July 2nd 2024 04:59:58 am                                                   #
+# Modified   : Tuesday July 2nd 2024 07:37:45 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -58,7 +58,7 @@ class FileSystem(Persistence):
             self._logger.exception(msg)
             raise FileExistsError(msg)
 
-        self._io.write(filepath=filepath, data=data, kwargs=kwargs)
+        self._io.write(filepath=filepath, data=data, **kwargs)
 
     def read(self, directory: str, filename: str = None) -> Any:
         """Reads file from disk

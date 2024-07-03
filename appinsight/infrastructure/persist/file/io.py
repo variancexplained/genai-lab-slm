@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday April 28th 2024 12:15:31 am                                                  #
-# Modified   : Sunday June 30th 2024 09:56:50 pm                                                   #
+# Modified   : Tuesday July 2nd 2024 07:40:01 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -291,8 +291,6 @@ class ParquetIO(IO):  # pragma: no cover
         cls,
         filepath: str,
         data: pd.DataFrame,
-        partition_cols: Union[str, list] = None,
-        row_group_size: int = 1073741824,
         existing_data_behavior: str = "delete_matching",
         **kwargs,
     ) -> None:
@@ -301,32 +299,25 @@ class ParquetIO(IO):  # pragma: no cover
         Args:
             filepath (str): Can be a directory or file path.
             data (pd.DataFrame): Pandas DataFrame
-            partition_cols (Union[str,list]): String or iterable specifying the column(s) by
-                which to partition the dataset. If not None, filepath is interpreted as the root directory for the dataset.
-            row_group_size (int): The size of each parquet row group in bytes. Apache
-                recommends a row group size of 1GB.
             existing_data_behavior (str): Controls how the dataset will handle data that already
                 exists in the destination. The default behaviour is 'delete_matching'.        'overwrite_or_ignore' will ignore any existing data and will overwrite files with the same name as an output file. Other existing files will be ignored. This behavior, in combination with a unique basename_template for each write, will allow for an append workflow. 'error' will raise an error if any data exists in the destination.         'delete_matching' is useful when you are writing a partitioned dataset. The first time each partition directory is encountered the entire directory will be deleted. This allows you to overwrite old partitions completely.
 
         """
         table = pa.Table.from_pandas(data)
-        partition_cols = (
-            partition_cols if isinstance(partition_cols, list) else [partition_cols]
-        )
 
-        if partition_cols is None:
-            pq.write_table(
-                table=table,
-                where=filepath,
-                row_group_size=row_group_size,
-                existing_data_behavior=existing_data_behavior,
-            )
-        else:
+        cls._logger.debug(f"Parquet kwargs: {kwargs}")
+
+        if "partition_cols" in kwargs.keys():
             pq.write_to_dataset(
                 table=table,
                 root_path=filepath,
-                partition_cols=partition_cols,
-                row_group_size=row_group_size,
+                existing_data_behavior=existing_data_behavior,
+                **kwargs,
+            )
+        else:
+            pq.write_table(
+                table=table,
+                where=filepath,
                 existing_data_behavior=existing_data_behavior,
             )
 

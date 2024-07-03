@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday May 25th 2024 03:48:28 am                                                  #
-# Modified   : Monday July 1st 2024 12:28:41 am                                                    #
+# Modified   : Tuesday July 2nd 2024 05:40:30 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -98,6 +98,7 @@ def build_dependencies(env: str):
             "appinsight.infrastructure.persist.database",
             "appinsight.infrastructure.profiling",
         ],
+        modules=["appinsight.infrastructure.persist.repo"],
     )  # Wire the current module
     print(f"Dependencies are initialized for the {env} environment.")
 
@@ -114,6 +115,8 @@ def build_dependencies(env: str):
 
 
 # ------------------------------------------------------------------------------------------------ #
+
+# TODO: Figure out setup vs reset
 
 
 def main():

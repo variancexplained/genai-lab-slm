@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 05:08:52 am                                                    #
-# Modified   : Tuesday July 2nd 2024 12:32:10 pm                                                   #
+# Modified   : Tuesday July 2nd 2024 08:04:38 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,11 +20,14 @@
 import logging
 
 import pandas as pd
+from dependency_injector.wiring import Provide, inject
+from sqlalchemy import delete, insert
 
+from appinsight.container import AppInsightContainer
 from appinsight.domain.dataset import Dataset
 from appinsight.domain.enums import Stage
 from appinsight.domain.repo import Repo
-from appinsight.infrastructure.persist.database.db import SQLiteDB
+from appinsight.infrastructure.persist.database.base import Database
 from appinsight.infrastructure.persist.file.filesystem import FileSystem
 from appinsight.infrastructure.utils.config import DatasetConfig
 
@@ -45,10 +48,11 @@ class DatasetRepo(Repo):
         >>> repo.remove(added_dataset.oid)
     """
 
+    @inject
     def __init__(
         self,
         fs_cls: type[FileSystem] = FileSystem,
-        db_cls: type[SQLiteDB] = SQLiteDB,
+        db: Database = Provide[AppInsightContainer.db.sqlite],
         config_cls: type[DatasetConfig] = DatasetConfig,
     ) -> None:
         """
@@ -61,9 +65,12 @@ class DatasetRepo(Repo):
         """
         super().__init__()
         self._fs = fs_cls()
-        self._db = db_cls()
+        self._db = db
         self._config = config_cls()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def __len__(self) -> int:
+        return len(self.registry)
 
     @property
     def registry(self) -> pd.DataFrame:
@@ -115,6 +122,7 @@ class DatasetRepo(Repo):
         directory, filename = self._get_location(
             stage=dataset["stage"], name=dataset["name"]
         )
+        dataset["created"] = pd.to_datetime(dataset["created"])
         dataset["content"] = self._fs.read(directory=directory, filename=filename)
         return Dataset(**dataset)
 
@@ -130,7 +138,7 @@ class DatasetRepo(Repo):
             >>> repo.remove(1)
         """
         delete = input(
-            "This will remove all metadata and content from the repository. Do you wish to proceed? [yes/no]"
+            "This will remove all metadata and content from the repository. Do you wish to proceed? [yes/no] "
         )
         if delete.lower() == "yes":
             dataset = self._get_metadata(oid)
@@ -167,30 +175,33 @@ class DatasetRepo(Repo):
     ) -> None:
         save_kwargs = self._config.get_save_kwargs()
         self._fs.create(
-            data=content, directory=directory, filename=filename, kwargs=save_kwargs
+            data=content, directory=directory, filename=filename, **save_kwargs
         )
 
     def _persist_metadata(self, dataset: Dataset, directory: str, filename: str) -> int:
         """Persists metadata to the database."""
+
         query = """INSERT INTO dataset (name, description, phase, stage, size, nrows, ncols, creator, created)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
-        data = dataset.to_dict()
-        params = (
-            data["name"],
-            data["description"],
-            data["phase"],
-            data["stage"],
-            data["size"],
-            data["nrows"],
-            data["ncols"],
-            data["creator"],
-            data["created"],
-        )
+        data = dataset.as_dict()
+        params = {
+            "name": data["name"],
+            "description": data["description"],
+            "phase": data["phase"],
+            "stage": data["stage"],
+            "size": data["size"],
+            "nrows": data["nrows"],
+            "ncols": data["ncols"],
+            "creator": data["creator"],
+            "created": data["created"],
+        }
+
+        self._logger.debug(f"\nParams in persist_metadata: {params}")
         return self._db.create(query=query, params=params)
 
     def _get_location(self, stage: str, name: str) -> tuple[str, str]:
         """Returns the directory and filename for the dataset."""
-        directory = Stage[stage]
+        directory = Stage[stage].value
         file_ext = self._config.get_file_ext()
         filename = f"{name}{file_ext}"
         return directory, filename

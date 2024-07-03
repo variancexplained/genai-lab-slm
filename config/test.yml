@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Tuesday July 2nd 2024 02:29:32 am                                                   #
+# Modified   : Tuesday July 2nd 2024 07:27:13 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -64,14 +64,13 @@ dataset:
   format: parquet
   file_ext: ""
   save_kwargs: 
-    partition_by: category
+    partition_cols: ["category"]
+    row_group_size: 10485760  # 10Mb
 # ------------------------------------------------------------------------------------------------ #
 kvs:
   cache:
     dqa: workspace/test/kvs/cache/dqa/dqa
     cachenow: workspace/test/kvs/cache/cachenow/cachenow
-  repo:
-    pipeline: workspace/test/kvs/repo/pipeline/pipeline
   unittest:
     kvs: workspace/test/kvs/unittest/kvs/kvs
     
