@@ -4,39 +4,40 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /chgenv.py                                                                          #
+# Filename   : /appinsight/infrastructure/config/recovery.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday July 1st 2024 11:16:04 pm                                                    #
-# Modified   : Tuesday July 2nd 2024 10:19:55 pm                                                   #
+# Created    : Sunday June 30th 2024 05:08:20 am                                                   #
+# Modified   : Tuesday July 2nd 2024 10:38:06 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-# Script for changing the current environment in the .env file.
+from __future__ import annotations
 
-import sys
-
+from appinsight.infrastructure.config.base import Config
 from appinsight.infrastructure.config.env import EnvManager
+from appinsight.infrastructure.persist.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python -m chgenv 'value'")
-        return
+#                                  DATASET CONFIG                                                  #
+# ------------------------------------------------------------------------------------------------ #
+class RecoveryConfig(Config):
+    """Encapsulates read-only access to the Dataset configuration"""
 
-    env_value = sys.argv[1]
-    env_manager = EnvManager()  # Initialize your EnvManager class
+    def __init__(
+        self, env_mgr_cls: EnvManager = EnvManager, io_cls: IOService = IOService
+    ) -> None:
+        super().__init__(env_mgr_cls, io_cls)
 
-    try:
-        env_manager.change_environment(new_value=env_value)
-    except Exception as e:
-        print(f"Error: {str(e)}")
+    def get_db_recovery_folder(self) -> str:
+        """Returns folder for database backup/recovery."""
+        return self._config["recovery"]["db"]
 
-
-if __name__ == "__main__":
-    main()
+    def get_file_recovery_folder(self) -> str:
+        """Returns folder for file backup/recovery."""
+        return self._config["recovery"]["file"]

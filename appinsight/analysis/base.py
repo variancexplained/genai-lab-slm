@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday June 4th 2024 11:21:31 pm                                                   #
-# Modified   : Sunday June 30th 2024 04:18:10 am                                                   #
+# Modified   : Tuesday July 2nd 2024 10:19:54 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ import logging
 import shelve
 from abc import ABC
 
-from appinsight.infrastructure.utils.env import EnvManager
+from appinsight.infrastructure.config.env import EnvManager
 
 
 # ------------------------------------------------------------------------------------------------ #

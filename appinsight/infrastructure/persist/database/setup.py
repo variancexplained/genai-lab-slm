@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 03:37:01 pm                                                   #
-# Modified   : Monday July 1st 2024 12:31:03 am                                                    #
+# Modified   : Tuesday July 2nd 2024 10:21:12 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 from dependency_injector.wiring import Provide, inject
 
 from appinsight.application.base import Task
-from appinsight.container import AppInsightContainer
+from appinsight.infrastructure.dependency.container import AppInsightContainer
 from appinsight.infrastructure.persist.database.dba import SQLiteDBA
 
 

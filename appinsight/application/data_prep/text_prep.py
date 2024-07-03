@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 19th 2024 09:08:01 pm                                                    #
-# Modified   : Monday July 1st 2024 12:31:03 am                                                    #
+# Modified   : Tuesday July 2nd 2024 10:17:59 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,8 +41,8 @@ from sparknlp.base import DocumentAssembler, Finisher
 from appinsight.application.base import Pipeline as Pipe
 from appinsight.application.base import PipelineBuilder, StageConfig, Task
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
+from appinsight.infrastructure.instrumentation.decorator import task_profiler
 from appinsight.infrastructure.logging import log_exceptions
-from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.convert import ToSpark
 from appinsight.utils.io import FileReader, PySparkReader, PySparkWriter

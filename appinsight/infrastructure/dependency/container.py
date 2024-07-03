@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday March 27th 2023 07:02:56 pm                                                  #
-# Modified   : Monday July 1st 2024 12:28:05 am                                                    #
+# Modified   : Tuesday July 2nd 2024 10:17:52 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -27,9 +27,9 @@ from dependency_injector import containers, providers
 from dotenv import load_dotenv
 
 from appinsight.application.data_prep.setup import CreateDatasetTask
+from appinsight.infrastructure.instrumentation.dal import ProfilingDAL
 from appinsight.infrastructure.persist.database.db import SQLiteDB
 from appinsight.infrastructure.persist.database.dba import SQLiteDBA
-from appinsight.infrastructure.profiling.dal import ProfilingDAL
 
 # ------------------------------------------------------------------------------------------------ #
 

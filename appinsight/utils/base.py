@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:30:18 am                                                 #
-# Modified   : Sunday June 30th 2024 04:18:06 am                                                   #
+# Modified   : Tuesday July 2nd 2024 10:19:48 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from pyspark.sql import DataFrame
 
-from appinsight.infrastructure.utils.env import EnvManager
+from appinsight.infrastructure.config.env import EnvManager
 from appinsight.utils.repo import ReviewRepo
 
 

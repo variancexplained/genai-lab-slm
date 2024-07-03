@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 05:08:52 am                                                    #
-# Modified   : Tuesday July 2nd 2024 08:04:38 pm                                                   #
+# Modified   : Tuesday July 2nd 2024 10:25:22 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,15 +21,14 @@ import logging
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
-from sqlalchemy import delete, insert
 
-from appinsight.container import AppInsightContainer
 from appinsight.domain.dataset import Dataset
 from appinsight.domain.enums import Stage
 from appinsight.domain.repo import Repo
+from appinsight.infrastructure.config.dataset import DatasetConfig
+from appinsight.infrastructure.dependency.container import AppInsightContainer
 from appinsight.infrastructure.persist.database.base import Database
 from appinsight.infrastructure.persist.file.filesystem import FileSystem
-from appinsight.infrastructure.utils.config import DatasetConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -137,17 +136,20 @@ class DatasetRepo(Repo):
             >>> repo = DatasetRepo()
             >>> repo.remove(1)
         """
-        delete = input(
+        go4it = input(
             "This will remove all metadata and content from the repository. Do you wish to proceed? [yes/no] "
         )
-        if delete.lower() == "yes":
+        if go4it.lower() == "yes":
+            # Obtain the metadata from which we will ascertain the location of the files.
             dataset = self._get_metadata(oid)
             directory, filename = self._get_location(
                 stage=dataset["stage"], name=dataset["name"]
             )
+            # Remove the files from the repository
             self._fs.delete(directory=directory, filename=filename)
-            query = "DELETE FROM dataset WHERE oid = ?;"
-            params = (oid,)
+            # Remove the metadata from the database.
+            query = "DELETE FROM dataset WHERE oid = :oid;"
+            params = {"oid": oid}
             self._db.command(query=query, params=params)
             print(f"Dataset {oid} has been removed from the repository")
         else:
@@ -155,8 +157,8 @@ class DatasetRepo(Repo):
 
     def _get_metadata(self, oid: int) -> dict:
         """Returns metadata from the database as a dictionary."""
-        query = """SELECT * FROM dataset WHERE oid = ?;"""
-        params = (oid,)
+        query = """SELECT * FROM dataset WHERE oid = :oid;"""
+        params = {"oid": oid}
         df = self._db.query(query=query, params=params)
         try:
             return df.iloc[0].to_dict()
@@ -180,10 +182,11 @@ class DatasetRepo(Repo):
 
     def _persist_metadata(self, dataset: Dataset, directory: str, filename: str) -> int:
         """Persists metadata to the database."""
-
-        query = """INSERT INTO dataset (name, description, phase, stage, size, nrows, ncols, creator, created)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+        # Extract dataset into a dictionary
         data = dataset.as_dict()
+        # We are using raw SQL because that's how we roll.
+        query = """INSERT INTO dataset (name, description, phase, stage, size, nrows, ncols, creator, created) VALUES (:name, :description, :phase, :stage, :size, :nrows, :ncols, :creator, :created);"""
+
         params = {
             "name": data["name"],
             "description": data["description"],
@@ -195,8 +198,6 @@ class DatasetRepo(Repo):
             "creator": data["creator"],
             "created": data["created"],
         }
-
-        self._logger.debug(f"\nParams in persist_metadata: {params}")
         return self._db.create(query=query, params=params)
 
     def _get_location(self, stage: str, name: str) -> tuple[str, str]:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday July 2nd 2024 06:22:36 pm                                                   #
+# Modified   : Tuesday July 2nd 2024 10:21:10 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ import sys
 import pytest
 from dotenv import load_dotenv
 
-from appinsight.container import AppInsightContainer
+from appinsight.infrastructure.dependency.container import AppInsightContainer
 from appinsight.infrastructure.persist.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #

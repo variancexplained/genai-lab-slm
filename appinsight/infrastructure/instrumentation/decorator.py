@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/infrastructure/profiling/decorator.py                                   #
+# Filename   : /appinsight/infrastructure/instrumentation/decorator.py                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 09:44:04 pm                                                    #
-# Modified   : Friday May 31st 2024 08:37:47 pm                                                    #
+# Modified   : Tuesday July 2nd 2024 10:17:55 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,8 @@ import logging
 from functools import wraps
 from typing import Callable
 
-from appinsight.infrastructure.profiling.dal import ProfilingDAL
-from appinsight.infrastructure.profiling.profiler import TaskProfiler
+from appinsight.infrastructure.instrumentation.dal import ProfilingDAL
+from appinsight.infrastructure.instrumentation.profiler import TaskProfiler
 
 # ------------------------------------------------------------------------------------------------ #
 logger = logging.getLogger(__name__)

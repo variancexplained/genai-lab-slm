@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Monday July 1st 2024 12:31:03 am                                                    #
+# Modified   : Tuesday July 2nd 2024 10:18:06 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,9 +26,9 @@ from dotenv import load_dotenv
 from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep.io import ReadTask, WriteTask
+from appinsight.infrastructure.instrumentation.decorator import task_profiler
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.persist.file.io import IOService
-from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.print import Printer

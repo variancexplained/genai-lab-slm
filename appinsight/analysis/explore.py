@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 8th 2024 04:22:19 am                                                  #
-# Modified   : Sunday June 30th 2024 05:07:47 am                                                   #
+# Modified   : Tuesday July 2nd 2024 10:19:53 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,8 @@ from typing import Union
 import pandas as pd
 from studioai.analysis import Explorer as EDA
 
+from appinsight.infrastructure.config.env import EnvManager
 from appinsight.infrastructure.utils.cache import cachenow
-from appinsight.infrastructure.utils.env import EnvManager
 
 
 # ------------------------------------------------------------------------------------------------ #

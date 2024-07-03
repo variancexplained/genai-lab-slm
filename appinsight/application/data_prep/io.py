@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Monday July 1st 2024 12:31:03 am                                                    #
+# Modified   : Tuesday July 2nd 2024 10:18:04 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,8 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from appinsight.application.base import Task
+from appinsight.infrastructure.instrumentation.decorator import task_profiler
 from appinsight.infrastructure.logging import log_exceptions
-from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import ReviewRepo

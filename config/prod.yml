@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Tuesday July 2nd 2024 07:27:50 pm                                                   #
+# Modified   : Tuesday July 2nd 2024 11:51:34 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -51,8 +51,8 @@ logging:
 # ------------------------------------------------------------------------------------------------ #
 database:
   sqlite:
-    url: sqlite:///data/prod/09_db/sqlite.db
-    filepath: data/prod/09_db/sqlite.db
+    url: sqlite:///workspace/prod/db/sqlite.db
+    filepath: workspace/prod/db/sqlite.db
     pool_size: 5 # Default for non-concurrent applications
     max_overflow: 10 # Allow temporary connections beyond pool_size if needed
 # ------------------------------------------------------------------------------------------------ #
@@ -70,3 +70,12 @@ kvs:
   cache:
     dqa: workspace/prod/kvs/cache/dqa/dqa
     cachenow: workspace/prod/kvs/cache/cachenow/cachenow
+# ------------------------------------------------------------------------------------------------ #
+recovery:
+  db: 
+    backup: workspace/prod/recovery/db
+    restore: workspace/prod/db/sqlite.db
+  file: 
+    location: data/prod
+    backup: workspace/prod/recovery/data    
+    restore: data/prod

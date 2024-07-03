@@ -4,39 +4,36 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /chgenv.py                                                                          #
+# Filename   : /appinsight/infrastructure/recovery/base.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday July 1st 2024 11:16:04 pm                                                    #
-# Modified   : Tuesday July 2nd 2024 10:19:55 pm                                                   #
+# Created    : Tuesday July 2nd 2024 10:23:48 pm                                                   #
+# Modified   : Tuesday July 2nd 2024 10:50:27 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-# Script for changing the current environment in the .env file.
+from abc import ABC, abstractmethod
 
-import sys
-
-from appinsight.infrastructure.config.env import EnvManager
+from appinsight.infrastructure.config.recovery import RecoveryConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python -m chgenv 'value'")
-        return
+class Recovery(ABC):
+    def __init__(self, config_cls: type[RecoveryConfig] = RecoveryConfig) -> None:
+        self._config = config_cls()
 
-    env_value = sys.argv[1]
-    env_manager = EnvManager()  # Initialize your EnvManager class
+    @property
+    def config(self) -> str:
+        return self._config["recovery"]
 
-    try:
-        env_manager.change_environment(new_value=env_value)
-    except Exception as e:
-        print(f"Error: {str(e)}")
+    @abstractmethod
+    def backup(self, *args, **kwargs) -> None:
+        """Executes a backup of an asset."""
 
-
-if __name__ == "__main__":
-    main()
+    @abstractmethod
+    def restore(self, *args, **kwargs) -> None:
+        """Executes a restore of an asset."""

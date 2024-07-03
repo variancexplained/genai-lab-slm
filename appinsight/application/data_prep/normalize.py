@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Sunday June 30th 2024 03:46:38 am                                                   #
+# Modified   : Tuesday July 2nd 2024 10:18:01 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,8 @@ from pandarallel import pandarallel
 
 from appinsight.application.data_prep.io import ReadTask, WriteTask
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig, Task
+from appinsight.infrastructure.instrumentation.decorator import task_profiler
 from appinsight.infrastructure.logging import log_exceptions
-from appinsight.infrastructure.profiling.decorator import task_profiler
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.cast import CastPandas
 from appinsight.utils.io import FileReader, FileWriter

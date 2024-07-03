@@ -4,39 +4,54 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /chgenv.py                                                                          #
+# Filename   : /appinsight/infrastructure/config/base.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday July 1st 2024 11:16:04 pm                                                    #
-# Modified   : Tuesday July 2nd 2024 10:19:55 pm                                                   #
+# Created    : Sunday June 30th 2024 05:08:20 am                                                   #
+# Modified   : Tuesday July 2nd 2024 10:25:39 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-# Script for changing the current environment in the .env file.
+from __future__ import annotations
 
-import sys
+import os
+from abc import ABC
+
+from dotenv import load_dotenv
 
 from appinsight.infrastructure.config.env import EnvManager
+from appinsight.infrastructure.persist.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
-def main():
-    if len(sys.argv) != 2:
-        print("Usage: python -m chgenv 'value'")
-        return
+#                                       CONFIG                                                     #
+# ------------------------------------------------------------------------------------------------ #
+class Config(ABC):
+    """Abstract base class for configurations."""
 
-    env_value = sys.argv[1]
-    env_manager = EnvManager()  # Initialize your EnvManager class
+    def __init__(
+        self,
+        env_mgr_cls: type[EnvManager] = EnvManager,
+        io_cls: type[IOService] = IOService,
+    ) -> None:
+        """
+        Initializes the IO class with an environment manager.
 
-    try:
-        env_manager.change_environment(new_value=env_value)
-    except Exception as e:
-        print(f"Error: {str(e)}")
+        Args:
+            env_mgr_cls (type[EnvManager], optional): Class for managing environments. Defaults to EnvManager.
+        """
+        load_dotenv()
+        self._io = io_cls()
+        self._env_mgr = env_mgr_cls()
+        self._config = self.read()
 
-
-if __name__ == "__main__":
-    main()
+    def read(self) -> dict:
+        """Reads the underlying configuration file."""
+        env = self._env_mgr.get_environment()
+        basedir = os.getenv(key="CONFIG_DIRECTORY")
+        filepath = os.path.join(basedir, f"{env}.yml")
+        return self._io.read(filepath=filepath)

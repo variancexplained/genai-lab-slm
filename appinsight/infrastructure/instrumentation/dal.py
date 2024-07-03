@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/infrastructure/profiling/dal.py                                         #
+# Filename   : /appinsight/infrastructure/instrumentation/dal.py                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 26th 2024 04:28:43 pm                                                    #
-# Modified   : Monday July 1st 2024 12:29:34 am                                                    #
+# Modified   : Tuesday July 2nd 2024 10:19:46 pm                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,11 +24,14 @@ from typing import Optional
 import pandas as pd
 from dotenv import load_dotenv
 
+from appinsight.infrastructure.config.env import EnvManager
+from appinsight.infrastructure.instrumentation.profile import (
+    TaskProfile,
+    TaskProfileDTO,
+)
 from appinsight.infrastructure.persist.database.base import DAL
 from appinsight.infrastructure.persist.database.db import SQLiteDB
 from appinsight.infrastructure.persist.file.io import IOService
-from appinsight.infrastructure.profiling.profile import TaskProfile, TaskProfileDTO
-from appinsight.infrastructure.utils.env import EnvManager
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
