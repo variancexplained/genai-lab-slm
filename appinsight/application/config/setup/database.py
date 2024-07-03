@@ -4,43 +4,50 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/infrastructure/config/recovery.py                                       #
+# Filename   : /appinsight/application/config/setup/database.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Sunday June 30th 2024 05:08:20 am                                                   #
-# Modified   : Wednesday July 3rd 2024 06:56:23 am                                                 #
+# Created    : Wednesday July 3rd 2024 09:30:00 am                                                 #
+# Modified   : Wednesday July 3rd 2024 10:16:53 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from __future__ import annotations
+"""Application Layer - Setup -  Database Configuration Module."""
+import os
+from collections import defaultdict
+from dataclasses import dataclass, field
 
-from appinsight.infrastructure.config.base import Config
-from appinsight.infrastructure.config.env import EnvManager
-from appinsight.infrastructure.persist.file.io import IOService
+from dotenv import load_dotenv
+
+from appinsight.application.config.base import AppConfig
+
+# ------------------------------------------------------------------------------------------------ #
+load_dotenv()
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                  DATASET CONFIG                                                  #
-# ------------------------------------------------------------------------------------------------ #
-class FileRecoveryConfig(Config):
-    """Encapsulates read-only access to the Dataset configuration"""
+@dataclass
+class AppDatabaseSetupConfig(AppConfig):
+    """Contains the database configuration
 
-    def __init__(
-        self, env_mgr_cls: EnvManager = EnvManager, io_cls: IOService = IOService
-    ) -> None:
-        super().__init__(env_mgr_cls, io_cls)
+    The file containing the configuration is stored in the .env file keyed
+    by this class name. The config is read into the config member as
+    a dictionary containing the configurations for the backup, profile,
+    and dataset tables.
 
-    def get_file_location(self) -> str:
-        """Returns the default file location for"""
+    """
 
-    def get_db_recovery_folder(self) -> str:
-        """Returns folder for database backup/recovery."""
-        return self._config["recovery"]["db"]
+    config: defaultdict[dict] = field(default_factory=lambda: defaultdict(dict))
 
-    def get_file_recovery_folder(self) -> str:
-        """Returns folder for file backup/recovery."""
-        return self._config["recovery"]["file"]
+    def __post_init__(self) -> None:
+        # Configuration file names are organized by the classes that use them.
+        config_file_key = self.__class__.__name__.upper()
+        # Obtain the config file
+        filepath = os.getenv(config_file_key)
+        # Set the query for the command.
+        with open(file=filepath) as file:
+            self.config = file.read()

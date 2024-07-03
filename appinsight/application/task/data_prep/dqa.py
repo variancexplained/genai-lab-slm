@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Monday July 1st 2024 12:31:04 am                                                    #
+# Modified   : Wednesday July 3rd 2024 07:23:00 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,7 +39,7 @@ from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep import log_exceptions, task_profiler
 from appinsight.data_prep.io import ReadTask, WriteTask
-from appinsight.infrastructure.utils.cache import Cache, CacheIterator
+from appinsight.infrastructure.persist.object.cache import Cache, CacheIterator
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.data import split_dataframe
 from appinsight.utils.io import FileReader, FileWriter

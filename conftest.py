@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday July 2nd 2024 10:21:10 pm                                                   #
+# Modified   : Wednesday July 3rd 2024 04:08:19 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ def container():
     container.wire(
         packages=[
             "appinsight.infrastructure.persist.database",
-            "appinsight.infrastructure.profiling",
+            "appinsight.infrastructure.instrumentation",
         ],
         modules=["appinsight.infrastructure.persist.repo"],
     )

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 09:44:04 pm                                                    #
-# Modified   : Tuesday July 2nd 2024 10:17:55 pm                                                   #
+# Modified   : Wednesday July 3rd 2024 07:23:07 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,8 @@ import logging
 from functools import wraps
 from typing import Callable
 
-from appinsight.infrastructure.instrumentation.dal import ProfilingDAL
 from appinsight.infrastructure.instrumentation.profiler import TaskProfiler
+from appinsight.infrastructure.instrumentation.repo import ProfilingDAL
 
 # ------------------------------------------------------------------------------------------------ #
 logger = logging.getLogger(__name__)

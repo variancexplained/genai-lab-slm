@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS profile (
+oid INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+task TEXT NOT NULL,
+stage TEXT NOT NULL,
+phase TEXT NOT NULL,
+runtime FLOAT NOT NULL,
+cpu_usage_pct FLOAT NOT NULL,
+memory_usage FLOAT NOT NULL,
+disk_read_bytes INTEGER NOT NULL,
+disk_write_bytes INTEGER NOT NULL,
+disk_total_bytes INTEGER NOT NULL,
+input_records INTEGER NOT NULL,
+output_records INTEGER NOT NULL,
+input_records_per_second FLOAT NOT NULL,
+output_records_per_second FLOAT NOT NULL,
+timestamp TIMESTAMP NOT NULL);

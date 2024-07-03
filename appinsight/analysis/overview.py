@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 09:31:08 pm                                                  #
-# Modified   : Monday July 1st 2024 12:29:35 am                                                    #
+# Modified   : Wednesday July 3rd 2024 07:23:02 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from matplotlib.lines import Line2D
 
 from appinsight.analysis.base import Analysis
 from appinsight.infrastructure.persist.file.io import IOService
-from appinsight.infrastructure.utils.cache import cachenow
+from appinsight.infrastructure.persist.object.cache import cachenow
 from appinsight.utils.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #

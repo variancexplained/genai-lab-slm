@@ -4,19 +4,19 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.12                                                                             #
-# Filename   : /config/test.yml                                                                    #
+# Filename   : /config/infrastructure/prod.yml                                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Tuesday July 2nd 2024 11:51:26 pm                                                   #
+# Modified   : Wednesday July 3rd 2024 09:51:24 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
 # ================================================================================================ #
-env: test
+env: prod
 logging:
   disable_existing_loggers: false
   formatters:
@@ -36,7 +36,7 @@ logging:
     file:
       backupCount: 0
       class: logging.handlers.TimedRotatingFileHandler
-      filename: logs/test.log
+      filename: logs/prod.log
       formatter: file
       interval: 1
       level: DEBUG
@@ -45,40 +45,38 @@ logging:
     handlers:
     - console
     - file
-    level: DEBUG
+    level: INFO
   version: 1
 
 # ------------------------------------------------------------------------------------------------ #
 database:
   sqlite:
-    url: sqlite:///workspace/test/db/sqlite.db
-    filepath: workspace/test/db/sqlite.db
+    url: sqlite:///workspace/prod/db/sqlite.db
+    filepath: workspace/prod/db/sqlite.db
     pool_size: 5 # Default for non-concurrent applications
     max_overflow: 10 # Allow temporary connections beyond pool_size if needed
-
 # ------------------------------------------------------------------------------------------------ #
 dataset:
   basedir: data
-  frac: 0.01 # What proportion of the overall dataset to sample for this environment
+  frac: 1
   random_state: 22
   format: parquet
   file_ext: ""
   save_kwargs: 
     partition_cols: ["category"]
-    row_group_size: 10485760  # 10Mb
+    row_group_size: 1073741824  # 1Gb    
+    existing_data_behavior: delete_matching
 # ------------------------------------------------------------------------------------------------ #
 kvs:
   cache:
-    dqa: workspace/test/kvs/cache/dqa/dqa
-    cachenow: workspace/test/kvs/cache/cachenow/cachenow
-  unittest:
-    kvs: workspace/test/kvs/unittest/kvs/kvs
+    dqa: workspace/prod/kvs/cache/dqa/dqa
+    cachenow: workspace/prod/kvs/cache/cachenow/cachenow
 # ------------------------------------------------------------------------------------------------ #
 recovery:
   db: 
-    backup: workspace/test/recovery/db
-    restore: workspace/test/db/sqlite.db
+    backup: workspace/prod/recovery/db
+    restore: workspace/prod/db/sqlite.db
   file: 
-    location: data/test
-    backup: workspace/test/recovery/data    
-    restore: data/test
+    location: data/prod
+    backup: workspace/prod/recovery/data    
+    restore: data/prod

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 2nd 2024 08:36:42 pm                                                    #
-# Modified   : Tuesday July 2nd 2024 10:18:09 pm                                                   #
+# Modified   : Wednesday July 3rd 2024 07:23:06 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,7 +33,7 @@ from appinsight.analysis.base import Analysis
 from appinsight.infrastructure.instrumentation.decorator import task_profiler
 from appinsight.infrastructure.logging import log_exceptions
 from appinsight.infrastructure.persist.file.io import IOService
-from appinsight.infrastructure.utils.cache import cachenow
+from appinsight.infrastructure.persist.object.cache import cachenow
 from appinsight.utils.format import format_numerics
 from appinsight.utils.repo import ReviewRepo
 

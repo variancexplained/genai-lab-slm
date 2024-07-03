@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday July 3rd 2024 12:29:21 am                                                 #
-# Modified   : Wednesday July 3rd 2024 01:21:20 am                                                 #
+# Modified   : Wednesday July 3rd 2024 06:56:21 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -216,10 +216,10 @@ class TestFileBackup:  # pragma: no cover
 
 
 @pytest.mark.file
-@pytest.mark.recovery
-class TestFileRecovery:  # pragma: no cover
+@pytest.mark.restore
+class TestFileRestore:  # pragma: no cover
     # ============================================================================================ #
-    def test_something(self, caplog):
+    def test_RESTORE(self, caplog):
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
