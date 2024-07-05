@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/normalize.py                                      #
+# Filename   : /appinsight/application/task/data_prep/normalize.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday July 2nd 2024 10:18:01 pm                                                   #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,8 @@ from pandarallel import pandarallel
 
 from appinsight.application.data_prep.io import ReadTask, WriteTask
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig, Task
-from appinsight.infrastructure.instrumentation.decorator import task_profiler
-from appinsight.infrastructure.logging import log_exceptions
+from appinsight.shared.instrumentation.decorator import task_profiler
+from appinsight.shared.logging.logging import log_exceptions
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.cast import CastPandas
 from appinsight.utils.io import FileReader, FileWriter
@@ -176,7 +176,7 @@ class NormalizeDataTask(Task):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """Preprocess text data by ensuring string column, removing newlines, and verifying encoding."""
 
         data = self._remove_newlines(data=data)

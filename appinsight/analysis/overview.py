@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 09:31:08 pm                                                  #
-# Modified   : Wednesday July 3rd 2024 07:23:02 am                                                 #
+# Modified   : Thursday July 4th 2024 07:39:12 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,8 @@ import seaborn as sns
 from matplotlib.lines import Line2D
 
 from appinsight.analysis.base import Analysis
-from appinsight.infrastructure.persist.file.io import IOService
-from appinsight.infrastructure.persist.object.cache import cachenow
+from appinsight.shared.persist.file.io import IOService
+from appinsight.shared.persist.object.cache import cachenow
 from appinsight.utils.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #

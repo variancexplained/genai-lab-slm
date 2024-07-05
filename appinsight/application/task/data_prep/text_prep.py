@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/text_prep.py                                      #
+# Filename   : /appinsight/application/task/data_prep/text_prep.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday May 19th 2024 09:08:01 pm                                                    #
-# Modified   : Tuesday July 2nd 2024 10:17:59 pm                                                   #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,8 +41,8 @@ from sparknlp.base import DocumentAssembler, Finisher
 from appinsight.application.base import Pipeline as Pipe
 from appinsight.application.base import PipelineBuilder, StageConfig, Task
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
-from appinsight.infrastructure.instrumentation.decorator import task_profiler
-from appinsight.infrastructure.logging import log_exceptions
+from appinsight.shared.instrumentation.decorator import task_profiler
+from appinsight.shared.logging.logging import log_exceptions
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.convert import ToSpark
 from appinsight.utils.io import FileReader, PySparkReader, PySparkWriter
@@ -355,7 +355,7 @@ class TextPipelineBuilderTask(Task):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: DataFrame) -> DataFrame:
+    def run_task(self, data: DataFrame) -> DataFrame:
         """
         Executes the text preprocessing pipeline.
 

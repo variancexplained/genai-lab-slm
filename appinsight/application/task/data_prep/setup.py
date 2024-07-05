@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/setup.py                                          #
+# Filename   : /appinsight/application/task/data_prep/setup.py                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 03:17:23 pm                                                   #
-# Modified   : Monday July 1st 2024 12:30:18 am                                                    #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -52,7 +52,7 @@ class CreateDatasetTask(Task):
         self._test_sample = test_sample
         self._random_state = random_state
 
-    def execute_task(self, data: pd.DataFrame) -> None:
+    def run_task(self, data: pd.DataFrame) -> None:
         """Create datasets for different environments.
 
         This method creates datasets for production, development, and testing environments

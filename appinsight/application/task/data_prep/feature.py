@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/feature.py                                        #
+# Filename   : /appinsight/application/task/data_prep/feature.py                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Monday July 1st 2024 12:31:04 am                                                    #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -173,7 +173,7 @@ class ParseDatesTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, adding parsed elements of the date to the DataFrame
 
         Args:
@@ -217,7 +217,7 @@ class BasicTextFeaturesTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         stop_words = set(stopwords.words("english"))
 
         data["text_sentence_count"] = data["content"].parallel_apply(
@@ -262,7 +262,7 @@ class LexicalFeaturesTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         data["lexical_unique_word_count"] = data["content"].parallel_apply(
             lambda x: len(set(word_tokenize(x)))
         )
@@ -303,7 +303,7 @@ class ReadabilityMetricsTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         data["readability_flesch_reading_ease"] = data["content"].parallel_apply(
             lambda x: textstat.flesch_reading_ease(x)
         )
@@ -331,7 +331,7 @@ class DropFeaturesTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, dropping designated features from the dataset.
 
         Args:
@@ -356,7 +356,7 @@ class CastDatatypesTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, dropping designated features from the dataset.
 
         Args:

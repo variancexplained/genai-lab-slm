@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/dqa.py                                            #
+# Filename   : /appinsight/application/task/data_prep/dqa.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Wednesday July 3rd 2024 07:23:00 am                                                 #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,7 +39,7 @@ from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep import log_exceptions, task_profiler
 from appinsight.data_prep.io import ReadTask, WriteTask
-from appinsight.infrastructure.persist.object.cache import Cache, CacheIterator
+from appinsight.shared.persist.object.cache import Cache, CacheIterator
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.data import split_dataframe
 from appinsight.utils.io import FileReader, FileWriter
@@ -266,7 +266,7 @@ class DQAInitTask(Task):
         super().__init__()
         self._sort_by = sort_by
 
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Performs the task
 
         Args:
@@ -296,7 +296,7 @@ class DQAFinalizeTask(Task):
         self._cache_name = cache_name
         self._cache_iter_cls = cache_iter_cls
 
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Performs the task
 
         Args:
@@ -341,8 +341,8 @@ class DataQualityAssessmentTask(Task):
         """Returns the new column a data quality assessment subtask adds to the dataset."""
         return self._new_column_name
 
-    def execute(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Executes the underlying subtask's execute_task method if result not in cache.
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Executes the underlying subtask's run_task method if result not in cache.
 
         Args:
             data (pd.DataFrame): Data to be assessed.
@@ -350,7 +350,7 @@ class DataQualityAssessmentTask(Task):
         self.start_task()
         # Execute the underlying task if the result does not exist in the cache.
         if not self._cache.exists(key=self.new_column_name):
-            result = self.execute_task(data=data)
+            result = self.run_task(data=data)
             self._cache.add_item(key=self.new_column_name, value=result)
 
         else:
@@ -391,7 +391,7 @@ class DetectDuplicateRowTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Returns a binary series indicating the rows that contain duplicate values.
 
@@ -425,7 +425,7 @@ class DetectNullValuesTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Mark incomplete rows in the DataFrame.
 
@@ -484,7 +484,7 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task to detect non-English text in the specified column and add a new column with the results.
 
         Args:
@@ -533,7 +533,7 @@ class DetectEmojiTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """
         Executes the task to detect emojis in the specified column and add a new column with the results.
 
@@ -589,7 +589,7 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """
         Executes the task to detect emojis in the specified column and add a new column with the results.
 
@@ -637,7 +637,7 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """
         Executes the task to detect invalid dates and to add a new column with the results.
 
@@ -675,7 +675,7 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """
         Executes the task to detect invalid ratings and to add a new column with the results.
 
@@ -748,7 +748,7 @@ class DetectProfanityTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """
         Executes the task to detect profanity in the specified column and add a new column with the results.
 
@@ -794,7 +794,7 @@ class DetectEmailTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """Detects special patterns (emails, URLs, phone numbers) in the specified text column
         and adds new columns indicating the presence of each pattern.
 
@@ -846,7 +846,7 @@ class DetectURLTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
         and adds new columns indicating the presence of the pattern.
 
@@ -898,7 +898,7 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
         and adds new columns indicating the presence of the pattern.
 
@@ -945,7 +945,7 @@ class DetectOutliersTask(DataQualityAssessmentTask):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame):
+    def run_task(self, data: pd.DataFrame):
         """Detects outliers in three columns
 
         Args:

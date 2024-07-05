@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday June 1st 2024 07:16:33 pm                                                  #
-# Modified   : Sunday June 30th 2024 03:45:08 am                                                   #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict
 
-from appinsight.utils.datetime import convert_seconds_to_hms
+from appinsight.shared.utils.datetime import convert_seconds_to_hms
 
 # ------------------------------------------------------------------------------------------------ #
 #                                       STAGE CONFIG                                               #
@@ -84,15 +84,15 @@ class Task(ABC):
         }
         print(f"Task {self.name} completed successfully. Runtime: {self._runtime}")
 
-    def execute(self, *args: Any, **kwargs: Any) -> Any:
+    def run(self, *args: Any, **kwargs: Any) -> Any:
         """Wraps the execute tasks with metrics capture and calculations"""
         self.start_task()
-        data = self.execute_task(*args, **kwargs)
+        data = self.run_task(*args, **kwargs)
         self.stop_task()
         return data
 
     @abstractmethod
-    def execute_task(self, *args: Any, **kwargs: Any) -> Any:
+    def run_task(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the task.
 
         This method defines the core functionality of the task. Subclasses

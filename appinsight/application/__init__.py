@@ -11,10 +11,10 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 10:08:45 am                                                  #
-# Modified   : Tuesday July 2nd 2024 10:18:07 pm                                                   #
+# Modified   : Thursday July 4th 2024 07:39:10 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from appinsight.infrastructure.instrumentation.decorator import task_profiler
-from appinsight.infrastructure.logging import log_exceptions
+from appinsight.shared.instrumentation.decorator import task_profiler
+from appinsight.shared.logging.logging import log_exceptions

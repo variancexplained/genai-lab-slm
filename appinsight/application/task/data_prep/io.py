@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/io.py                                             #
+# Filename   : /appinsight/application/task/data_prep/io.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Tuesday July 2nd 2024 10:18:04 pm                                                   #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,8 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from appinsight.application.base import Task
-from appinsight.infrastructure.instrumentation.decorator import task_profiler
-from appinsight.infrastructure.logging import log_exceptions
+from appinsight.shared.instrumentation.decorator import task_profiler
+from appinsight.shared.logging.logging import log_exceptions
 from appinsight.utils.base import Converter, Reader, Writer
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.repo import ReviewRepo
@@ -58,7 +58,7 @@ class ReadTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, *args, **kwargs) -> pd.DataFrame:
+    def run_task(self, *args, **kwargs) -> pd.DataFrame:
         """Executes the load operation for the pandas DataFrame"""
 
         self._logger.debug("Executing ReadTask")
@@ -100,7 +100,7 @@ class WriteTask(Task):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: DataFrame) -> None:
+    def run_task(self, data: DataFrame) -> None:
         """Saves the dataframe to file.
 
         Args:
@@ -145,7 +145,7 @@ class ConvertTask(Task):
 
     @task_profiler()
     @log_exceptions()
-    def execute_task(self, data: pd.DataFrame) -> DataFrame:
+    def run_task(self, data: pd.DataFrame) -> DataFrame:
         """Converts a Pandas DataFrame to a Spark DataFrame
 
         Args:

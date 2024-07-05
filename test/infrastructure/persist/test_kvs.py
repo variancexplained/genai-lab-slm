@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /test/test_infrastructure/test_persist/test_kvs.py                                  #
+# Filename   : /test/infrastructure/persist/test_kvs.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 11:11:28 pm                                                    #
-# Modified   : Tuesday July 2nd 2024 12:06:34 am                                                   #
+# Modified   : Thursday July 4th 2024 07:38:54 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 
 import pytest
 
-from appinsight.infrastructure.persist.object.kvs import KVS
+from appinsight.shared.persist.object.kvs import KVS
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

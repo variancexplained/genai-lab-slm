@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/clean.py                                          #
+# Filename   : /appinsight/application/task/data_prep/clean.py                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Tuesday July 2nd 2024 10:18:06 pm                                                   #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,9 +26,9 @@ from dotenv import load_dotenv
 from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep.io import ReadTask, WriteTask
-from appinsight.infrastructure.instrumentation.decorator import task_profiler
-from appinsight.infrastructure.logging import log_exceptions
-from appinsight.infrastructure.persist.file.io import IOService
+from appinsight.shared.instrumentation.decorator import task_profiler
+from appinsight.shared.logging.logging import log_exceptions
+from appinsight.shared.persist.file.io import IOService
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.print import Printer
@@ -172,7 +172,7 @@ class DataCleaningTask(Task):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run_task(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, cleaning the DataFrame based on configuration rules.
 
         Args:

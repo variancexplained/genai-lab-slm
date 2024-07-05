@@ -11,25 +11,25 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday July 3rd 2024 04:08:19 am                                                 #
+# Modified   : Thursday July 4th 2024 11:43:32 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
-import shutil
 import sys
 
 import pytest
 from dotenv import load_dotenv
 
-from appinsight.infrastructure.dependency.container import AppInsightContainer
-from appinsight.infrastructure.persist.file.io import IOService
+from appinsight.setup.file.config import FileSetupPipelineConfig
+from appinsight.shared.dependency.container import AppInsightContainer
+from appinsight.shared.persist.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = []
+collect_ignore_glob = ["test/infrastructure/*.*"]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -44,10 +44,9 @@ def container():
     container.init_resources()
     container.wire(
         packages=[
-            "appinsight.infrastructure.persist.database",
-            "appinsight.infrastructure.instrumentation",
+            "appinsight.shared.persist.database",
+            "appinsight.shared.instrumentation",
         ],
-        modules=["appinsight.infrastructure.persist.repo"],
     )
 
     return container
@@ -73,47 +72,24 @@ def check_environment():
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                 RESET TEST REPO                                                  #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="class", autouse=True)
-def reset_repo(container):
-    # Obtain database
-    db = container.db.sqlite()
-
-    # Drop table
-    with open("scripts/sqlite3/dataset/drop.sql") as file:
-        drop_query = file.read()
-        print(f"\nExecuting drop query: {drop_query}")
-        db.command(query=drop_query)
-
-    # Verify table is dropped
-    check_query = "SELECT * FROM sqlite_master WHERE type='table' AND name='dataset';"
-    result = db.query(query=check_query)
-    assert len(result) == 0, "Table 'datasets' should not exist after drop"
-
-    # Recreate table
-    with open("scripts/sqlite3/dataset/create.sql") as file:
-        create_query = file.read()
-        print(f"Executing create query: {create_query}")
-        db.command(query=create_query)
-
-    # Verify table is created
-    result = db.query(query=check_query)
-    assert len(result) == 1, "Table 'datasets' should exist after creation"
-
-    # Delete files
-    directory = "data/test"
-    if os.path.exists(directory):
-        shutil.rmtree(directory)
-    os.makedirs(directory, exist_ok=True)
-
-    print("Reset repository fixture executed")
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                       DATASET                                                    #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
 def reviews():
     DATASET_FP = "test/data/reviews"
     return IOService.read(filepath=DATASET_FP)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                               FILE SETUP CONFIG                                                  #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def file_setup_config():
+    return FileSetupPipelineConfig(
+        local_download_folder="test/data",
+        extract_destination="test/data/reviews",
+        aws_folder="test",
+        aws_s3_key="reviews.tar.gz",
+        frac=0.1,
+        force=True,
+    )

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Sunday June 30th 2024 03:48:53 am                                                   #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,7 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from appinsight.domain.repo import Repo
-from appinsight.utils.datetime import convert_seconds_to_hms
+from appinsight.shared.utils.datetime import convert_seconds_to_hms
 from appinsight.utils.io import FileReader, FileWriter
 from appinsight.utils.print import Printer
 from appinsight.utils.repo import ReviewRepo
@@ -91,15 +91,15 @@ class Task(ABC):
         }
         print(f"Task {self.name} completed successfully. Runtime: {self._runtime}")
 
-    def execute(self, *args: Any, **kwargs: Any) -> Any:
+    def run(self, *args: Any, **kwargs: Any) -> Any:
         """Wraps the execute tasks with metrics capture and calculations"""
         self.start_task()
-        data = self.execute_task(*args, **kwargs)
+        data = self.run_task(*args, **kwargs)
         self.stop_task()
         return data
 
     @abstractmethod
-    def execute_task(self, *args: Any, **kwargs: Any) -> Any:
+    def run_task(self, *args: Any, **kwargs: Any) -> Any:
         """Execute the task.
 
         This method defines the core functionality of the task. Subclasses
@@ -158,7 +158,7 @@ class Pipeline:
         """
         self._tasks.append(task)
 
-    def execute(self):
+    def run(self):
         """Execute the pipeline tasks in sequence."""
 
         self._start_pipeline()
@@ -167,7 +167,7 @@ class Pipeline:
 
         for task in self._tasks:
 
-            data = task.execute(data)
+            data = task.run(data)
             self._data = data if data is not None else self._data
 
             self._tasks_completed.append(task)
@@ -249,7 +249,7 @@ class PipelineBuilder(ABC):
     def create_pipeline(self) -> Pipeline:
         """Constructs the pipeline that executes the preprocessing tasks."""
 
-    def execute(self) -> Union[pd.DataFrame, DataFrame]:
+    def run(self) -> Union[pd.DataFrame, DataFrame]:
         """Executes the preprocessing tasks.
 
         The pipeline runs if the endpoint doesn't already exist or if
@@ -264,7 +264,7 @@ class PipelineBuilder(ABC):
             self.logger.debug("Creating pipeline")
             pipeline = self.create_pipeline()
             self.logger.debug("Pipeline created.")
-            self._data = pipeline.execute()
+            self._data = pipeline.run()
         return self._data
 
     def endpoint_exists(self) -> bool:

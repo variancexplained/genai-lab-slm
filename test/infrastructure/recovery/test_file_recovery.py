@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday July 3rd 2024 12:29:21 am                                                 #
-# Modified   : Wednesday July 3rd 2024 06:56:21 am                                                 #
+# Modified   : Thursday July 4th 2024 07:38:52 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,8 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from appinsight.infrastructure.recovery.file import FileRecovery
-from appinsight.infrastructure.utils.file import check_files_start_with
+from appinsight.shared.recovery.file import FileRecovery
+from appinsight.shared.utils.file import check_files_start_with
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

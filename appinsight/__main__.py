@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday May 25th 2024 03:48:28 am                                                  #
-# Modified   : Wednesday July 3rd 2024 04:08:19 am                                                 #
+# Modified   : Thursday July 4th 2024 11:22:10 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,9 +27,9 @@ from datetime import datetime
 import pandas as pd
 from dotenv import load_dotenv
 
-from appinsight.infrastructure.dependency.container import AppInsightContainer
-from appinsight.infrastructure.persist.file.io import IOService
-from appinsight.utils.datetime import convert_seconds_to_hms
+from appinsight.shared.dependency.container import AppInsightContainer
+from appinsight.shared.persist.file.io import IOService
+from appinsight.shared.utils.datetime import convert_seconds_to_hms
 from appinsight.utils.repo import ReviewRepo
 
 # ------------------------------------------------------------------------------------------------ #
@@ -57,7 +57,7 @@ def setup_application(container: AppInsightContainer, df: pd.DataFrame):
     """
     # Setup datasets for the environment
     dsa = container.dataset.setup()
-    dsa.execute(data=df)
+    dsa.run(data=df)
 
     # Create Database
 
@@ -75,7 +75,7 @@ def build_datasets(force, container) -> None:
         df = load_data()
         # Build raw dataset
         setup = container.dataset.setup()
-        dataset = setup.execute(data=df)
+        dataset = setup.run(data=df)
         ReviewRepo().write(directory="00_raw", filename="reviews.pkl", data=dataset)
 
 
@@ -95,10 +95,10 @@ def build_dependencies(env: str):
     container.init_resources()
     container.wire(
         packages=[
-            "appinsight.infrastructure.persist.database",
-            "appinsight.infrastructure.instrumentation",
+            "appinsight.shared.persist.database",
+            "appinsight.shared.instrumentation",
         ],
-        modules=["appinsight.infrastructure.persist.repo"],
+        modules=["appinsight.shared.persist.repo"],
     )  # Wire the current module
     print(f"Dependencies are initialized for the {env} environment.")
 

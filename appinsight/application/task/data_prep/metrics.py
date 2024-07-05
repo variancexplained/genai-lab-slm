@@ -4,14 +4,14 @@
 # Project    : AppInsight                                                                          #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appinsight/application/data_prep/metrics.py                                        #
+# Filename   : /appinsight/application/task/data_prep/metrics.py                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Tuesday July 2nd 2024 10:18:03 pm                                                   #
+# Modified   : Thursday July 4th 2024 07:50:29 pm                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,8 +30,8 @@ from pyspark.sql import functions as sparkFunc
 from appinsight.application.base import Task
 from appinsight.application.pipeline import Pipeline, PipelineBuilder, StageConfig
 from appinsight.data_prep.io import ConvertTask, ReadTask, WriteTask
-from appinsight.infrastructure.instrumentation.decorator import task_profiler
-from appinsight.infrastructure.logging import log_exceptions
+from appinsight.shared.instrumentation.decorator import task_profiler
+from appinsight.shared.logging.logging import log_exceptions
 from appinsight.utils.base import Reader, Writer
 from appinsight.utils.convert import ToPandas, ToSpark
 from appinsight.utils.io import FileReader, FileWriter
@@ -181,7 +181,7 @@ class Metrics(PipelineBuilder):
         pipe.add_task(save)
         return pipe
 
-    def execute(self) -> Union[pd.DataFrame, DataFrame]:
+    def run(self) -> Union[pd.DataFrame, DataFrame]:
         """Executes the preprocessing tasks.
 
         The pipeline runs if the endpoint doesn't already exist or if
@@ -193,7 +193,7 @@ class Metrics(PipelineBuilder):
         else:
             with self._tempfile_manager_cls() as tempfile_manager:
                 pipeline = self.create_pipeline(tempfile_manager)
-                self._data = pipeline.execute()
+                self._data = pipeline.run()
         return self._data
 
 
@@ -218,7 +218,7 @@ class CategoryMetricsTask(MetricsTask):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: DataFrame) -> DataFrame:
+    def run_task(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the category level.
 
         Args:
@@ -303,7 +303,7 @@ class AuthorMetricsTask(MetricsTask):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: DataFrame) -> DataFrame:
+    def run_task(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the author level.
 
         Args:
@@ -387,7 +387,7 @@ class AppMetricsTask(MetricsTask):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: DataFrame) -> DataFrame:
+    def run_task(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the app level.
 
         Args:
@@ -468,7 +468,7 @@ class CategoryAuthorMetricsTask(MetricsTask):
 
     @log_exceptions()
     @task_profiler()
-    def execute_task(self, data: DataFrame) -> DataFrame:
+    def run_task(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the category/author level.
 
         Args:
