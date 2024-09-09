@@ -18,6 +18,7 @@
 			"creationDateZero": "asIs"
 		},
 		"psi-header.changes-tracking": {
+
 			"isActive": true,
 			"modAuthor": "Modified By:",
 			"modDate": "Modified:",
@@ -59,11 +60,11 @@
 			],
 			[
 				"url",
-				"https://github.com/variancexplained/appinsight"
+				"https://github.com/variancexplained/appvocai-discover"
 			],
 			[
 				"projectname",
-				"AppInsight"
+				"AppVoCAI-Discover"
 			],
 			[
 				"version",
@@ -71,7 +72,7 @@
 			],
 			[
 				"pythonversion",
-				"3.12.3"
+				"3.10.14"
 			]
 		],
 		"psi-header.lang-config": [

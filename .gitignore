@@ -7,6 +7,10 @@
 *.coverage
 .coverage.*
 
+# Data
+data/
+tests/data/
+
 # Cache
 cache/
 
@@ -24,15 +28,8 @@ develop-eggs
 lib
 lib64
 
-# Data
-data/**/*.*
-*.pkl
-*.parquet
-*.txt
-tests/data/*.*
-
 # Logs
-logs/*.*
+logs/
 
 # Models
 models
@@ -72,7 +69,7 @@ env/
 /node_modules/
 
 # webpack-built files
-/appinsight/static/build/
+/appvocai/static/build/
 
 # Configuration
 .env

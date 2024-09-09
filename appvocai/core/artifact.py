@@ -4,36 +4,40 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /appvocai/shared/persist/database/setup.py                                          #
+# Filename   : /appvocai/core/artifact.py                                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Tuesday May 28th 2024 03:37:01 pm                                                   #
-# Modified   : Monday September 9th 2024 09:41:26 am                                               #
+# Created    : Sunday June 30th 2024 10:32:43 pm                                                   #
+# Modified   : Monday September 9th 2024 09:41:24 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Database Setup Module"""
-from appvocai.orchestration.base import Task
-from appvocai.shared.dependency.container import AppInsightContainer
-from appvocai.shared.persist.database.dba import SQLiteDBA
-from dependency_injector.wiring import Provide, inject
+"""Entity Module"""
+from __future__ import annotations
+
+from abc import abstractmethod
+from dataclasses import dataclass
+
+from appvocai.utils.data import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #
-class CreateDatabasesTask(Task):
-    @inject
-    def __init__(self, dba: SQLiteDBA = Provide[AppInsightContainer.db.admin]) -> None:
-        self._dba = dba()
+@dataclass
+class Artifact(DataClass):
+    """Base class for all entities"""
 
-    def execute(self) -> None:
-        try:
-            self._dba.create_table(tablename="profile")
-        except Exception as e:
-            msg = f"Exception occurred while creating dataset. \n{e} "
-            self.logger.exception(msg)
-            raise
-        print("Database has been setup.")
+    oid: str = None
+    name: str = None
+    description: str = None
+    phase: str = None
+    stage: str = None
+    creator: str = None
+    created: str = None
+
+    @abstractmethod
+    def validate(self) -> None:
+        """Validates the entity. Should be called when exporting data to be persisted"""
