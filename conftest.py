@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday July 4th 2024 11:43:32 pm                                                  #
+# Modified   : Tuesday August 27th 2024 10:54:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,11 +20,10 @@ import os
 import sys
 
 import pytest
+from appvocai.setup.file.config import FileSetupPipelineConfig
+from appvocai.shared.dependency.container import AppInsightContainer
+from appvocai.shared.persist.file.io import IOService
 from dotenv import load_dotenv
-
-from appinsight.setup.file.config import FileSetupPipelineConfig
-from appinsight.shared.dependency.container import AppInsightContainer
-from appinsight.shared.persist.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

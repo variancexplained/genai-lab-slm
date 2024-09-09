@@ -1,49 +1,64 @@
 project_root/
-│
-├── data_prep/
-│   ├── application/
-│   ├── domain/
-│   ├── ui/
-│   └── config/
-│
-├── eda/
-│   ├── application/
-│   ├── domain/
-│   ├── ui/
-│   └── config/
-│
-├── sentiment_analysis/
-│   ├── application/
-│   ├── domain/
-│   ├── ui/
-│   └── config/
-│
-├── topic_modeling/
-│   ├── application/
-│   ├── domain/
-│   ├── ui/
-│   └── config/
-│
+├── core/
+│   ├── __init__.py
+│   ├── interfaces/
+│   │   ├── i_pipeline.py
+│   │   ├── i_task.py
+│   │   ├── i_io.py
+│   │   └── i_builder.py
+│   └── models/
+│       ├── dataset.py
+│       └── result.py
+├── features/
+│   ├── data_prep/
+│   │   ├── __init__.py
+│   │   ├── pipeline.py
+│   │   ├── tasks/
+│   │   │   ├── __init__.py
+│   │   │   ├── read_task.py
+│   │   │   ├── write_task.py
+│   │   └── builder.py
+│   ├── eda/
+│   │   ├── __init__.py
+│   │   ├── pipeline.py
+│   │   ├── tasks/
+│   │   │   ├── __init__.py
+│   │   │   └── some_eda_task.py
+│   │   └── builder.py
+│   └── modeling/
+│       ├── __init__.py
+│       ├── pipeline.py
+│       ├── tasks/
+│       │   ├── __init__.py
+│       │   └── some_modeling_task.py
+│       └── builder.py
 └── shared/
-    ├── application/
-    │   ├── task.py         <-- Shared Task class
-    │   └── other_app_module.py
-    │
-    ├── domain/
-    │   ├── common_model.py
-    │   └── other_domain_module.py
-    │
-    ├── ui/
-    │   ├── shared_visualization.py
-    │   └── other_ui_module.py
-    │
+    ├── __init__.py
     ├── config/
     │   ├── base_config.py
-    │   ├── global_config.py
     │   ├── dev.yaml
     │   ├── prod.yaml
     │   └── test.yaml
-    │
-    └── infrastructure/
-        ├── io.py
-        └── config_loader.py
+    ├── dependency_container.py
+    ├── frameworks/
+    │   └── spark/
+    │       ├── spark_utils.py
+    │       └── spark_integration.py
+    ├── instrumentation/
+    │   ├── performance_profiler.py
+    │   └── metrics.py
+    ├── logging/
+    │   ├── logger.py
+    │   └── log_config.py
+    ├── persist/
+    │   ├── io.py
+    │   └── database.py
+    ├── recovery/
+    │   ├── backup.py
+    │   └── restore.py
+    ├── setup/
+    │   ├── database_setup.py
+    │   └── environment_setup.py
+    └── utils/
+        ├── data_utils.py
+        └── general_utils.py

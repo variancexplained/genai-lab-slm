@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 11:11:28 pm                                                    #
-# Modified   : Thursday July 4th 2024 07:38:54 pm                                                  #
+# Modified   : Tuesday August 27th 2024 10:54:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,7 @@ import os
 from datetime import datetime
 
 import pytest
-
-from appinsight.shared.persist.object.kvs import KVS
+from appvocai.shared.persist.object.kvs import KVS
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

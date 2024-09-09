@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appinsight                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 10:31:27 pm                                                  #
-# Modified   : Friday July 5th 2024 12:02:52 am                                                    #
+# Modified   : Tuesday August 27th 2024 10:54:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,12 +23,11 @@ import shutil
 from datetime import datetime
 
 import pytest
+from appvocai.setup.file.download import DownloadFileTask
+from appvocai.setup.file.extract import ExtractFileTask
+from appvocai.setup.file.pipeline import create_file_setup_pipeline
+from appvocai.setup.file.sample import SampleFileTask
 from prefect import Flow
-
-from appinsight.setup.file.download import DownloadFileTask
-from appinsight.setup.file.extract import ExtractFileTask
-from appinsight.setup.file.pipeline import create_file_setup_pipeline
-from appinsight.setup.file.sample import SampleFileTask
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
