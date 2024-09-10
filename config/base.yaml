@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : AppVoCAI-Discover                                                                   #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.10.14                                                                             #
+# Filename   : /config/base.yaml                                                                   #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john@variancexplained.com                                                           #
+# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Monday September 9th 2024 11:24:51 am                                               #
+# Modified   : Monday September 9th 2024 12:47:45 pm                                               #
+# ------------------------------------------------------------------------------------------------ #
+# License    : MIT License                                                                         #
+# Copyright  : (c) 2024 John James                                                                 #
+# ================================================================================================ #
+cloud:
+  aws:
+    botocore:
+      connection_timeout: 60
+      read_timeout: 60
+      max_pool_connections: 10
+      retries:
+        total_max_attempts: 5
+        mode: standard

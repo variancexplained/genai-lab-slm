@@ -1,5 +1,5 @@
 [run]
-source = appinsight
+source = appvocai-discover
 omit =
     tests/*
     autoapp.py

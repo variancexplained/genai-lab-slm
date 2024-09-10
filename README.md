@@ -7,7 +7,7 @@ App (IOS) Analytics and Insight Platform
 Run the following commands to bootstrap your environment if you are unable to run the application using Docker
 
 ```bash
-cd appinsight
+cd appvocai-discover
 pip install -r requirements/dev.txt
 npm install
 npm run-script build

@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "appinsight"
+name = "discover"
 version = "0.0.1"
-description = "AppInsight: Explore Mobile App User Experience"
+description = "AppVoCAI-Discover: Opportunity and Unmet Needs Discovery with Generative AI"
 authors = [
     "John James <john@variancexplained.com>",
 ]
@@ -9,9 +9,9 @@ license = "MIT"
 requires-python = ">=3.7.1"
 readme = "README.md"
 
-documentation = "https://variancexplained.github.io/appinsight"
-homepage = "https://variancexplained.github.io/appinsight"
-repository = "https://github.com/variancexplained/appinsight"
+documentation = "https://variancexplained.github.io/appvocai-discover"
+homepage = "https://variancexplained.github.io/appvocai-discover"
+repository = "https://github.com/variancexplained/appvocai-discover"
 
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 packages = [
-    { include = "appinsight"}
+    { include = "discover"}
 ]
 
 [tool.poetry.dependencies]
@@ -64,7 +64,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
-src_paths = ["appinsight", "tests"]
+src_paths = ["discover", "tests"]
 
 [tool.black]
 target-version = ["py37", "py38", "py39", "py310"]
@@ -77,7 +77,7 @@ log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(linen
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 norecursedirs = 'data'
 addopts = """\
-    --cov appinsight \
+    --cov discover \
     --cov tests \
     --cov-report term-missing \
     --no-cov-on-fail \
@@ -93,13 +93,3 @@ exclude_lines = [
     'pragma: no cover'
 ]
 
-[tool.mypy]
-disallow_any_unimported = true
-disallow_untyped_defs = true
-no_implicit_optional = true
-strict_equality = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_return_any = true
-check_untyped_defs = true
-show_error_codes = true
