@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Wednesday September 11th 2024 09:52:24 am                                           #
+# Modified   : Wednesday September 11th 2024 03:43:22 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,6 +26,7 @@ from typing import Any
 import pandas as pd
 
 from discover.domain.service.base.repo import Repo
+from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.config import Config
 
 
@@ -58,19 +59,19 @@ class ReviewRepo(Repo):
 
     Methods:
     --------
-    add(data: Any, stage: str, name: str) -> None
+    add(data: Any, stage: Stage, name: str) -> None
         Adds data to the repository by writing it to a file.
 
-    get(stage: str, name: str) -> pd.DataFrame
+    get(stage: Stage, name: str) -> pd.DataFrame
         Retrieves data from the repository by reading from a file.
 
-    remove(stage: str, name: str) -> None
+    remove(stage: Stage, name: str) -> None
         Removes a file from the repository.
 
-    exists(stage: str, name: str) -> bool
+    exists(stage: Stage, name: str) -> bool
         Checks whether the file exists in the repository.
 
-    _get_filepath(stage: str, name: str) -> str
+    _get_filepath(stage: Stage, name: str) -> str
         Constructs the file path based on the stage, name, and file format.
 
     _read(filepath: str) -> Any
@@ -98,7 +99,7 @@ class ReviewRepo(Repo):
         self._config = config_cls()
         self._basedir = self._config.get_config(section="data").basedir
 
-    def add(self, data: Any, stage: str, name: str) -> None:
+    def add(self, data: Any, stage: Stage, name: str) -> None:
         """
         Adds data to the repository by writing it to a file.
 
@@ -124,7 +125,7 @@ class ReviewRepo(Repo):
 
         self._write(filepath=filepath, data=data)
 
-    def get(self, stage: str, name: str) -> pd.DataFrame:
+    def get(self, stage: Stage, name: str) -> pd.DataFrame:
         """
         Retrieves data from the repository by reading it from a file.
 
@@ -143,7 +144,7 @@ class ReviewRepo(Repo):
         filepath = self._get_filepath(stage=stage, name=name)
         return self._read(filepath=filepath)
 
-    def remove(self, stage: str, name: str) -> None:
+    def remove(self, stage: Stage, name: str) -> None:
         """
         Removes a file from the repository.
 
@@ -178,7 +179,7 @@ class ReviewRepo(Repo):
         else:
             self._logger.info(f"Removal of {name} from {stage} stage aborted.")
 
-    def exists(self, stage: str, name: str) -> bool:
+    def exists(self, stage: Stage, name: str) -> bool:
         """
         Checks if a file exists in the repository.
 
@@ -197,7 +198,7 @@ class ReviewRepo(Repo):
         filepath = self._get_filepath(stage=stage, name=name)
         return os.path.exists(filepath)
 
-    def _get_filepath(self, stage: str, name: str) -> str:
+    def _get_filepath(self, stage: Stage, name: str) -> str:
         """
         Constructs the file path based on the stage, name, and file format.
 
@@ -214,7 +215,10 @@ class ReviewRepo(Repo):
             The constructed file path.
         """
         env = self._config.get_environment()
-        return os.path.join(self._basedir, env, stage, name) + self._file_format.value
+        return (
+            os.path.join(self._basedir, env, stage.value, name)
+            + self._file_format.value
+        )
 
     @abstractmethod
     def _read(self, filepath: str) -> Any:

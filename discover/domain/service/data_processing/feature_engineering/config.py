@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Wednesday September 11th 2024 11:07:57 am                                           #
+# Modified   : Wednesday September 11th 2024 02:51:55 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -172,7 +172,7 @@ class ParseDatesTask(Task):
         super().__init__()
 
     @log_exceptions()
-    @task_profiler()
+    @task_profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, adding parsed elements of the date to the DataFrame
 
@@ -216,7 +216,7 @@ class BasicTextFeaturesTask(Task):
         super().__init__(*args, **kwargs)
 
     @log_exceptions()
-    @task_profiler()
+    @task_profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         stop_words = set(stopwords.words("english"))
 
@@ -261,7 +261,7 @@ class LexicalFeaturesTask(Task):
         super().__init__(*args, **kwargs)
 
     @log_exceptions()
-    @task_profiler()
+    @task_profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         data["lexical_unique_word_count"] = data["content"].parallel_apply(
             lambda x: len(set(word_tokenize(x)))
@@ -302,7 +302,7 @@ class ReadabilityMetricsTask(Task):
         super().__init__(*args, **kwargs)
 
     @log_exceptions()
-    @task_profiler()
+    @task_profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         data["readability_flesch_reading_ease"] = data["content"].parallel_apply(
             lambda x: textstat.flesch_reading_ease(x)
@@ -330,7 +330,7 @@ class DropFeaturesTask(Task):
         self._features_to_drop = features_to_drop
 
     @log_exceptions()
-    @task_profiler()
+    @task_profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, dropping designated features from the dataset.
 
@@ -355,7 +355,7 @@ class CastDatatypesTask(Task):
         self._cast_cls = cast_cls
 
     @log_exceptions()
-    @task_profiler()
+    @task_profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, dropping designated features from the dataset.
 

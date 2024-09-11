@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/infra/storage/operations/file_task/download.py                            #
+# Filename   : /discover/infra/operations/file_task/download.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 05:40:36 pm                                                  #
-# Modified   : Tuesday September 10th 2024 10:56:45 pm                                             #
+# Modified   : Wednesday September 11th 2024 01:44:05 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,8 +19,10 @@
 """Download File Module"""
 
 import os
+from typing import Optional
 
 from discover.domain.service.base.task import Task
+from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.storage.cloud.aws import S3Handler
 
 
@@ -37,16 +39,15 @@ class DownloadFileTask(Task):
         force (bool, optional): If True, forces the download even if the file already exists locally. Defaults to False.
     """
 
+    __STAGE = Stage.RAW
+
     def __init__(
         self,
-        aws_access_key: str,
-        aws_secret_access_key: str,
-        aws_region_name: str,
         aws_bucket_name: str,
         aws_folder: str,
         aws_s3_key: str,
-        local_download_folder: str,
-        local_download_filepath: str,
+        local_folder: str,
+        local_name: Optional[str] = None,
         s3h_cls: type[S3Handler] = S3Handler,
         force: bool = False,
     ) -> None:
@@ -55,16 +56,13 @@ class DownloadFileTask(Task):
 
         Loads environment variables, sets up the S3 handler and file system handler, and configures the task parameters.
         """
-        super().__init__()
-
-        self._s3h = s3h_cls(
-            aws_access_key_id=aws_access_key,
-            aws_secret_access_key=aws_secret_access_key,
-            region_name=aws_region_name,
-        )
-        self._bucket_name = aws_bucket_name
-        self._s3_key = aws_s3_key
-        self._local_download_folder = local_download_folder
+        super().__init__(stage=self.__STAGE)
+        self._aws_bucket_name = aws_bucket_name
+        self._aws_folder = aws_folder
+        self._aws_s3_key = aws_s3_key
+        self._local_folder = local_folder
+        self._local_name = local_name
+        self._s3h_cls = s3h_cls
         self._force = force
 
     def run(self) -> str:
@@ -76,12 +74,17 @@ class DownloadFileTask(Task):
         Returns
             The path to which the file was downloaded.
         """
-        filepath = os.path.join(self._local_download_folder, self._s3_key)
+        filename = self._local_name or self._aws_s3_key
+        filepath = os.path.join(self._local_folder, filename)
         if self._force or not os.path.exists(filepath):
             self._s3h.download_file(
-                bucket_name=self._bucket_name,
-                s3_key=self._s3_key,
-                local_path=self._local_download_folder,
+                bucket_name=self._aws_bucket_name,
+                s3_key=self._aws_s3_key,
+                local_path=filepath,
                 force=self._force,
             )
-        return filepath
+            return filepath
+        else:
+            msg = f"Download aborted. A file at {filepath} already exists."
+            self.logger.exception(msg)
+            raise FileExistsError(msg)

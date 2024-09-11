@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday September 11th 2024 01:11:02 pm                                           #
+# Modified   : Wednesday September 11th 2024 04:09:33 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,6 +25,8 @@ from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
+from discover.infra.config.config import Config
+from discover.infra.storage.cloud.aws import S3Handler
 from discover.infra.storage.database.schema import schema
 
 # ------------------------------------------------------------------------------------------------ #
@@ -80,10 +82,24 @@ def db_setup(container) -> None:
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                                      PROFILE REPO                                                #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def profile_repo(container):
+    return container.repo.profile
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                                        SPARK                                                     #
 # ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def aws():
+    return S3Handler(config_cls=Config)
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                        SPARK                                                     #
+# ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
 def spark():
     """

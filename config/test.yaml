@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Wednesday September 11th 2024 01:05:48 pm                                           #
+# Modified   : Wednesday September 11th 2024 02:33:46 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -83,3 +83,6 @@ recovery:
     default_source: data/test
     backup_directory: workspace/test/recovery/data
 
+aws:
+  bucket: appvoc
+  s3_key: test/reviews.tar.gz

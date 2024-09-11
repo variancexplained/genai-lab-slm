@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 02:58:50 pm                                               #
-# Modified   : Wednesday September 11th 2024 10:15:53 am                                           #
+# Modified   : Wednesday September 11th 2024 03:38:27 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -52,7 +52,7 @@ class ZahariaRepo(ReviewRepo):
 
     def __init__(
         self,
-        file_format: FileFormat,
+        file_format: FileFormat = FileFormat.PARQUET_PARTITIONED,
         config_cls: type[Config] = Config,
         spark: Optional[SparkSession] = None,
     ) -> None:

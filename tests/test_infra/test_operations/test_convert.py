@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_infra/test_operations/test_data_tasks.py                                #
+# Filename   : /tests/test_infra/test_operations/test_convert.py                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 10:35:29 am                                           #
-# Modified   : Wednesday September 11th 2024 01:09:12 pm                                           #
+# Modified   : Wednesday September 11th 2024 03:30:46 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ import pandas as pd
 import pytest
 from pyspark.sql import DataFrame
 
-from discover.infra.operations.data_task.convert import ConvertTask
+from discover.infra.operations.convert import ConvertTask
 from discover.infra.utils.data_utils.converter import ToPandas, ToSpark
 
 # ------------------------------------------------------------------------------------------------ #

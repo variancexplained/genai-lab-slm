@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/infra/file_setup/compression.py                                           #
+# Filename   : /discover/infra/utils/file_utils/compress.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday April 28th 2024 12:15:31 am                                                  #
-# Modified   : Tuesday September 10th 2024 07:36:57 pm                                             #
+# Modified   : Wednesday September 11th 2024 02:43:29 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -55,6 +55,7 @@ class TarGzHandler:
         Raises:
             tarfile.TarError: If there is an error during extraction.
         """
+        os.makedirs(extract_dir, exist_ok=True)
         try:
             with tarfile.open(tar_gz_path, "r:gz") as tar:
                 tar.extractall(path=extract_dir)
@@ -103,6 +104,7 @@ class TarGzHandler:
         Raises:
             tarfile.TarError: If there is an error during compression.
         """
+        os.makedirs(os.path.dirname(tar_gz_path))
         try:
             with tarfile.open(tar_gz_path, "w:gz") as tar:
                 tar.add(file_path, arcname=os.path.basename(file_path))

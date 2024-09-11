@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Wednesday September 11th 2024 11:33:25 am                                           #
+# Modified   : Wednesday September 11th 2024 01:43:30 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,14 +19,16 @@
 """Abstract Base Classes for the Task Subclasses w/in the Domain Services Layer"""
 from __future__ import annotations
 
-# ------------------------------------------------------------------------------------------------ #
-#                                           TASK                                                   #
-# ------------------------------------------------------------------------------------------------ #
+import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.config import Config
+
+# ------------------------------------------------------------------------------------------------ #
+#                                           TASK                                                   #
+# ------------------------------------------------------------------------------------------------ #
 
 
 class Task(ABC):
@@ -43,6 +45,14 @@ class Task(ABC):
         The environment in which the task operates, as determined by the configuration.
     _stage : str
         The stage of the task, if applicable.
+    _logger : logging.Logger
+        A private logger instance used for logging within the task. Subclasses can
+        access this via a read-only property.
+
+    Properties:
+    -----------
+    logger : logging.Logger (read-only)
+        Provides read-only access to the logger instance for subclasses.
 
     Methods:
     --------
@@ -80,6 +90,20 @@ class Task(ABC):
         self._config = config_cls()
         self._env = self._config.get_environment()
         self._stage = stage
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    @property
+    def logger(self) -> logging.Logger:
+        """
+        Provides read-only access to the private logger instance. This logger
+        is available for use in subclasses but cannot be modified directly.
+
+        Returns:
+        --------
+        logging.Logger
+            The logger instance associated with this task.
+        """
+        return self._logger
 
     @property
     def name(self) -> str:

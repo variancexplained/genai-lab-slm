@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 10th 2024 09:49:14 pm                                             #
+# Modified   : Wednesday September 11th 2024 02:51:52 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -174,7 +174,7 @@ class NormalizeDataTask(Task):
         self._encoding_sample = encoding_sample
         self._random_state = random_state
 
-    @task_profiler()
+    @task_profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """Preprocess text data by ensuring string column, removing newlines, and verifying encoding."""
