@@ -1,4 +1,4 @@
-# AppInsight
+# AppVoCAI-Discover
 
 App (IOS) Analytics and Insight Platform
 

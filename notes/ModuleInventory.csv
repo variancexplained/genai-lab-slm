@@ -1,0 +1,93 @@
+source,source_package,source_subpackage,source_module,Description,Layer,Package,Subpackage,Sub2Package,Module,Status
+utils,,,data,,core,,,,data,ready
+domain,,,base,,core,,,,data,ready
+domain,,,enums,"Prep, Analysis",core,,,,enum,ready
+domain,,,enums,"Raw,Norm, DQA, Clean, Feature, NLP, Metrics",core,,,,enum,ready
+analysis,,,base,,domain,services,base,,analysis,ready
+application,,,base,,domain,services,base,,config,done
+application,,,pipeline,,domain,services,base,,pipeline,ready
+utils,,,repo,,domain,services,base,,repo,done
+application,,,base,Base class describing task interface,domain,services,base,,task,done
+application,task,data_prep,clean,Configuration for the DataCleaner,domain,services,data_processing,data_cleaning,config,ready
+application,task,data_prep,clean,,domain,services,data_processing,data_cleaning,pipeline,ready
+application,task,data_prep,clean,,domain,services,data_processing,data_cleaning,task,ready
+application,task,data_prep,normalize,,domain,services,data_processing,data_prep,config,ready
+application,task,data_prep,text_prep,,domain,services,data_processing,data_prep,config,ready
+application,task,data_prep,normalize,,domain,services,data_processing,data_prep,pipeline,ready
+application,task,data_prep,text_prep,,domain,services,data_processing,data_prep,pipeline,ready
+application,task,data_prep,normalize,A data preparation task,domain,services,data_processing,data_prep,task,ready
+application,task,data_prep,text_prep,,domain,services,data_processing,data_prep,task,ready
+analysis,,,data,,domain,services,data_processing,data_quality_analysis,analysis,ready
+application,task,data_prep,dqa,Builds a data quality assessment,domain,services,data_processing,data_quality_analysis,pipeline,ready
+application,task,data_prep,dqa,Base class for data quality tasks,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Marks duplicate rows in a dataframe,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Detects emojis in review text,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Detects invalid dates,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Detects non-englishin review text,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Marks incomplete rows in a dataframe,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Detects special characters in text,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Configuration for data quality assessment,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Data quality analysis task,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,dqa,Initializes data for data quality assessment,domain,services,data_processing,data_quality_analysis,task,ready
+application,task,data_prep,feature,,domain,services,data_processing,feature_engineering,config,ready
+application,task,data_prep,feature,,domain,services,data_processing,feature_engineering,pipeline,ready
+application,task,data_prep,feature,Feature engineering task,domain,services,data_processing,feature_engineering,task,ready
+application,task,data_prep,feature,,domain,services,data_processing,feature_engineering,task,ready
+analysis,,,explore,,domain,services,exploratory_data_analysis,,base,ready
+analysis,,,data,"Overview of contents i.e. apps, categories, plots",domain,services,exploratory_data_analysis,,overview,ready
+analysis,,,overview,"Overview in terms of rows, columns, file size, memory footprint",domain,services,exploratory_data_analysis,,overview,ready
+application,task,data_prep,metrics,Abstract base class for metrics,domain,services,metrics,base,task,ready
+application,task,data_prep,metrics,,domain,services,metrics,developer,config,ready
+application,task,data_prep,metrics,,domain,services,metrics,developer,task,ready
+application,task,data_prep,metrics,,domain,services,metrics,app,config,ready
+application,task,data_prep,metrics,,domain,services,metrics,app,task,ready
+application,task,data_prep,metrics,,domain,services,metrics,author,con,ready
+application,task,data_prep,metrics,,domain,services,metrics,author,task,ready
+application,task,data_prep,metrics,,domain,services,metrics,base,config,ready
+application,task,data_prep,metrics,,domain,services,metrics,category,config,ready
+application,task,data_prep,metrics,,domain,services,metrics,category,task,ready
+application,task,data_prep,metrics,,domain,services,metrics,category_author,config,ready
+application,task,data_prep,metrics,,domain,services,metrics,category_author,task,ready
+application,task,data_prep,metrics,,domain,services,metrics,base,pipeline,ready
+callbacks,,,callback,,domain,services,sentiment_analysis,,callback,ready
+analysis,,,sentiment,,domain,services,sentiment_analysis,,classifier,ready
+analysis,,,config,,domain,services,sentiment_analysis,,config,ready
+analysis,,,data,,domain,services,sentiment_analysis,,data,ready
+shared,recovery,,base,,infra,backup,recovery,,base,ready
+shared,recovery,,database,,infra,backup,recovery,,database,ready
+shared,recovery,,file,,infra,backup,recovery,,file,ready
+shared,,config,config,,infra,config,,,config,ready
+utils,,,cast,,infra,data_management,cast,,pandas,ready
+utils,,,cast,,infra,data_management,cast,,pyspark,ready
+utils,,,convert,,infra,data_management,convert,,pandas,ready
+utils,,,convert,,infra,data_management,convert,,pyspark,ready
+application,task,data_prep,io,Converts dataframes to Pandas or Spark,infra,data_task,convert,,base,ready
+shared,persist,database,setup,,infra,data_task,convert,,database,ready
+application,task,data_prep,setup,,infra,data_task,convert,,dataset,ready
+shared,,dependency,container,,infra,dependency,,,container,ready
+shared,persist,file,compression,,infra,file_setup,,,compression,ready
+setup,,file,pipeline,,infra,file_setup,,,pipeline,ready
+setup,,file,config,,infra,file_setup,,,pipeline,ready
+setup,,file,download,,infra,file_task,,,download,ready
+setup,,file,extract,,infra,file_task,,,extract,ready
+application,task,data_prep,io,Responsible for Reading data from files,infra,file_task,,,read,ready
+setup,,file,sample,,infra,file_task,,,sample,ready
+application,task,data_prep,io,Responsible for writing data to files,infra,file_task,,,write,ready
+utils,,,io,,infra,fileio,pandas,,reader,ready
+utils,,,io,,infra,fileio,pandas,,writer,ready
+utils,,,io,,infra,fileio,pyspark,,reader,ready
+utils,,,io,,infra,fileio,pyspark,,writer,ready
+utils,,,base,,infra,fileio,,,base,ready
+utils,,,tempfile,,infra,fileio,,,tempfile,ready
+shared,frameworks,spark,factory,,infra,frameworks,spark,,factor,ready
+shared,frameworks,spark,manager,,infra,frameworks,spark,,manager,ready
+utils,,,jbook,,infra,jbook,,,manager,ready
+shared,logging,,logging,,infra,logging,,,decorator,ready
+utils,,,repo,,infra,repo,,,review,ready
+utils,,,base,,infra,data_task,convert,,base,ready
+shared,utils,,datetime,,infra,utils,,,date,ready
+shared,utils,,file,,infra,utils,,,file,ready
+utils,,,format,,infra,utils,,,format,ready
+utils,,,print,,infra,utils,,,print,ready
+utils,,,version,,infra,utils,,,version,ready

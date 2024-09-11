@@ -1,4 +1,4 @@
-# AppInsight
+# AppVoCAI-Discover
 
 > Analysis and Opportunity Discovery in the Mobile App Ecosystem
 

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday September 9th 2024 10:33:16 pm                                               #
+# Modified   : Wednesday September 11th 2024 01:11:02 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,10 +19,13 @@
 import os
 import sys
 
+import pandas as pd
 import pytest
-from discover.container import AppVoCAIDiscoverContainer
-from discover.infra.database.schema import schema
 from dotenv import load_dotenv
+from pyspark.sql import SparkSession
+
+from discover.container import DiscoverContainer
+from discover.infra.storage.database.schema import schema
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -37,8 +40,8 @@ collect_ignore_glob = []
 #                              DEPENDENCY INJECTION                                                #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session", autouse=True)
-def container() -> AppVoCAIDiscoverContainer:
-    container = AppVoCAIDiscoverContainer()
+def container() -> DiscoverContainer:
+    container = DiscoverContainer()
     container.init_resources()
     container.wire(
         packages=[],
@@ -76,25 +79,46 @@ def db_setup(container) -> None:
     dba.create_table(schema=schema["profile"])
 
 
-# # ------------------------------------------------------------------------------------------------ #
-# #                                       DATASET                                                    #
-# # ------------------------------------------------------------------------------------------------ #
-# @pytest.fixture(scope="session")
-# def reviews():
-#     DATASET_FP = "test/data/reviews"
-#     return IOService.read(filepath=DATASET_FP)
+# ------------------------------------------------------------------------------------------------ #
+#                                        SPARK                                                     #
+# ------------------------------------------------------------------------------------------------ #
 
 
-# # ------------------------------------------------------------------------------------------------ #
-# #                               FILE SETUP CONFIG                                                  #
-# # ------------------------------------------------------------------------------------------------ #
-# @pytest.fixture(scope="session")
-# def file_setup_config():
-#     return FileSetupPipelineConfig(
-#         local_download_folder="test/data",
-#         extract_destination="test/data/reviews",
-#         aws_folder="test",
-#         aws_s3_key="reviews.tar.gz",
-#         frac=0.1,
-#         force=True,
-#     )
+@pytest.fixture(scope="session")
+def spark():
+    """
+    Pytest fixture to create a Spark session.
+    This fixture is session-scoped, meaning it will be created once per test session.
+    """
+    spark_session = (
+        SparkSession.builder.appName("pytest-spark-session")
+        .master("local[*]")
+        .getOrCreate()
+    )
+
+    yield spark_session
+
+    # Teardown after the test session ends
+    spark_session.stop()
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture
+def pandas_df():
+    """
+    Pytest fixture that reads a CSV file into a pandas DataFrame.
+    Modify this to point to the correct CSV file.
+    """
+    FILEPATH = "data/test/00_raw/reviews.csv"
+    return pd.read_csv(FILEPATH)
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture
+def spark_df(spark, pandas_df):
+    """
+    Pytest fixture that converts a pandas DataFrame to a Spark DataFrame.
+    Requires the spark fixture and pandas_df_from_csv fixture.
+    """
+
+    return spark.createDataFrame(pandas_df)
