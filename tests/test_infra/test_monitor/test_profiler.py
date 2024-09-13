@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 03:58:14 pm                                           #
-# Modified   : Wednesday September 11th 2024 04:13:27 pm                                           #
+# Modified   : Friday September 13th 2024 12:01:34 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -43,7 +43,7 @@ single_line = f"\n{100 * '-'}"
 # ------------------------------------------------------------------------------------------------ #
 class TestTask(Task):
     def __init__(self):
-        super().__init__(stage=Stage.MULTI)
+        super().__init__(stage=Stage.CORE)
 
     @task_profiler
     def run(self):

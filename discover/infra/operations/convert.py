@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Wednesday September 11th 2024 03:30:13 pm                                           #
+# Modified   : Friday September 13th 2024 12:01:33 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,7 +42,7 @@ class ConvertTask(Task):
         **kwargs: Other keyword arguments.
     """
 
-    __stage = Stage.MULTI
+    __stage = Stage.CORE
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class ConvertTask(Task):
         tempfile_manager_cls: type[TempFileMgr] = TempFileMgr,
         **kwargs,
     ) -> None:
-        super().__init__(converter_cls=converter_cls, stage=Stage.MULTI)
+        super().__init__(converter_cls=converter_cls, stage=Stage.CORE)
         self._converter_cls = converter_cls
         self._tempfile_manager_cls = tempfile_manager_cls
         self._kwargs = kwargs

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data_processing/data_quality_analysis/pipeline.py          #
+# Filename   : /discover/domain/service/data/data_quality_analysis/task.py                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Wednesday September 11th 2024 02:51:54 pm                                           #
+# Modified   : Friday September 13th 2024 12:01:28 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -59,7 +59,7 @@ class DQAConfig(StageConfig):
     """Class encapsulating the configuration for data quality assessment stage."""
 
     name: str = "DataQualityAssessment"
-    source_directory: str = "01_norm/reviews"
+    source_directory: str = "01_stage/reviews"
     source_filename: str = None
     target_directory: str = "02_dqa/reviews"
     target_filename: str = None

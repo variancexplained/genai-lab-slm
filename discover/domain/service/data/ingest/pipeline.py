@@ -4,28 +4,31 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data_processing/data_prep/config.py                        #
+# Filename   : /discover/domain/service/data/ingest/pipeline.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Wednesday September 11th 2024 02:51:50 pm                                           #
+# Modified   : Friday September 13th 2024 02:34:29 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Normalize Module"""
-from dataclasses import dataclass, field
+"""Stage Module"""
 from typing import Dict
 
 import pandas as pd
 from dotenv import load_dotenv
 from pandarallel import pandarallel
 
-from discover.application.data_prep.io import ReadTask, WriteTask
-from discover.application.pipeline import Pipeline, PipelineBuilder, StageConfig, Task
+from discover..pipeline import (
+    Pipeline,
+    PipelineBuilder,
+    Task,
+    StageConfig,
+)
 from discover.shared.instrumentation.decorator import task_profiler
 from discover.shared.logging.logging import log_exceptions
 from discover.utils.base import Reader, Writer
@@ -37,49 +40,17 @@ from discover.utils.repo import ReviewRepo
 load_dotenv()
 pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
 
-
-@dataclass
-class NormalizeConfig(StageConfig):
-    """Data processing configuration for the Normalize"""
-
-    name: str = "Normalize"
-    source_directory: str = "00_raw/reviews"
-    source_filename: str = None
-    target_directory: str = "01_norm/reviews"
-    target_filename: str = None
-    partition_cols: str = "category"
-    text_column: str = "content"
-    force: bool = False
-    encoding_sample: float = 0.01
-    random_state: int = 22
-    datatypes: dict = field(
-        default_factory=lambda: {
-            "id": "string",
-            "app_id": "string",
-            "app_name": "string",
-            "category_id": "category",
-            "category": "category",
-            "author": "string",
-            "rating": "int16",
-            "content": "string",
-            "vote_count": "int64",
-            "vote_sum": "int64",
-            "date": "datetime64[ms]",
-        }
-    )
-
-
 # ------------------------------------------------------------------------------------------------ #
-#                                        NORMALIZE                                                 #
+#                                STAGE PIPELINE BUILDER                                            #
 # ------------------------------------------------------------------------------------------------ #
-class Normalize(PipelineBuilder):
+class IngestPipelineBuilder(PipelineBuilder):
     """Encapsulates the data normalization pipeline
 
     Attributes:
         data (pd.DataFrame): The normalized dataset
 
     Args:
-        config (StageConfig): Configuration for the subclass stage.
+        config (StageConfig): Configuration for the Stage step in the workflow.
         pipeline_cls type[Pipeline]: Pipeline class to instantiate
         review_repo_cls (type[ReviewRepo]): Manages dataset IO
         source_reader_cls (type[Reader]): Class for reading the source data.
@@ -90,7 +61,7 @@ class Normalize(PipelineBuilder):
 
     def __init__(
         self,
-        config: NormalizeConfig,
+        config: StageConfig,
         source_reader_cls: type[Reader] = PandasReader,
         target_writer_cls: type[Writer] = PandasWriter,
         target_reader_cls: type[Reader] = PandasReader,
@@ -128,7 +99,7 @@ class Normalize(PipelineBuilder):
             writer_cls=self.target_writer_cls,
             partition_cols=self.config.partition_cols,
         )
-        normalize = NormalizeDataTask(
+        normalize = StageDataTask(
             datatypes=self.config.datatypes,
             text_column=self.config.text_column,
             cast_cls=CastPandas,
@@ -144,7 +115,7 @@ class Normalize(PipelineBuilder):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class NormalizeDataTask(Task):
+class StageDataTask(Task):
     def __init__(
         self,
         datatypes: dict,
@@ -154,7 +125,7 @@ class NormalizeDataTask(Task):
         random_state: int = None,
     ):
         """
-        Initializes the NormalizeDataTask.
+        Initializes the StageDataTask.
 
         The purpose of this class is to perform the minimum necessary preconditioning
         of the data, keeping it as close to its original form as possible, while ensuring

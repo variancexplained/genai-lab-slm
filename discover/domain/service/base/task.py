@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Wednesday September 11th 2024 01:43:30 pm                                           #
+# Modified   : Friday September 13th 2024 02:33:44 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,9 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
+from discover.domain.value_objects.context import Context
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.config import Config
 
@@ -71,7 +72,11 @@ class Task(ABC):
     """
 
     def __init__(
-        self, *args, stage: Stage, config_cls: type[Config] = Config, **kwargs
+        self,
+        *args,
+        config_cls: type[Config] = Config,
+        stage: Optional[Stage] = None,
+        **kwargs,
     ) -> None:
         """
         Initializes the Task with a configuration object. The configuration
@@ -88,8 +93,10 @@ class Task(ABC):
             Keyword arguments passed during initialization.
         """
         self._config = config_cls()
-        self._env = self._config.get_environment()
-        self._stage = stage
+        self._stage = stage  # TODO: Figure out stage setting.
+        self._context = Context(
+            service_type="Task", service_name=self.name, stage=self.stage
+        )
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -119,6 +126,11 @@ class Task(ABC):
         return self.__class__.__name__
 
     @property
+    def context(self) -> Context:
+        return self._context
+
+    @property
+    @abstractmethod
     def stage(self) -> str:
         """
         Returns the current stage of the task, if any.
@@ -128,19 +140,6 @@ class Task(ABC):
         str:
             The stage of the task, or None if no stage has been set.
         """
-        return self._stage
-
-    @property
-    def env(self) -> str:
-        """
-        Returns the environment in which the task is executed.
-
-        Returns:
-        --------
-        str:
-            The environment set by the task's configuration.
-        """
-        return self._env
 
     @abstractmethod
     def run(self, *args: Any, **kwargs: Any) -> Any:

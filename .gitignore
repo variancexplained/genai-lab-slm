@@ -8,7 +8,11 @@
 .coverage.*
 
 # Data
-data/
+data/dev/
+data/ext/
+data/prod/
+data/test/
+data/ref/
 tests/data/
 
 # Cache

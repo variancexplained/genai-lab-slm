@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Tuesday September 10th 2024 04:50:59 pm                                             #
+# Modified   : Friday September 13th 2024 01:43:25 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,10 @@
 from abc import ABC
 from dataclasses import dataclass
 
+from discover.domain.value_objects.lifecycle import Stage
+
 # ------------------------------------------------------------------------------------------------ #
-#                                       STAGE CONFIG                                               #
+#                                     STAGE CONFIG                                                 #
 # ------------------------------------------------------------------------------------------------ #
 
 
@@ -29,9 +31,9 @@ from dataclasses import dataclass
 class StageConfig(ABC):
     """Abstract base class for data preprocessing stage configurations."""
 
-    name: str = None
-    source_directory: str = None
-    source_filename: str = None
-    target_directory: str = None
-    target_filename: str = None
+    name: str
+    source_stage: Stage
+    source_name: str
+    target_stage: Stage
+    target_name: str
     force: bool = False

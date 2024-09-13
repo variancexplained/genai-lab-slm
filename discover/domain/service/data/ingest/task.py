@@ -4,19 +4,19 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data_processing/data_prep/pipeline.py                      #
+# Filename   : /discover/domain/service/data/ingest/task.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Wednesday September 11th 2024 02:51:50 pm                                           #
+# Modified   : Friday September 13th 2024 02:34:29 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Normalize Module"""
+"""Stage Module"""
 from dataclasses import dataclass, field
 from typing import Dict
 
@@ -39,13 +39,13 @@ pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
 
 
 @dataclass
-class NormalizeConfig(StageConfig):
-    """Data processing configuration for the Normalize"""
+class StageConfig(StageConfig):
+    """Data processing configuration for the Stage"""
 
-    name: str = "Normalize"
+    name: str = "Stage"
     source_directory: str = "00_raw/reviews"
     source_filename: str = None
-    target_directory: str = "01_norm/reviews"
+    target_directory: str = "01_stage/reviews"
     target_filename: str = None
     partition_cols: str = "category"
     text_column: str = "content"
@@ -72,7 +72,7 @@ class NormalizeConfig(StageConfig):
 # ------------------------------------------------------------------------------------------------ #
 #                                        NORMALIZE                                                 #
 # ------------------------------------------------------------------------------------------------ #
-class Normalize(PipelineBuilder):
+class Stage(PipelineBuilder):
     """Encapsulates the data normalization pipeline
 
     Attributes:
@@ -90,7 +90,7 @@ class Normalize(PipelineBuilder):
 
     def __init__(
         self,
-        config: NormalizeConfig,
+        config: StageConfig,
         source_reader_cls: type[Reader] = PandasReader,
         target_writer_cls: type[Writer] = PandasWriter,
         target_reader_cls: type[Reader] = PandasReader,
@@ -128,7 +128,7 @@ class Normalize(PipelineBuilder):
             writer_cls=self.target_writer_cls,
             partition_cols=self.config.partition_cols,
         )
-        normalize = NormalizeDataTask(
+        normalize = StageDataTask(
             datatypes=self.config.datatypes,
             text_column=self.config.text_column,
             cast_cls=CastPandas,
@@ -144,7 +144,7 @@ class Normalize(PipelineBuilder):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class NormalizeDataTask(Task):
+class StageDataTask(Task):
     def __init__(
         self,
         datatypes: dict,
@@ -154,7 +154,7 @@ class NormalizeDataTask(Task):
         random_state: int = None,
     ):
         """
-        Initializes the NormalizeDataTask.
+        Initializes the StageDataTask.
 
         The purpose of this class is to perform the minimum necessary preconditioning
         of the data, keeping it as close to its original form as possible, while ensuring
