@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Friday September 13th 2024 05:46:41 pm                                              #
+# Modified   : Saturday September 14th 2024 06:48:31 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from pyspark.sql import functions as sparkFunc
 
 from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
 from discover.data_prep.io import ConvertTask, ReadTask, WriteTask
-from discover.domain.service.base.task import Task
+from discover.domain.base.task import Task
 from discover.shared.instrumentation.decorator import task_profiler
 from discover.shared.logging.logging import log_exceptions
 from discover.utils.base import Reader, Writer

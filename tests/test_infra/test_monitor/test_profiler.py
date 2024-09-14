@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 03:58:14 pm                                           #
-# Modified   : Friday September 13th 2024 12:01:34 pm                                              #
+# Modified   : Saturday September 14th 2024 06:48:02 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from discover.domain.service.base.task import Task
+from discover.domain.base.task import Task
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.monitor.profiler import task_profiler
 

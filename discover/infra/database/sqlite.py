@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/storage/database/sqlite.py                                          #
+# Filename   : /discover/infra/database/sqlite.py                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:47:41 pm                                               #
-# Modified   : Wednesday September 11th 2024 01:31:22 am                                           #
+# Modified   : Saturday September 14th 2024 06:46:50 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ import pandas as pd
 from sqlalchemy import Connection, RootTransaction, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
-from discover.infra.storage.database.base import DBA, Database
+from discover.infra.database.base import DBA, Database
 
 
 # ------------------------------------------------------------------------------------------------ #

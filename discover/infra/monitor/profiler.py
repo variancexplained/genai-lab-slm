@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Saturday September 14th 2024 01:52:04 am                                            #
+# Modified   : Saturday September 14th 2024 06:14:23 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,7 +32,7 @@ profile_repo = container.repo.profile()
 # ------------------------------------------------------------------------------------------------ #
 
 
-def task_profiler(func: Callable) -> Callable:
+def profiler(func: Callable) -> Callable:
     """
     A decorator to profile Task objects by measuring performance metrics.
 
@@ -108,11 +108,12 @@ def task_profiler(func: Callable) -> Callable:
 
             # Create the Profile object with the computed metrics
             profile = Profile(
-                env=self.env,  # Environment (e.g., production, development)
+                runid=self.context.runid,
+                service_type=self.context.service_type,
+                service_name=self.context.service_name,
                 stage=self.stage.value,  # Stage in the pipeline (e.g., data cleaning)
-                task_name=self.name,  # Name of the task being profiled
-                task_start_time=start_time,
-                task_end_time=end_time,
+                start_time=start_time,
+                end_time=end_time,
                 runtime_seconds=runtime_seconds,
                 cpu_cores=cpu_cores,
                 cpu_user_utilization=cpu_user_utilization,
@@ -125,7 +126,6 @@ def task_profiler(func: Callable) -> Callable:
                 network_data_sent_bytes=network_data_sent_bytes,
                 network_data_received_bytes=network_data_received_bytes,
                 exceptions_raised=exceptions_raised,
-                retry_count=0,  # Placeholder for retry logic
             )
 
             # Persist the profile data to the profile repository

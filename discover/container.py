@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Wednesday September 11th 2024 10:18:00 am                                           #
+# Modified   : Saturday September 14th 2024 06:47:07 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import logging.config  # pragma: no cover
 from dependency_injector import containers, providers
 
 from discover.infra.config.config import Config
-from discover.infra.storage.database.sqlite import SQLiteDB, SQLiteDBA
+from discover.infra.database.sqlite import SQLiteDB, SQLiteDBA
 from discover.infra.storage.repo.profile import ProfileRepo
 
 # ------------------------------------------------------------------------------------------------ #

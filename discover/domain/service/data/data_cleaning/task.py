@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Friday September 13th 2024 05:46:35 pm                                              #
+# Modified   : Saturday September 14th 2024 06:48:27 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from dotenv import load_dotenv
 
 from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
 from discover.data_prep.io import ReadTask, WriteTask
-from discover.domain.service.base.task import Task
+from discover.domain.base.task import Task
 from discover.shared.instrumentation.decorator import task_profiler
 from discover.shared.logging.logging import log_exceptions
 from discover.shared.persist.file.io import IOService

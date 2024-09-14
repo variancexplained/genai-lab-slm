@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Friday September 13th 2024 05:46:36 pm                                              #
+# Modified   : Saturday September 14th 2024 06:48:28 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,7 +32,7 @@ from textstat import textstat
 from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
 from discover.data_prep import log_exceptions, task_profiler
 from discover.data_prep.io import ReadTask, WriteTask
-from discover.domain.service.base.task import Task
+from discover.domain.base.task import Task
 from discover.utils.base import Reader, Writer
 from discover.utils.cast import CastPandas
 from discover.utils.io import PandasReader, PandasWriter
