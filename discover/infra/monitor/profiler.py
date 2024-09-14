@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Friday September 13th 2024 12:01:34 pm                                              #
+# Modified   : Saturday September 14th 2024 01:52:04 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Callable
 import psutil  # For gathering system resource usage
 
 from discover.container import DiscoverContainer
-from discover.infra.monitor.profile import TaskProfile
+from discover.infra.monitor.profile import Profile
 
 # ------------------------------------------------------------------------------------------------ #
 # Initialize the repository once at the module level
@@ -106,8 +106,8 @@ def task_profiler(func: Callable) -> Callable:
             cpu_user_utilization = cpu_user_time / (runtime_seconds * cpu_cores)
             cpu_system_utilization = cpu_system_time / (runtime_seconds * cpu_cores)
 
-            # Create the TaskProfile object with the computed metrics
-            profile = TaskProfile(
+            # Create the Profile object with the computed metrics
+            profile = Profile(
                 env=self.env,  # Environment (e.g., production, development)
                 stage=self.stage.value,  # Stage in the pipeline (e.g., data cleaning)
                 task_name=self.name,  # Name of the task being profiled

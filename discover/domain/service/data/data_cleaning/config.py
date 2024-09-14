@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Friday September 13th 2024 12:01:27 pm                                              #
+# Modified   : Friday September 13th 2024 05:46:35 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 from dotenv import load_dotenv
 
-from discover.application.pipeline import Pipeline, PipelineBuilder, StageConfig
+from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
 from discover.data_prep.io import ReadTask, WriteTask
 from discover.domain.service.base.task import Task
 from discover.shared.instrumentation.decorator import task_profiler
@@ -42,7 +42,7 @@ load_dotenv()
 #                                    CLEAN CONFIG                                                  #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class CleanConfig(StageConfig):
+class CleanConfig(ServiceConfig):
     """Class encapsulating the configuration for the data cleaning stage."""
 
     name: str = "DataCleaner"
@@ -79,7 +79,7 @@ class DataCleaner(PipelineBuilder):
         data (pd.DataFrame): The cleaned dataset
 
     Args:
-        config (StageConfig): Configuration for the subclass stage.
+        config (ServiceConfig): Configuration for the subclass stage.
         pipeline_cls type[Pipeline]: Pipeline class to instantiate
         review_repo_cls (type[ReviewRepo]): Manages dataset IO
         source_reader_cls (type[Reader]): Class for reading the source data.
@@ -90,7 +90,7 @@ class DataCleaner(PipelineBuilder):
 
     def __init__(
         self,
-        config: StageConfig,
+        config: ServiceConfig,
         source_reader_cls: type[Reader] = PandasReader,
         target_writer_cls: type[Writer] = PandasWriter,
         target_reader_cls: type[Reader] = PandasReader,

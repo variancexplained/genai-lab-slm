@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 02:58:50 pm                                               #
-# Modified   : Wednesday September 11th 2024 03:38:27 pm                                           #
+# Modified   : Saturday September 14th 2024 03:19:53 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Optional
 from pyspark.sql import DataFrame, SparkSession
 
 from discover.infra.config.config import Config
-from discover.infra.storage.repo.base import FileFormat, ReviewRepo
+from discover.infra.storage.repo.base import ReviewRepo
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -51,10 +51,7 @@ class ZahariaRepo(ReviewRepo):
     """
 
     def __init__(
-        self,
-        file_format: FileFormat = FileFormat.PARQUET_PARTITIONED,
-        config_cls: type[Config] = Config,
-        spark: Optional[SparkSession] = None,
+        self, config_cls: type[Config] = Config, spark: Optional[SparkSession] = None
     ) -> None:
         """
         Initializes the ZahariaRepo with a file format, configuration, and an optional Spark session.
@@ -76,20 +73,21 @@ class ZahariaRepo(ReviewRepo):
         TypeError:
             If no Spark session is provided in a production environment.
         """
-        super().__init__(file_format=file_format, config_cls=config_cls)
+        super().__init__(config_cls=config_cls)
+        self._spark = spark
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         env = self._config.get_environment()
-        if env == "prod" and spark is None:
+        if env == "prod" and self._spark is None:
             msg = "A Spark Session is required in production environments."
             self._logger.exception(msg)
             raise TypeError(msg)
-        else:
+        elif self._spark is None:
             self._spark = (
                 spark or SparkSession.builder.appName("AppVoCAI-D").getOrCreate()
             )
 
-    def _read(self, filepath: str) -> DataFrame:
+    def _read(self, filepath: str, **kwargs) -> DataFrame:
         """
         Reads review data from a Parquet file using Spark.
 
@@ -103,9 +101,9 @@ class ZahariaRepo(ReviewRepo):
         pyspark.sql.DataFrame:
             The review data read from the file as a PySpark DataFrame.
         """
-        return self._spark.read.parquet(filepath)
+        return self._spark.read.parquet(filepath, kwargs=kwargs)
 
-    def _write(self, data: DataFrame, filepath: str) -> None:
+    def _write(self, data: DataFrame, filepath: str, **kwargs) -> None:
         """
         Writes the given review data to a Parquet file using Spark.
 
@@ -121,4 +119,4 @@ class ZahariaRepo(ReviewRepo):
         FileExistsError:
             If the file already exists in the specified path.
         """
-        data.write.parquet(filepath)
+        data.write.parquet(filepath, kwargs=kwargs)

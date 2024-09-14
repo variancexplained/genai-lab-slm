@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Friday September 13th 2024 12:01:28 pm                                              #
+# Modified   : Friday September 13th 2024 05:46:36 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from pandarallel import pandarallel
 from profanity_check import predict
 from tqdm import tqdm
 
-from discover.application.pipeline import Pipeline, PipelineBuilder, StageConfig
+from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
 from discover.data_prep import log_exceptions, task_profiler
 from discover.data_prep.io import ReadTask, WriteTask
 from discover.domain.service.base.task import Task
@@ -55,7 +55,7 @@ fasttext.FastText.eprint = lambda x: None
 #                                 DATA QUALITY CONFIG                                              #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class DQAConfig(StageConfig):
+class DQAConfig(ServiceConfig):
     """Class encapsulating the configuration for data quality assessment stage."""
 
     name: str = "DataQualityAssessment"

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 01:26:24 am                                                    #
-# Modified   : Friday September 13th 2024 12:01:02 pm                                              #
+# Modified   : Friday September 13th 2024 05:09:22 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from enum import Enum
 # ------------------------------------------------------------------------------------------------ #
 class Stage(Enum):
     RAW = "00_raw"
-    STAGE = "01_stage"
+    INGEST = "01_ingest"
     DQA = "02_dqa"
     CLEAN = "03_clean"
     FEATURE = "04_features"

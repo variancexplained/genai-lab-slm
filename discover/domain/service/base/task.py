@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Friday September 13th 2024 02:33:44 pm                                              #
+# Modified   : Saturday September 14th 2024 03:49:58 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,11 +21,10 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any
 
+from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
-from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.config.config import Config
 
 # ------------------------------------------------------------------------------------------------ #
 #                                           TASK                                                   #
@@ -33,49 +32,13 @@ from discover.infra.config.config import Config
 
 
 class Task(ABC):
-    """
-    Abstract base class for all tasks. This class provides a structure for
-    defining tasks that have a configuration, environment, and stage, while
-    enforcing the implementation of a `run` method in subclasses.
-
-    Attributes:
-    -----------
-    _config : Config
-        The configuration object used to set up the task's environment and stage.
-    _env : str
-        The environment in which the task operates, as determined by the configuration.
-    _stage : str
-        The stage of the task, if applicable.
-    _logger : logging.Logger
-        A private logger instance used for logging within the task. Subclasses can
-        access this via a read-only property.
-
-    Properties:
-    -----------
-    logger : logging.Logger (read-only)
-        Provides read-only access to the logger instance for subclasses.
-
-    Methods:
-    --------
-    name:
-        Returns the name of the class implementing the task.
-
-    stage:
-        Returns the current stage of the task, if set.
-
-    env:
-        Returns the environment in which the task is executed.
-
-    run:
-        Abstract method that must be implemented by subclasses to define the
-        specific behavior of the task.
-    """
+    """"""
 
     def __init__(
         self,
         *args,
-        config_cls: type[Config] = Config,
-        stage: Optional[Stage] = None,
+        context: Context,
+        config: ServiceConfig,
         **kwargs,
     ) -> None:
         """
@@ -92,11 +55,11 @@ class Task(ABC):
         **kwargs :
             Keyword arguments passed during initialization.
         """
-        self._config = config_cls()
-        self._stage = stage  # TODO: Figure out stage setting.
-        self._context = Context(
-            service_type="Task", service_name=self.name, stage=self.stage
-        )
+        self._config = config
+        self._context = context
+        self._context.service_type = "Task"
+        self._context.service_name = self.name
+        self._context.stage = self.stage
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -160,4 +123,7 @@ class Task(ABC):
             The result of the task's execution, which depends on the implementation
             in the subclass.
         """
-        pass
+        self._context.service_type + "Task"
+        self._context.service_name = self.name
+        self._context.stage = self.stage
+        self._context.create_run(owner=self)

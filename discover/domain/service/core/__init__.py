@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /appvocai/infra/config/__init__.py                                                  #
+# Filename   : /discover/domain/service/core/__init__.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday September 9th 2024 11:10:34 am                                               #
-# Modified   : Monday September 9th 2024 11:11:16 am                                               #
+# Created    : Friday September 13th 2024 07:13:11 pm                                              #
+# Modified   : Friday September 13th 2024 07:13:14 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #

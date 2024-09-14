@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_infra/test_operations/test_write.py                                     #
+# Filename   : /tests/test_services/test_ingestion.py/test_ingest_app_service.py                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday September 11th 2024 03:18:48 pm                                           #
-# Modified   : Friday September 13th 2024 12:01:34 pm                                              #
+# Created    : Friday September 13th 2024 11:23:02 pm                                              #
+# Modified   : Saturday September 14th 2024 04:47:01 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,12 +19,15 @@
 import inspect
 import logging
 import os
+import shutil
 from datetime import datetime
 
+import pandas as pd
 import pytest
 
-from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.operations.write import WritePandasTask, WriteSparkTask
+from discover.application.service.data.ingest import DataIngestionApplicationService
+from discover.domain.service.data.ingest.config import IngestConfig
+from discover.domain.value_objects.context import Context
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -35,26 +38,22 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
 double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
-# ------------------------------------------------------------------------------------------------ #
-PANDAS_FILEPATH = "data/test/02_dqa/reviews.csv"
-SPARK_FILEPATH = "data/test/02_dqa/reviews"
+
+TARGET = "data/test/01_ingest/reviews"
 
 
-# ------------------------------------------------------------------------------------------------ #
-@pytest.mark.task
-@pytest.mark.write
-class TestWriteTask:  # pragma: no cover
+@pytest.mark.ingest
+class TestIngest:  # pragma: no cover
     # ============================================================================================ #
-    def test_write_pandas(self, pandas_df, caplog) -> None:
+    def test_setup(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        task = WritePandasTask(stage=Stage.DQA, name="reviews")
-        task.run(data=pandas_df)
-        assert os.path.exists(PANDAS_FILEPATH)
+        shutil.rmtree(path="data/test/01_ingest", ignore_errors=True)
+
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -65,16 +64,38 @@ class TestWriteTask:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_write_spark(self, spark_df, caplog) -> None:
+    def test_ingest(self, config, context, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        task = WriteSparkTask(stage=Stage.DQA, name="reviews")
-        task.run(data=spark_df)
-        assert os.path.exists(SPARK_FILEPATH)
+        ingest = DataIngestionApplicationService(
+            config_cls=IngestConfig, context_cls=Context
+        )
+        data = ingest.run()
+        assert isinstance(data, pd.DataFrame)
+        logger.info(data.head())
+        assert os.path.exists(path=TARGET)
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_teardown(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        shutil.rmtree(path="data/test/01_ingest", ignore_errors=True)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)

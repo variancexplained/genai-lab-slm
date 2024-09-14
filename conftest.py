@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday September 11th 2024 04:09:33 pm                                           #
+# Modified   : Saturday September 14th 2024 04:41:14 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,10 +24,16 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
+from discover.application.service.data.ingest import IngestConfig
 from discover.container import DiscoverContainer
+from discover.domain.value_objects.config import DataConfig
+from discover.domain.value_objects.context import Context
+from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.config import Config
+from discover.infra.identity.idxgen import RunIDXGen
 from discover.infra.storage.cloud.aws import S3Handler
 from discover.infra.storage.database.schema import schema
+from discover.infra.storage.repo.mckinney import McKinneyRepo
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -90,7 +96,7 @@ def profile_repo(container):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                        SPARK                                                     #
+#                                         AWS                                                      #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
 def aws():
@@ -138,3 +144,21 @@ def spark_df(spark, pandas_df):
     """
 
     return spark.createDataFrame(pandas_df)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                         CONFIG                                                   #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def config():
+    source = DataConfig(repo=McKinneyRepo(), stage=Stage.RAW, name="reviews")
+    target = DataConfig(repo=McKinneyRepo(), stage=Stage.INGEST, name="reviews")
+    return IngestConfig(source_data_config=source, target_data_config=target)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                         CONTEXT                                                  #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="class")
+def context():
+    return Context(idxgen_cls=RunIDXGen)

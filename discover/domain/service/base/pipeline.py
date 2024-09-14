@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Friday September 13th 2024 02:31:29 pm                                              #
+# Modified   : Saturday September 14th 2024 03:43:52 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,9 +22,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from discover.domain.service.base.config import StageConfig
-from discover.domain.service.base.repo import Repo
 from discover.domain.service.base.task import Task
+from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
 from discover.domain.value_objects.lifecycle import Stage
 
@@ -37,17 +36,15 @@ class Pipeline(ABC):
 
     def __init__(
         self,
-        config: StageConfig,
-        source_repo_cls: type[Repo],
-        target_repo_cls: type[Repo],
+        config: ServiceConfig,
+        context: Context,
     ):
-        self._source_repo = source_repo_cls()
-        self._target_repo = target_repo_cls()
         self._config = config
+        self._context = context
+        self._context.service_type = "Pipeline"
+        self._context.service_name = self.name
+        self._context.stage = self.stage
         self._tasks = []
-        self._context = Context(
-            service_type="Pipeline", service_name=self.name, stage=self.stage
-        )
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -77,14 +74,16 @@ class Pipeline(ABC):
 
     def run(self) -> Any:
         """Execute the pipeline tasks in sequence."""
-        self._logger.debug(f"Checking if endpoint for {self._name} exists.")
+        # Adds a run_id to the pipeline context.
+        self._context.create_run(owner=self)
+        self._logger.debug(f"Checking if endpoint for {self.name} exists.")
         if self.endpoint_exists():
             self._logger.info(
-                f"Endpoint {self._name} exists. Returning data from endpoint."
+                f"Endpoint {self.name} exists. Returning data from endpoint."
             )
             return self.read_endpoint()
         else:
-            self._logger.debug(f"Endpoint does not exist. Running {self._name}.")
+            self._logger.debug(f"Endpoint does not exist. Running {self.name}.")
             data = None
             for task in self._tasks:
                 data = task.run(data)
@@ -92,16 +91,19 @@ class Pipeline(ABC):
 
     def endpoint_exists(self) -> bool:
         """Returns True if the target already exists. False otherwise"""
+        repo = self._config.target_data_config.repo
 
-        return self._target_repo.exists(
-            stage=self._config.target_stage,
-            name=self._config.target_name,
+        return repo.exists(
+            stage=self._config.target_data_config.stage,
+            name=self._config.target_data_config.name,
         )
 
     def read_endpoint(self) -> Any:
         """Reads and returns the target data."""
-        return self._target_repo.get(
-            stage=self._config.target_stage, name=self.config.target_name
+        repo = self._config.target_data_config.repo
+        return repo.get(
+            stage=self._config.target_data_config.stage,
+            name=self._config.target_data_config.name,
         )
 
 
@@ -109,32 +111,48 @@ class Pipeline(ABC):
 #                                  PIPELINE BUILDER                                                #
 # ------------------------------------------------------------------------------------------------ #
 class PipelineBuilder(ABC):
-    """Abstract base class for data preprocessor classes
+    """Abstract base class for constructing pipelines that execute preprocessing tasks.
 
-    Args:
-        config (StageConfig): Configuration for the subclass stage.
-        pipeline_cls type[Pipeline]: Pipeline class to instantiate
-        review_repo_cls (type[ReviewRepo]): Manages dataset IO
-        source_reader_cls (type[Reader]): Class for reading the source data.
-        target_writer_cls (type[Writer]): Class for writing the target data
-        target_reader_cls (type[Reader]): Class for reading the target data.
+    This class provides a blueprint for building a pipeline, which consists of a series
+    of preprocessing tasks. Subclasses must implement the `create_pipeline` method to
+    define the specific pipeline creation logic.
+
+    Attributes:
+        config (ServiceConfig): Configuration object that defines parameters for building the pipeline.
+        pipeline_cls (type[Pipeline]): Class representing the pipeline to be constructed. Defaults to `Pipeline`.
+        logger (logging.Logger): Logger instance for logging events related to the pipeline construction.
     """
 
     def __init__(
         self,
-        config: StageConfig,
-        source_repo_cls: type[Repo],
-        target_repo_cls: type[Repo],
+        config: ServiceConfig,
+        context: Context,
         pipeline_cls: type[Pipeline] = Pipeline,
         **kwargs,
     ) -> None:
-        super().__init__()
-        self.config = config
-        self._source_repo_cls = source_repo_cls
-        self._target_repo_cls = target_repo_cls
+        """
+        Initializes the PipelineBuilder with the given configuration and pipeline class.
+
+        Args:
+            config (ServiceConfig): Configuration object to be used for constructing the pipeline.
+            pipeline_cls (type[Pipeline], optional): Pipeline class to use for creating the pipeline instance.
+                                                     Defaults to `Pipeline`.
+            **kwargs: Additional keyword arguments to be passed during the construction process.
+        """
+        self._config = config
+        self._context = context
+
         self.pipeline_cls = pipeline_cls
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @abstractmethod
     def create_pipeline(self) -> Pipeline:
-        """Constructs the pipeline that executes the preprocessing tasks."""
+        """Constructs the pipeline that executes the preprocessing tasks.
+
+        This method must be implemented by subclasses to define the logic for creating
+        a pipeline. The pipeline is responsible for executing a series of tasks as part
+        of the preprocessing stage.
+
+        Returns:
+            Pipeline: An instance of the pipeline to be executed.
+        """

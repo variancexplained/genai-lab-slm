@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/monitor/repo.py                                                     #
+# Filename   : /discover/infra/storage/repo/__pycache__/repo.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:43:56 pm                                               #
-# Modified   : Wednesday September 11th 2024 09:41:15 am                                           #
+# Modified   : Saturday September 14th 2024 01:52:04 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import logging
 import pandas as pd
 
 from discover.domain.service.base.repo import Repo
-from discover.infra.monitor.profile import TaskProfile
+from discover.infra.monitor.profile import Profile
 from discover.infra.storage.database.base import Database
 
 
@@ -39,7 +39,7 @@ class ProfileRepo(Repo):
 
     Methods:
         __len__(): Returns the total number of profiles in the database.
-        add(profile: TaskProfile): Adds a new profile to the 'profile' table.
+        add(profile: Profile): Adds a new profile to the 'profile' table.
         get(profile_id: int): Retrieves a profile by its ID.
         get_all(): Retrieves all profiles as a pandas DataFrame.
         get_by_task(task_name: str): Retrieves profiles that match a specific task name.
@@ -69,12 +69,12 @@ class ProfileRepo(Repo):
         """
         return len(self.get_all())
 
-    def add(self, profile: TaskProfile) -> None:
+    def add(self, profile: Profile) -> None:
         """
         Adds a new profile to the 'profile' table in the database.
 
         Args:
-            profile (TaskProfile): The profile object to be added to the database.
+            profile (Profile): The profile object to be added to the database.
         """
         query = """
             INSERT INTO profile (
@@ -94,7 +94,7 @@ class ProfileRepo(Repo):
         with self._database as db:
             db.command(query=query, params=params)
 
-    def get(self, profile_id: int) -> TaskProfile:
+    def get(self, profile_id: int) -> Profile:
         """
         Retrieves a profile from the database by its ID.
 
@@ -102,14 +102,14 @@ class ProfileRepo(Repo):
             profile_id (int): The ID of the profile to retrieve.
 
         Returns:
-            TaskProfile: The profile object retrieved from the database.
+            Profile: The profile object retrieved from the database.
         """
         query = """SELECT * FROM profile WHERE id = :id;"""
         params = {"id": profile_id}
         with self._database as db:
             profile = db.query(query=query, params=params)
 
-        return TaskProfile(**profile)
+        return Profile(**profile)
 
     def get_all(self) -> pd.DataFrame:
         """

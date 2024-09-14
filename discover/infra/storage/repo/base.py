@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Friday September 13th 2024 12:01:34 pm                                              #
+# Modified   : Saturday September 14th 2024 04:08:08 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -81,9 +81,7 @@ class ReviewRepo(Repo):
         Abstract method for writing data to a file. To be implemented by subclasses.
     """
 
-    def __init__(
-        self, file_format: FileFormat, config_cls: type[Config] = Config
-    ) -> None:
+    def __init__(self, config_cls: type[Config] = Config) -> None:
         """
         Initializes the ReviewRepo with the specified file format and configuration.
 
@@ -95,11 +93,11 @@ class ReviewRepo(Repo):
             The configuration class that provides environment-specific settings, by default Config.
         """
         super().__init__()
-        self._file_format = file_format
         self._config = config_cls()
         self._basedir = self._config.get_config(section="data").basedir
+        self._file_ext = self._config.get_config(section="data").format
 
-    def add(self, data: Any, stage: Stage, name: str) -> None:
+    def add(self, data: Any, stage: Stage, name: str, **kwargs) -> None:
         """
         Adds data to the repository by writing it to a file.
 
@@ -123,7 +121,7 @@ class ReviewRepo(Repo):
             self._logger.exception(msg)
             raise FileExistsError(msg)
 
-        self._write(filepath=filepath, data=data)
+        self._write(filepath=filepath, data=data, **kwargs)
 
     def get(self, stage: Stage, name: str) -> pd.DataFrame:
         """
@@ -215,10 +213,8 @@ class ReviewRepo(Repo):
             The constructed file path.
         """
         env = self._config.get_environment()
-        return (
-            os.path.join(self._basedir, env, stage.value, name)
-            + self._file_format.value
-        )
+
+        return os.path.join(self._basedir, env, stage.value, name) + self._file_ext
 
     @abstractmethod
     def _read(self, filepath: str) -> Any:

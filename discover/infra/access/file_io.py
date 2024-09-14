@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Wednesday September 11th 2024 12:59:49 pm                                           #
+# Modified   : Saturday September 14th 2024 04:26:16 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -319,7 +319,6 @@ class ParquetIO(IO):  # pragma: no cover
             pq.write_table(
                 table=table,
                 where=filepath,
-                existing_data_behavior=existing_data_behavior,
             )
 
 

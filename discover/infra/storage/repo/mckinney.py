@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 02:58:50 pm                                               #
-# Modified   : Wednesday September 11th 2024 03:38:09 pm                                           #
+# Modified   : Saturday September 14th 2024 04:08:41 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ import pandas as pd
 
 from discover.infra.access.file_io import IOService
 from discover.infra.config.config import Config
-from discover.infra.storage.repo.base import FileFormat, ReviewRepo
+from discover.infra.storage.repo.base import ReviewRepo
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -51,10 +51,7 @@ class McKinneyRepo(ReviewRepo):
     """
 
     def __init__(
-        self,
-        file_format: FileFormat = FileFormat.CSV,
-        config_cls: type[Config] = Config,
-        io: type[IOService] = IOService,
+        self, config_cls: type[Config] = Config, io_cls: type[IOService] = IOService
     ) -> None:
         """
         Initializes the McKinneyRepo with a file format, configuration, and IO service.
@@ -68,11 +65,11 @@ class McKinneyRepo(ReviewRepo):
         io : type[IOService], optional
             The IO service class responsible for file operations, by default IOService.
         """
-        super().__init__(file_format=file_format, config_cls=config_cls)
-        self._io = io()  # Initialize the IO service
+        super().__init__(config_cls=config_cls)
+        self._io = io_cls()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def _read(self, filepath: str) -> pd.DataFrame:
+    def _read(self, filepath: str, **kwargs) -> pd.DataFrame:
         """
         Reads review data from the file system using the IO service and returns it as a pandas DataFrame.
 
@@ -86,9 +83,9 @@ class McKinneyRepo(ReviewRepo):
         pd.DataFrame:
             The review data read from the file as a pandas DataFrame.
         """
-        return self._io.read(filepath=filepath)
+        return self._io.read(filepath=filepath, **kwargs)
 
-    def _write(self, data: pd.DataFrame, filepath: str) -> None:
+    def _write(self, data: pd.DataFrame, filepath: str, **kwargs) -> None:
         """
         Writes the given review data to the file system using the IO service.
 
@@ -99,4 +96,4 @@ class McKinneyRepo(ReviewRepo):
         filepath : str
             The full file path where the file will be saved.
         """
-        self._io.write(filepath=filepath, data=data)
+        self._io.write(filepath=filepath, data=data, **kwargs)

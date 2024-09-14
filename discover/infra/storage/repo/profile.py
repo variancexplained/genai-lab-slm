@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 10:14:56 am                                           #
-# Modified   : Wednesday September 11th 2024 10:15:43 am                                           #
+# Modified   : Saturday September 14th 2024 01:52:04 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import logging
 import pandas as pd
 
 from discover.domain.service.base.repo import Repo
-from discover.infra.monitor.profile import TaskProfile
+from discover.infra.monitor.profile import Profile
 from discover.infra.storage.database.base import Database
 
 
@@ -35,7 +35,7 @@ class ProfileRepo(Repo):
     def __len__(self) -> int:
         return len(self.get_all())
 
-    def add(self, profile: TaskProfile) -> None:
+    def add(self, profile: Profile) -> None:
         query = """
             INSERT INTO profile (
                 env,
@@ -82,13 +82,13 @@ class ProfileRepo(Repo):
         with self._database as db:
             db.command(query=query, params=params)
 
-    def get(self, profile_id: int) -> TaskProfile:
+    def get(self, profile_id: int) -> Profile:
         query = """SELECT * FROM profile WHERE id = :id;"""
         params = {"id": profile_id}
         with self._database as db:
             profile = db.query(query=query, params=params)
 
-        return TaskProfile(**profile)
+        return Profile(**profile)
 
     def get_all(self) -> pd.DataFrame:
         query = """SELECT * FROM profile;"""

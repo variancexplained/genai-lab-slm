@@ -3,8 +3,8 @@
 ## **Overview**
 
 The **Task Profiler** package provides a set of tools to capture and persist performance metrics of tasks within your data pipeline. The main components include:
-- **TaskProfile**: A data class that captures the performance metrics of a task.
-- **ProfileRepo**: A repository class responsible for CRUD operations related to `TaskProfile` objects, storing them in an SQLite database.
+- **Profile**: A data class that captures the performance metrics of a task.
+- **ProfileRepo**: A repository class responsible for CRUD operations related to `Profile` objects, storing them in an SQLite database.
 - **task_profiler**: A decorator that wraps the `run` method of task objects, capturing key metrics (CPU utilization, memory usage, etc.) and saving them using `ProfileRepo`.
 
 ## **Contents**
@@ -41,15 +41,15 @@ Ensure that you have Python installed along with the necessary dependencies.
 
 ### **Profiling Tasks**
 
-1. **TaskProfile Class**:
-   `TaskProfile` is a data class that encapsulates the key metrics collected during the execution of a task. Metrics include runtime, CPU utilization, memory usage, and I/O operations.
+1. **Profile Class**:
+   `Profile` is a data class that encapsulates the key metrics collected during the execution of a task. Metrics include runtime, CPU utilization, memory usage, and I/O operations.
 
    Example:
    ```python
-   from discover.infra.monitor.profile import TaskProfile
+   from discover.infra.monitor.profile import Profile
    from datetime import datetime
 
-   profile = TaskProfile(
+   profile = Profile(
        env="production",
        stage="data_cleaning",
        task_name="AnonymizeReviewsTask",
@@ -72,7 +72,7 @@ Ensure that you have Python installed along with the necessary dependencies.
    ```
 
 2. **ProfileRepo Class**:
-   The `ProfileRepo` is used to store and manage `TaskProfile` data in an SQLite database. You can add, retrieve, and delete profiles, as well as check if a profile exists.
+   The `ProfileRepo` is used to store and manage `Profile` data in an SQLite database. You can add, retrieve, and delete profiles, as well as check if a profile exists.
 
    Example:
    ```python
@@ -124,7 +124,7 @@ The `ProfileRepo` allows you to interact with the SQLite database for CRUD opera
 - **Delete by ID or task name**: `profile_repo.remove(profile_id=123)`, `profile_repo.remove_by_task(task_name="TaskName")`
 
 ## **Metrics Captured**
-The **TaskProfile** class collects the following metrics:
+The **Profile** class collects the following metrics:
 - **env**: Environment (e.g., production, staging, development).
 - **stage**: Stage in the data pipeline (e.g., data cleaning, analysis).
 - **task_name**: Name of the task being profiled.

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 08:37:42 pm                                               #
-# Modified   : Wednesday September 11th 2024 10:18:00 am                                           #
+# Modified   : Saturday September 14th 2024 01:52:02 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import pytest
 
-from discover.infra.monitor.profile import TaskProfile
+from discover.infra.monitor.profile import Profile
 from discover.infra.storage.repo.profile import ProfileRepo
 
 # ------------------------------------------------------------------------------------------------ #
@@ -51,9 +51,9 @@ class ProfileGen:
             "Final",
         ]
 
-    def get_profile(self) -> TaskProfile:
+    def get_profile(self) -> Profile:
         self.idx += 1
-        return TaskProfile(
+        return Profile(
             env=self.env[self.idx % 3],
             stage=self.stage[self.idx % 5],
             task_name=self.task_name[self.idx % 5],
@@ -114,7 +114,7 @@ class TestProfileRepo:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         repo = container.repo.profile()
         profile = repo.get(profile_id=1)
-        assert isinstance(profile, TaskProfile)
+        assert isinstance(profile, Profile)
         logger.info(profile)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

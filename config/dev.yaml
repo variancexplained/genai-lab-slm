@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Monday September 9th 2024 11:11:30 pm                                               #
+# Modified   : Friday September 13th 2024 11:41:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -67,18 +67,7 @@ dataset:
     row_group_size: 10485760  # 10Mb
     existing_data_behavior: delete_matching
 # ------------------------------------------------------------------------------------------------ #
-kvs:
-  cache:
-    dqa: workspace/dev/kvs/cache/dqa/dqa
-    cachenow: workspace/dev/kvs/cache/cachenow/cachenow
-
-# ------------------------------------------------------------------------------------------------ #
-recovery:
-  db:
-    backup_source: workspace/test/db/sqlite.db
-    backup_directory: workspace/dev/recovery/db
-  file:
-    default_source: data/dev
-    backup: workspace/dev/recovery/data
-
-
+ops:
+  cache: ops/dev/cache/cachenow
+  idxgen:
+    runid: ops/dev/identity/runid

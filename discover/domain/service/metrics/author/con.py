@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Friday September 13th 2024 12:01:31 pm                                              #
+# Modified   : Friday September 13th 2024 05:46:38 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sparkFunc
 
-from discover.application.pipeline import Pipeline, PipelineBuilder, StageConfig
+from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
 from discover.data_prep.io import ConvertTask, ReadTask, WriteTask
 from discover.domain.service.base.task import Task
 from discover.shared.instrumentation.decorator import task_profiler
@@ -46,7 +46,7 @@ load_dotenv()
 #                                        CONFIG                                                    #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class MetricsConfig(StageConfig):
+class MetricsConfig(ServiceConfig):
     """Base class for configuration"""
 
     source_directory: str = "04_features/reviews"

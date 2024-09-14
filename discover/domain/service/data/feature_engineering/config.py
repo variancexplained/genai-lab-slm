@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Friday September 13th 2024 12:01:28 pm                                              #
+# Modified   : Friday September 13th 2024 05:46:37 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from pandarallel import pandarallel
 from textstat import textstat
 
-from discover.application.pipeline import Pipeline, PipelineBuilder, StageConfig
+from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
 from discover.data_prep import log_exceptions, task_profiler
 from discover.data_prep.io import ReadTask, WriteTask
 from discover.domain.service.base.task import Task
@@ -48,7 +48,7 @@ pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class FeatureEngineeringConfig(StageConfig):
+class FeatureEngineeringConfig(ServiceConfig):
     """Encapsulates the configuration for feature engineering."""
 
     name: str = "FeatureEngineering"
@@ -91,7 +91,7 @@ class FeatureEngineer(PipelineBuilder):
         data (pd.DataFrame): The enriched dataset
 
     Args:
-        config (StageConfig): Configuration for the subclass stage.
+        config (ServiceConfig): Configuration for the subclass stage.
         pipeline_cls type[Pipeline]: Pipeline class to instantiate
         review_repo_cls (type[ReviewRepo]): Manages dataset IO
         source_reader_cls (type[Reader]): Class for reading the source data.
@@ -102,7 +102,7 @@ class FeatureEngineer(PipelineBuilder):
 
     def __init__(
         self,
-        config: StageConfig,
+        config: ServiceConfig,
         source_reader_cls: type[Reader] = PandasReader,
         target_writer_cls: type[Writer] = PandasWriter,
         target_reader_cls: type[Reader] = PandasReader,
