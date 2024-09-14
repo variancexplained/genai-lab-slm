@@ -1,5 +1,5 @@
 ,Class,Modulle
-0,Profile,infra.monitor.profile
+0,Profile,domain.service.core.monitor.profile
 1,Converter,infra.utils.data_utils.converter
 2,ToSpark,infra.utils.data_utils.converter
 3,ToPandas,infra.utils.data_utils.converter

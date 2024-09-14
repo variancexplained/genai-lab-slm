@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 03:24:28 am                                            #
-# Modified   : Saturday September 14th 2024 05:05:50 am                                            #
+# Modified   : Saturday September 14th 2024 05:19:07 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,40 +20,47 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.context import Context
 
 
 # ------------------------------------------------------------------------------------------------ #
 class DomainService(ABC):
     """
-    Abstract base class for domain services.
-
-    This class provides a blueprint for domain-level services, which are responsible
-    for executing business logic in the domain layer. Subclasses of `DomainService`
-    must implement the `run` method to define the specific logic for the service.
+    Abstract base class for a domain service that encapsulates the core business logic
+    for a specific domain. This class serves as a blueprint for services, requiring subclasses
+    to implement the `run` method, which defines the service's behavior.
 
     Attributes:
     -----------
     _config : ServiceConfig
-        Configuration object that provides service-specific settings and environment information.
-    _context : Context
-        Context object that holds metadata such as service type, name, and stage,
-        and tracks the execution of the domain service.
+        The configuration object containing settings and environment-specific details
+        needed to run the service.
+
+    Methods:
+    --------
+    __init__(config: ServiceConfig) -> None
+        Initializes the domain service with the provided configuration.
+
+    run() -> Any
+        Abstract method that must be implemented by subclasses to define the service's behavior.
+        This method contains the core business logic of the domain service and should be
+        overridden in each subclass.
+
+    Parameters:
+    -----------
+    config : ServiceConfig
+        The configuration object that includes the settings and environment information for the service.
     """
 
-    def __init__(self, config: ServiceConfig, context: Context) -> None:
+    def __init__(self, config: ServiceConfig) -> None:
         """
-        Initializes the domain service with the provided configuration and context.
+        Initializes the domain service with the provided configuration.
 
         Parameters:
         -----------
         config : ServiceConfig
             Configuration object containing settings and environment information for the service.
-        context : Context
-            Context object that tracks the service's execution details, such as service type and stage.
         """
         self._config = config
-        self._context = context
 
     @abstractmethod
     def run(self) -> Any:
@@ -67,4 +74,3 @@ class DomainService(ABC):
         Any:
             The result of the domain service's execution, as defined by the subclass implementation.
         """
-        pass

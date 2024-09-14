@@ -5,7 +5,7 @@
 The **Task Profiler** package provides a set of tools to capture and persist performance metrics of tasks within your data pipeline. The main components include:
 - **Profile**: A data class that captures the performance metrics of a task.
 - **ProfileRepo**: A repository class responsible for CRUD operations related to `Profile` objects, storing them in an SQLite database.
-- **task_profiler**: A decorator that wraps the `run` method of task objects, capturing key metrics (CPU utilization, memory usage, etc.) and saving them using `ProfileRepo`.
+- **profiler**: A decorator that wraps the `run` method of task objects, capturing key metrics (CPU utilization, memory usage, etc.) and saving them using `ProfileRepo`.
 
 ## **Contents**
 1. [Features](#features)
@@ -21,7 +21,7 @@ The **Task Profiler** package provides a set of tools to capture and persist per
 - **Performance Profiling**: Automatically capture task performance metrics (e.g., runtime, CPU, memory, I/O).
 - **Persistence**: Store task profiles in a persistent database using an SQLite-backed repository.
 - **Task-Level Granularity**: Capture metrics for individual tasks, which can be retrieved and analyzed.
-- **Easy Integration**: Use the `task_profiler` decorator to profile any task by simply wrapping its `run` method.
+- **Easy Integration**: Use the `profiler` decorator to profile any task by simply wrapping its `run` method.
 
 ## **Installation**
 Ensure that you have Python installed along with the necessary dependencies.
@@ -46,13 +46,13 @@ Ensure that you have Python installed along with the necessary dependencies.
 
    Example:
    ```python
-   from discover.infra.monitor.profile import Profile
+   from discover.domain.service.core.monitor.profile import Profile
    from datetime import datetime
 
    profile = Profile(
        env="production",
        stage="data_cleaning",
-       task_name="AnonymizeReviewsTask",
+       process_name="AnonymizeReviewsTask",
        task_start_time=datetime.now(),
        task_end_time=datetime.now(),
        runtime_seconds=10.5,
@@ -67,7 +67,6 @@ Ensure that you have Python installed along with the necessary dependencies.
        network_data_sent_bytes=5000,
        network_data_received_bytes=12000,
        exceptions_raised=0,
-       retry_count=0
    )
    ```
 
@@ -93,19 +92,19 @@ Ensure that you have Python installed along with the necessary dependencies.
    all_profiles = profile_repo.get_all()
    ```
 
-3. **task_profiler Decorator**:
-   Use the `task_profiler` decorator to automatically profile the `run` method of any task object. The decorator captures performance metrics and stores them in the database.
+3. **profiler Decorator**:
+   Use the `profiler` decorator to automatically profile the `run` method of any task object. The decorator captures performance metrics and stores them in the database.
 
    Example:
    ```python
-   from discover.decorators import task_profiler
+   from discover.decorators import profiler
 
    class SomeTask:
        env = "production"
        stage = "data_cleaning"
-       task_name = "SomeTask"
+       process_name = "SomeTask"
 
-       @task_profiler
+       @profiler
        def run(self):
            # Task logic here
            pass
@@ -119,15 +118,15 @@ Ensure that you have Python installed along with the necessary dependencies.
 The `ProfileRepo` allows you to interact with the SQLite database for CRUD operations on task profiles. The repository supports methods to:
 - **Add a profile**: `profile_repo.add(profile)`
 - **Retrieve all profiles**: `profile_repo.get_all()`
-- **Retrieve by task name**: `profile_repo.get_by_task(task_name="TaskName")`
+- **Retrieve by task name**: `profile_repo.get_by_process(process_name="TaskName")`
 - **Check existence by ID**: `profile_repo.exists(profile_id=123)`
-- **Delete by ID or task name**: `profile_repo.remove(profile_id=123)`, `profile_repo.remove_by_task(task_name="TaskName")`
+- **Delete by ID or task name**: `profile_repo.remove(profile_id=123)`, `profile_repo.remove_by_process(process_name="TaskName")`
 
 ## **Metrics Captured**
 The **Profile** class collects the following metrics:
-- **env**: Environment (e.g., production, staging, development).
+
 - **stage**: Stage in the data pipeline (e.g., data cleaning, analysis).
-- **task_name**: Name of the task being profiled.
+- **process_name**: Name of the task being profiled.
 - **task_start_time**: Start time of the task.
 - **task_end_time**: End time of the task.
 - **runtime_seconds**: Total runtime of the task in seconds.
@@ -142,7 +141,7 @@ The **Profile** class collects the following metrics:
 - **network_data_sent_bytes**: Total data sent over the network.
 - **network_data_received_bytes**: Total data received over the network.
 - **exceptions_raised**: Number of exceptions raised during task execution.
-- **retry_count**: Number of retries or re-executions of the task.
+
 
 ## **Contributing**
 Contributions are welcome! Please submit a pull request or raise an issue if you encounter bugs or want to request features. Before contributing, make sure to run all tests to verify the functionality of your changes.

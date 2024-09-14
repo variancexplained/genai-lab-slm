@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_services/test_ingestion.py/test_ingest_app_service.py                   #
+# Filename   : /tests/test_services/test_data_services/test_ingestion.py/test_ingest_app_service.py #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 11:23:02 pm                                              #
-# Modified   : Saturday September 14th 2024 04:47:01 am                                            #
+# Modified   : Saturday September 14th 2024 05:18:15 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,6 @@ import pandas as pd
 import pytest
 
 from discover.application.service.data.ingest import DataIngestionApplicationService
-from discover.domain.service.data.ingest.config import IngestConfig
-from discover.domain.value_objects.context import Context
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -64,16 +62,14 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_ingest(self, config, context, caplog) -> None:
+    def test_ingest(self, data_ingestion_service_config, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        ingest = DataIngestionApplicationService(
-            config_cls=IngestConfig, context_cls=Context
-        )
+        ingest = DataIngestionApplicationService(config=data_ingestion_service_config)
         data = ingest.run()
         assert isinstance(data, pd.DataFrame)
         logger.info(data.head())

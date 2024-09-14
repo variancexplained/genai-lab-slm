@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/monitor/profiler.py                                                 #
+# Filename   : /discover/domain/service/core/monitor/profiler.py                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Saturday September 14th 2024 06:14:23 am                                            #
+# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Callable
 import psutil  # For gathering system resource usage
 
 from discover.container import DiscoverContainer
-from discover.infra.monitor.profile import Profile
+from discover.domain.service.core.monitor.profile import Profile
 
 # ------------------------------------------------------------------------------------------------ #
 # Initialize the repository once at the module level
@@ -108,10 +108,9 @@ def profiler(func: Callable) -> Callable:
 
             # Create the Profile object with the computed metrics
             profile = Profile(
-                runid=self.context.runid,
-                service_type=self.context.service_type,
-                service_name=self.context.service_name,
-                stage=self.stage.value,  # Stage in the pipeline (e.g., data cleaning)
+                process_type=self.context.process_type,
+                process_name=self.context.process_name,
+                stage=self.context.stage.value,  # Stage in the pipeline (e.g., data cleaning)
                 start_time=start_time,
                 end_time=end_time,
                 runtime_seconds=runtime_seconds,

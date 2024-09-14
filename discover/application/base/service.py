@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/application/service/base/service.py                                       #
+# Filename   : /discover/application/base/service.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 05:41:52 pm                                              #
-# Modified   : Saturday September 14th 2024 03:31:22 am                                            #
+# Modified   : Saturday September 14th 2024 05:19:07 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,6 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.context import Context
-from discover.infra.identity.idxgen import RunIDXGen
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -35,11 +33,9 @@ class ApplicationService(ABC):
 
     def __init__(
         self,
-        config_cls: type[ServiceConfig] = ServiceConfig,
-        context_cls: type[Context] = Context,
+        config: ServiceConfig,
     ) -> None:
-        self._config_cls = config_cls
-        self._context = context_cls(idxgen_cls=RunIDXGen)
+        self._config = config
 
     @abstractmethod
     def run(self) -> Optional[Any]:

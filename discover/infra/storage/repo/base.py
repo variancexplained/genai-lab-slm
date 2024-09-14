@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Saturday September 14th 2024 06:48:26 am                                            #
+# Modified   : Saturday September 14th 2024 04:18:59 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,23 +20,13 @@
 import os
 import shutil
 from abc import abstractmethod
-from enum import Enum
 from typing import Any
 
 import pandas as pd
 
 from discover.domain.base.repo import Repo
 from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.config.config import Config
-
-
-# ------------------------------------------------------------------------------------------------ #
-class FileFormat(Enum):
-    CSV = ".csv"
-    TSV = ".tsv"
-    PICKLE = ".pickle"
-    PARQUET = ".parquet"
-    PARQUET_PARTITIONED = ""
+from discover.infra.config.reader import ConfigReader
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -52,8 +42,8 @@ class ReviewRepo(Repo):
     -----------
     _file_format : FileFormat
         The format in which the data will be saved (CSV, TSV, Pickle, Parquet, etc.).
-    _config : Config
-        Configuration object for retrieving settings like base directory and environment.
+    _config : ConfigReader
+        ConfigReaderuration object for retrieving settings like base directory and environment.
     _basedir : str
         The base directory where the data files are stored.
 
@@ -81,7 +71,7 @@ class ReviewRepo(Repo):
         Abstract method for writing data to a file. To be implemented by subclasses.
     """
 
-    def __init__(self, config_cls: type[Config] = Config) -> None:
+    def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
         """
         Initializes the ReviewRepo with the specified file format and configuration.
 
@@ -89,13 +79,13 @@ class ReviewRepo(Repo):
         -----------
         file_format : FileFormat
             The format in which the data will be stored (CSV, TSV, Pickle, Parquet, etc.).
-        config_cls : type[Config], optional
-            The configuration class that provides environment-specific settings, by default Config.
+        config_reader_cls : type[ConfigReader], optional
+            The configuration class that provides environment-specific settings, by default ConfigReader.
         """
         super().__init__()
-        self._config = config_cls()
-        self._basedir = self._config.get_config(section="data").basedir
-        self._file_ext = self._config.get_config(section="data").format
+        self._config_reader = config_reader_cls()
+        self._basedir = self._config_reader.get_config(section="data").basedir
+        self._file_ext = self._config_reader.get_config(section="data").format
 
     def add(self, data: Any, stage: Stage, name: str, **kwargs) -> None:
         """
@@ -212,7 +202,7 @@ class ReviewRepo(Repo):
         str:
             The constructed file path.
         """
-        env = self._config.get_environment()
+        env = self._config_reader.get_environment()
 
         return os.path.join(self._basedir, env, stage.value, name) + self._file_ext
 

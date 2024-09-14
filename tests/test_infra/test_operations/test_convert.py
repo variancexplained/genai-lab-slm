@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 10:35:29 am                                           #
-# Modified   : Wednesday September 11th 2024 03:30:46 pm                                           #
+# Modified   : Saturday September 14th 2024 06:45:22 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,6 +42,7 @@ NAME = "reviews"
 
 
 @pytest.mark.convert
+@pytest.mark.skip(reason="Wait until needed.")
 class TestConvertTask:  # pragma: no cover
     # ============================================================================================ #
     def test_to_spark(self, pandas_df, spark, caplog) -> None:

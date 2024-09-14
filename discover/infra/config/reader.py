@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/config/config.py                                                    #
+# Filename   : /discover/infra/config/reader.py                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Saturday September 14th 2024 06:08:31 am                                            #
+# Modified   : Saturday September 14th 2024 03:36:07 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,7 +35,7 @@ load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
 
 
-class Config:
+class ConfigReader:
     """
     A class for managing configuration and environment variables.
 

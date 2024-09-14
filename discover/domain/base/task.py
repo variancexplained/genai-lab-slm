@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Saturday September 14th 2024 06:08:39 am                                            #
+# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,28 +32,60 @@ from discover.domain.value_objects.context import Context
 # ------------------------------------------------------------------------------------------------ #
 class Task(ABC):
     """
-    Abstract base class for tasks in a pipeline.
-
-    This class defines the blueprint for tasks, requiring subclasses to implement
-    the `run` method and specify the task's `stage`. Each task is initialized with
-    a configuration and context, which are used to track and manage the task's execution.
+    Abstract base class for tasks within a pipeline. The `Task` class provides common functionality
+    such as logging and context management, and requires subclasses to implement the `run` method
+    which defines the task-specific behavior.
 
     Attributes:
     -----------
     _config : ServiceConfig
-        Configuration object that defines environment and task-specific settings.
+        The configuration object containing settings and environment information for the task.
+
+    _pipeline_context : Context
+        The pipeline context that tracks execution metadata like stage and service type.
+
     _context : Context
-        Context object that holds metadata such as service type, service name, and stage
-        during task execution.
+        A task-specific context derived from the pipeline context, tracking task execution details
+        such as service type, service name, and stage.
+
     _logger : logging.Logger
         Logger instance for logging task-specific events and errors.
+
+    Methods:
+    --------
+    __init__(config: ServiceConfig, pipeline_context: Context, *args, **kwargs) -> None
+        Initializes the task with the provided configuration and pipeline context.
+
+    logger() -> logging.Logger
+        Property that provides read-only access to the logger instance for the task.
+
+    name() -> str
+        Property that returns the class name of the task, used as the task's name.
+
+    context() -> Context
+        Property that provides read-only access to the task-specific context.
+
+    run(*args: Any, **kwargs: Any) -> Any
+        Abstract method that must be implemented by subclasses to define the task's behavior
+        when executed. This method updates the context and executes the task logic.
+
+    Parameters:
+    -----------
+    *args :
+        Positional arguments passed during task initialization or execution.
+    config : ServiceConfig
+        The configuration object containing task-specific settings.
+    pipeline_context : Context
+        The context object used to track the pipeline's execution metadata, such as stage and service type.
+    **kwargs :
+        Additional keyword arguments passed during task initialization or execution.
     """
 
     def __init__(
         self,
         *args,
-        context: Context,
         config: ServiceConfig,
+        pipeline_context: Context,
         **kwargs,
     ) -> None:
         """
@@ -74,10 +106,16 @@ class Task(ABC):
             Additional keyword arguments passed during initialization.
         """
         self._config = config
-        self._context = context
-        self._context.service_type = "Task"
-        self._context.service_name = self.name
-        self._context.stage = self.stage
+        self._pipeline_context = pipeline_context
+        self._kwargs = kwargs
+
+        # Create task context from pipeline context stage
+        self._context = Context(
+            process_type="Task",
+            process_name=self.name,
+            stage=self._pipeline_context.stage,
+        )
+
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -123,29 +161,12 @@ class Task(ABC):
         """
         return self._context
 
-    @property
-    @abstractmethod
-    def stage(self) -> str:
-        """
-        Abstract property that must be implemented by subclasses to define the current stage of the task.
-
-        The stage represents the lifecycle stage of the task, such as "INGEST", "TRANSFORM", or "LOAD".
-
-        Returns:
-        --------
-        str:
-            The current stage of the task.
-        """
-        pass
-
     @abstractmethod
     def run(self, *args: Any, **kwargs: Any) -> Any:
         """
         Abstract method that defines the behavior of the task when executed.
 
         This method must be implemented by any subclass to define the task's specific logic.
-        It also updates the context with the task's service type, name, and stage,
-        and generates a run ID for the task.
 
         Parameters:
         -----------
@@ -159,7 +180,3 @@ class Task(ABC):
         Any:
             The result of the task's execution, depending on the implementation in the subclass.
         """
-        self._context.service_type = "Task"
-        self._context.service_name = self.name
-        self._context.stage = self.stage
-        self._context.create_run(owner=self)

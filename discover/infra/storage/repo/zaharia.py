@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 02:58:50 pm                                               #
-# Modified   : Saturday September 14th 2024 03:19:53 am                                            #
+# Modified   : Saturday September 14th 2024 05:41:21 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from typing import Optional
 
 from pyspark.sql import DataFrame, SparkSession
 
-from discover.infra.config.config import Config
+from discover.infra.config.reader import ConfigReader
 from discover.infra.storage.repo.base import ReviewRepo
 
 
@@ -51,7 +51,9 @@ class ZahariaRepo(ReviewRepo):
     """
 
     def __init__(
-        self, config_cls: type[Config] = Config, spark: Optional[SparkSession] = None
+        self,
+        config_reader_cls: type[ConfigReader] = ConfigReader,
+        spark: Optional[SparkSession] = None,
     ) -> None:
         """
         Initializes the ZahariaRepo with a file format, configuration, and an optional Spark session.
@@ -62,8 +64,8 @@ class ZahariaRepo(ReviewRepo):
         -----------
         file_format : FileFormat
             The format in which the review data will be stored. Expected to be PARQUET or PARQUET_PARTITIONED.
-        config_cls : type[Config], optional
-            The configuration class that provides environment-specific settings, by default Config.
+        config_reader_cls : type[ConfigReader], optional
+            The configuration class that provides environment-specific settings, by default ConfigReader.
         spark : Optional[SparkSession], optional
             The Spark session to use for reading and writing data. If not provided, a new session will
             be created. In production, this parameter is required.
@@ -73,11 +75,11 @@ class ZahariaRepo(ReviewRepo):
         TypeError:
             If no Spark session is provided in a production environment.
         """
-        super().__init__(config_cls=config_cls)
+        super().__init__(config_reader_cls=config_reader_cls)
         self._spark = spark
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-        env = self._config.get_environment()
+        env = self._config_reader.get_environment()
         if env == "prod" and self._spark is None:
             msg = "A Spark Session is required in production environments."
             self._logger.exception(msg)

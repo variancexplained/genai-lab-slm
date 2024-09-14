@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Saturday September 14th 2024 06:17:08 am                                            #
+# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,10 +23,10 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.domain.base.task import Task
+from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
 from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.monitor.profiler import profiler
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -58,7 +58,7 @@ class Pipeline(ABC):
     def __init__(
         self,
         config: ServiceConfig,
-        context: Context,
+        stage: Stage,
     ):
         """
         Initializes the pipeline with the provided configuration and context.
@@ -74,10 +74,10 @@ class Pipeline(ABC):
             Context object used to track execution metadata, including service type, name, stage, and run ID.
         """
         self._config = config
-        self._context = context
-        self._context.service_type = "Pipeline"
-        self._context.service_name = self.name
-        self._context.stage = self.stage
+        self._stage = stage
+        self._context = Context(
+            process_type="Pipeline", process_name=self.name, stage=self.stage
+        )
         self._tasks = []
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -120,7 +120,6 @@ class Pipeline(ABC):
         return self._context
 
     @property
-    @abstractmethod
     def stage(self) -> Stage:
         """
         Abstract property that must be implemented by subclasses to define the pipeline's current stage.
@@ -132,7 +131,7 @@ class Pipeline(ABC):
         Stage:
             The current stage of the pipeline.
         """
-        pass
+        return self._stage
 
     def add_task(self, task: Task):
         """
@@ -159,8 +158,6 @@ class Pipeline(ABC):
         Any:
             The result of the pipeline execution or the data from the existing endpoint.
         """
-        # Adds a run_id to the pipeline context.
-        self._context.create_run(owner=self)
 
         if self._config.force:
             return self._run_pipeline()
@@ -226,51 +223,66 @@ class Pipeline(ABC):
 # ------------------------------------------------------------------------------------------------ #
 class PipelineBuilder(ABC):
     """
-    Abstract base class for constructing pipelines that execute a sequence of tasks.
-
-    This class provides the foundation for building pipelines, each of which consists
-    of a series of tasks. Subclasses must implement the `create_pipeline` method to
-    define the specific logic for assembling and creating a pipeline. The pipeline
-    is responsible for executing tasks related to data processing, transformations,
-    and other stages of the pipeline lifecycle.
+    Abstract base class for constructing pipelines. This class provides the structure for
+    building a pipeline that orchestrates the execution of various tasks in a workflow.
+    Subclasses must implement the `create_pipeline` method to define the specific pipeline
+    to be created.
 
     Attributes:
     -----------
     _config : ServiceConfig
-        Configuration object that contains parameters for building the pipeline,
-        including task-specific settings and environment details.
-    _context : Context
-        Context object that holds metadata such as service type, name, and stage,
-        and tracks the execution of the pipeline.
+        Configuration object containing settings and environment-specific details necessary for building the pipeline.
+
     pipeline_cls : type[Pipeline]
-        The class representing the pipeline to be constructed. Defaults to the `Pipeline` base class.
+        The class of the pipeline to be created. Defaults to the base `Pipeline` class but
+        can be overridden to create a specific type of pipeline.
+
     logger : logging.Logger
-        Logger instance for logging events related to pipeline construction and task management.
+        A logger instance used for logging information and debugging throughout the pipeline construction process.
+
+    Methods:
+    --------
+    __init__(config: ServiceConfig, pipeline_cls: type[Pipeline] = Pipeline, **kwargs) -> None
+        Initializes the `PipelineBuilder` with the provided configuration and optionally specifies
+        a custom pipeline class.
+
+    create_pipeline() -> Pipeline
+        Abstract method that must be implemented by subclasses to create and return an instance of a pipeline.
+        This pipeline will handle the execution of a series of tasks in the workflow.
+
+    Parameters:
+    -----------
+    config : ServiceConfig
+        The configuration object containing the necessary settings for the pipeline.
+
+    pipeline_cls : type[Pipeline], optional
+        The class of the pipeline to be created (defaults to `Pipeline`).
+
+    **kwargs : dict
+        Additional arguments that can be passed for further customization of the pipeline creation process.
     """
 
     def __init__(
         self,
         config: ServiceConfig,
-        context: Context,
         pipeline_cls: type[Pipeline] = Pipeline,
         **kwargs,
     ) -> None:
         """
-        Initializes the PipelineBuilder with the provided configuration, context, and pipeline class.
+        Initializes the `PipelineBuilder` with the provided configuration and an optional custom pipeline class.
 
         Parameters:
         -----------
         config : ServiceConfig
-            Configuration object containing settings and parameters for constructing the pipeline.
-        context : Context
-            Context object for tracking metadata related to the pipeline's execution.
+            Configuration object containing necessary settings for the pipeline's execution.
+
         pipeline_cls : type[Pipeline], optional
-            The class representing the pipeline to be constructed. Defaults to `Pipeline`.
-        **kwargs :
-            Additional keyword arguments that may be passed to customize the pipeline construction process.
+            The class of the pipeline to be created (defaults to `Pipeline`).
+
+        **kwargs : dict
+            Additional keyword arguments for further customization during initialization.
         """
         self._config = config
-        self._context = context
         self.pipeline_cls = pipeline_cls
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 

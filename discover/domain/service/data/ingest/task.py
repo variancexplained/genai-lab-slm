@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday September 14th 2024 06:16:12 am                                            #
+# Modified   : Saturday September 14th 2024 05:25:13 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,10 +24,9 @@ from dotenv import load_dotenv
 from pandarallel import pandarallel
 
 from discover.domain.base.task import Task
-from discover.domain.service.data.ingest.config import IngestConfig
+from discover.domain.service.core.monitor.profiler import profiler
+from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
-from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.monitor.profiler import profiler
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -37,67 +36,53 @@ pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 class IngestTask(Task):
     """
-    Task for preprocessing data during the ingestion stage.
-
-    This task handles text data preprocessing, including removing newlines,
-    verifying encoding, casting data types, and trimming the dataset. It is
-    part of the data ingestion pipeline and ensures the data is cleaned and
-    properly formatted for further processing.
+    A task class responsible for ingesting and preprocessing data as part of a pipeline. This task performs
+    a series of transformations on the data, such as removing newlines, verifying text encoding, casting
+    datatypes, and trimming unnecessary data from the dataset.
 
     Attributes:
     -----------
-    __STAGE : Stage
-        The stage of the task, which is set to INGEST.
-    _config : IngestConfig
-        Configuration object containing settings such as data columns and datatypes.
-    _context : Context
-        Context object tracking metadata related to task execution.
+    _config : ServiceConfig
+        Configuration object containing settings for the ingest task, including data columns, datatypes,
+        and text column information.
+
+    pipeline_context : Context
+        Context object that tracks task execution metadata such as the current stage and service type.
 
     Methods:
     --------
-    run(data: Any) -> Any:
-        Executes the task by preprocessing the input data, including removing newlines,
-        verifying encoding, casting datatypes, and trimming the dataset.
+    __init__(config: ServiceConfig, pipeline_context: Context) -> None
+        Initializes the IngestTask with the given configuration and pipeline context.
 
-    _remove_newlines(data: pd.DataFrame) -> pd.DataFrame:
-        Removes newline characters from the specified text column.
+    run(data: Any) -> Any
+        Executes the data preprocessing steps such as removing newlines, verifying encoding,
+        casting datatypes, and trimming the dataset.
 
-    _verify_encoding(data: pd.DataFrame) -> pd.DataFrame:
-        Verifies the encoding of the text column and re-encodes if necessary.
+    _remove_newlines(data: pd.DataFrame) -> pd.DataFrame
+        Removes newline characters from the specified text column in the dataset.
 
-    _cast_datatypes(data: pd.DataFrame, datatypes: Dict[str, type]) -> pd.DataFrame:
-        Casts columns to the designated data types as specified in the configuration.
+    _verify_encoding(data: pd.DataFrame) -> pd.DataFrame
+        Verifies and normalizes the encoding of the specified text column, re-encoding it if necessary.
 
-    _trim_dataset(data: pd.DataFrame) -> pd.DataFrame:
-        Removes entries in the "Shopping" category and drops unused categories.
+    _cast_datatypes(data: pd.DataFrame, datatypes: Dict[str, type]) -> pd.DataFrame
+        Casts columns to their expected data types as defined in the configuration.
+
+    _trim_dataset(data: pd.DataFrame) -> pd.DataFrame
+        Removes unnecessary categories from the dataset, specifically trimming the "Shopping" category.
     """
 
-    __STAGE = Stage.INGEST
-
-    def __init__(self, config: IngestConfig, context: Context):
+    def __init__(self, config: ServiceConfig, pipeline_context: Context):
         """
         Initializes the IngestTask with the given configuration and context.
 
         Parameters:
         -----------
-        config : IngestConfig
+        config : ServiceConfig
             Configuration object containing settings such as data columns and datatypes.
         context : Context
             Context object used to track task execution metadata such as stage and service type.
         """
-        super().__init__(config=config, context=context)
-
-    @property
-    def stage(self) -> Stage:
-        """
-        Returns the current stage of the task, which is set to INGEST.
-
-        Returns:
-        --------
-        Stage:
-            The stage of the task (INGEST).
-        """
-        return self.__STAGE
+        super().__init__(config=config, pipeline_context=pipeline_context)
 
     @profiler
     def run(self, data: Any):

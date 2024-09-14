@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 02:27:48 pm                                           #
-# Modified   : Wednesday September 11th 2024 03:35:18 pm                                           #
+# Modified   : Saturday September 14th 2024 06:49:55 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 # ------------------------------------------------------------------------------------------------ #
-LOCAL_PATH = "tests/data/infra/operations/file_tasks/download/reviews.tar.gz"
+LOCAL_PATH = "tests/data/aws/reviews.tar.gz"
 EXTRACT_DIR = "tests/data/infra/operations/file_tasks/extract/reviews/"
 
 

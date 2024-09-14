@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Saturday September 14th 2024 06:48:02 am                                            #
+# Modified   : Saturday September 14th 2024 06:45:22 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,9 +23,9 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from discover.domain.base.task import Task
+from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.logging.decorator import log_exceptions
-from discover.infra.monitor.profiler import task_profiler
 from discover.infra.utils.data_utils.converter import Converter
 from discover.infra.utils.file_utils.tempfile import TempFileMgr
 
@@ -55,9 +55,11 @@ class ConvertTask(Task):
         self._tempfile_manager_cls = tempfile_manager_cls
         self._kwargs = kwargs
 
-    @task_profiler
+    @profiler
     @log_exceptions()
-    def run(self, data: Union[pd.DataFrame, DataFrame]) -> DataFrame:
+    def run(
+        self, data: Union[pd.DataFrame, DataFrame]
+    ) -> Union[pd.DataFrame, DataFrame]:
         """Converts a Pandas DataFrame to a Spark DataFrame
 
         Args:

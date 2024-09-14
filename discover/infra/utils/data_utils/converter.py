@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:30:01 am                                                 #
-# Modified   : Wednesday September 11th 2024 12:45:34 pm                                           #
+# Modified   : Saturday September 14th 2024 04:07:53 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from typing import Union
 import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
-from discover.infra.config.config import Config
+from discover.infra.config.reader import ConfigReader
 from discover.infra.utils.file_utils.tempfile import TempFileMgr
 
 
@@ -36,7 +36,7 @@ from discover.infra.utils.file_utils.tempfile import TempFileMgr
 class Converter(ABC):
     """Abstract base class for dataframe converters."""
 
-    def __init__(self, config_cls: type[Config] = Config) -> None:
+    def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
         self.tempdir = os.getenv(key="TEMPDIR")
 
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")

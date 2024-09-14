@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Saturday September 14th 2024 06:50:36 am                                            #
+# Modified   : Saturday September 14th 2024 04:13:08 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import logging
 from dependency_injector.wiring import Provide, inject
 
 from discover.container import DiscoverContainer
-from discover.infra.config.config import Config
+from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
 from discover.infra.database.sqlite import SQLiteDBA
 
@@ -34,11 +34,11 @@ logger = logging.getLogger(__name__)
 @inject
 def setup_database(
     dba: SQLiteDBA = Provide[DiscoverContainer.db.admin],
-    config_cls: type[Config] = Config,
+    config_reader_cls: type[ConfigReader] = ConfigReader,
     force: bool = False,
 ) -> None:
-    config = config_cls()
-    env = config.get_environment()
+    config_reader = config_reader_cls()
+    env = config_reader.get_environment()
     if force:
         dba.drop_table(tablename="profile")
         logger.info(f"Profile table dropped from the {env} environment.")

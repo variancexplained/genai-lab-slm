@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/monitor/profile.py                                                  #
+# Filename   : /discover/domain/service/core/monitor/profile.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Saturday September 14th 2024 02:29:56 am                                            #
+# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,19 +21,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any, Dict, Optional
 
 from discover.core.data import DataClass
-from discover.domain.value_objects.context import Context
 from discover.domain.value_objects.lifecycle import Stage
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class Profile(DataClass):
-
-    runid: str  # Unique identifier for each run.
-    service_type: str  # Type of service, i.e. Pipeline or Task
-    service_name: str  # Name of Pipeline or Task
+    process_type: str  # Type of service, i.e. Pipeline or Task
+    process_name: str  # Name of Pipeline or Task
     stage: Stage  # Stage of the process.
     start_time: datetime  # Task start time
     end_time: datetime  # Task end time
@@ -53,12 +51,9 @@ class Profile(DataClass):
     exceptions_raised: int = (
         0  # Number of exceptions raised during process execution (default 0)
     )
+    id: Optional[int] = None  # Unique identifier for each run.
 
     @classmethod
-    def create(cls, context: Context) -> Profile:
-        return cls(
-            runid=context.runid,
-            service_type=context.service_type,
-            service_name=context.service_name,
-            stage=context.stage,
-        )
+    def create(cls, data: Dict[str, Any]) -> Profile:
+        """Used to create an instance from data obtained from the repository."""
+        return cls(**data)

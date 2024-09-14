@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday September 14th 2024 06:47:07 am                                            #
+# Modified   : Saturday September 14th 2024 05:18:15 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,14 +24,12 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
-from discover.application.service.data.ingest import IngestConfig
+from discover.application.service.data.ingest import DataIngestionServiceConfig
 from discover.container import DiscoverContainer
 from discover.domain.value_objects.config import DataConfig
-from discover.domain.value_objects.context import Context
 from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.config.config import Config
+from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
-from discover.infra.identity.idxgen import RunIDXGen
 from discover.infra.storage.cloud.aws import S3Handler
 from discover.infra.storage.repo.mckinney import McKinneyRepo
 
@@ -100,7 +98,7 @@ def profile_repo(container):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
 def aws():
-    return S3Handler(config_cls=Config)
+    return S3Handler(config_reader_cls=ConfigReader)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -150,15 +148,9 @@ def spark_df(spark, pandas_df):
 #                                         CONFIG                                                   #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def config():
+def data_ingestion_service_config():
     source = DataConfig(repo=McKinneyRepo(), stage=Stage.RAW, name="reviews")
     target = DataConfig(repo=McKinneyRepo(), stage=Stage.INGEST, name="reviews")
-    return IngestConfig(source_data_config=source, target_data_config=target)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                         CONTEXT                                                  #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="class")
-def context():
-    return Context(idxgen_cls=RunIDXGen)
+    return DataIngestionServiceConfig(
+        source_data_config=source, target_data_config=target
+    )

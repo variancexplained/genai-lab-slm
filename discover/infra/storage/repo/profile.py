@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 10:14:56 am                                           #
-# Modified   : Saturday September 14th 2024 06:48:26 am                                            #
+# Modified   : Saturday September 14th 2024 05:58:43 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ import logging
 import pandas as pd
 
 from discover.domain.base.repo import Repo
+from discover.domain.service.core.monitor.profile import Profile
 from discover.infra.database.base import Database
-from discover.infra.monitor.profile import Profile
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -38,11 +38,11 @@ class ProfileRepo(Repo):
     def add(self, profile: Profile) -> None:
         query = """
             INSERT INTO profile (
-                env,
+                process_type,
+                process_name,
                 stage,
-                task_name,
-                task_start_time,
-                task_end_time,
+                start_time,
+                end_time,
                 runtime_seconds,
                 cpu_cores,
                 cpu_user_utilization,
@@ -54,15 +54,14 @@ class ProfileRepo(Repo):
                 io_wait_time_seconds,
                 network_data_sent_bytes,
                 network_data_received_bytes,
-                exceptions_raised,
-                retry_count
+                exceptions_raised
             )
             VALUES (
-                :env,
+                :process_type,
+                :process_name,
                 :stage,
-                :task_name,
-                :task_start_time,
-                :task_end_time,
+                :start_time,
+                :end_time,
                 :runtime_seconds,
                 :cpu_cores,
                 :cpu_user_utilization,
@@ -74,8 +73,7 @@ class ProfileRepo(Repo):
                 :io_wait_time_seconds,
                 :network_data_sent_bytes,
                 :network_data_received_bytes,
-                :exceptions_raised,
-                :retry_count
+                :exceptions_raised
             );
             """
         params = profile.as_dict()
@@ -95,9 +93,9 @@ class ProfileRepo(Repo):
         with self._database as db:
             return db.query(query=query)
 
-    def get_by_task(self, task_name: str) -> pd.DataFrame:
-        query = """SELECT * FROM profile WHERE task_name = :task_name;"""
-        params = {"task_name": task_name}
+    def get_by_process(self, process_name: str) -> pd.DataFrame:
+        query = """SELECT * FROM profile WHERE process_name = :process_name;"""
+        params = {"process_name": process_name}
         with self._database as db:
             return db.query(query=query, params=params)
 
@@ -113,9 +111,9 @@ class ProfileRepo(Repo):
         with self._database as db:
             db.command(query=query, params=params)
 
-    def remove_by_task(self, task_name: str) -> None:
-        query = """DELETE FROM profile WHERE task_name = :task_name;"""
-        params = {"task_name": task_name}
+    def remove_by_process(self, process_name: str) -> None:
+        query = """DELETE FROM profile WHERE process_name = :process_name;"""
+        params = {"process_name": process_name}
         with self._database as db:
             db.command(query=query, params=params)
 

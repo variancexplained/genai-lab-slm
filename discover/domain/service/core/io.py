@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 07:13:32 pm                                              #
-# Modified   : Saturday September 14th 2024 02:28:14 pm                                            #
+# Modified   : Saturday September 14th 2024 04:04:53 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,133 +19,139 @@
 from typing import Any
 
 from discover.domain.base.task import Task
+from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import DataConfig
 from discover.domain.value_objects.context import Context
-from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.monitor.profiler import profiler
 
 
 # ------------------------------------------------------------------------------------------------ #
 class ReadTask(Task):
     """
-    Task for reading data from a repository.
-
-    This task is responsible for fetching data from a repository using the provided
-    `DataConfig`. It executes as part of a pipeline or service to retrieve the required
-    input data.
-
-    Attributes:
-    -----------
-    _data_config : DataConfig
-        Configuration object containing the repository details, stage, and name for the data.
-    _context : Context
-        Context object that tracks metadata such as service type, name, and stage during task execution.
-    _stage : Stage
-        The current stage of the task, derived from the context.
+    A task responsible for reading data from a repository as part of a data pipeline.
+    This class extends the base `Task` class and retrieves the required data from the repository
+    based on the configuration provided.
 
     Methods:
     --------
-    stage() -> Stage:
-        Returns the stage of the task, which is set from the context.
+    __init__(*args, config: DataConfig, pipeline_context: Context, **kwargs) -> None
+        Initializes the `ReadTask` with the given data configuration and pipeline context.
 
-    run(*args, **kwargs) -> Any:
-        Executes the task, retrieves data from the repository, and returns it.
-    """
-
-    def __init__(self, data_config: DataConfig, context: Context) -> None:
-        """
-        Initializes the ReadTask with the given data configuration and context.
-
-        Parameters:
-        -----------
-        data_config : DataConfig
-            Configuration object containing the details of the repository, stage, and name for the data.
-        context : Context
-            Context object used to track execution metadata, including the stage and other task-specific information.
-        """
-        self._data_config = data_config
-        self._context = context
-        self._stage = context.stage
-
-    def stage(self) -> Stage:
-        """
-        Returns the stage of the task, which is set from the context.
-
-        Returns:
-        --------
-        Stage:
-            The current stage of the task.
-        """
-        return self._stage
-
-    @profiler
-    def run(self, *args, **kwargs) -> Any:
-        """
-        Executes the task by retrieving data from the repository based on the stage and name
-        defined in the `DataConfig`.
-
-        Parameters:
-        -----------
-        *args : Any
-            Positional arguments passed during the task's execution.
-        **kwargs : Any
-            Keyword arguments passed during the task's execution.
+    run(*args, **kwargs) -> Any
+        Executes the task to read data from the repository.
+        Uses the repository specified in the configuration to retrieve the data based on the stage and name.
 
         Returns:
         --------
         Any:
-            The retrieved data from the repository.
+            The data retrieved from the repository.
+    """
+
+    def __init__(
+        self, *args, config: DataConfig, pipeline_context: Context, **kwargs
+    ) -> None:
+        """
+        Initializes the ReadTask with the provided configuration and pipeline context.
+
+        Parameters:
+        -----------
+        *args :
+            Additional positional arguments passed during task initialization.
+        config : DataConfig
+            Configuration object that provides repository settings and data-related options.
+        pipeline_context : Context
+            The context object that tracks the execution metadata of the pipeline, such as the current stage.
+        **kwargs :
+            Additional keyword arguments passed during task initialization.
+        """
+        super().__init__(config=config, pipeline_context=pipeline_context, **kwargs)
+
+    @profiler
+    def run(self, *args, **kwargs) -> Any:
+        """
+        Executes the task by reading data from the repository based on the configuration.
+
+        Parameters:
+        -----------
+        *args :
+            Positional arguments passed to the task.
+        **kwargs :
+            Keyword arguments passed to the task.
+
+        Returns:
+        --------
+        Any:
+            The data retrieved from the repository for the given stage and name.
         """
         super().run(args=args, **kwargs)
-        return self._data_config.repo.get(
-            stage=self._data_config.stage, name=self._data_config.name
+        return self._config.repo.get(
+            stage=self._config.stage, name=self._config.name, **self._kwargs
         )
 
 
 # ------------------------------------------------------------------------------------------------ #
 class WriteTask(Task):
     """
-    A task class responsible for writing data to a repository. This class extends the base `Task` class
-    and is used in a data pipeline to handle writing operations to a repository.
-
-    Attributes:
-        data_config (DataConfig): Configuration object containing details about the data repository,
-                                  stage, and other necessary configuration parameters.
-        context (Context): An object providing the context in which this task is running, including
-                           information such as the current stage of the pipeline.
-        kwargs (dict): Additional keyword arguments passed during task initialization, allowing flexibility
-                       for extra parameters needed during the write operation.
+    A task responsible for writing processed data to a repository as part of a data pipeline.
+    This class extends the base `Task` class and interacts with a repository to store the output data.
 
     Methods:
-        stage() -> Stage:
-            Returns the current pipeline stage.
+    --------
+    __init__(*args, config: DataConfig, pipeline_context: Context, **kwargs) -> None
+        Initializes the `WriteTask` with the given data configuration and pipeline context.
 
-        run(data: Any) -> Any:
-            Executes the task to write data to the configured repository. The `data` argument represents the
-            data to be written. The method updates the repository with the provided data and any extra
-            configuration provided through the `kwargs`.
+    run(data: Any) -> Any
+        Executes the task to write the provided data to the repository.
+        Uses the repository specified in the configuration to store the data.
 
-            Args:
-                data (Any): The data to be written to the repository.
+        Parameters:
+        -----------
+        data : Any
+            The data to be written to the repository.
 
-            Returns:
-                Any: The same data passed as input, allowing for chained operations or further processing.
+        Returns:
+        --------
+        Any:
+            The same data that was written to the repository, for further use in the pipeline.
     """
 
-    def __init__(self, data_config: DataConfig, context: Context, **kwargs) -> None:
-        self._data_config = data_config
-        self._context = context
-        self._stage = context.stage
-        self._kwargs = kwargs
+    def __init__(
+        self, *args, config: DataConfig, pipeline_context: Context, **kwargs
+    ) -> None:
+        """
+        Initializes the WriteTask with the provided configuration and pipeline context.
 
-    def stage(self) -> Stage:
-        return self._stage
+        Parameters:
+        -----------
+        *args :
+            Additional positional arguments passed during task initialization.
+        config : DataConfig
+            Configuration object that provides repository settings and data-related options.
+        pipeline_context : Context
+            The context object that tracks the execution metadata of the pipeline, such as the current stage.
+        **kwargs :
+            Additional keyword arguments passed during task initialization.
+        """
+        super().__init__(config=config, pipeline_context=pipeline_context, **kwargs)
 
+    @profiler
     def run(self, data: Any) -> Any:
+        """
+        Executes the task by writing the provided data to the repository.
+
+        Parameters:
+        -----------
+        data : Any
+            The data to be written to the repository.
+
+        Returns:
+        --------
+        Any:
+            The same data that was written to the repository.
+        """
         super().run(data=data)
-        self._data_config.repo.add(
-            stage=self._data_config.stage,
-            name=self._data_config.name,
+        self._config.repo.add(
+            stage=self._config.stage,
+            name=self._config.name,
             data=data,
             **self._kwargs,
         )

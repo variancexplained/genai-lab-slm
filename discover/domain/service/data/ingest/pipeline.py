@@ -11,14 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday September 14th 2024 05:33:10 am                                            #
+# Modified   : Saturday September 14th 2024 05:24:01 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Stage Module"""
 
-from copy import copy
 
 from dotenv import load_dotenv
 from pandarallel import pandarallel
@@ -27,7 +26,6 @@ from discover.domain.base.pipeline import Pipeline, PipelineBuilder
 from discover.domain.service.core.io import ReadTask, WriteTask
 from discover.domain.service.data.ingest.task import IngestTask
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.context import Context
 from discover.domain.value_objects.lifecycle import Stage
 
 # ------------------------------------------------------------------------------------------------ #
@@ -38,36 +36,33 @@ pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 class IngestPipeline(Pipeline):
     """
-    Pipeline class for managing the data ingestion stage.
-
-    This class represents the data ingestion pipeline, which is responsible for
-    executing tasks related to the ingestion of data. It extends the base `Pipeline`
-    class and sets the pipeline's stage to INGEST.
+    A pipeline class responsible for handling the ingestion stage of a data processing workflow.
+    This class inherits from the base `Pipeline` and specifically sets the stage to `INGEST`.
 
     Attributes:
     -----------
     __STAGE : Stage
-        The stage of the pipeline, which is set to INGEST.
+        A constant that defines the pipeline's current stage as the ingestion stage.
 
     Methods:
     --------
-    stage() -> Stage:
-        Returns the current stage of the pipeline, which is set to INGEST.
+    __init__(config: ServiceConfig) -> None
+        Initializes the `IngestPipeline` with the provided service configuration and sets the
+        pipeline stage to ingestion.
+
+    Parameters:
+    -----------
+    config : ServiceConfig
+        The configuration object containing necessary settings for the pipeline's execution.
     """
 
     __STAGE = Stage.INGEST
 
-    @property
-    def stage(self) -> Stage:
-        """
-        Returns the current stage of the pipeline.
-
-        Returns:
-        --------
-        Stage:
-            The stage of the pipeline, which is set to INGEST.
-        """
-        return self.__STAGE
+    def __init__(
+        self,
+        config: ServiceConfig,
+    ):
+        super().__init__(config=config, stage=self.__STAGE)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -92,7 +87,6 @@ class IngestPipelineBuilder(PipelineBuilder):
     def __init__(
         self,
         config: ServiceConfig,
-        context: Context,
     ) -> None:
         """
         Initializes the IngestPipelineBuilder with the provided configuration and context.
@@ -104,7 +98,7 @@ class IngestPipelineBuilder(PipelineBuilder):
         context : Context
             Context object that tracks metadata related to the pipeline's execution.
         """
-        super().__init__(config=config, context=context)
+        super().__init__(config=config)
 
     def create_pipeline(self) -> IngestPipeline:
         """
@@ -120,18 +114,19 @@ class IngestPipelineBuilder(PipelineBuilder):
             The fully configured data ingestion pipeline with all tasks.
         """
         # Instantiate pipeline
-        pipe = IngestPipeline(config=self._config, context=self._context)
+        pipe = IngestPipeline(config=self._config)
 
         # Instantiate Tasks
         load = ReadTask(
-            data_config=self._config.source_data_config, context=copy(self._context)
+            config=self._config.source_data_config,
+            pipeline_context=pipe.context,
         )
         save = WriteTask(
-            data_config=self._config.target_data_config,
-            context=copy(self._context),
+            config=self._config.target_data_config,
+            pipeline_context=pipe.context,
             partition_cols=self._config.partition_cols,
         )
-        ingest = IngestTask(config=self._config, context=copy(self._context))
+        ingest = IngestTask(config=self._config, pipeline_context=pipe.context)
 
         # Add tasks to pipeline
         pipe.add_task(load)

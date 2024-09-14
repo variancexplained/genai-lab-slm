@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 02:58:50 pm                                               #
-# Modified   : Saturday September 14th 2024 04:08:41 am                                            #
+# Modified   : Saturday September 14th 2024 04:08:53 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import logging
 import pandas as pd
 
 from discover.infra.access.file_io import IOService
-from discover.infra.config.config import Config
+from discover.infra.config.reader import ConfigReader
 from discover.infra.storage.repo.base import ReviewRepo
 
 
@@ -51,7 +51,9 @@ class McKinneyRepo(ReviewRepo):
     """
 
     def __init__(
-        self, config_cls: type[Config] = Config, io_cls: type[IOService] = IOService
+        self,
+        config_reader_cls: type[ConfigReader] = ConfigReader,
+        io_cls: type[IOService] = IOService,
     ) -> None:
         """
         Initializes the McKinneyRepo with a file format, configuration, and IO service.
@@ -60,12 +62,12 @@ class McKinneyRepo(ReviewRepo):
         -----------
         file_format : FileFormat
             The format in which the review data will be stored (e.g., CSV, TSV, Pickle, Parquet).
-        config_cls : type[Config], optional
-            The configuration class that provides environment-specific settings, by default Config.
+        config_reader_cls : type[ConfigReader], optional
+            The configuration class that provides environment-specific settings, by default ConfigReader.
         io : type[IOService], optional
             The IO service class responsible for file operations, by default IOService.
         """
-        super().__init__(config_cls=config_cls)
+        super().__init__(config_reader_cls=config_reader_cls)
         self._io = io_cls()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 

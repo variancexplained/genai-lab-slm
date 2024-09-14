@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday September 14th 2024 06:48:27 am                                            #
+# Modified   : Saturday September 14th 2024 04:50:21 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,8 +34,8 @@ from pandarallel import pandarallel
 from profanity_check import predict
 from tqdm import tqdm
 
-from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
-from discover.data_prep import log_exceptions, task_profiler
+from discover.application.pipeline import Pipeline, PipelineBuilder
+from discover.data_prep import log_exceptions, profiler
 from discover.data_prep.io import ReadTask, WriteTask
 from discover.domain.base.task import Task
 from discover.shared.persist.object.cache import Cache, CacheIterator
@@ -388,7 +388,7 @@ class DetectDuplicateRowTask(DataQualityAssessmentTask):
         super().__init__(cache=cache, new_column_name=new_column_name)
         self._column_names = column_names
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -422,7 +422,7 @@ class DetectNullValuesTask(DataQualityAssessmentTask):
     ):
         super().__init__(cache=cache, new_column_name=new_column_name)
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -481,7 +481,7 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
         # Load pre-trained FastText language identification model
         self._model_filepath = os.getenv("FASTTEXT_MODEL")
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task to detect non-English text in the specified column and add a new column with the results.
@@ -530,7 +530,7 @@ class DetectEmojiTask(DataQualityAssessmentTask):
         super().__init__(cache=cache, new_column_name=new_column_name)
         self._text_column = text_column
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """
@@ -586,7 +586,7 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
         self._text_column = text_column
         self._threshold = threshold
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """
@@ -634,7 +634,7 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
         """
         super().__init__(cache=cache, new_column_name=new_column_name)
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """
@@ -672,7 +672,7 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
         """
         super().__init__(cache=cache, new_column_name=new_column_name)
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """
@@ -745,7 +745,7 @@ class DetectProfanityTask(DataQualityAssessmentTask):
         self._text_column = text_column
         self._n_jobs = n_jobs
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """
@@ -791,7 +791,7 @@ class DetectEmailTask(DataQualityAssessmentTask):
         super().__init__(cache=cache, new_column_name=new_column_name)
         self._text_column = text_column
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """Detects special patterns (emails, URLs, phone numbers) in the specified text column
@@ -843,7 +843,7 @@ class DetectURLTask(DataQualityAssessmentTask):
         super().__init__(cache=cache, new_column_name=new_column_name)
         self._text_column = text_column
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
@@ -895,7 +895,7 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
         super().__init__(cache=cache, new_column_name=new_column_name)
         self._text_column = text_column
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
@@ -942,7 +942,7 @@ class DetectOutliersTask(DataQualityAssessmentTask):
         super().__init__(cache=cache, new_column_name=new_column_name)
         self._column_name = column_name
 
-    @task_profiler
+    @profiler
     @log_exceptions()
     def run(self, data: pd.DataFrame):
         """Detects outliers in three columns

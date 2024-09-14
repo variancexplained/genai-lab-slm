@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/cloud/aws.py                                                        #
+# Filename   : /discover/infra/storage/cloud/aws.py                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 10:57:37 am                                               #
-# Modified   : Tuesday September 10th 2024 12:11:03 am                                             #
+# Modified   : Saturday September 14th 2024 04:12:20 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,9 @@ from datetime import datetime, timedelta
 
 import boto3
 import botocore.exceptions
-from discover.infra.config.config import Config
 from tqdm import tqdm
+
+from discover.infra.config.reader import ConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 
@@ -62,7 +63,7 @@ class S3Handler:
 
     def __init__(
         self,
-        config_cls: type[Config] = Config,
+        config_reader_cls: type[ConfigReader] = ConfigReader,
     ) -> None:
         """
         Initializes the S3Handler with optional AWS credentials and configuration.
@@ -73,8 +74,8 @@ class S3Handler:
             region_name (str, optional): AWS region name.
             config (dict, optional): Dictionary containing configuration options such as read timeout and retries.
         """
-        config = config_cls()
-        aws_config = config.aws
+        config_reader = config_reader_cls()
+        aws_config = config_reader.aws
 
         self.s3_client = boto3.client(
             "s3",
@@ -220,7 +221,7 @@ class S3Handler:
             region = region or self.s3_client.meta.region_name
             self.s3_client.create_bucket(
                 Bucket=bucket_name,
-                CreateBucketConfiguration={"LocationConstraint": region},
+                CreateBucketConfigReaderuration={"LocationConstraint": region},
             )
             print(f"Bucket '{bucket_name}' created successfully in region '{region}'.")
             return True

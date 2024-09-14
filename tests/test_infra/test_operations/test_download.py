@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 02:27:48 pm                                           #
-# Modified   : Wednesday September 11th 2024 03:34:54 pm                                           #
+# Modified   : Saturday September 14th 2024 06:45:57 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.infra.config.config import Config
+from discover.infra.config.reader import ConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -51,7 +51,7 @@ class TestDownload:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        shutil.rmtree(os.path.dirname(LOCAL_PATH))
+        shutil.rmtree(os.path.dirname(LOCAL_PATH), ignore_errors=True)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -69,7 +69,7 @@ class TestDownload:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        config = Config().get_config(section="aws")
+        config = ConfigReader().get_config(section="aws")
         aws.download_file(
             bucket_name=config.bucket, s3_key=config.s3_key, local_path=LOCAL_PATH
         )
@@ -91,7 +91,7 @@ class TestDownload:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        shutil.rmtree(os.path.dirname(LOCAL_PATH))
+        shutil.rmtree(os.path.dirname(LOCAL_PATH), ignore_errors=True)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)

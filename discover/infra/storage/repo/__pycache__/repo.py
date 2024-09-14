@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:43:56 pm                                               #
-# Modified   : Saturday September 14th 2024 06:48:26 am                                            #
+# Modified   : Saturday September 14th 2024 05:58:43 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ import logging
 import pandas as pd
 
 from discover.domain.base.repo import Repo
+from discover.domain.service.core.monitor.profile import Profile
 from discover.infra.database.base import Database
-from discover.infra.monitor.profile import Profile
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -42,10 +42,10 @@ class ProfileRepo(Repo):
         add(profile: Profile): Adds a new profile to the 'profile' table.
         get(profile_id: int): Retrieves a profile by its ID.
         get_all(): Retrieves all profiles as a pandas DataFrame.
-        get_by_task(task_name: str): Retrieves profiles that match a specific task name.
+        get_by_process(process_name: str): Retrieves profiles that match a specific task name.
         get_by_stage(stage: str): Retrieves profiles that match a specific stage.
         remove(profile_id: int): Removes a profile by its ID.
-        remove_by_task(task_name: str): Removes profiles that match a specific task name.
+        remove_by_process(process_name: str): Removes profiles that match a specific task name.
         remove_by_stage(stage: str): Removes profiles that match a specific stage.
         exists(profile_id: int): Checks if a profile exists by its ID.
     """
@@ -78,16 +78,16 @@ class ProfileRepo(Repo):
         """
         query = """
             INSERT INTO profile (
-                env, stage, task_name, task_start_time, task_end_time, runtime_seconds,
+                env, stage, process_name, task_start_time, task_end_time, runtime_seconds,
                 cpu_cores, cpu_user_utilization, cpu_system_utilization, memory_usage_peak_mb,
                 memory_allocations, file_read_bytes, file_write_bytes, io_wait_time_seconds,
                 network_data_sent_bytes, network_data_received_bytes, exceptions_raised, retry_count
             )
             VALUES (
-                :env, :stage, :task_name, :task_start_time, :task_end_time, :runtime_seconds,
+                :env, :stage, :process_name, :task_start_time, :task_end_time, :runtime_seconds,
                 :cpu_cores, :cpu_user_utilization, :cpu_system_utilization, :memory_usage_peak_mb,
                 :memory_allocations, :file_read_bytes, :file_write_bytes, :io_wait_time_seconds,
-                :network_data_sent_bytes, :network_data_received_bytes, :exceptions_raised, :retry_count
+                :network_data_sent_bytes, :network_data_received_bytes, :exceptions_raised
             );
         """
         params = profile.as_dict()
@@ -122,18 +122,18 @@ class ProfileRepo(Repo):
         with self._database as db:
             return db.query(query=query)
 
-    def get_by_task(self, task_name: str) -> pd.DataFrame:
+    def get_by_process(self, process_name: str) -> pd.DataFrame:
         """
         Retrieves profiles from the database that match a specific task name.
 
         Args:
-            task_name (str): The task name to filter profiles by.
+            process_name (str): The task name to filter profiles by.
 
         Returns:
             pd.DataFrame: A DataFrame containing profiles that match the task name.
         """
-        query = """SELECT * FROM profile WHERE task_name = :task_name;"""
-        params = {"task_name": task_name}
+        query = """SELECT * FROM profile WHERE process_name = :process_name;"""
+        params = {"process_name": process_name}
         with self._database as db:
             return db.query(query=query, params=params)
 
@@ -164,15 +164,15 @@ class ProfileRepo(Repo):
         with self._database as db:
             db.command(query=query, params=params)
 
-    def remove_by_task(self, task_name: str) -> None:
+    def remove_by_process(self, process_name: str) -> None:
         """
         Removes profiles from the database that match a specific task name.
 
         Args:
-            task_name (str): The task name to filter profiles to be removed.
+            process_name (str): The task name to filter profiles to be removed.
         """
-        query = """DELETE FROM profile WHERE task_name = :task_name;"""
-        params = {"task_name": task_name}
+        query = """DELETE FROM profile WHERE process_name = :process_name;"""
+        params = {"process_name": process_name}
         with self._database as db:
             db.command(query=query, params=params)
 
