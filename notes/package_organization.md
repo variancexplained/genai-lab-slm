@@ -15,8 +15,8 @@ project_root/
 │   │   ├── pipeline.py
 │   │   ├── tasks/
 │   │   │   ├── __init__.py
-│   │   │   ├── read_task.py
-│   │   │   ├── write_task.py
+│   │   │   ├── reader.py
+│   │   │   ├── writer.py
 │   │   └── builder.py
 │   ├── eda/
 │   │   ├── __init__.py

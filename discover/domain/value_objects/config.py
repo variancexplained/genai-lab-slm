@@ -11,17 +11,19 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:55 pm                                             #
-# Modified   : Saturday September 14th 2024 05:19:07 pm                                            #
+# Modified   : Monday September 16th 2024 12:27:08 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Abstract Base Class for Data Processing Stage Configurations"""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
 
 from discover.core.data import DataClass
-from discover.domain.base.repo import Repo
+from discover.domain.value_objects.config import DataStructure
+from discover.domain.value_objects.file_format import FileFormat
 from discover.domain.value_objects.lifecycle import Stage
 
 # ------------------------------------------------------------------------------------------------ #
@@ -46,9 +48,11 @@ class DataConfig(DataClass):
         The name of the data being processed.
     """
 
-    repo: Repo
     stage: Stage
     name: str
+    data_structure: DataStructure
+    format: FileFormat
+    partition_cols: List[str] = field(default_factory=list)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -63,8 +67,8 @@ class ServiceConfig(DataClass):
 
     Attributes:
     -----------
-    source_data_config : DataConfig
-        Configuration for the source data being processed in the pipeline.
+    stage : Stage
+        Stage of the processing and analysis pipeline.
     target_data_config : DataConfig
         Configuration for the target data where the results of processing will be stored.
     force : bool
@@ -72,6 +76,5 @@ class ServiceConfig(DataClass):
         even if the output already exists. Defaults to False.
     """
 
-    source_data_config: DataConfig
-    target_data_config: DataConfig
+    stage: Stage
     force: bool = False

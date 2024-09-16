@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 05:35:17 pm                                              #
-# Modified   : Saturday September 14th 2024 05:23:12 pm                                            #
+# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,11 +21,12 @@ from typing import Any
 
 from discover.application.base.service import ApplicationService
 from discover.domain.base.repo import Repo
+from discover.domain.service.core.data import Reader, Writer
 from discover.domain.service.data.ingest.service import DataIngestionDomainService
 from discover.domain.value_objects.config import DataConfig, ServiceConfig
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.reader import ConfigReader
-from discover.infra.storage.repo.mckinney import McKinneyRepo
+from discover.infra.repo.mckinney import McKinneyRepo
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -105,8 +106,8 @@ class DataIngestionServiceConfig(ServiceConfig):
     """
 
     stage: Stage = Stage.INGEST
-    source_data_config: IngestSourceDataConfig = IngestSourceDataConfig()
-    target_data_config: IngestTargetDataConfig = IngestTargetDataConfig()
+    reader: Reader = Reader(config=IngestSourceDataConfig())
+    writer: Writer = Writer(config=IngestTargetDataConfig())
     partition_cols: list = field(default_factory=lambda: ["category"])
     text_column: str = "content"
     encoding_sample: float = 0.01

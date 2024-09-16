@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Saturday September 14th 2024 05:19:04 pm                                            #
+# Modified   : Monday September 16th 2024 01:47:18 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,10 +24,9 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
-from discover.data_prep.io import ReadTask, WriteTask
+from discover.data_prep.io import Reader, WriteTask
 from discover.domain.base.task import Task
 from discover.shared.instrumentation.decorator import profiler
-from discover.shared.logging.logging import log_exceptions
 from discover.shared.persist.file.io import IOService
 from discover.utils.base import Reader, Writer
 from discover.utils.io import PandasReader, PandasWriter
@@ -126,10 +125,10 @@ class DataCleaner(PipelineBuilder):
             Pipeline: The configured pipeline with tasks.
         """
         # Instantiate pipeline
-        pipe = self.pipeline_cls(name=self.config.name)
+        pipe = self._pipeline_cls(name=self.config.name)
 
         # Instantiate Tasks
-        load = ReadTask(
+        load = Reader(
             directory=self.config.source_directory,
             filename=self.config.source_filename,
             reader_cls=self.source_reader_cls,
@@ -170,7 +169,7 @@ class DataCleaningTask(Task):
         self._issues_to_remove = issues_to_remove
         self._printer = Printer()
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, cleaning the DataFrame based on configuration rules.

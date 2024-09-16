@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday September 14th 2024 05:24:01 pm                                            #
+# Modified   : Monday September 16th 2024 12:27:24 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 from pandarallel import pandarallel
 
 from discover.domain.base.pipeline import Pipeline, PipelineBuilder
-from discover.domain.service.core.io import ReadTask, WriteTask
+from discover.domain.service.core.data import Reader, Writer
 from discover.domain.service.data.ingest.task import IngestTask
 from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.lifecycle import Stage
@@ -61,7 +61,7 @@ class IngestPipeline(Pipeline):
     def __init__(
         self,
         config: ServiceConfig,
-    ):
+    ) -> None:
         super().__init__(config=config, stage=self.__STAGE)
 
 
@@ -85,8 +85,7 @@ class IngestPipelineBuilder(PipelineBuilder):
     """
 
     def __init__(
-        self,
-        config: ServiceConfig,
+        self, config: ServiceConfig, pipeline_cls: type[Pipeline] = IngestPipeline
     ) -> None:
         """
         Initializes the IngestPipelineBuilder with the provided configuration and context.
@@ -98,7 +97,7 @@ class IngestPipelineBuilder(PipelineBuilder):
         context : Context
             Context object that tracks metadata related to the pipeline's execution.
         """
-        super().__init__(config=config)
+        super().__init__(config=config, pipeline_cls=pipeline_cls)
 
     def create_pipeline(self) -> IngestPipeline:
         """
@@ -114,14 +113,14 @@ class IngestPipelineBuilder(PipelineBuilder):
             The fully configured data ingestion pipeline with all tasks.
         """
         # Instantiate pipeline
-        pipe = IngestPipeline(config=self._config)
+        pipe = self._pipeline_cls(config=self._config)
 
         # Instantiate Tasks
-        load = ReadTask(
+        load = Reader(
             config=self._config.source_data_config,
             pipeline_context=pipe.context,
         )
-        save = WriteTask(
+        save = Writer(
             config=self._config.target_data_config,
             pipeline_context=pipe.context,
             partition_cols=self._config.partition_cols,

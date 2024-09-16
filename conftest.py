@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday September 14th 2024 05:18:15 pm                                            #
+# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,8 +30,8 @@ from discover.domain.value_objects.config import DataConfig
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
+from discover.infra.repo.mckinney import McKinneyRepo
 from discover.infra.storage.cloud.aws import S3Handler
-from discover.infra.storage.repo.mckinney import McKinneyRepo
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

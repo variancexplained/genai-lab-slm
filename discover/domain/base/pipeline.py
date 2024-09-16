@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
+# Modified   : Monday September 16th 2024 01:44:20 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,6 +23,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.domain.base.task import Task
+from discover.domain.service.core.monitor.announcer import announcer
 from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
@@ -143,6 +144,7 @@ class Pipeline(ABC):
             A task object to add to the pipeline for execution.
         """
         self._tasks.append(task)
+        self._logger.info(f"Added {task.name} to the {self.name} pipeline.")
 
     @profiler
     def run(self) -> Any:
@@ -201,6 +203,7 @@ class Pipeline(ABC):
             name=self._config.target_data_config.name,
         )
 
+    @announcer
     def _run_pipeline(self) -> Any:
         """
         Runs the pipeline by executing all the tasks in sequence.
@@ -283,7 +286,7 @@ class PipelineBuilder(ABC):
             Additional keyword arguments for further customization during initialization.
         """
         self._config = config
-        self.pipeline_cls = pipeline_cls
+        self._pipeline_cls = pipeline_cls
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @abstractmethod

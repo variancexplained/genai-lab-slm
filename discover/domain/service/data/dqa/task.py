@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data/data_quality_analysis/pipeline.py                     #
+# Filename   : /discover/domain/service/data/dqa/task.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Saturday September 14th 2024 04:50:21 pm                                            #
+# Modified   : Monday September 16th 2024 01:47:32 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,6 @@ from __future__ import annotations
 import os
 import re
 import warnings
-from dataclasses import dataclass
 from typing import AnyStr, List, Optional, Union
 
 import emoji
@@ -34,284 +33,18 @@ from pandarallel import pandarallel
 from profanity_check import predict
 from tqdm import tqdm
 
-from discover.application.pipeline import Pipeline, PipelineBuilder
-from discover.data_prep import log_exceptions, profiler
-from discover.data_prep.io import ReadTask, WriteTask
+from discover.core.data import split_dataframe
 from discover.domain.base.task import Task
-from discover.shared.persist.object.cache import Cache, CacheIterator
-from discover.utils.base import Reader, Writer
-from discover.utils.data import split_dataframe
-from discover.utils.io import PandasReader, PandasWriter
-from discover.utils.repo import ReviewRepo
+from discover.domain.service.core.cache import Cache
+from discover.domain.service.core.monitor.announcer import announcer
+from discover.domain.service.core.monitor.profile import profiler
+from discover.domain.value_objects.context import Context
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
 fasttext.FastText.eprint = lambda x: None
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 DATA QUALITY CONFIG                                              #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class DQAConfig(ServiceConfig):
-    """Class encapsulating the configuration for data quality assessment stage."""
-
-    name: str = "DataQualityAssessment"
-    source_directory: str = "01_stage/reviews"
-    source_filename: str = None
-    target_directory: str = "02_dqa/reviews"
-    target_filename: str = None
-    cache_name: str = "dqa"
-    partition_cols: str = "category"
-    n_jobs: int = 18
-    force: bool = False
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                              DATA QUALITY ASSESSMENT                                             #
-# ------------------------------------------------------------------------------------------------ #
-class DataQualityAssessment(PipelineBuilder):
-    """Data quality assessment class.
-
-    This class constructs and executes a pipeline to detect data quality issues
-    in a dataset. If the endpoint already exists and config.force is False,
-    the pipeline is not executed; instead, the endpoint is read and
-    returned.
-
-    Attributes:
-        data (pd.DataFrame): The input data for quality analysis.
-
-    Args:
-        config (DQAConfig): Configuration for the data quality assessment stage.
-        pipeline_cls type[Pipeline]: Pipeline class to instantiate
-        review_repo_cls (type[ReviewRepo]): Manages dataset IO
-        source_reader_cls (type[Reader]): Class for reading the source data.
-        target_writer_cls (type[Writer]): Class for writing the target data
-        target_reader_cls (type[Reader]): Class for reading the target data.
-    """
-
-    def __init__(
-        self,
-        config: DQAConfig,
-        source_reader_cls: type[Reader] = PandasReader,
-        target_writer_cls: type[Writer] = PandasWriter,
-        target_reader_cls: type[Reader] = PandasReader,
-        pipeline_cls: type[Pipeline] = Pipeline,
-        review_repo_cls: type[ReviewRepo] = ReviewRepo,
-        cache_cls: type[Cache] = Cache,
-        fastmode: bool = False,
-    ) -> None:
-        """Initializes the DataQualityPipeline with data."""
-        super().__init__(
-            config=config,
-            source_reader_cls=source_reader_cls,
-            target_writer_cls=target_writer_cls,
-            target_reader_cls=target_reader_cls,
-            pipeline_cls=pipeline_cls,
-            review_repo_cls=review_repo_cls,
-        )
-        self._cache = cache_cls(name=self.config.cache_name)
-        self._pipeline = self.create_pipeline()
-
-    def overview(self) -> pd.DataFrame:
-        """Provides an overview of the data quality issues in terms of counts and percentages."""
-        try:
-            overview = (
-                self._data.loc[:, self._data.columns.str.startswith("dqa_")]
-                .sum()
-                .to_frame()
-            )
-            overview.columns = ["Count"]
-            overview["Percent"] = overview["Count"] / len(self._data) * 100
-            overview = overview.style.format(thousands=",", precision=2)
-            return overview
-        except Exception as e:
-            msg = f"Exception occurred in overview. \n{e}"
-            self.logger.exception(msg)
-            raise
-
-    def create_pipeline(self) -> Pipeline:
-        """Creates the pipeline with all the tasks for data quality analysis.
-
-        Returns:
-            Pipeline: The configured pipeline with tasks.
-        """
-        # Instantiate pipeline
-        pipe = self.pipeline_cls(name=self.config.name)
-
-        # Instantiate IO Tasks
-        load = ReadTask(
-            directory=self.config.source_directory,
-            filename=self.config.source_filename,
-            reader_cls=self.source_reader_cls,
-        )
-        save = WriteTask(
-            directory=self.config.target_directory,
-            filename=self.config.target_filename,
-            writer_cls=self.target_writer_cls,
-            partition_cols=self.config.partition_cols,
-        )
-
-        # Instantiate DQA initializer
-        init = DQAInitTask(sort_by="id")
-
-        # Instantiate DQA Finalizer
-        finalizer = DQAFinalizeTask(cache_name=self.config.cache_name)
-
-        # Instantiate duplicate checkers
-        dup1 = DetectDuplicateRowTask(new_column_name="is_duplicate", cache=self._cache)
-        dup2 = DetectDuplicateRowTask(
-            column_names="id",
-            new_column_name="is_duplicate_review_id",
-            cache=self._cache,
-        )
-        # Instantiate detection of null values
-        null = DetectNullValuesTask(
-            new_column_name="has_null_values", cache=self._cache
-        )
-
-        # Instantiate detection of outliers
-        out_vote_sum = DetectOutliersTask(
-            column_name="vote_sum",
-            new_column_name="vote_sum_outlier",
-            cache=self._cache,
-        )
-        out_vote_count = DetectOutliersTask(
-            column_name="vote_count",
-            new_column_name="vote_count_outlier",
-            cache=self._cache,
-        )
-        # Instantiate detection of non-english text in reviews and app names.
-        lang_review = DetectNonEnglishTask(
-            text_column="content",
-            new_column_name="has_non_english_review",
-            n_jobs=self.config.n_jobs,
-            cache=self._cache,
-        )
-        lang_app_name = DetectNonEnglishTask(
-            text_column="app_name",
-            new_column_name="has_non_english_app_name",
-            n_jobs=self.config.n_jobs,
-            cache=self._cache,
-        )
-        # Instantiate detection of emojis
-        emoji = DetectEmojiTask(new_column_name="has_emojis", cache=self._cache)
-        # Instantiate detection of excessive special characters
-        chars = DetectSpecialCharacterTask(
-            threshold=0.3,
-            new_column_name="has_excessive_special_chars",
-            cache=self._cache,
-        )
-        # Instantiate date validator
-        dates = DetectInvalidDatesTask(
-            new_column_name="has_invalid_date", cache=self._cache
-        )
-        # Instantiate a rating validator
-        ratings = DetectInvalidRatingsTask(
-            new_column_name="has_invalid_rating", cache=self._cache
-        )
-        # Instantiate a profanity check
-        profanity = DetectProfanityTask(
-            n_jobs=self.config.n_jobs,
-            new_column_name="has_profanity",
-            cache=self._cache,
-        )
-        # Instantiate email, URL, and phone number detection in review text.
-        emails = DetectEmailTask(new_column_name="contains_email", cache=self._cache)
-        urls = DetectURLTask(new_column_name="contains_url", cache=self._cache)
-        phones = DetectPhoneNumberTask(
-            new_column_name="contains_phone_number", cache=self._cache
-        )
-
-        # Add tasks to pipeline, starting with the lower resource intensive tasks.
-        pipe.add_task(load)
-        pipe.add_task(init)
-        pipe.add_task(dup1)
-        pipe.add_task(dup2)
-        pipe.add_task(null)
-        pipe.add_task(out_vote_sum)
-        pipe.add_task(out_vote_count)
-        pipe.add_task(emoji)
-        pipe.add_task(chars)
-        pipe.add_task(dates)
-        pipe.add_task(ratings)
-        pipe.add_task(emails)
-        pipe.add_task(urls)
-        pipe.add_task(phones)
-        # Add resource moderate tasks.
-        pipe.add_task(lang_review)
-        pipe.add_task(lang_app_name)
-        # Add resource intensive task
-        pipe.add_task(profanity)
-        # Finalizer
-        pipe.add_task(finalizer)
-        pipe.add_task(save)
-        return pipe
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                  DQA INIT TASK                                                   #
-# ------------------------------------------------------------------------------------------------ #
-class DQAInitTask(Task):
-    """Initializes the data for the data quality assessment
-
-    Args:
-        sort_by (str): The column to sort by.
-    """
-
-    def __init__(self, sort_by: str = "id") -> None:
-        super().__init__()
-        self._sort_by = sort_by
-
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Performs the task
-
-        Args:
-            data (pd.DataFrame): Data to be assessed.
-        """
-        data = data.reset_index().set_index(keys=[self._sort_by])
-        data = data.sort_index(ascending=True)
-        return data.reset_index()
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                  DQA FINALIZE TASK                                               #
-# ------------------------------------------------------------------------------------------------ #
-class DQAFinalizeTask(Task):
-    """Finalizes the data for the data quality assessment
-
-    Args:
-        cache_cls (type[Cache]): Cache manager class.
-    """
-
-    def __init__(
-        self,
-        cache_iter_cls: type[CacheIterator] = CacheIterator,
-        cache_name: str = "dqa",
-    ) -> None:
-        super().__init__()
-        self._cache_name = cache_name
-        self._cache_iter_cls = cache_iter_cls
-
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Performs the task
-
-        Args:
-            data (pd.DataFrame): Data to be assessed.
-        """
-        cache_iter = self._cache_iter_cls(name=self._cache_name)
-        for column in cache_iter:
-            self._logger.debug(
-                f"Obtaining {column.name} from cache with {len(column)} rows."
-            )
-            data = pd.concat([data, column], axis=1)
-            self._logger.debug(f"Data now has {data.shape[1]} columns.")
-
-        self._logger.debug(f"Final Data Head: \n{data.head()}")
-        self._logger.debug(f"Final Data Tail: \n{data.tail()}")
-        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -328,36 +61,16 @@ class DataQualityAssessmentTask(Task):
 
     def __init__(
         self,
+        pipeline_context: Context,
         new_column_name: str,
-        cache: Cache,
     ):
-        super().__init__()
+        super().__init__(pipeline_context=pipeline_context)
         self._new_column_name = f"{self.PREFIX}{new_column_name}"
-        self._cache = cache
 
     @property
     def new_column_name(self) -> str:
         """Returns the new column a data quality assessment subtask adds to the dataset."""
         return self._new_column_name
-
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Executes the underlying subtask's run method if result not in cache.
-
-        Args:
-            data (pd.DataFrame): Data to be assessed.
-        """
-        self.start_task()
-        # Execute the underlying task if the result does not exist in the cache.
-        if not self._cache.exists(key=self.new_column_name):
-            result = self.run(data=data)
-            self._cache.add_item(key=self.new_column_name, value=result)
-
-        else:
-            self._logger.debug(
-                f"Cache for {self.new_column_name} already exists. Skipping task."
-            )
-        self.stop_task()
-        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -373,6 +86,7 @@ class DetectDuplicateRowTask(DataQualityAssessmentTask):
 
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         column_names: Optional[Union[List[AnyStr], AnyStr]] = None,
         new_column_name: str = "is_duplicate",
@@ -385,11 +99,15 @@ class DetectDuplicateRowTask(DataQualityAssessmentTask):
                 Default is to use all columns.
             new_column_name (str): The name of the column to add, indicating whether each row is a duplicate.
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._column_names = column_names
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Returns a binary series indicating the rows that contain duplicate values.
@@ -417,13 +135,18 @@ class DetectNullValuesTask(DataQualityAssessmentTask):
 
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         new_column_name: str = "has_null",
     ):
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Mark incomplete rows in the DataFrame.
@@ -470,19 +193,24 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
 
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         text_column: str = "content",
         new_column_name: str = "non_english",
         n_jobs: int = 12,
     ):
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._text_column = text_column
         self._n_jobs = n_jobs
         # Load pre-trained FastText language identification model
         self._model_filepath = os.getenv("FASTTEXT_MODEL")
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task to detect non-English text in the specified column and add a new column with the results.
 
@@ -516,6 +244,7 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
 class DetectEmojiTask(DataQualityAssessmentTask):
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         text_column: str = "content",
         new_column_name: str = "has_emoji",
@@ -527,11 +256,15 @@ class DetectEmojiTask(DataQualityAssessmentTask):
             text_column (str): Name of the column containing text to be analyzed.
             new_column_name (str): Name of the new column to be created indicating whether the text contains emojis or not.
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._text_column = text_column
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect emojis in the specified column and add a new column with the results.
@@ -567,6 +300,7 @@ class DetectEmojiTask(DataQualityAssessmentTask):
 class DetectSpecialCharacterTask(DataQualityAssessmentTask):
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         text_column: str = "content",
         new_column_name: str = "has_excessive_special_chars",
@@ -582,12 +316,16 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
             threshold (float): Proportion of review text with special characters, above which, is considered
                 excessive
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._text_column = text_column
         self._threshold = threshold
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect emojis in the specified column and add a new column with the results.
@@ -625,17 +363,26 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
 #                               DETECT INVALID DATES TASK                                          #
 # ------------------------------------------------------------------------------------------------ #
 class DetectInvalidDatesTask(DataQualityAssessmentTask):
-    def __init__(self, cache: Cache, new_column_name: str = "date_invalid"):
+    def __init__(
+        self,
+        pipeline_context: Context,
+        cache: Cache,
+        new_column_name: str = "date_invalid",
+    ):
         """
         Detects dates that are outside the range of 2008-2023
 
         Args:
             new_column_name (str): Name of the new column to be created indicating whether the rating is valid or not.
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect invalid dates and to add a new column with the results.
@@ -663,17 +410,26 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
 #                               DETECT INVALID RATINGS TASK                                        #
 # ------------------------------------------------------------------------------------------------ #
 class DetectInvalidRatingsTask(DataQualityAssessmentTask):
-    def __init__(self, cache: Cache, new_column_name: str = "rating_invalid"):
+    def __init__(
+        self,
+        pipeline_context: Context,
+        cache: Cache,
+        new_column_name: str = "rating_invalid",
+    ):
         """
         Detects ratings that are not on the five-point scale.
 
         Args:
             new_column_name (str): Name of the new column to be created indicating whether the rating is valid or not.
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect invalid ratings and to add a new column with the results.
@@ -727,6 +483,7 @@ class DetectProfanityTask(DataQualityAssessmentTask):
 
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         text_column: str = "content",
         new_column_name: str = "has_profanity",
@@ -741,12 +498,16 @@ class DetectProfanityTask(DataQualityAssessmentTask):
                 whether the text contains profanity or not.
             n_jobs (int): Number of cpus corresponding to 'jobs' in a concurrent context.
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._text_column = text_column
         self._n_jobs = n_jobs
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect profanity in the specified column and add a new column with the results.
@@ -778,6 +539,7 @@ class DetectProfanityTask(DataQualityAssessmentTask):
 class DetectEmailTask(DataQualityAssessmentTask):
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         text_column: str = "content",
         new_column_name: str = "contains_email",
@@ -788,11 +550,15 @@ class DetectEmailTask(DataQualityAssessmentTask):
         Args:
             text_column (str): Name of the column containing text to be analyzed.
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._text_column = text_column
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """Detects special patterns (emails, URLs, phone numbers) in the specified text column
         and adds new columns indicating the presence of each pattern.
@@ -836,15 +602,20 @@ class DetectURLTask(DataQualityAssessmentTask):
 
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         text_column: str = "content",
         new_column_name: str = "contains_url",
     ):
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._text_column = text_column
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
         and adds new columns indicating the presence of the pattern.
@@ -888,15 +659,20 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
 
     def __init__(
         self,
+        pipeline_context: Context,
         cache: Cache,
         text_column: str = "content",
         new_column_name: str = "contains_phone_number",
     ):
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._text_column = text_column
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
         and adds new columns indicating the presence of the pattern.
@@ -931,7 +707,13 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
 #                               DETECT OUTLIERS TASK                                               #
 # ------------------------------------------------------------------------------------------------ #
 class DetectOutliersTask(DataQualityAssessmentTask):
-    def __init__(self, cache: Cache, column_name: str, new_column_name: str):
+    def __init__(
+        self,
+        pipeline_context: Context,
+        cache: Cache,
+        column_name: str,
+        new_column_name: str,
+    ):
         """Detects outliers in vote sum, vote count, and review length columns.
 
         Args:
@@ -939,11 +721,15 @@ class DetectOutliersTask(DataQualityAssessmentTask):
             column_name (str): Column to examine
             new_column_name (str): Column containing indicator of presence of outliers.
         """
-        super().__init__(cache=cache, new_column_name=new_column_name)
+        super().__init__(
+            pipeline_context=pipeline_context,
+            cache=cache,
+            new_column_name=new_column_name,
+        )
         self._column_name = column_name
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(self, data: pd.DataFrame):
         """Detects outliers in three columns
 

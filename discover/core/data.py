@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : AppVoCAI-Acquire                                                                    #
-# Version    : 0.2.0                                                                               #
+# Project    : AppVoCAI-Discover                                                                   #
+# Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /appvocai/core/data.py                                                              #
+# Filename   : /discover/core/data.py                                                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
-# URL        : https://github.com/variancexplained/appvocai-acquire                                #
+# URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Sunday September 8th 2024 06:17:37 pm                                               #
+# Modified   : Sunday September 15th 2024 01:35:45 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -146,3 +146,26 @@ class NestedNamespace(SimpleNamespace):
                 self.__setattr__(key, NestedNamespace(value))
             else:
                 self.__setattr__(key, value)
+
+
+# ------------------------------------------------------------------------------------------------ #
+def split_dataframe(data, n):
+    """
+    Split the DataFrame into n+1 chunks where the last chunk has len(data) % n rows.
+
+    Args:
+        data (pd.DataFrame): The DataFrame to be split.
+        n (int): The number of chunks to split the DataFrame into.
+
+    Returns:
+        List[pd.DataFrame]: A list of DataFrame chunks.
+    """
+    chunk_size = len(data) // n
+    remainder = len(data) % n
+
+    chunks = [data.iloc[i * chunk_size : (i + 1) * chunk_size] for i in range(n)]
+
+    if remainder > 0:
+        chunks.append(data.iloc[n * chunk_size :])
+
+    return chunks

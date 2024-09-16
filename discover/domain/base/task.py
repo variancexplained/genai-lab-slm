@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
+# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
@@ -84,8 +84,8 @@ class Task(ABC):
     def __init__(
         self,
         *args,
-        config: ServiceConfig,
         pipeline_context: Context,
+        config: Optional[ServiceConfig] = None,
         **kwargs,
     ) -> None:
         """

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Saturday September 14th 2024 06:45:22 pm                                            #
+# Modified   : Monday September 16th 2024 01:47:24 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,6 @@ from pyspark.sql import DataFrame
 from discover.domain.base.task import Task
 from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.logging.decorator import log_exceptions
 from discover.infra.utils.data_utils.converter import Converter
 from discover.infra.utils.file_utils.tempfile import TempFileMgr
 
@@ -56,7 +55,7 @@ class ConvertTask(Task):
         self._kwargs = kwargs
 
     @profiler
-    @log_exceptions()
+    @announcer
     def run(
         self, data: Union[pd.DataFrame, DataFrame]
     ) -> Union[pd.DataFrame, DataFrame]:

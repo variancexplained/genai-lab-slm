@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/storage/repo/mckinney.py                                            #
+# Filename   : /discover/infra/repo/mckinney.py                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 02:58:50 pm                                               #
-# Modified   : Saturday September 14th 2024 04:08:53 pm                                            #
+# Modified   : Saturday September 14th 2024 09:09:55 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,9 +21,9 @@ import logging
 
 import pandas as pd
 
-from discover.infra.access.file_io import IOService
 from discover.infra.config.reader import ConfigReader
-from discover.infra.storage.repo.base import ReviewRepo
+from discover.infra.repo.base import ReviewRepo
+from discover.infra.storage.local.file_io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #

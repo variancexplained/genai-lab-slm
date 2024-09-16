@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/storage/repo/base.py                                                #
+# Filename   : /discover/infra/repo/base.py                                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Saturday September 14th 2024 04:18:59 pm                                            #
+# Modified   : Sunday September 15th 2024 06:01:17 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,11 +20,12 @@
 import os
 import shutil
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 import pandas as pd
 
 from discover.domain.base.repo import Repo
+from discover.domain.value_objects.file_format import FileFormat
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.reader import ConfigReader
 
@@ -87,7 +88,14 @@ class ReviewRepo(Repo):
         self._basedir = self._config_reader.get_config(section="data").basedir
         self._file_ext = self._config_reader.get_config(section="data").format
 
-    def add(self, data: Any, stage: Stage, name: str, **kwargs) -> None:
+    def add(
+        self,
+        data: Any,
+        stage: Stage,
+        name: str,
+        format: Optional[FileFormat] = None,
+        **kwargs,
+    ) -> None:
         """
         Adds data to the repository by writing it to a file.
 
@@ -105,7 +113,7 @@ class ReviewRepo(Repo):
         FileExistsError:
             If the file already exists in the specified path.
         """
-        filepath = self._get_filepath(stage=stage, name=name)
+        filepath = self._get_filepath(stage=stage, name=name, format=format)
         if os.path.exists(filepath):
             msg = f"File {filepath} cannot be created. It already exists."
             self._logger.exception(msg)
@@ -113,7 +121,12 @@ class ReviewRepo(Repo):
 
         self._write(filepath=filepath, data=data, **kwargs)
 
-    def get(self, stage: Stage, name: str) -> pd.DataFrame:
+    def get(
+        self,
+        stage: Stage,
+        name: str,
+        format: Optional[FileFormat] = None,
+    ) -> pd.DataFrame:
         """
         Retrieves data from the repository by reading it from a file.
 
@@ -129,10 +142,15 @@ class ReviewRepo(Repo):
         pd.DataFrame:
             The retrieved data as a pandas DataFrame (or other type based on implementation).
         """
-        filepath = self._get_filepath(stage=stage, name=name)
+        filepath = self._get_filepath(stage=stage, name=name, format=format)
         return self._read(filepath=filepath)
 
-    def remove(self, stage: Stage, name: str) -> None:
+    def remove(
+        self,
+        stage: Stage,
+        name: str,
+        format: Optional[FileFormat] = None,
+    ) -> None:
         """
         Removes a file from the repository.
 
@@ -154,7 +172,7 @@ class ReviewRepo(Repo):
             f"Removing {name} from {stage} stage is permanent. Confirm [Y/N]."
         )
         if confirm.lower() == "y":
-            filepath = self._get_filepath(stage=stage, name=name)
+            filepath = self._get_filepath(stage=stage, name=name, format=format)
 
             try:
                 os.remove(filepath)
@@ -167,7 +185,12 @@ class ReviewRepo(Repo):
         else:
             self._logger.info(f"Removal of {name} from {stage} stage aborted.")
 
-    def exists(self, stage: Stage, name: str) -> bool:
+    def exists(
+        self,
+        stage: Stage,
+        name: str,
+        format: Optional[FileFormat] = None,
+    ) -> bool:
         """
         Checks if a file exists in the repository.
 
@@ -183,10 +206,12 @@ class ReviewRepo(Repo):
         bool:
             True if the file exists, False otherwise.
         """
-        filepath = self._get_filepath(stage=stage, name=name)
+        filepath = self._get_filepath(stage=stage, name=name, format=format)
         return os.path.exists(filepath)
 
-    def _get_filepath(self, stage: Stage, name: str) -> str:
+    def _get_filepath(
+        self, stage: Stage, name: str, format: Optional[FileFormat] = None
+    ) -> str:
         """
         Constructs the file path based on the stage, name, and file format.
 
@@ -204,7 +229,9 @@ class ReviewRepo(Repo):
         """
         env = self._config_reader.get_environment()
 
-        return os.path.join(self._basedir, env, stage.value, name) + self._file_ext
+        file_ext = format.value or self._file_ext
+
+        return os.path.join(self._basedir, env, stage.value, name) + file_ext
 
     @abstractmethod
     def _read(self, filepath: str) -> Any:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Saturday September 14th 2024 04:50:25 pm                                            #
+# Modified   : Monday September 16th 2024 01:47:22 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,10 +28,9 @@ from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as sparkFunc
 
 from discover.application.pipeline import Pipeline, PipelineBuilder
-from discover.data_prep.io import ConvertTask, ReadTask, WriteTask
+from discover.data_prep.io import ConvertTask, Reader, WriteTask
 from discover.domain.base.task import Task
 from discover.shared.instrumentation.decorator import profiler
-from discover.shared.logging.logging import log_exceptions
 from discover.utils.base import Reader, Writer
 from discover.utils.convert import ToPandas, ToSpark
 from discover.utils.io import PandasReader, PandasWriter
@@ -142,10 +141,10 @@ class Metrics(PipelineBuilder):
             Pipeline: The configured pipeline with tasks.
         """
         # Instantiate pipeline
-        pipe = self.pipeline_cls(name=self.config.name)
+        pipe = self._pipeline_cls(name=self.config.name)
 
         # Instantiate Tasks
-        load = ReadTask(
+        load = Reader(
             directory=self.config.source_directory,
             filename=self.config.source_filename,
             reader_cls=self.source_reader_cls,
@@ -216,7 +215,7 @@ class CategoryMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the category level.
@@ -301,7 +300,7 @@ class AuthorMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the author level.
@@ -385,7 +384,7 @@ class AppMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the app level.
@@ -466,7 +465,7 @@ class CategoryAuthorMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the category/author level.

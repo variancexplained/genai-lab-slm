@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Saturday September 14th 2024 05:19:07 pm                                            #
+# Modified   : Monday September 16th 2024 01:47:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,8 +30,8 @@ from pandarallel import pandarallel
 from textstat import textstat
 
 from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConfig
-from discover.data_prep import log_exceptions, profiler
-from discover.data_prep.io import ReadTask, WriteTask
+from discover.data_prep import profiler
+from discover.data_prep.io import Reader, WriteTask
 from discover.domain.base.task import Task
 from discover.utils.base import Reader, Writer
 from discover.utils.cast import CastPandas
@@ -126,10 +126,10 @@ class FeatureEngineer(PipelineBuilder):
             Pipeline: The configured pipeline with tasks.
         """
         # Instantiate pipeline
-        pipe = self.pipeline_cls(name=self.config.name)
+        pipe = self._pipeline_cls(name=self.config.name)
 
         # Instantiate Tasks
-        load = ReadTask(
+        load = Reader(
             directory=self.config.source_directory,
             filename=self.config.source_filename,
             reader_cls=self.source_reader_cls,
@@ -171,7 +171,7 @@ class ParseDatesTask(Task):
     def __init__(self) -> None:
         super().__init__()
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, adding parsed elements of the date to the DataFrame
@@ -215,7 +215,7 @@ class BasicTextFeaturesTask(Task):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         stop_words = set(stopwords.words("english"))
@@ -260,7 +260,7 @@ class LexicalFeaturesTask(Task):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         data["lexical_unique_word_count"] = data["content"].parallel_apply(
@@ -301,7 +301,7 @@ class ReadabilityMetricsTask(Task):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         data["readability_flesch_reading_ease"] = data["content"].parallel_apply(
@@ -329,7 +329,7 @@ class DropFeaturesTask(Task):
         super().__init__()
         self._features_to_drop = features_to_drop
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, dropping designated features from the dataset.
@@ -354,7 +354,7 @@ class CastDatatypesTask(Task):
         self._dtype_mapping = dtype_mapping
         self._cast_cls = cast_cls
 
-    @log_exceptions()
+    @announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, dropping designated features from the dataset.
