@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 01:11:48 am                                             #
-# Modified   : Tuesday September 17th 2024 02:06:13 am                                             #
+# Modified   : Tuesday September 17th 2024 03:26:07 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,11 +20,15 @@ import inspect
 import logging
 import os
 import shutil
+import time
 from datetime import datetime
 
+import pandas as pd
 import pytest
 
-from discover.domain.service.core.cache import Cache
+from discover.domain.base.task import Task
+from discover.domain.service.core.cache import Cache, cachenow
+from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
 from discover.domain.value_objects.lifecycle import DataPrepStage, Phase
 
@@ -177,6 +181,90 @@ class TestCache:  # pragma: no cover
         cache.delete_cache()
         assert not os.path.exists(filepath)
 
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+
+@pytest.mark.cache
+@pytest.mark.cachenow
+class TestCachenow:  # pragma: no cover
+    # ============================================================================================ #
+    def test_setup(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        shutil.rmtree("ops/test/cache", ignore_errors=True)
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_cachenow(self, test_config, pandas_df, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+
+        # ---------------------------------------------------------------------------------------- #
+        class TestTask(Task):
+            def __init__(self, *args, config: ServiceConfig, **kwargs) -> None:
+                super().__init__(*args, config=config, **kwargs)
+
+            @cachenow
+            def run(self, df: pd.DataFrame):
+                time.sleep(2)
+                return df
+
+        assert isinstance(pandas_df, (pd.DataFrame, pd.core.frame.DataFrame))
+
+        test_task = TestTask(config=test_config)
+        starttime = time.time()
+        df = test_task.run(df=pandas_df)
+        stop = time.time()
+
+        assert (stop - starttime) > 2
+        assert df.equals(pandas_df)
+
+        starttime = time.time()
+        df = test_task.run(df=pandas_df)
+        stop = time.time()
+
+        assert (stop - starttime) < 2
+        assert df.equals(pandas_df)
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_teardown(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        shutil.rmtree("ops/test/cache", ignore_errors=True)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)

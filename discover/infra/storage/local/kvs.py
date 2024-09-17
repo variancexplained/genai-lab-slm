@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:30:37 pm                                            #
-# Modified   : Tuesday September 17th 2024 01:52:41 am                                             #
+# Modified   : Tuesday September 17th 2024 03:21:32 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -103,13 +103,13 @@ class KVS:
             FileExistsError: If the key already exists.
         """
         if self.exists(key):
-            msg = f"Cannot create {key} as it already exists."
+            msg = f"Cannot create {key} as it already exists in {self.filepath}"
             self._logger.exception(msg)
             raise FileExistsError(msg)
 
         with shelve.open(self._kvs_file) as kvs:
             kvs[key] = value
-        self._logger.debug(f"Added {key} to KVS.")
+        self._logger.debug(f"Added {key} to KVS at {self.filepath}.")
 
     def read(self, key: str) -> Any:
         """Reads an object from the KVS.
@@ -127,7 +127,7 @@ class KVS:
             with shelve.open(self._kvs_file) as kvs:
                 return kvs[key]
         except KeyError as ke:
-            msg = f"No key {key} found.\n{ke}"
+            msg = f"No key {key} found in {self.filepath}.\n{ke}"
             self._logger.exception(msg)
             raise
 
@@ -144,7 +144,7 @@ class KVS:
             with shelve.open(self._kvs_file) as kvs:
                 del kvs[key]
         except KeyError as ke:
-            msg = f"No key {key} found.\n{ke}"
+            msg = f"No key {key} found in {self.filepath}.\n{ke}"
             self._logger.warning(msg)
 
     def exists(self, key: str) -> bool:

@@ -11,23 +11,25 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday September 16th 2024 03:05:42 pm                                              #
+# Modified   : Tuesday September 17th 2024 03:11:51 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 import sys
+from dataclasses import dataclass
 
-import pandas as pd
 import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
+from discover.domain.value_objects.lifecycle import DataPrepStage, Phase
 from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
 from discover.infra.storage.cloud.aws import S3Handler
+from discover.infra.storage.local.file_io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -119,18 +121,18 @@ def spark():
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture
+@pytest.fixture(scope="session")
 def pandas_df():
     """
     Pytest fixture that reads a CSV file into a pandas DataFrame.
     Modify this to point to the correct CSV file.
     """
-    FILEPATH = "data/test/00_raw/reviews.csv"
-    return pd.read_csv(FILEPATH)
+    FILEPATH = "data/test/00_raw/reviews"
+    return IOService.read(FILEPATH)
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture
+@pytest.fixture(scope="session")
 def spark_df(spark, pandas_df):
     """
     Pytest fixture that converts a pandas DataFrame to a Spark DataFrame.
@@ -138,3 +140,20 @@ def spark_df(spark, pandas_df):
     """
 
     return spark.createDataFrame(pandas_df)
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def test_config(pandas_df):
+    """
+    Pytest fixture that converts a pandas DataFrame to a Spark DataFrame.
+    Requires the spark fixture and pandas_df_from_csv fixture.
+    """
+
+    @dataclass
+    class TestConfig:
+        phase: Phase = Phase.DATAPREP
+        stage: DataPrepStage = DataPrepStage.DQA
+        force: bool = False
+
+    return TestConfig()

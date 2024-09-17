@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Tuesday September 17th 2024 01:52:53 am                                             #
+# Modified   : Tuesday September 17th 2024 03:19:12 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -75,8 +75,8 @@ def cachenow(func):
         dataset_id = hash_dataframe(df=df)
         # Obtain a cache object
         cache = Cache(context=self.context, dataset_id=dataset_id)
-        # Create a key from the fully qualified name.
-        cache_key = self.__qualname__.lower()
+        # Create a key from the class name.
+        cache_key = self.__class__.__name__.lower()
 
         # Determine whether the task should be run based on configuration and cache
         run_task = self.config.force or not cache.exists(key=cache_key)

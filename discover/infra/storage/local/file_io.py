@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/access/file_io.py                                                   #
+# Filename   : /discover/infra/storage/local/file_io.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Saturday September 14th 2024 04:26:16 am                                            #
+# Modified   : Tuesday September 17th 2024 03:05:39 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -79,7 +79,7 @@ class ExcelIO(IO):  # pragma: no cover
         usecols: List[str] = None,
         **kwargs,
     ) -> pd.DataFrame:
-        return pd.read_excel(
+        data = pd.read_excel(
             filepath,
             sheet_name=sheet_name,
             header=header,
@@ -87,6 +87,8 @@ class ExcelIO(IO):  # pragma: no cover
             usecols=usecols,
             **kwargs,
         )
+        logging.debug(f"Read file using {cls.__name__} and returning a {type(data)}")
+        return data
 
     @classmethod
     def _write(
@@ -99,6 +101,7 @@ class ExcelIO(IO):  # pragma: no cover
         index: bool = False,
         **kwargs,
     ) -> None:
+        logging.debug(f"Writing file of {type(data)} using {cls.__name__}.")
         data.to_excel(
             excel_writer=filepath,
             sheet_name=sheet_name,
@@ -128,7 +131,7 @@ class CSVIO(IO):  # pragma: no cover
         encoding: str = "utf-8",
         **kwargs,
     ) -> pd.DataFrame:
-        return pd.read_csv(
+        data = pd.read_csv(
             filepath,
             sep=sep,
             header=header,
@@ -139,6 +142,8 @@ class CSVIO(IO):  # pragma: no cover
             encoding=encoding,
             **kwargs,
         )
+        logging.debug(f"Read file using {cls.__name__} and returning a {type(data)}")
+        return data
 
     @classmethod
     def _write(
@@ -151,6 +156,7 @@ class CSVIO(IO):  # pragma: no cover
         encoding: str = "utf-8",
         **kwargs,
     ) -> None:
+        logging.debug(f"Writing file of {type(data)} using {cls.__name__}.")
         data.to_csv(
             filepath,
             sep=sep,
@@ -180,7 +186,7 @@ class TSVIO(IO):  # pragma: no cover
         encoding: str = "utf-8",
         **kwargs,
     ) -> pd.DataFrame:
-        return pd.read_csv(
+        data = pd.read_csv(
             filepath,
             sep=sep,
             header=header,
@@ -189,6 +195,8 @@ class TSVIO(IO):  # pragma: no cover
             low_memory=low_memory,
             encoding=encoding,
         )
+        logging.debug(f"Read file using {cls.__name__} and returning a {type(data)}")
+        return data
 
     @classmethod
     def _write(
@@ -201,6 +209,7 @@ class TSVIO(IO):  # pragma: no cover
         encoding: str = "utf-8",
         **kwargs,
     ) -> None:
+        logging.debug(f"Writing file of {type(data)} using {cls.__name__}.")
         data.to_csv(
             filepath,
             sep=sep,
@@ -219,22 +228,27 @@ class TSVIO(IO):  # pragma: no cover
 class YamlIO(IO):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> dict:
+        logging.debug(f"Reading file using {cls.__name__}")
         with open(filepath, "r", encoding="utf-8") as f:
             try:
-                return yaml.safe_load(f)
+                data = yaml.safe_load(f)
             except yaml.YAMLError as e:  # pragma: no cover
-                cls._logger.exception(e)
+                logging.exception(e)
                 raise IOError(e) from e
             finally:
                 f.close()
 
+        logging.debug(f"Read file using {cls.__name__} and returning a {type(data)}")
+        return data
+
     @classmethod
     def _write(cls, filepath: str, data: Any, **kwargs) -> None:
+        logging.debug(f"Writing file of {type(data)} using {cls.__name__}.")
         with open(filepath, "w", encoding="utf-8") as f:
             try:
                 yaml.dump(data, f)
             except yaml.YAMLError as e:  # pragma: no cover
-                cls._logger.exception(e)
+                logging.exception(e)
                 raise IOError(e) from e
             finally:
                 f.close()
@@ -250,22 +264,27 @@ class PickleIO(IO):  # pragma: no cover
     def _read(cls, filepath: str, **kwargs) -> Any:
         with open(filepath, "rb") as f:
             try:
-                return pickle.load(f)
+                data = pickle.load(f)
             except pickle.PickleError() as e:  # pragma: no cover
-                cls._logger.exception(e)
+                logging.exception(e)
                 raise IOError(e) from e
             finally:
                 f.close()
+            logging.debug(
+                f"Read file using {cls.__name__} and returning a {type(data)}"
+            )
+            return data
 
     @classmethod
     def _write(cls, filepath: str, data: Any, write_mode: str = "wb", **kwargs) -> None:
         # Note, "a+" write_mode for append. If <TypeError: write() argument must be str, not bytes>
         # use "ab+"
+        logging.debug(f"Writing file of {type(data)} using {cls.__name__}.")
         with open(filepath, write_mode) as f:
             try:
                 pickle.dump(data, f)
             except pickle.PickleError() as e:  # pragma: no cover
-                cls._logger.exception(e)
+                logging.exception(e)
                 raise (e)
             finally:
                 f.close()
@@ -285,7 +304,9 @@ class ParquetIO(IO):  # pragma: no cover
             filepath (str): Can be a file or directory path.
 
         """
-        return pq.read_table(source=filepath).to_pandas()
+        data = pq.read_table(source=filepath).to_pandas()
+        logging.debug(f"Read file using {cls.__name__} and returning a {type(data)}")
+        return data
 
     @classmethod
     def _write(
@@ -304,9 +325,8 @@ class ParquetIO(IO):  # pragma: no cover
                 exists in the destination. The default behaviour is 'delete_matching'.        'overwrite_or_ignore' will ignore any existing data and will overwrite files with the same name as an output file. Other existing files will be ignored. This behavior, in combination with a unique basename_template for each write, will allow for an append workflow. 'error' will raise an error if any data exists in the destination.         'delete_matching' is useful when you are writing a partitioned dataset. The first time each partition directory is encountered the entire directory will be deleted. This allows you to overwrite old partitions completely.
 
         """
+        logging.debug(f"Writing file of {type(data)} using {cls.__name__}.")
         table = pa.Table.from_pandas(data)
-
-        cls._logger.debug(f"Parquet kwargs: {kwargs}")
 
         if "partition_cols" in kwargs.keys():
             pq.write_to_dataset(
@@ -332,7 +352,9 @@ class HtmlIO(IO):  # pragma: no cover
     def _read(cls, filepath: str, **kwargs) -> Any:
         """Read the raw html."""
         file = codecs.open(filename=filepath, encoding="utf-8")
-        return file.read()
+        data = file.read()
+        logging.debug(f"Read file using {cls.__name__} and returning a {type(data)}")
+        return data
 
     @classmethod
     def _write(cls, filepath: str, data: pd.DataFrame, **kwargs) -> None:
@@ -350,11 +372,14 @@ class JsonIO(IO):  # pragma: no cover
     def _read(cls, filepath: str, **kwargs) -> Any:
         """Read the parsed dictionary from a json file."""
         with open(filepath, encoding="utf-8") as json_file:
-            return json.load(json_file)
+            data = json.load(json_file)
+        logging.debug(f"Read file using {cls.__name__} and returning a {type(data)}")
+        return data
 
     @classmethod
     def _write(cls, filepath: str, data: dict, **kwargs) -> None:
         """Writes a dictionary to a json file."""
+        logging.debug(f"Writing file of {type(data)} using {cls.__name__}.")
         with open(filepath, "w", encoding="utf-8") as json_file:
             if isinstance(data, list):
                 for datum in data:
@@ -362,13 +387,13 @@ class JsonIO(IO):  # pragma: no cover
                         json.dump(datum, json_file, indent=2)
                     else:
                         msg = "JsonIO supports dictionaries and lists of dictionaries only."
-                        cls._logger.exception(msg)
+                        logging.exception(msg)
                         raise ValueError(msg)
             else:
                 try:
                     json.dump(data, json_file, indent=2)
                 except json.JSONDecodeError as e:
-                    cls._logger.exception(f"Exception of type {type(e)} occurred.\n{e}")
+                    logging.exception(f"Exception of type {type(e)} occurred.\n{e}")
                     raise
 
 
@@ -389,7 +414,7 @@ class IOService:  # pragma: no cover
         "xlsx": ExcelIO,
         "xls": ExcelIO,
         "parquet": ParquetIO,
-        "": ParquetIO,  # If no filepath, assumed to be Parquet IO that supports reading and writing from and to directories.
+        "": ParquetIO,  # If no file extension, assumed to be Parquet IO that supports reading and writing from and to directories.
     }
     _logger = logging.getLogger(
         f"{__module__}.{__name__}",
@@ -414,9 +439,9 @@ class IOService:  # pragma: no cover
         except TypeError as exc:
             if filepath is None:
                 msg = "Filepath is None"
-                cls._logger.exception(msg)
+                logging.exception(msg)
                 raise ValueError(msg) from exc
         except KeyError as exc:
             msg = "File type {} is not supported.".format(file_format)
-            cls._logger.exception(msg)
+            logging.exception(msg)
             raise ValueError(msg) from exc

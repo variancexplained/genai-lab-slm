@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Monday September 16th 2024 10:30:21 pm                                              #
+# Modified   : Tuesday September 17th 2024 02:11:06 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -83,20 +83,16 @@ class Task(ABC):
     def __init__(
         self,
         *args,
-        pipeline_context: Context,
         config: Optional[ServiceConfig] = None,
         **kwargs,
     ) -> None:
 
         self._config = config
-        self._pipeline_context = pipeline_context
         self._kwargs = kwargs
 
         # Create task context from pipeline context stage
         self._context = Context(
-            process_type="Task",
-            process_name=self.name,
-            stage=self._pipeline_context.stage,
+            phase=config.phase, stage=config.stage, task=self.__class__.__name__
         )
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 07:13:32 pm                                              #
-# Modified   : Monday September 16th 2024 09:59:49 pm                                              #
+# Modified   : Tuesday September 17th 2024 03:23:32 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -238,22 +238,20 @@ def hash_dataframe(
     """
 
     # Handle empty DataFrame case
-    if isinstance(df, pd.DataFrame) and df.empty:
+    if isinstance(df, (pd.DataFrame, pd.core.frame.DataFrame)) and df.empty:
         raise ValueError("Encountered an empty dataframe")
     elif isinstance(df, SparkDataFrame) and df.count() == 0:
         raise ValueError("Encountered an empty dataframe")
 
     # Check if it's a pandas DataFrame
-    if isinstance(df, pd.DataFrame):
+    if isinstance(df, (pd.DataFrame, pd.core.frame.DataFrame)):
         num_rows = len(df)
         num_columns = len(df.columns)
         schema_str = str(df.dtypes.values)
-        data_str = df.sample(min(len(df), 1000)).to_string(index=False).encode("utf-8")
     else:
         num_rows = df.count()
         num_columns = len(df.columns)
         schema_str = df.schema.simpleString()
-        data_str = str(df.limit(1000).collect()).encode("utf-8")
 
     # Combine the dimensions, schema, and data for hashing
     dimensions_str = f"{num_rows}-{num_columns}-{schema_str}"
@@ -261,6 +259,5 @@ def hash_dataframe(
     # Generate a hash from the dimensions, schema, and sample data
     hasher = hashlib.blake2s(digest_size=hash_length)
     hasher.update(dimensions_str.encode("utf-8"))
-    hasher.update(data_str)  # Include sampled data in the hash
 
     return hasher.hexdigest()
