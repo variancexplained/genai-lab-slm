@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
+# Modified   : Tuesday September 17th 2024 11:00:31 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -108,9 +108,9 @@ def profiler(func: Callable) -> Callable:
 
             # Create the Profile object with the computed metrics
             profile = Profile(
-                process_type=self.context.process_type,
-                process_name=self.context.process_name,
-                stage=self.context.stage.value,  # Stage in the pipeline (e.g., data cleaning)
+                phase=self.context.phase,
+                stage=self.context.stage,
+                task=self.context.task,
                 start_time=start_time,
                 end_time=end_time,
                 runtime_seconds=runtime_seconds,

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 01:26:24 am                                                    #
-# Modified   : Monday September 16th 2024 08:02:19 pm                                              #
+# Modified   : Tuesday September 17th 2024 10:52:23 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -153,3 +153,8 @@ class AnalysisStage(Stage):
         obj._value_ = value
         obj.description = description  # type: ignore
         return obj
+
+
+# ------------------------------------------------------------------------------------------------ #
+class ModelingStage(Stage):
+    """TBD"""

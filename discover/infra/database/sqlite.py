@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:47:41 pm                                               #
-# Modified   : Saturday September 14th 2024 06:46:50 am                                            #
+# Modified   : Tuesday September 17th 2024 11:28:11 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -190,7 +190,11 @@ class SQLiteDBA(DBA):
         Returns:
             bool: True if table exists, False otherwise.
         """
-        return self._database.table_exists(tablename=tablename)
+        query = (
+            """SELECT name FROM sqlite_master WHERE type = 'table' AND name = :name;"""
+        )
+        params = {"name": tablename}
+        return len(self._database.query(query=query, params=params)) > 0
 
     def drop_table(self, tablename: str = "profile") -> None:
         """Drops the given table.

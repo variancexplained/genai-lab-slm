@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:38:38 pm                                               #
-# Modified   : Saturday September 14th 2024 05:48:59 pm                                            #
+# Modified   : Tuesday September 17th 2024 11:29:49 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,9 +20,9 @@ schema = {
     "profile": """
         CREATE TABLE IF NOT EXISTS profile (
             id INTEGER PRIMARY KEY AUTOINCREMENT,          -- Unique identifier for each profiling record
-            process_type TEXT NOT NULL,                    -- Type of service, i.e., Pipeline or Task
-            process_name TEXT NOT NULL,                    -- Name of Pipeline or Task
-            stage TEXT NOT NULL,                           -- Stage in the process (e.g., INGEST, CLEAN)
+            phase TEXT NOT NULL,                           -- Phase, i.e. DataPrep, Analysis, or Modeling
+            stage TEXT NOT NULL,                           -- Stage within Phase, i.e. DQA
+            task TEXT NOT NULL,                            -- Task class name.
             start_time DATETIME NOT NULL,                  -- Task start time
             end_time DATETIME NOT NULL,                    -- Task end time
             runtime_seconds REAL NOT NULL,                 -- Total runtime of the process (in seconds)

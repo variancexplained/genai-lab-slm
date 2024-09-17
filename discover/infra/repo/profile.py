@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/storage/repo/profile.py                                             #
+# Filename   : /discover/infra/repo/profile.py                                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 10:14:56 am                                           #
-# Modified   : Saturday September 14th 2024 05:58:43 pm                                            #
+# Modified   : Tuesday September 17th 2024 11:32:39 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,6 +23,7 @@ import pandas as pd
 
 from discover.domain.base.repo import Repo
 from discover.domain.service.core.monitor.profile import Profile
+from discover.domain.value_objects.lifecycle import Phase
 from discover.infra.database.base import Database
 
 
@@ -38,9 +39,9 @@ class ProfileRepo(Repo):
     def add(self, profile: Profile) -> None:
         query = """
             INSERT INTO profile (
-                process_type,
-                process_name,
+                phase,
                 stage,
+                task,
                 start_time,
                 end_time,
                 runtime_seconds,
@@ -57,9 +58,9 @@ class ProfileRepo(Repo):
                 exceptions_raised
             )
             VALUES (
-                :process_type,
-                :process_name,
+                :phase,
                 :stage,
+                :task,
                 :start_time,
                 :end_time,
                 :runtime_seconds,
@@ -79,6 +80,9 @@ class ProfileRepo(Repo):
         params = profile.as_dict()
         with self._database as db:
             db.command(query=query, params=params)
+        self._logger.info(
+            f"Inserted profile for phase: {params['phase']} stage: {params['stage']} and task: {params['task']}."
+        )
 
     def get(self, profile_id: int) -> Profile:
         query = """SELECT * FROM profile WHERE id = :id;"""
@@ -93,15 +97,15 @@ class ProfileRepo(Repo):
         with self._database as db:
             return db.query(query=query)
 
-    def get_by_process(self, process_name: str) -> pd.DataFrame:
-        query = """SELECT * FROM profile WHERE process_name = :process_name;"""
-        params = {"process_name": process_name}
+    def get_by_phase(self, phase: Phase) -> pd.DataFrame:
+        query = """SELECT * FROM profile WHERE phase = :phase;"""
+        params = {"phase": phase.description}
         with self._database as db:
             return db.query(query=query, params=params)
 
     def get_by_stage(self, stage: str) -> pd.DataFrame:
         query = """SELECT * FROM profile WHERE stage = :stage;"""
-        params = {"stage": stage}
+        params = {"stage": stage.description}
         with self._database as db:
             return db.query(query=query, params=params)
 
@@ -110,18 +114,33 @@ class ProfileRepo(Repo):
         params = {"id": profile_id}
         with self._database as db:
             db.command(query=query, params=params)
+        self._logger.info(f"Removed profile for profile_id: {profile_id}.")
 
-    def remove_by_process(self, process_name: str) -> None:
-        query = """DELETE FROM profile WHERE process_name = :process_name;"""
-        params = {"process_name": process_name}
+    def remove_by_phase(self, phase: Phase) -> None:
+        query = """DELETE FROM profile WHERE phase = :phase;"""
+        params = {"phase": phase.description}
         with self._database as db:
             db.command(query=query, params=params)
+        self._logger.info(f"Removed profile data for phase: {phase.description}.")
 
     def remove_by_stage(self, stage: str) -> None:
         query = """DELETE FROM profile WHERE stage = :stage;"""
-        params = {"stage": stage}
+        params = {"stage": stage.description}
         with self._database as db:
             db.command(query=query, params=params)
+        self._logger.info(f"Removed profile data for stage: {stage.description}.")
+
+    def remove_all(self) -> None:
+        confirm = input(
+            "Deleting the profile repository is irreversible. Confirm [yes/no] "
+        )
+        if "yes" in confirm.lower():
+            query = """DELETE FROM profile;"""
+            with self._database as db:
+                db.command(query=query)
+            self._logger.info("Removed all profile data")
+        else:
+            self._logger.info("Removal aborted.")
 
     def exists(self, profile_id) -> bool:
         query = """SELECT EXISTS(SELECT 1 FROM profile WHERE id = :id);"""

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
+# Modified   : Tuesday September 17th 2024 10:53:00 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,18 +21,25 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 from discover.core.data import DataClass
-from discover.domain.value_objects.lifecycle import Stage
+from discover.domain.value_objects.lifecycle import (
+    AnalysisStage,
+    DataPrepStage,
+    ModelingStage,
+    Phase,
+)
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class Profile(DataClass):
-    process_type: str  # Type of service, i.e. Pipeline or Task
-    process_name: str  # Name of Pipeline or Task
-    stage: Stage  # Stage of the process.
+    phase: Phase  # Phase i.e. DataPrep, Analysis
+    stage: Union[
+        DataPrepStage, AnalysisStage, ModelingStage
+    ]  # Stage within Phase, i.e. DQA
+    task: str  # Class name for the task to which the context applies.
     start_time: datetime  # Task start time
     end_time: datetime  # Task end time
     runtime_seconds: float  # Total runtime of the process (in seconds)
