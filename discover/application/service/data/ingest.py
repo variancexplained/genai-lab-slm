@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 05:35:17 pm                                              #
-# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:34:21 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,7 +42,7 @@ class IngestSourceDataConfig(DataConfig):
     """
 
     repo: Repo = McKinneyRepo(config_reader_cls=ConfigReader)
-    stage: Stage = Stage.RAW
+    stage: Stage = DataPrepStage.RAW
     name: str = "reviews"
 
 
@@ -59,7 +59,7 @@ class IngestTargetDataConfig(DataConfig):
     """
 
     repo: Repo = McKinneyRepo(config_reader_cls=ConfigReader)
-    stage: Stage = Stage.INGEST
+    stage: Stage = DataPrepStage.INGEST
     name: str = "reviews"
 
 
@@ -105,7 +105,7 @@ class DataIngestionServiceConfig(ServiceConfig):
             - "date": "datetime64[ms]"
     """
 
-    stage: Stage = Stage.INGEST
+    stage: Stage = DataPrepStage.INGEST
     reader: Reader = Reader(config=IngestSourceDataConfig())
     writer: Writer = Writer(config=IngestTargetDataConfig())
     partition_cols: list = field(default_factory=lambda: ["category"])

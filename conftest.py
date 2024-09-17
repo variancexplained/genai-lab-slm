@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
+# Modified   : Monday September 16th 2024 03:05:42 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,19 +24,15 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
-from discover.application.service.data.ingest import DataIngestionServiceConfig
 from discover.container import DiscoverContainer
-from discover.domain.value_objects.config import DataConfig
-from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
-from discover.infra.repo.mckinney import McKinneyRepo
 from discover.infra.storage.cloud.aws import S3Handler
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = []
+collect_ignore_glob = ["**/test_ingestion*.py"]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -142,15 +138,3 @@ def spark_df(spark, pandas_df):
     """
 
     return spark.createDataFrame(pandas_df)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                         CONFIG                                                   #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def data_ingestion_service_config():
-    source = DataConfig(repo=McKinneyRepo(), stage=Stage.RAW, name="reviews")
-    target = DataConfig(repo=McKinneyRepo(), stage=Stage.INGEST, name="reviews")
-    return DataIngestionServiceConfig(
-        source_data_config=source, target_data_config=target
-    )

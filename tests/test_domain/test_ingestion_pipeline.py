@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_services/test_data_services/test_ingestion.py/test_ingestion_pipeline.py #
+# Filename   : /tests/test_domain/test_ingestion_pipeline.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 01:22:08 am                                            #
-# Modified   : Saturday September 14th 2024 05:35:29 pm                                            #
+# Modified   : Tuesday September 17th 2024 01:34:10 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,6 @@ from discover.domain.service.data.ingest.pipeline import (
     IngestPipelineBuilder,
 )
 from discover.domain.value_objects.context import Context
-from discover.domain.value_objects.lifecycle import Stage
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -80,8 +79,8 @@ class TestIngestPipeline:  # pragma: no cover
         assert isinstance(pipeline.context, Context)
         assert pipeline.context.process_type == "Pipeline"
         assert pipeline.context.process_name == "IngestPipeline"
-        assert pipeline.context.stage == Stage.INGEST
-        assert pipeline.stage == Stage.INGEST
+        assert pipeline.context.stage == DataPrepStage.INGEST
+        assert pipeline.stage == DataPrepStage.INGEST
 
         pipeline.run()
         logger.info(pipeline.context)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 02:12:54 pm                                              #
-# Modified   : Saturday September 14th 2024 05:35:28 pm                                            #
+# Modified   : Tuesday September 17th 2024 01:34:21 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,29 +19,35 @@
 from dataclasses import dataclass
 
 from discover.core.data import DataClass
-from discover.domain.value_objects.lifecycle import Stage
+from discover.domain.value_objects.lifecycle import Phase, Stage
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class Context(DataClass):
     """
-    A dataclass that represents the execution context for a task or service, containing
-    essential metadata like the service type, service name, and the current stage of the
-    pipeline.
+    Represents the contextual information for a particular task within a workflow.
+
+    This class provides details about the current phase, stage, and task in a data processing
+    or analysis pipeline. It helps to track the state and progress of a task in the pipeline
+    by associating it with a specific phase and stage.
 
     Attributes:
     -----------
-    process_type : str
-        The type of service being executed (e.g., 'data processing', 'data extraction').
-
-    process_name : str
-        The name of the specific service or task being run.
-
+    phase : Phase
+        The current phase of the workflow, represented by the Phase enum (e.g., Data Preparation, Analysis).
     stage : Stage
-        The current stage of the pipeline where the task or service is operating.
+        The current stage within the phase, represented by the Stage enum (e.g., RAW, CLEAN, EDA).
+    task : str
+        A string describing the specific task being executed at the current stage.
+
+    Examples:
+    ---------
+    >>> context = Context(phase=Phase.DATAPREP, stage=DataPrepStage.RAW, task="Ingesting raw data")
+    >>> print(context)
+    Context(phase=<Phase.DATAPREP: ('data_prep', 'Data Preparation Phase')>, stage=<DataPrepStage.RAW: ('00_raw', 'Raw Stage')>, task='Ingesting raw data')
     """
 
-    process_type: str
-    process_name: str
+    phase: Phase
     stage: Stage
+    task: str

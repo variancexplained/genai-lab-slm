@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 15th 2024 04:21:04 am                                              #
-# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
+# Modified   : Monday September 16th 2024 04:08:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,12 +22,12 @@ import logging
 import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
-from discover.domain.service.core.monitor import profiler
+from discover.domain.service.core.data import DataService, Reader, Writer
+from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import DataConfig
 from discover.domain.value_objects.data_structure import DataStructure
 from discover.infra.repo.mckinney import McKinneyRepo
 from discover.infra.repo.zaharia import ZahariaRepo
-from domain.service.core.data import DataService, Reader, Writer
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -107,12 +107,12 @@ class FileService(DataService):
         """
         if config.data_structure == DataStructure.PANDAS:
             repo = self._mckinney_repo_cls()
-            self._logger.info(f"Creating PandasReader for {config.file_path}")
+            self._logger.info(f"Creating PandasReader for {config.stage.description}")
             return PandasReader(repo=repo, config=config)
 
         elif config.data_structure == DataStructure.SPARK:
             repo = self._zaharia_repo_cls(spark=self._get_spark())
-            self._logger.info(f"Creating SparkReader for {config.file_path}")
+            self._logger.info(f"Creating SparkReader for {config.stage.description}")
             return SparkReader(repo=repo, config=config)
 
         else:
@@ -141,12 +141,12 @@ class FileService(DataService):
         """
         if config.data_structure == DataStructure.PANDAS:
             repo = self._mckinney_repo_cls()
-            self._logger.info(f"Creating PandasWriter for {config.file_path}")
+            self._logger.info(f"Creating PandasWriter for {config.stage.description}")
             return PandasWriter(repo=repo, config=config)
 
         elif config.data_structure == DataStructure.SPARK:
             repo = self._zaharia_repo_cls(spark=self._get_spark())
-            self._logger.info(f"Creating SparkWriter for {config.file_path}")
+            self._logger.info(f"Creating SparkWriter for {config.stage.description}")
             return SparkWriter(repo=repo, config=config)
 
         else:
@@ -220,7 +220,7 @@ class PandasReader(Reader):
         config : DataConfig
             The configuration containing details such as stage, name, and format.
         """
-        super().__init__()
+        super().__init__(config=config)
         self._repo = repo  # Store the repository instance to access data.
         self._config = config  # Store the configuration for reading data.
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -244,7 +244,7 @@ class PandasReader(Reader):
 
         try:
             self._logger.info(
-                f"Reading data: stage={self._config.stage}, name={self._config.name}, format={self._config.format}"
+                f"Reading data: stage={self._config.stage.description}, name={self._config.name}, format={self._config.format.value}"
             )
             data = self._repo.get(
                 stage=self._config.stage,
@@ -309,7 +309,7 @@ class PandasWriter(Writer):
         config : DataConfig
             The configuration containing details such as stage, name, and format.
         """
-        super().__init__()
+        super().__init__(config=config)
         self._repo = repo  # Store the repository instance to handle data storage.
         self._config = config  # Store the configuration for writing data.
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -333,7 +333,7 @@ class PandasWriter(Writer):
 
         try:
             self._logger.info(
-                f"Writing data: stage={self._config.stage}, name={self._config.name}, format={self._config.format}"
+                f"Writing data: stage={self._config.stage.description}, name={self._config.name}, format={self._config.format.value}"
             )
             self._repo.add(
                 data=data,
@@ -401,7 +401,7 @@ class SparkReader(Reader):
         config : DataConfig
             The configuration containing details such as stage, name, and format.
         """
-        super().__init__()
+        super().__init__(config=config)
         self._repo = repo  # Store the repository instance for reading Spark DataFrames.
         self._config = config  # Store the configuration for reading data.
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -425,7 +425,7 @@ class SparkReader(Reader):
 
         try:
             self._logger.info(
-                f"Reading data: stage={self._config.stage}, name={self._config.name}, format={self._config.format}"
+                f"Reading data: stage={self._config.stage.description}, name={self._config.name}, format={self._config.format.value}"
             )
             data = self._repo.get(
                 stage=self._config.stage,
@@ -490,7 +490,7 @@ class SparkWriter(Writer):
         config : DataConfig
             The configuration containing details such as stage, name, and format.
         """
-        super().__init__()
+        super().__init__(config=config)
         self._repo = repo  # Store the repository instance for writing Spark DataFrames.
         self._config = config  # Store the configuration for writing data.
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -514,7 +514,7 @@ class SparkWriter(Writer):
 
         try:
             self._logger.info(
-                f"Writing data: stage={self._config.stage}, name={self._config.name}, format={self._config.format}"
+                f"Writing data: stage={self._config.stage.description}, name={self._config.name}, format={self._config.format.value}"
             )
             self._repo.add(
                 data=data,

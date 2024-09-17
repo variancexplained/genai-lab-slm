@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 07:54:12 pm                                            #
-# Modified   : Monday September 16th 2024 02:24:02 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:48:10 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,16 +20,19 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
-from typing import Any, List
+from dataclasses import dataclass
+from typing import Any, Optional
 
 from discover.application.base.service import ApplicationService
 from discover.domain.service.core.cache import Cache
 from discover.domain.service.core.data import Reader, Writer
 from discover.domain.service.data.dqa.service import DQADomainService
-from discover.domain.value_objects.config import DataConfig, ServiceConfig
-from discover.domain.value_objects.file_format import FileFormat
-from discover.domain.value_objects.lifecycle import Stage
+from discover.domain.value_objects.config import (
+    ServiceConfig,
+    SourceDataConfig,
+    TargetDataConfig,
+)
+from discover.domain.value_objects.lifecycle import DataPrepStage, Phase, Stage
 from discover.infra.storage.service.file import FileService
 
 
@@ -37,35 +40,53 @@ from discover.infra.storage.service.file import FileService
 #                                 DATA QUALITY CONFIG                                              #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class DQASourceDataConfig(DataConfig):
+class DQASourceDataConfig(SourceDataConfig):
     """
-    DQASourceDataConfig represents the configuration for the source data in the Data Quality Assessment (DQA) process.
-    It defines the stage, file name, and format for the source data, which is typically in the INGEST stage.
+    A subclass of SourceDataConfig that defines the data quality assessment (DQA)
+    configuration for source data.
 
-    Attributes:
-    -----------
-    stage : Stage
-        The stage of the data pipeline where the source data is located (default is Stage.INGEST).
+    Inherits all attributes from SourceDataConfig and sets specific default values
+    for the `stage` and `name` attributes.
 
-    name : str
-        The name of the dataset (default is "reviews").
-
+    Inherited Attributes:
+    ---------------------
     format : FileFormat
-        The format of the source data file (default is FileFormat.PARQUET_PARTITIONED).
+        The file format of the source data. Inherited from SourceDataConfig and
+        defaults to FileFormat.PARQUET_PARTITIONED. Defines how the source data
+        is stored or read in the pipeline.
+    repo : Repo
+        Repository object responsible for data storage and retrieval. Inherited
+        from DataConfig.
+    stage : Stage
+        Represents the current stage of the data in the pipeline. In this subclass,
+        it is explicitly set to DataPrepStage.INGEST.
+    name : str
+        The name of the dataset being processed. In this subclass, it is set to
+        "reviews".
+    data_structure : DataStructure
+        Defines the structure of the data, including the schema or format (e.g.,
+        column definitions, types) expected in each stage of the pipeline.
 
-    Example:
-    --------
-    source_config = DQASourceDataConfig(stage=Stage.INGEST, name="reviews", format=FileFormat.PARQUET_PARTITIONED)
+    Additional Attributes:
+    ----------------------
+    stage : Stage
+        Specifically set to DataPrepStage.INGEST for DQA processing of the source data.
+    name : str
+        Set to "reviews", indicating that this configuration is for handling
+        review data in the DQA process.
+
+    This class provides a specialized configuration for running data quality
+    assessments on source data, with a focus on review datasets.
     """
 
-    stage: Stage = Stage.INGEST
+    phase: Phase = Phase.DATAPREP
+    stage: Stage = DataPrepStage.INGEST
     name: str = "reviews"
-    format: FileFormat = FileFormat.PARQUET_PARTITIONED
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class DQATargetDataConfig(DataConfig):
+class DQATargetDataConfig(TargetDataConfig):
     """
     DQATargetDataConfig represents the configuration for the target data in the Data Quality Assessment (DQA) process.
     It extends the base configuration with additional fields, such as partition columns, which are required for
@@ -74,7 +95,7 @@ class DQATargetDataConfig(DataConfig):
     Attributes:
     -----------
     stage : Stage
-        The stage of the data pipeline where the target data is located (default is Stage.DQA).
+        The stage of the data pipeline where the target data is located (default is DataPrepStage.DQA).
 
     name : str
         The name of the dataset (default is "reviews").
@@ -92,28 +113,12 @@ class DQATargetDataConfig(DataConfig):
 
     Example:
     --------
-    target_config = DQATargetDataConfig(stage=Stage.DQA, name="reviews", format=FileFormat.PARQUET_PARTITIONED, partition_cols=["category"])
+    target_config = DQATargetDataConfig(stage=DataPrepStage.DQA, name="reviews", format=FileFormat.PARQUET_PARTITIONED, partition_cols=["category"])
     """
 
-    stage: Stage = Stage.DQA
+    phase: Phase = Phase.DATAPREP
+    stage: Stage = DataPrepStage.DQA
     name: str = "reviews"
-    format: FileFormat = FileFormat.PARQUET_PARTITIONED
-    partition_cols: List[str] = field(default_factory=lambda: ["category"])
-
-    def __post_init__(self):
-        """
-        Post-initialization validation to ensure that partition columns are specified when the format is
-        FileFormat.PARQUET_PARTITIONED. Raises a ValueError if partition columns are missing for partitioned Parquet files.
-
-        Raises:
-        -------
-        ValueError
-            If partition columns are not provided for partitioned Parquet files.
-        """
-        if self.format == FileFormat.PARQUET_PARTITIONED and not self.partition_cols:
-            raise ValueError(
-                "Partition columns are required for partitioned Parquet files."
-            )
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -127,7 +132,7 @@ class DQAConfig(ServiceConfig):
     Attributes:
     -----------
     stage : Stage
-        The current stage of the data pipeline, default is Stage.DQA.
+        The current stage of the data pipeline, default is DataPrepStage.DQA.
 
     reader : Reader
         The Reader instance used to read source data during the DQA process.
@@ -163,15 +168,16 @@ class DQAConfig(ServiceConfig):
     Example:
     --------
     # Example instantiation of the DQAConfig:
-    source_config = DQASourceDataConfig(stage=Stage.INGEST, name="reviews", format=FileFormat.PARQUET_PARTITIONED)
-    target_config = DQATargetDataConfig(stage=Stage.DQA, name="reviews", format=FileFormat.PARQUET_PARTITIONED, partition_cols=["category"])
+    source_config = DQASourceDataConfig(stage=DataPrepStage.INGEST, name="reviews", format=FileFormat.PARQUET_PARTITIONED)
+    target_config = DQATargetDataConfig(stage=DataPrepStage.DQA, name="reviews", format=FileFormat.PARQUET_PARTITIONED, partition_cols=["category"])
 
     dqa_config = DQAConfig.create(source_data_config=source_config, target_data_config=target_config)
     """
 
-    stage: Stage = Stage.DQA
-    reader: Reader
-    writer: Writer
+    phase: Phase = Phase.DATAPREP
+    stage: Stage = DataPrepStage.DQA
+    reader: Optional[Reader] = None
+    writer: Optional[Writer] = None
     init_sort_by: str = "id"
     cache_name: str = "dqa"
     cache_cls: type[Cache] = Cache
@@ -228,7 +234,9 @@ class DQAConfig(ServiceConfig):
             writer = fs.get_writer(config=target_data_config)
         except Exception as e:
             logging.error(f"Failed to create reader/writer: {e}")
-            raise ValueError("Error initializing DQAConfig.") from e
+            raise ValueError(
+                f"Error initializing DQAConfig. Failed to create reader/writer: {e}"
+            ) from e
 
         return cls(reader=reader, writer=writer)
 
@@ -277,15 +285,15 @@ class DQAApplicationService(ApplicationService):
         target_data_config: DQATargetDataConfig = DQATargetDataConfig(),  # Target data configuration object.
         **kwargs,  # Additional keyword arguments for flexibility.
     ) -> None:
+        # Initialize a logger specific to this class, using the module name and class name.
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
         # Create the configuration object using the config_cls factory method, passing the source and target data configurations.
         config = config_cls.create(
             source_data_config=source_data_config, target_data_config=target_data_config
         )
         # Call the parent class constructor (ApplicationService) with the generated config.
         super().__init__(config=config)
-
-        # Initialize a logger specific to this class, using the module name and class name.
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
         # Initialize the domain service (DQADomainService) with the current configuration.
         self._domain_service = DQADomainService(config=self._config)

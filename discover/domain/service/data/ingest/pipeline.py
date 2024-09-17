@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Monday September 16th 2024 12:27:24 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:36:53 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from discover.domain.base.pipeline import Pipeline, PipelineBuilder
 from discover.domain.service.core.data import Reader, Writer
 from discover.domain.service.data.ingest.task import IngestTask
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.lifecycle import Stage
+from discover.domain.value_objects.lifecycle import DataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -56,7 +56,7 @@ class IngestPipeline(Pipeline):
         The configuration object containing necessary settings for the pipeline's execution.
     """
 
-    __STAGE = Stage.INGEST
+    __STAGE = DataPrepStage.INGEST
 
     def __init__(
         self,

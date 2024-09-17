@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 05:40:36 pm                                                  #
-# Modified   : Saturday September 14th 2024 06:48:26 am                                            #
+# Modified   : Tuesday September 17th 2024 01:34:20 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,6 @@ import os
 from typing import Optional
 
 from discover.domain.base.task import Task
-from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.storage.cloud.aws import S3Handler
 
 
@@ -39,7 +38,7 @@ class DownloadFileTask(Task):
         force (bool, optional): If True, forces the download even if the file already exists locally. Defaults to False.
     """
 
-    __STAGE = Stage.RAW
+    __STAGE = DataPrepStage.RAW
 
     def __init__(
         self,

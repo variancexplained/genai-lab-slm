@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Monday September 16th 2024 12:27:23 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:39:00 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ from dotenv import load_dotenv
 from pandarallel import pandarallel
 
 from discover.domain.base.task import Task
+from discover.domain.service.core.cache import cachenow
 from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import ServiceConfig
 from discover.domain.value_objects.context import Context
@@ -85,6 +86,7 @@ class IngestTask(Task):
         super().__init__(config=config, pipeline_context=pipeline_context)
 
     @profiler
+    @cachenow
     def run(self, data: Any):
         """
         Executes the preprocessing of text data by removing newlines, verifying encoding,

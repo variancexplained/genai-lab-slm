@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Monday September 16th 2024 01:42:29 pm                                              #
+# Modified   : Monday September 16th 2024 03:21:33 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,6 @@ import functools
 import logging
 
 from discover.core.date_time import ThirdDateFormatter
-from discover.domain.base.pipeline import Pipeline
 
 # ------------------------------------------------------------------------------------------------ #
 # Instantiating a global instance of the date formatter which will be reused across all calls.
@@ -39,7 +38,7 @@ def announcer(func):
 
         try:
             # Determine if the current instance is a Pipeline or Task for logging purposes.
-            what = "Pipeline" if isinstance(self, Pipeline) else "Task"
+            what = "Task" if "Task" in self.__class__.__name__ else "Pipeline"
             line = f"\n{'='*80}" if what == "Pipeline" else ""
 
             # Formatting the current time using the date formatter in HTTP format.

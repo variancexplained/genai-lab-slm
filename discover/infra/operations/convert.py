@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Monday September 16th 2024 01:47:24 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:38:00 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,9 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from discover.domain.base.task import Task
+from discover.domain.service.core.monitor.announcer import announcer
 from discover.domain.service.core.monitor.profiler import profiler
-from discover.domain.value_objects.lifecycle import Stage
+from discover.domain.value_objects.lifecycle import DataPrepStage
 from discover.infra.utils.data_utils.converter import Converter
 from discover.infra.utils.file_utils.tempfile import TempFileMgr
 
@@ -41,7 +42,7 @@ class ConvertTask(Task):
         **kwargs: Other keyword arguments.
     """
 
-    __stage = Stage.CORE
+    __stage = DataPrepStage.CORE
 
     def __init__(
         self,
@@ -49,7 +50,7 @@ class ConvertTask(Task):
         tempfile_manager_cls: type[TempFileMgr] = TempFileMgr,
         **kwargs,
     ) -> None:
-        super().__init__(converter_cls=converter_cls, stage=Stage.CORE)
+        super().__init__(converter_cls=converter_cls, stage=DataPrepStage.CORE)
         self._converter_cls = converter_cls
         self._tempfile_manager_cls = tempfile_manager_cls
         self._kwargs = kwargs

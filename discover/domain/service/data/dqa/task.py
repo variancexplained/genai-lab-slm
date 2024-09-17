@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Monday September 16th 2024 01:47:32 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:06:42 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,9 +35,9 @@ from tqdm import tqdm
 
 from discover.core.data import split_dataframe
 from discover.domain.base.task import Task
-from discover.domain.service.core.cache import Cache
+from discover.domain.service.core.cache import Cache, cachenow
 from discover.domain.service.core.monitor.announcer import announcer
-from discover.domain.service.core.monitor.profile import profiler
+from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.context import Context
 
 # ------------------------------------------------------------------------------------------------ #
@@ -108,6 +108,7 @@ class DetectDuplicateRowTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Returns a binary series indicating the rows that contain duplicate values.
@@ -147,6 +148,7 @@ class DetectNullValuesTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Mark incomplete rows in the DataFrame.
@@ -211,6 +213,7 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task to detect non-English text in the specified column and add a new column with the results.
 
@@ -265,6 +268,7 @@ class DetectEmojiTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect emojis in the specified column and add a new column with the results.
@@ -326,6 +330,7 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect emojis in the specified column and add a new column with the results.
@@ -383,6 +388,7 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect invalid dates and to add a new column with the results.
@@ -430,6 +436,7 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect invalid ratings and to add a new column with the results.
@@ -508,6 +515,7 @@ class DetectProfanityTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect profanity in the specified column and add a new column with the results.
@@ -559,6 +567,7 @@ class DetectEmailTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """Detects special patterns (emails, URLs, phone numbers) in the specified text column
         and adds new columns indicating the presence of each pattern.
@@ -616,6 +625,7 @@ class DetectURLTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
         and adds new columns indicating the presence of the pattern.
@@ -673,6 +683,7 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
         and adds new columns indicating the presence of the pattern.
@@ -730,6 +741,7 @@ class DetectOutliersTask(DataQualityAssessmentTask):
 
     @profiler
     @announcer
+    @cachenow
     def run(self, data: pd.DataFrame):
         """Detects outliers in three columns
 

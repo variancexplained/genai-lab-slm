@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Monday September 16th 2024 01:44:20 pm                                              #
+# Modified   : Monday September 16th 2024 04:34:24 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,6 +23,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.domain.base.task import Task
+from discover.domain.service.core.cache import Cache
 from discover.domain.service.core.monitor.announcer import announcer
 from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import ServiceConfig
@@ -56,11 +57,7 @@ class Pipeline(ABC):
         Logger instance used for logging pipeline-specific events and messages.
     """
 
-    def __init__(
-        self,
-        config: ServiceConfig,
-        stage: Stage,
-    ):
+    def __init__(self, config: ServiceConfig, cache_cls: type[Cache] = Cache):
         """
         Initializes the pipeline with the provided configuration and context.
 
@@ -75,7 +72,8 @@ class Pipeline(ABC):
             Context object used to track execution metadata, including service type, name, stage, and run ID.
         """
         self._config = config
-        self._stage = stage
+        self._stage = config.stage
+        self._cache = cache_cls(name=self._config.cache_name)
         self._context = Context(
             process_type="Pipeline", process_name=self.name, stage=self.stage
         )

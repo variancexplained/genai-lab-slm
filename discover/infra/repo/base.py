@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Sunday September 15th 2024 06:01:17 am                                              #
+# Modified   : Monday September 16th 2024 08:52:01 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from typing import Any, Optional
 import pandas as pd
 
 from discover.domain.base.repo import Repo
-from discover.domain.value_objects.file_format import FileFormat
+from discover.domain.value_objects.file import FileFormat
 from discover.domain.value_objects.lifecycle import Stage
 from discover.infra.config.reader import ConfigReader
 

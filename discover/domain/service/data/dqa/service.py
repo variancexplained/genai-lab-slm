@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:04:14 pm                                            #
-# Modified   : Monday September 16th 2024 12:34:53 pm                                              #
+# Modified   : Monday September 16th 2024 04:10:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -71,5 +71,5 @@ class DQADomainService(DomainService):
             return pipeline.run()
         except Exception as e:
             # Log the error or handle it as necessary
-            self._logging.error(f"Error occurred while running the DQA pipeline: {e}")
+            self._logger.error(f"Error occurred while running the DQA pipeline: {e}")
             raise RuntimeError("Failed to execute the DQA pipeline") from e

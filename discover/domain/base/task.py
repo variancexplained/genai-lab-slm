@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
+# Modified   : Monday September 16th 2024 10:30:21 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,53 +32,52 @@ from discover.domain.value_objects.context import Context
 # ------------------------------------------------------------------------------------------------ #
 class Task(ABC):
     """
-    Abstract base class for tasks within a pipeline. The `Task` class provides common functionality
-    such as logging and context management, and requires subclasses to implement the `run` method
-    which defines the task-specific behavior.
+    Abstract base class representing a generic task in a pipeline.
+
+    This class serves as a template for defining tasks in a pipeline. It provides properties
+    and methods to access the task's configuration, context, and logging utilities.
+    Subclasses must implement the `run` method, which defines the task's execution logic.
 
     Attributes:
     -----------
-    _config : ServiceConfig
-        The configuration object containing settings and environment information for the task.
-
+    _config : Optional[ServiceConfig]
+        Configuration object for the task, passed during initialization.
     _pipeline_context : Context
-        The pipeline context that tracks execution metadata like stage and service type.
-
+        The pipeline context, providing metadata about the pipeline's phase, stage, and task.
+    _kwargs : dict
+        Additional keyword arguments passed during initialization.
     _context : Context
-        A task-specific context derived from the pipeline context, tracking task execution details
-        such as service type, service name, and stage.
-
+        Task-specific context, derived from the pipeline context, which tracks the task's execution metadata.
     _logger : logging.Logger
-        Logger instance for logging task-specific events and errors.
-
-    Methods:
-    --------
-    __init__(config: ServiceConfig, pipeline_context: Context, *args, **kwargs) -> None
-        Initializes the task with the provided configuration and pipeline context.
-
-    logger() -> logging.Logger
-        Property that provides read-only access to the logger instance for the task.
-
-    name() -> str
-        Property that returns the class name of the task, used as the task's name.
-
-    context() -> Context
-        Property that provides read-only access to the task-specific context.
-
-    run(*args: Any, **kwargs: Any) -> Any
-        Abstract method that must be implemented by subclasses to define the task's behavior
-        when executed. This method updates the context and executes the task logic.
+        Logger instance used for logging events, errors, and other relevant information during task execution.
 
     Parameters:
     -----------
-    *args :
-        Positional arguments passed during task initialization or execution.
-    config : ServiceConfig
-        The configuration object containing task-specific settings.
     pipeline_context : Context
-        The context object used to track the pipeline's execution metadata, such as stage and service type.
+        The context object representing the current pipeline's execution phase, stage, and task.
+    config : Optional[ServiceConfig], optional
+        Configuration object specific to the service or task, by default None.
+    *args :
+        Positional arguments passed to the task.
     **kwargs :
-        Additional keyword arguments passed during task initialization or execution.
+        Keyword arguments passed to the task.
+
+    Methods:
+    --------
+    logger() -> logging.Logger:
+        Provides access to the logger instance for this task.
+
+    name() -> str:
+        Returns the name of the task, typically the class name of the task.
+
+    config() -> ServiceConfig:
+        Returns the configuration object for the task.
+
+    context() -> Context:
+        Provides access to the task-specific context, which tracks the task's metadata.
+
+    run(*args: Any, **kwargs: Any) -> Any:
+        Abstract method that must be implemented by subclasses, defining the task's logic during execution.
     """
 
     def __init__(
@@ -88,23 +87,7 @@ class Task(ABC):
         config: Optional[ServiceConfig] = None,
         **kwargs,
     ) -> None:
-        """
-        Initializes the Task with the given configuration and context.
 
-        The configuration determines the environment and any other setup needed for the task,
-        while the context tracks execution details such as service type and stage.
-
-        Parameters:
-        -----------
-        *args :
-            Positional arguments passed during initialization.
-        context : Context
-            The context object used to track task-specific metadata.
-        config : ServiceConfig
-            Configuration object that provides task-specific settings.
-        **kwargs :
-            Additional keyword arguments passed during initialization.
-        """
         self._config = config
         self._pipeline_context = pipeline_context
         self._kwargs = kwargs
@@ -147,6 +130,20 @@ class Task(ABC):
         return self.__class__.__name__
 
     @property
+    def config(self) -> ServiceConfig:
+        """
+        Returns the configuration object for this task.
+
+        If no configuration is provided during initialization, it returns None.
+
+        Returns:
+        --------
+        ServiceConfig:
+            The configuration object for this task.
+        """
+        return self._config
+
+    @property
     def context(self) -> Context:
         """
         Provides read-only access to the context object for this task.
@@ -180,3 +177,4 @@ class Task(ABC):
         Any:
             The result of the task's execution, depending on the implementation in the subclass.
         """
+        pass

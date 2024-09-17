@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Monday September 16th 2024 02:22:54 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:08:56 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,7 @@ import fasttext
 import pandas as pd
 from pandarallel import pandarallel
 
-from discover.domain.base import Pipeline, PipelineBuilder
-from discover.domain.service.core.cache import Cache
+from discover.domain.base.pipeline import Pipeline, PipelineBuilder
 from discover.domain.service.data.dqa.task import (
     DetectDuplicateRowTask,
     DetectEmailTask,
@@ -43,7 +42,6 @@ from discover.domain.service.data.dqa.task import (
     DetectURLTask,
 )
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.lifecycle import Stage
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
@@ -56,11 +54,9 @@ fasttext.FastText.eprint = lambda x: None
 #                                       DQA Pipeline                                               #
 # ------------------------------------------------------------------------------------------------ #
 class DQAPipeline(Pipeline):
-    __STAGE = Stage.DQA
 
-    def __init__(self, config: ServiceConfig, cache: Cache) -> None:
-        super().__init__(config=config, stage=self.__STAGE)
-        self._cache = cache
+    def __init__(self, config: ServiceConfig) -> None:
+        super().__init__(config=config)
         self._reader = self._config.reader
         self._writer = self._config.writer
 
@@ -74,13 +70,7 @@ class DQAPipeline(Pipeline):
         self._data = self._initialize(data=self._data)
 
         for task in self._tasks:
-            # Check cache for task results.
-            if not self._config.force and self._cache.exists(key=task.new_column_name):
-                result = self._cache.get_item(key=task.new_column_name)
-            else:
-                result = task.run(self._data)
-                self._cache.add_item(key=task.new_column_name, value=result)
-
+            result = task.run(self._data)
             self._update_qa_data(result=result)
 
         self._data = self._finalize()
@@ -113,7 +103,6 @@ class DQAPipelineBuilder(PipelineBuilder):
     ) -> None:
         """Initializes the DataQualityPipeline with data."""
         super().__init__(config=config, pipeline_cls=pipeline_cls)
-        self._cache = self._config.cache_cls(name=self._config.cache_name)
 
     def create_pipeline(self) -> Pipeline:
         """Creates the pipeline with all the tasks for data quality analysis.
@@ -125,68 +114,76 @@ class DQAPipelineBuilder(PipelineBuilder):
         pipe = self._pipeline_cls(config=self._config)
 
         # Instantiate duplicate checkers
-        dup1 = DetectDuplicateRowTask(new_column_name="is_duplicate", cache=self._cache)
+        dup1 = DetectDuplicateRowTask(
+            new_column_name="is_duplicate", pipeline_context=pipe.context
+        )
         dup2 = DetectDuplicateRowTask(
             column_names="id",
             new_column_name="is_duplicate_review_id",
-            cache=self._cache,
+            pipeline_context=pipe.context,
         )
         # Instantiate detection of null values
         null = DetectNullValuesTask(
-            new_column_name="has_null_values", cache=self._cache
+            new_column_name="has_null_values", pipeline_context=pipe.context
         )
 
         # Instantiate detection of outliers
         out_vote_sum = DetectOutliersTask(
             column_name="vote_sum",
             new_column_name="vote_sum_outlier",
-            cache=self._cache,
+            pipeline_context=pipe.context,
         )
         out_vote_count = DetectOutliersTask(
             column_name="vote_count",
             new_column_name="vote_count_outlier",
-            cache=self._cache,
+            pipeline_context=pipe.context,
         )
         # Instantiate detection of non-english text in reviews and app names.
         lang_review = DetectNonEnglishTask(
             text_column="content",
             new_column_name="has_non_english_review",
             n_jobs=self.config.n_jobs,
-            cache=self._cache,
+            pipeline_context=pipe.context,
         )
         lang_app_name = DetectNonEnglishTask(
             text_column="app_name",
             new_column_name="has_non_english_app_name",
             n_jobs=self.config.n_jobs,
-            cache=self._cache,
+            pipeline_context=pipe.context,
         )
         # Instantiate detection of emojis
-        emoji = DetectEmojiTask(new_column_name="has_emojis", cache=self._cache)
+        emoji = DetectEmojiTask(
+            new_column_name="has_emojis", pipeline_context=pipe.context
+        )
         # Instantiate detection of excessive special characters
         chars = DetectSpecialCharacterTask(
             threshold=0.3,
             new_column_name="has_excessive_special_chars",
-            cache=self._cache,
+            pipeline_context=pipe.context,
         )
         # Instantiate date validator
         dates = DetectInvalidDatesTask(
-            new_column_name="has_invalid_date", cache=self._cache
+            new_column_name="has_invalid_date", pipeline_context=pipe.context
         )
         # Instantiate a rating validator
         ratings = DetectInvalidRatingsTask(
-            new_column_name="has_invalid_rating", cache=self._cache
+            new_column_name="has_invalid_rating", pipeline_context=pipe.context
         )
         # Instantiate a profanity check
         profanity = DetectProfanityTask(
             n_jobs=self.config.n_jobs,
             new_column_name="has_profanity",
-            cache=self._cache,
+            pipeline_context=pipe.context,
         )
         # Instantiate email, URL, and phone number detection in review text.
-        emails = DetectEmailTask(new_column_name="contains_email", cache=self._cache)
-        urls = DetectURLTask(new_column_name="contains_url", cache=self._cache)
+        emails = DetectEmailTask(
+            new_column_name="contains_email", pipeline_context=pipe.context
+        )
+        urls = DetectURLTask(
+            new_column_name="contains_url", pipeline_context=pipe.context
+        )
         phones = DetectPhoneNumberTask(
-            new_column_name="contains_phone_number", cache=self._cache
+            new_column_name="contains_phone_number", pipeline_context=pipe.context
         )
 
         # Add tasks to pipeline, starting with the lower resource intensive tasks.

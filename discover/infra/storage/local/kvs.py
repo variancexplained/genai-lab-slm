@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:30:37 pm                                            #
-# Modified   : Saturday September 14th 2024 08:44:52 pm                                            #
+# Modified   : Tuesday September 17th 2024 01:52:41 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,11 @@
 import logging
 import os
 import shelve
+import shutil
 from typing import Any
 
+from discover.domain.value_objects.context import Context
+from discover.domain.value_objects.file import KVSType
 from discover.infra.config.reader import ConfigReader
 from discover.infra.storage.local.file_io import IOService
 
@@ -37,32 +40,32 @@ class KVS:
     Args:
         section (str): The section can be 'cache', 'repo', etc.
         name (str): The name of the KVS within the section.
+        kvs_type (KVSType): The name of the key value store for which
+            this class is being instantiated.
         config_reader_cls (type[EnvManager], optional): Environment manager class.
         io_cls (type[IOService], optional): IO service class.
-
-    Examples:
-        >>> kvs = KVS(section='cache', name='example')
-        >>> kvs.create('key1', 'value1')
-        >>> kvs.read('key1')
-        >>> kvs.delete('key1')
     """
 
     def __init__(
         self,
-        section: str,
-        name: str,
+        kvs_type: KVSType,
+        context: Context,
+        dataset_id: str,
         config_reader_cls: type[ConfigReader] = ConfigReader,
         io_cls: type[IOService] = IOService,
     ) -> None:
-        self._section = section
-        self._name = name
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._kvs_type = kvs_type
+        self._context = context
+        self._dataset_id = dataset_id
+
         self._config_reader = config_reader_cls()
         self._io = io_cls()
 
-        self._kvs_file = self._get_filepath(section=section, name=name)
+        self._kvs_file = self._get_filepath(
+            kvs_type=kvs_type, context=context, dataset_id=dataset_id
+        )
         self._validate_kvs()
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def __len__(self) -> int:
         """Returns the number of keys in the KVS."""
@@ -83,6 +86,11 @@ class KVS:
         except StopIteration:
             self._kvs.close()
             raise
+
+    @property
+    def filepath(self) -> str:
+        """Returns the filepath of the cache."""
+        return self._kvs_file
 
     def create(self, key: str, value: Any) -> None:
         """Persists the object in the KVS.
@@ -123,7 +131,7 @@ class KVS:
             self._logger.exception(msg)
             raise
 
-    def delete(self, key: str) -> None:
+    def remove(self, key: str) -> None:
         """Deletes an object from the KVS.
 
         Args:
@@ -148,8 +156,20 @@ class KVS:
         Returns:
             bool: True if the key exists, False otherwise.
         """
-        with shelve.open(self._kvs_file) as kvs:
-            return key in kvs
+        try:
+            with shelve.open(self._kvs_file) as kvs:
+                return key in kvs
+        except FileNotFoundError as e:
+            msg = f"Unable to find kvs file: {self._kvs_file}.\n{e}"
+            self._logger.exception(msg)
+            raise
+        except Exception as e:
+            msg = f"Unknown exception occurred while reading {self._kvs_file}.\n{e}"
+            raise
+
+    def delete(self) -> None:
+        """Deletes the cache file."""
+        shutil.rmtree(self._kvs_file, ignore_errors=True)
 
     def reset(self) -> None:
         """Resets the KVS by clearing all entries.
@@ -158,7 +178,7 @@ class KVS:
             Exception: For any issues during the reset operation.
         """
         confirmation = input(
-            f"Are you sure you want to reset the KVS '{self._name}' in the section '{self._section}'? This action cannot be undone. (yes/no): "
+            f"Are you sure you want to reset the KVS at '{self._kvs_file}'? This action cannot be undone. (yes/no): "
         )
         if confirmation.lower() != "yes":
             print("Reset operation aborted.")
@@ -174,30 +194,19 @@ class KVS:
             self._logger.exception(msg)
             raise
 
-    def _get_filepath(self, section: str, name: str) -> str:
-        """Returns the KVS file path for the section and name from config.
-
-        Args:
-            section (str): Department name.
-            name (str): KVS name.
-
-        Returns:
-            str: The file path of the KVS.
-
-        Raises:
-            ValueError: If the KVS configuration is invalid.
-        """
-        ops_config = self._config_reader.get_config(section="ops", namespace=False)
-        try:
-            return ops_config["ops"][section][name]
-        except KeyError as ke:
-            msg = f"No key value store exists for {section}.{name}.\n{ke}"
-            self._logger.exception(msg)
-            raise ValueError(msg)
-        except Exception as e:
-            msg = f"Unknown error occurred while accessing the KVS configuration.\n{e}"
-            self._logger.exception(msg)
-            raise
+    def _get_filepath(
+        self, kvs_type: KVSType, context: Context, dataset_id: str
+    ) -> str:
+        """ """
+        basedir = self._config_reader.get_config(section="ops", namespace=False)
+        filepath = os.path.join(
+            basedir,  # i.e. ops/dev
+            kvs_type.value.lower(),  # i.e. cache
+            context.phase.value.lower(),  # i.e. data_prep
+            context.stage.value.lower(),  # i.e. dqa
+            dataset_id.lower(),  # i.e. some has value
+        )
+        return filepath
 
     def _validate_kvs(self) -> None:
         """Validates the KVS is accessible.
