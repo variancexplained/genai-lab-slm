@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Tuesday September 17th 2024 07:15:52 pm                                             #
+# Modified   : Wednesday September 18th 2024 06:23:28 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -70,7 +70,9 @@ dataset:
 ops:
   basedir: ops/prod  # Base directory for operations data.
   cache:
-    basedir: ops/prod/cache # Base directory for cache
+    registry: ops/prod/cache/registry
+    data: ops/prod/cache/data
+    archive: ops/prod/cache/archive
     ttl: 90 # In days
     refresh_on_access: True  # Access resets the expiration clock.
 # ------------------------------------------------------------------------------------------------ #

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Wednesday September 18th 2024 03:25:17 pm                                           #
+# Modified   : Wednesday September 18th 2024 07:24:31 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,9 +23,9 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.application.ops.announcer import task_announcer
-from discover.application.ops.cache import cachenow
+from discover.application.ops.cachenow import cachenow
 from discover.application.ops.profiler import profiler
-from discover.application.service.io.config import ServiceConfig
+from discover.application.service.base.config import ServiceConfig
 from discover.domain.base.task import Task
 
 
@@ -63,9 +63,7 @@ class Pipeline(ABC):
 
     def __init__(self, config: ServiceConfig):
         self._config = config
-        self._source_reader = self._config.source_reader
-        self._target_reader = self._config.target_reader
-        self._target_writer = self._config.target_writer
+        self._repo = config.repo
 
         self._tasks = []
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -113,12 +111,19 @@ class Pipeline(ABC):
 
         if self._config.force:
             data = self._run_pipeline()
-        else:
+        elif self.endpoint_exists():
             data = self.read_endpoint()
-            if data is None or len(data) == 0:
-                data = self._run_pipeline()
+        else:
+            data = self._run_pipeline()
 
         return data
+
+    def endpoint_exists(self) -> bool:
+        """Checks existence of the data endpoint."""
+        return self._repo.exists(
+            stage=self._config.target_data_config.stage,
+            name=self._config.target_data_config.name,
+        )
 
     def read_endpoint(self) -> Any:
         """
@@ -133,9 +138,14 @@ class Pipeline(ABC):
         """
         data = None
         try:
-            data = self._target_reader.read()
-        except Exception:
-            pass
+            data = self._repo.get(
+                stage=self._config.target_data_config.stage,
+                name=self._config.target_data_config.name,
+            )
+        except Exception as e:
+            msg = f"Unable to read endpoint for Stage: {self._config.target_data_config.stage} object: {self._config.target_data_config.name}.\n{e}"
+            self._logger.exception(msg)
+            raise
         return data
 
     @abstractmethod

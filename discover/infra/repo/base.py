@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Tuesday September 17th 2024 01:26:52 pm                                             #
+# Modified   : Wednesday September 18th 2024 04:21:29 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -72,7 +72,7 @@ class ReviewRepo(Repo):
         Abstract method for writing data to a file. To be implemented by subclasses.
     """
 
-    __Phase: Phase = Phase.DATAPREP
+    __phase: Phase = Phase.DATAPREP
 
     def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
         """
@@ -87,7 +87,9 @@ class ReviewRepo(Repo):
         """
         super().__init__()
         self._config_reader = config_reader_cls()
-        self._basedir = self._config_reader.get_config(section="workspace")
+        self._basedir = self._config_reader.get_config(
+            section="workspace", namespace=False
+        )
         self._file_ext = self._config_reader.get_config(section="dataset").file_ext
 
     def add(

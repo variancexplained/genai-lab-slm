@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Wednesday September 18th 2024 02:41:41 pm                                           #
+# Modified   : Wednesday September 18th 2024 05:14:13 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,10 +22,8 @@ import pandas as pd
 from dotenv import load_dotenv
 from pandarallel import pandarallel
 
-from discover.application.service.io.config import ServiceConfig
+from discover.application.service.base.config import ServiceConfig
 from discover.domain.base.task import Task
-from discover.domain.task.core.monitor.announcer import task_announcer
-from discover.domain.task.core.monitor.profiler import profiler
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -60,8 +58,6 @@ class RemoveNewlinesTask(Task):
     def __init__(self, config: ServiceConfig) -> None:
         super().__init__(config=config)
 
-    @profiler
-    @task_announcer
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Removes newline characters from the specified text column in the DataFrame by replacing them with spaces.
@@ -114,8 +110,6 @@ class VerifyEncodingTask(Task):
     def __init__(self, config: ServiceConfig) -> None:
         super().__init__(config=config)
 
-    @profiler
-    @task_announcer
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Verifies the UTF-8 encoding of the text column in the DataFrame. If encoding issues are found in the sample,
@@ -192,8 +186,6 @@ class CastDataTypeTask(Task):
     def __init__(self, config: ServiceConfig) -> None:
         super().__init__(config=config)
 
-    @profiler
-    @task_announcer
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Casts the data types of specified columns in the input DataFrame based on the configuration.

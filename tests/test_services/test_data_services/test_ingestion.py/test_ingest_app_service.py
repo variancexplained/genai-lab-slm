@@ -11,21 +11,21 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 11:23:02 pm                                              #
-# Modified   : Wednesday September 18th 2024 02:59:15 pm                                           #
+# Modified   : Wednesday September 18th 2024 07:19:00 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import inspect
 import logging
-import os
-import shutil
 from datetime import datetime
 
 import pandas as pd
 import pytest
 
-from discover.application.service.data.ingest import IngestService
+from discover.application.service.data.ingest.ingest import IngestService
+from discover.infra.repo.mckinney import McKinneyRepo
+from discover.infra.storage.local.cache import DiscoverCache
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -37,21 +37,25 @@ logger = logging.getLogger(__name__)
 double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
-TARGET = "data/test/01_ingest/reviews"
-
 
 @pytest.mark.ingest
 class TestIngest:  # pragma: no cover
     # ============================================================================================ #
-    def test_setup(self, caplog) -> None:
+    def test_setup(self, ingest_config, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        shutil.rmtree(path="data/test/01_ingest", ignore_errors=True)
+        repo = McKinneyRepo()
+        try:
+            repo.remove(stage=ingest_config.stage, name="reviews")
+        except Exception:
+            pass
 
+        cache = DiscoverCache()
+        cache.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -62,18 +66,27 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_ingest(self, data_ingestion_service_config, caplog) -> None:
+    def test_ingest(self, ingest_config, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        ingest = IngestService(config=data_ingestion_service_config)
+        repo = McKinneyRepo()
+        ingest = IngestService(config=ingest_config)
         data = ingest.run()
-        assert isinstance(data, pd.DataFrame)
+        assert isinstance(data, (pd.core.frame.DataFrame, pd.DataFrame))
         logger.info(data.head())
-        assert os.path.exists(path=TARGET)
+        assert repo.exists(stage=ingest_config.stage, name="reviews")
+
+        # Run again and confirm cache is used.
+        ingest = IngestService(config=ingest_config)
+        data = ingest.run()
+        assert isinstance(data, (pd.core.frame.DataFrame, pd.DataFrame))
+        logger.info(data.head())
+        assert repo.exists(stage=ingest_config.stage, name="reviews")
+
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -84,14 +97,20 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_teardown(self, caplog) -> None:
+    def test_teardown(self, ingest_config, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        shutil.rmtree(path="data/test/01_ingest", ignore_errors=True)
+        repo = McKinneyRepo()
+        try:
+            repo.remove(stage=ingest_config.stage, name="reviews")
+        except Exception:
+            pass
+        cache = DiscoverCache()
+        cache.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)

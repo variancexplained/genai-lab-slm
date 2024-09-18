@@ -11,16 +11,16 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:25:12 am                                           #
-# Modified   : Wednesday September 18th 2024 03:00:15 pm                                           #
+# Modified   : Wednesday September 18th 2024 05:32:19 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 
-from typing import Any, Optional
+from typing import Any
 
 from discover.application.service.base.service import ApplicationService
-from discover.application.service.data.ingest.config import DataIngestionServiceConfig
+from discover.application.service.data.ingest.config import IngestServiceConfig
 from discover.application.service.data.ingest.pipeline import IngestPipelineBuilder
 
 
@@ -33,20 +33,16 @@ class IngestService(ApplicationService):
     of the data ingestion process. It uses a domain service to perform the ingestion and processing of the data.
 
     Args:
-        config (DataIngestionServiceConfig): Configuration for the data ingestion service. Defaults to
-            a new instance of DataIngestionServiceConfig.
+        config (IngestServiceConfig): Configuration for the data ingestion service. Defaults to
+            a new instance of IngestServiceConfig.
 
     Attributes:
-        _domain_service (DataIngestionDomainService): The domain service that performs the actual data ingestion
+        _domain_service (IngestDomainService): The domain service that performs the actual data ingestion
             logic based on the provided configuration.
     """
 
-    def __init__(
-        self,
-        config: Optional[DataIngestionServiceConfig] = None,
-    ) -> None:
+    def __init__(self, config: IngestServiceConfig = IngestServiceConfig()) -> None:
         """"""
-        self._config = DataIngestionServiceConfig.create()
         super().__init__(config=config)
 
     def run(self) -> Any:

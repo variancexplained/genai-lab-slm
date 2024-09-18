@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Wednesday September 18th 2024 03:24:34 pm                                           #
+# Modified   : Wednesday September 18th 2024 06:34:49 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,6 +23,7 @@ from typing import Callable
 import psutil  # For gathering system resource usage
 
 from discover.application.ops.profile import Profile
+from discover.application.ops.utils import find_task
 from discover.container import DiscoverContainer
 
 # ------------------------------------------------------------------------------------------------ #
@@ -106,11 +107,14 @@ def profiler(func: Callable) -> Callable:
             cpu_user_utilization = cpu_user_time / (runtime_seconds * cpu_cores)
             cpu_system_utilization = cpu_system_time / (runtime_seconds * cpu_cores)
 
+            # Find the Task object and return the context
+            task = find_task(args, kwargs)
+
             # Create the Profile object with the computed metrics
             profile = Profile(
-                phase=self.context.phase,
-                stage=self.context.stage,
-                task=self.context.task,
+                phase=task.context.phase.description,
+                stage=task.context.stage.description,
+                task=task.context.task,
                 start_time=start_time,
                 end_time=end_time,
                 runtime_seconds=runtime_seconds,

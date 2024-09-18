@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday September 18th 2024 02:29:03 pm                                           #
+# Modified   : Wednesday September 18th 2024 05:27:44 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -157,3 +157,14 @@ def test_config(pandas_df):
         force: bool = False
 
     return TestConfig()
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def ingest_config(pandas_df):
+    """
+    Constructs an ingest service configuration
+    """
+    from discover.application.service.data.ingest.config import IngestServiceConfig
+
+    return IngestServiceConfig()

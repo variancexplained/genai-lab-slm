@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:24:56 am                                           #
-# Modified   : Wednesday September 18th 2024 03:22:18 pm                                           #
+# Modified   : Wednesday September 18th 2024 05:26:40 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,143 +19,99 @@
 """Data  Ingestion Application Service Config"""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass, field
+from typing import Optional
 
-from discover.application.service.io import DataService
-from discover.application.service.io.config import (
-    ReaderConfig,
-    ServiceConfig,
-    WriterConfig,
-)
+from discover.application.service.base.config import DataConfig, ServiceConfig
+from discover.domain.base.repo import Repo
 from discover.domain.value_objects.lifecycle import DataPrepStage, Phase, Stage
+from discover.infra.repo.factory import ReviewRepoFactory
+
+# ------------------------------------------------------------------------------------------------ #
+repo_factory = ReviewRepoFactory()
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class IngestSourceReaderConfig(ReaderConfig):
+class IngestSourceDataConfig(DataConfig):
     """
-    IngestSourceReaderConfig provides configuration for reading the source data during the ingestion process
-    in the DATAPREP phase. This configuration is specific to the RAW stage of the data pipeline and is used
-    to define how the raw source dataset, such as app reviews, is read before ingestion.
+    Configuration class for ingesting source data in the data preparation phase.
+
+    This class extends `DataConfig` and provides specific default values for the ingestion
+    of source data, such as the lifecycle phase (`DATAPREP`), the stage (`RAW`), and the
+    default dataset name (`reviews`). It is designed to configure the source data for ingestion
+    tasks during the data preparation pipeline.
 
     Attributes:
-        phase (Phase): The lifecycle phase, set to Phase.DATAPREP by default, indicating this configuration is
-            used during the data preparation phase.
+    -----------
+    phase : Phase, default=Phase.DATAPREP
+        The lifecycle phase of the data pipeline, set to `DATAPREP` by default, representing
+        the data preparation phase of the workflow.
 
-        stage (Stage): The service stage, set to DataPrepStage.RAW by default. This represents the stage where
-            the raw source data is being prepared for ingestion.
+    stage : Stage, default=DataPrepStage.RAW
+        The stage of the data preparation process, set to `RAW`, indicating that the source
+        data is in its raw, unprocessed form.
 
-        io_stage (Stage): The stage from which the data is read, set to DataPrepStage.INGEST by default, indicating
-            that the data is being ingested from the raw source.
+    name : str, default="reviews"
+        The name of the dataset being ingested, set to "reviews" as a default for ingesting
+        reviews data.
 
-        name (str): The name of the dataset being read, defaulting to "reviews." This typically refers to the
-            raw dataset being ingested, such as app reviews.
+    Inherits:
+    ---------
+    DataConfig:
+        Inherits all attributes and methods from the `DataConfig` class, including configuration
+        for data structures, file formats, and partitioning options.
     """
 
     phase: Phase = Phase.DATAPREP
     stage: Stage = DataPrepStage.RAW
-    io_stage: Stage = DataPrepStage.INGEST
     name: str = "reviews"
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class IngestTargetReaderConfig(ReaderConfig):
+class IngestTargetReaderConfig(DataConfig):
     """
-    IngestTargetReaderConfig provides configuration for reading target data during the ingestion stage
-    of the DATAPREP phase. This configuration is used to check whether the data has already been ingested
-    and resides in the target dataset.
+    Configuration class for reading target data during the ingestion phase of data preparation.
+
+    This class extends `ReaderConfig` and sets default values specific to the ingestion
+    of target data, such as the lifecycle phase (`DATAPREP`), the stage (`INGEST`), and
+    the default dataset name (`reviews`). It is designed to configure how target data
+    should be read during the ingestion phase of the data preparation pipeline.
 
     Attributes:
-        phase (Phase): The lifecycle phase, set to Phase.DATAPREP by default, indicating this configuration
-            is used during the data preparation phase.
+    -----------
+    phase : Phase, default=Phase.DATAPREP
+        The lifecycle phase of the data pipeline, set to `DATAPREP` by default, indicating
+        that this configuration is used during the data preparation phase.
 
-        stage (Stage): The service stage, set to DataPrepStage.INGEST by default, representing the stage
-            where data ingestion is taking place.
+    stage : Stage, default=DataPrepStage.INGEST
+        The stage of the data preparation process, set to `INGEST`, specifying that the data
+        reading happens during the ingestion stage.
 
-        io_stage (Stage): The stage from which the data is read, set to DataPrepStage.INGEST by default, indicating
-            that this configuration is used to check the ingested data in the target stage.
+    name : str, default="reviews"
+        The name of the dataset being read, set to "reviews" as a default for target data ingestion.
 
-        name (str): The name of the dataset being checked or read, defaulting to "reviews." This typically refers
-            to the ingested dataset, such as app reviews.
+    Inherits:
+    ---------
+    ReaderConfig:
+        Inherits all attributes and methods from the `ReaderConfig` class, which defines
+        the general configuration for reading data.
     """
 
     phase: Phase = Phase.DATAPREP
     stage: Stage = DataPrepStage.INGEST
-    io_stage: Stage = DataPrepStage.INGEST
     name: str = "reviews"
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class IngestTargetWriterConfig(WriterConfig):
-    """
-    IngestTargetWriterConfig provides configuration for writing data to the target during the ingestion stage
-    of the DATAPREP phase. This configuration is used to define how ingested datasets, such as app reviews,
-    are written to the target destination.
+class IngestServiceConfig(ServiceConfig):
+    """"""
 
-    Attributes:
-        phase (Phase): The lifecycle phase, set to Phase.DATAPREP by default, indicating this configuration
-            is used during the data preparation phase.
-
-        stage (Stage): The service stage, set to DataPrepStage.INGEST by default, representing the stage
-            where data is being ingested and written to the target.
-
-        io_stage (Stage): The stage to which the data is being written, set to DataPrepStage.INGEST by default,
-            indicating that the data is being written to the target as part of the ingestion process.
-
-        name (str): The name of the dataset being written, defaulting to "reviews." This typically refers
-            to the dataset being written to the target, such as app reviews.
-    """
-
-    phase: Phase = Phase.DATAPREP
-    stage: Stage = DataPrepStage.INGEST
-    io_stage: Stage = DataPrepStage.INGEST
-    name: str = "reviews"
-
-
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class DataIngestionServiceConfig(ServiceConfig):
-    """
-    DataIngestionServiceConfig extends ServiceConfig to provide specific configuration for the data ingestion
-    service within the DATAPREP phase. This class configures how text data is ingested and processed, including
-    settings for text column selection, sample size for encoding detection, and random state for reproducibility.
-
-    Attributes:
-        phase (Phase): The lifecycle phase of the service, set to Phase.DATAPREP by default, indicating the configuration
-            is used during the data preparation phase.
-
-        stage (Stage): The service stage, set to DataPrepStage.INGEST by default, representing the data ingestion stage.
-
-        text_column (str): The name of the column containing the text data to be processed. Default is "content."
-
-        encoding_sample (float): The proportion of the dataset to sample for encoding detection. Default is 0.01
-            (1% of the data).
-
-        random_state (int): A random seed for reproducibility. Default is 22.
-
-        force (bool): Optional flag to force execution, bypassing certain checks (default is False).
-
-    Methods:
-        create(cls, source_reader_config, target_reader_config, target_writer_config) -> DataIngestionServiceConfig:
-            Factory method for creating a DataIngestionServiceConfig instance. This method initializes the readers
-            and writer using the provided configurations. If an error occurs while creating the readers or writer,
-            an exception is logged and a RuntimeError is raised.
-
-            Parameters:
-                source_reader_config (ReaderConfig): Configuration for the source reader. Defaults to IngestSourceReaderConfig.
-                target_reader_config (ReaderConfig): Configuration for the target reader. Defaults to IngestTargetReaderConfig.
-                target_writer_config (WriterConfig): Configuration for the target writer. Defaults to IngestTargetWriterConfig.
-
-            Returns:
-                DataIngestionServiceConfig: A new instance of the DataIngestionServiceConfig class.
-
-            Raises:
-                RuntimeError: If an error occurs while creating the readers or writer.
-    """
-
+    repo: Optional[Repo] = None
+    source_data_config: DataConfig = IngestSourceDataConfig()
+    target_data_config: DataConfig = IngestTargetReaderConfig()
     phase: Phase = Phase.DATAPREP
     stage: Stage = DataPrepStage.INGEST
     text_column: str = "content"
@@ -178,25 +134,5 @@ class DataIngestionServiceConfig(ServiceConfig):
     )
     force: bool = False
 
-    @classmethod
-    def create(
-        cls,
-        source_reader_config: ReaderConfig = IngestSourceReaderConfig(),
-        target_reader_config: ReaderConfig = IngestTargetReaderConfig(),
-        target_writer_config: WriterConfig = IngestTargetWriterConfig(),
-    ) -> DataIngestionServiceConfig:
-        ds = DataService()
-        try:
-            sr = ds.get_reader(config=source_reader_config)
-            tr = ds.get_reader(config=target_reader_config)
-            tw = ds.get_writer(config=target_writer_config)
-        except Exception as e:
-            msg = f"Unknown error occured. Unable to create ServiceConfig.\n{e}"
-            logging.exception(msg)
-            raise RuntimeError(msg)
-
-        return cls(
-            source_reader=sr,
-            target_reader=tr,
-            target_writer=tw,
-        )
+    def __post_init__(self) -> None:
+        self.repo = repo_factory.get_repo(config=self.source_data_config)

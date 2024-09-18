@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 01:11:48 am                                             #
-# Modified   : Wednesday September 18th 2024 02:41:40 pm                                           #
+# Modified   : Wednesday September 18th 2024 05:14:21 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,9 +23,9 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from discover.application.service.io.config import ServiceConfig
+from discover.application.ops.profiler import profiler
+from discover.application.service.base.config import ServiceConfig
 from discover.domain.base.task import Task
-from discover.domain.task.core.monitor.profiler import profiler
 from discover.infra.storage.local.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #

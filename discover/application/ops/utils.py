@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/application/optimization/utils.py                                         #
+# Filename   : /discover/application/ops/utils.py                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Wednesday September 18th 2024 03:20:11 pm                                           #
+# Modified   : Wednesday September 18th 2024 05:51:08 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -67,7 +67,7 @@ def find_dataframe(args, kwargs) -> Union[pd.DataFrame, SparkDataFrame]:
 
 
 # ------------------------------------------------------------------------------------------------ #
-def find_context(args, kwargs) -> Context:
+def find_task(args, kwargs) -> Context:
     """
     This function is invoked by decorators that expect a Task object as an argument or a keyword
     argument. Searches for a Task object in the positional and keyword arguments and returns
@@ -85,20 +85,68 @@ def find_context(args, kwargs) -> Context:
     context : Context or None
         Returns the found Context, or None if no Context object is found.
     """
-    context = None
+    task = None
     # Search through args first for a Task object
     for arg in args:
         if isinstance(arg, Task):
-            context = arg.context
+            task = arg
             break
 
     # If no context found in args, search through kwargs
-    if context is None:
+    if task is None:
         for key, value in kwargs.items():
             if isinstance(value, Task):
-                context = value.context
+                task = value
                 break
-    return context
+    return task
+
+
+# ------------------------------------------------------------------------------------------------ #
+def get_object_name(obj) -> str:
+    """
+    Returns the class name if the object has one, otherwise the qualified name (qualname) if applicable,
+    and finally the type name if neither a class nor qualname makes sense.
+
+    Parameters:
+    -----------
+    obj : Any
+        The object to inspect, which can be a class, method, function, or any other type.
+
+    Returns:
+    --------
+    str
+        The class name, qualname, or type of the object depending on its type.
+
+    Examples:
+    ---------
+    >>> class ExampleClass:
+    >>>     def method(self):
+    >>>         pass
+
+    >>> get_class_or_qualname(ExampleClass)
+    'ExampleClass'
+
+    >>> get_class_or_qualname(ExampleClass.method)
+    'ExampleClass.method'
+
+    >>> get_class_or_qualname(42)
+    'int'
+    """
+    # Check if the object is a class
+    if isinstance(obj, type):
+        return obj.__name__
+
+    # Check if the object is an instance of a class
+    elif hasattr(obj, "__class__"):
+        return obj.__class__.__name__
+
+    # Check if the object has a __qualname__ attribute (functions, methods)
+    elif hasattr(obj, "__qualname__"):
+        return obj.__qualname__
+
+    # Return the type name if neither class name nor qualname is available
+    else:
+        return type(obj).__name__
 
 
 # ------------------------------------------------------------------------------------------------ #

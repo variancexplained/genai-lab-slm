@@ -11,20 +11,20 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Wednesday September 18th 2024 02:16:40 pm                                           #
+# Modified   : Wednesday September 18th 2024 04:09:03 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""IO Module"""
+"""Convert Task Module"""
 from typing import Union
 
 import pandas as pd
 from pyspark.sql import DataFrame
 
+from discover.application.ops.announcer import task_announcer
+from discover.application.ops.profiler import profiler
 from discover.domain.base.task import Task
-from discover.domain.task.core.monitor.announcer import task_announcer
-from discover.domain.task.core.monitor.profiler import profiler
 from discover.domain.value_objects.lifecycle import DataPrepStage
 from discover.infra.utils.data_utils.converter import Converter
 from discover.infra.utils.file_utils.tempfile import TempFileMgr

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Saturday September 14th 2024 05:08:53 am                                            #
+# Modified   : Wednesday September 18th 2024 05:14:22 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,8 @@
 """Persistence base class module"""
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+
+from discover.application.service.base.config import DataConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -131,3 +133,37 @@ class Repo(ABC):
             If the method is not implemented by a subclass.
         """
         pass
+
+
+# ------------------------------------------------------------------------------------------------ #
+class RepoFactory(ABC):
+    """
+    Abstract base class for repository factories.
+
+    The purpose of this class is to define a factory interface for creating repository
+    instances based on the provided configuration. Concrete implementations of this
+    factory will create specific types of repositories depending on the data source,
+    database, or other storage mechanisms specified in the configuration.
+
+    Methods:
+    --------
+    get_repo(config: DataConfig) -> Repo:
+        Abstract method that, when implemented, returns a repository instance based
+        on the given configuration.
+
+        Parameters:
+        -----------
+        config : DataConfig
+            Configuration object containing necessary information to initialize
+            the repository (e.g., database URL, credentials, etc.).
+
+        Returns:
+        --------
+        Repo:
+            An instance of a repository that is configured according to the
+            provided configuration.
+    """
+
+    @abstractmethod
+    def get_repo(self, config: DataConfig) -> Repo:
+        """Returns a repository based upon the configuration provided."""

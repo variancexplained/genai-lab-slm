@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:25:06 am                                           #
-# Modified   : Wednesday September 18th 2024 03:26:35 pm                                           #
+# Modified   : Wednesday September 18th 2024 05:34:41 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,9 +24,9 @@ from dotenv import load_dotenv
 from pandarallel import pandarallel
 
 from discover.application.ops.announcer import pipeline_announcer
+from discover.application.service.base.config import ServiceConfig
 from discover.application.service.base.pipeline import Pipeline, PipelineBuilder
-from discover.application.service.io.config import ServiceConfig
-from discover.domain.task.data.ingest import (
+from discover.domain.task.data.ingest.ingest import (
     CastDataTypeTask,
     RemoveNewlinesTask,
     VerifyEncodingTask,
@@ -71,12 +71,19 @@ class IngestPipeline(Pipeline):
         Any:
             The final processed data after executing all tasks in the pipeline.
         """
-        data = self._source_reader.read()
+        data = self._repo.get(
+            stage=self._config.source_data_config.stage,
+            name=self._config.source_data_config.name,
+        )
 
         for task in self._tasks:
             data = self._run_task(data=data, task=task)
 
-        self._target_writer.write(data=data)
+        self._repo.add(
+            stage=self._config.target_data_config.stage,
+            name=self._config.target_data_config.name,
+            data=data,
+        )
         return data
 
 
