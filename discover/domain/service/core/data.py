@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 07:13:32 pm                                              #
-# Modified   : Tuesday September 17th 2024 03:23:32 am                                             #
+# Modified   : Tuesday September 17th 2024 09:33:35 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from typing import Any, Union
 import pandas as pd
 from pyspark.sql import DataFrame as SparkDataFrame
 
-from discover.domain.value_objects.config import DataConfig
+from discover.domain.value_objects.config import ReaderConfig, WriterConfig
 from discover.domain.value_objects.context import Context
 
 
@@ -47,7 +47,7 @@ class DataService(ABC):
     """
 
     @abstractmethod
-    def get_reader(self, config: DataConfig) -> Reader:
+    def get_reader(self, config: ReaderConfig) -> Reader:
         """
         Returns a Reader for the provided configuration.
 
@@ -64,7 +64,7 @@ class DataService(ABC):
         pass
 
     @abstractmethod
-    def get_writer(self, config: DataConfig) -> Writer:
+    def get_writer(self, config: WriterConfig) -> Writer:
         """
         Returns a Writer for the provided configuration.
 
@@ -93,11 +93,12 @@ class Reader(ABC):
         Reads and returns data from a source.
     """
 
-    def __init__(self, config: DataConfig) -> None:
+    def __init__(self, config: ReaderConfig) -> None:
+        self._config = config
         self._context = Context(
-            process_type="Reader",
-            process_name=self.__class__.__name__,
+            phase=config.phase,
             stage=config.stage,
+            task=self.__class__.__name__,
         )
 
     def context(self) -> Context:
@@ -130,11 +131,12 @@ class Writer(ABC):
         Writes data to a target destination.
     """
 
-    def __init__(self, config: DataConfig) -> None:
+    def __init__(self, config: WriterConfig) -> None:
+        self._config = config
         self._context = Context(
-            process_type="Writer",
-            process_name=self.__class__.__name__,
+            phase=config.phase,
             stage=config.stage,
+            task=self.__class__.__name__,
         )
 
     def context(self) -> Context:
@@ -161,7 +163,8 @@ class Writer(ABC):
 # ------------------------------------------------------------------------------------------------ #
 def find_dataframe(args, kwargs) -> Union[pd.DataFrame, SparkDataFrame]:
     """
-    Searches for a pandas or Spark DataFrame in the positional and keyword arguments.
+    This function is invoked by decorators that expect dataframes as arguments or keyword
+    arguments. Searches for a pandas or Spark DataFrame in the positional and keyword arguments.
 
     Parameters:
     -----------

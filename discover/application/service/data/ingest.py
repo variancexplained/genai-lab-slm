@@ -11,55 +11,110 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 05:35:17 pm                                              #
-# Modified   : Tuesday September 17th 2024 01:34:21 am                                             #
+# Modified   : Tuesday September 17th 2024 10:01:58 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+"""Data  Ingestion Application Service Config"""
+from __future__ import annotations
+
+import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Optional
 
 from discover.application.base.service import ApplicationService
-from discover.domain.base.repo import Repo
-from discover.domain.service.core.data import Reader, Writer
+from discover.domain.service.core.data import DataService
 from discover.domain.service.data.ingest.service import DataIngestionDomainService
-from discover.domain.value_objects.config import DataConfig, ServiceConfig
-from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.config.reader import ConfigReader
-from discover.infra.repo.mckinney import McKinneyRepo
+from discover.domain.value_objects.config import (
+    ReaderConfig,
+    ServiceConfig,
+    WriterConfig,
+)
+from discover.domain.value_objects.lifecycle import DataPrepStage, Phase, Stage
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class IngestSourceDataConfig(DataConfig):
+class IngestSourceReaderConfig(ReaderConfig):
     """
-    Configuration class for the source data in the data ingestion pipeline.
+    IngestSourceReaderConfig provides configuration for reading the source data during the ingestion process
+    in the DATAPREP phase. This configuration is specific to the RAW stage of the data pipeline and is used
+    to define how the raw source dataset, such as app reviews, is read before ingestion.
 
     Attributes:
-        repo (Repo): Repository instance for accessing source data, defaulting to McKinneyRepo.
-        stage (Stage): The stage of the data, defaulting to RAW.
-        name (str): The name of the source data, defaulting to "reviews".
+        phase (Phase): The lifecycle phase, set to Phase.DATAPREP by default, indicating this configuration is
+            used during the data preparation phase.
+
+        stage (Stage): The service stage, set to DataPrepStage.RAW by default. This represents the stage where
+            the raw source data is being prepared for ingestion.
+
+        io_stage (Stage): The stage from which the data is read, set to DataPrepStage.INGEST by default, indicating
+            that the data is being ingested from the raw source.
+
+        name (str): The name of the dataset being read, defaulting to "reviews." This typically refers to the
+            raw dataset being ingested, such as app reviews.
     """
 
-    repo: Repo = McKinneyRepo(config_reader_cls=ConfigReader)
+    phase: Phase = Phase.DATAPREP
     stage: Stage = DataPrepStage.RAW
+    io_stage: Stage = DataPrepStage.INGEST
     name: str = "reviews"
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class IngestTargetDataConfig(DataConfig):
+class IngestTargetReaderConfig(ReaderConfig):
     """
-    Configuration class for the target data in the data ingestion pipeline.
+    IngestTargetReaderConfig provides configuration for reading target data during the ingestion stage
+    of the DATAPREP phase. This configuration is used to check whether the data has already been ingested
+    and resides in the target dataset.
 
     Attributes:
-        repo (Repo): Repository instance for storing ingested data, defaulting to McKinneyRepo.
-        stage (Stage): The stage of the data, defaulting to INGEST.
-        name (str): The name of the target data, defaulting to "reviews".
+        phase (Phase): The lifecycle phase, set to Phase.DATAPREP by default, indicating this configuration
+            is used during the data preparation phase.
+
+        stage (Stage): The service stage, set to DataPrepStage.INGEST by default, representing the stage
+            where data ingestion is taking place.
+
+        io_stage (Stage): The stage from which the data is read, set to DataPrepStage.INGEST by default, indicating
+            that this configuration is used to check the ingested data in the target stage.
+
+        name (str): The name of the dataset being checked or read, defaulting to "reviews." This typically refers
+            to the ingested dataset, such as app reviews.
     """
 
-    repo: Repo = McKinneyRepo(config_reader_cls=ConfigReader)
+    phase: Phase = Phase.DATAPREP
     stage: Stage = DataPrepStage.INGEST
+    io_stage: Stage = DataPrepStage.INGEST
+    name: str = "reviews"
+
+
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class IngestTargetWriterConfig(WriterConfig):
+    """
+    IngestTargetWriterConfig provides configuration for writing data to the target during the ingestion stage
+    of the DATAPREP phase. This configuration is used to define how ingested datasets, such as app reviews,
+    are written to the target destination.
+
+    Attributes:
+        phase (Phase): The lifecycle phase, set to Phase.DATAPREP by default, indicating this configuration
+            is used during the data preparation phase.
+
+        stage (Stage): The service stage, set to DataPrepStage.INGEST by default, representing the stage
+            where data is being ingested and written to the target.
+
+        io_stage (Stage): The stage to which the data is being written, set to DataPrepStage.INGEST by default,
+            indicating that the data is being written to the target as part of the ingestion process.
+
+        name (str): The name of the dataset being written, defaulting to "reviews." This typically refers
+            to the dataset being written to the target, such as app reviews.
+    """
+
+    phase: Phase = Phase.DATAPREP
+    stage: Stage = DataPrepStage.INGEST
+    io_stage: Stage = DataPrepStage.INGEST
     name: str = "reviews"
 
 
@@ -67,48 +122,45 @@ class IngestTargetDataConfig(DataConfig):
 @dataclass
 class DataIngestionServiceConfig(ServiceConfig):
     """
-    Configuration class for the data ingestion process.
-
-    This class defines the configuration parameters required for the data ingestion stage
-    in the pipeline. It includes source and target data configurations, partitioning columns,
-    text column details, encoding sample rate, random seed, and data type mappings for the input data.
+    DataIngestionServiceConfig extends ServiceConfig to provide specific configuration for the data ingestion
+    service within the DATAPREP phase. This class configures how text data is ingested and processed, including
+    settings for text column selection, sample size for encoding detection, and random state for reproducibility.
 
     Attributes:
-    -----------
-    stage : Stage
-        The stage of the processing pipeline, which is set to INGEST.
-    source_data_config : DataConfig
-        Configuration object for the source data to be ingested.
-    target_data_config : DataConfig
-        Configuration object for the target data after ingestion.
-    partition_cols : list
-        A list of column names used for partitioning the data. Defaults to ["category"].
-    text_column : str
-        The name of the text column in the dataset. Defaults to "content".
-    encoding_sample : float
-        The proportion of the data to sample for encoding checks. Defaults to 0.01 (1% of the data).
-    random_state : int
-        Random seed used for random operations within the ingestion process. Defaults to 22.
-    datatypes : dict
-        A dictionary that specifies the expected data types for each column in the dataset.
-        The default mapping includes:
-            - "id": "string"
-            - "app_id": "string"
-            - "app_name": "string"
-            - "category_id": "category"
-            - "category": "category"
-            - "author": "string"
-            - "rating": "int16"
-            - "content": "string"
-            - "vote_count": "int64"
-            - "vote_sum": "int64"
-            - "date": "datetime64[ms]"
+        phase (Phase): The lifecycle phase of the service, set to Phase.DATAPREP by default, indicating the configuration
+            is used during the data preparation phase.
+
+        stage (Stage): The service stage, set to DataPrepStage.INGEST by default, representing the data ingestion stage.
+
+        text_column (str): The name of the column containing the text data to be processed. Default is "content."
+
+        encoding_sample (float): The proportion of the dataset to sample for encoding detection. Default is 0.01
+            (1% of the data).
+
+        random_state (int): A random seed for reproducibility. Default is 22.
+
+        force (bool): Optional flag to force execution, bypassing certain checks (default is False).
+
+    Methods:
+        create(cls, source_reader_config, target_reader_config, target_writer_config) -> DataIngestionServiceConfig:
+            Factory method for creating a DataIngestionServiceConfig instance. This method initializes the readers
+            and writer using the provided configurations. If an error occurs while creating the readers or writer,
+            an exception is logged and a RuntimeError is raised.
+
+            Parameters:
+                source_reader_config (ReaderConfig): Configuration for the source reader. Defaults to IngestSourceReaderConfig.
+                target_reader_config (ReaderConfig): Configuration for the target reader. Defaults to IngestTargetReaderConfig.
+                target_writer_config (WriterConfig): Configuration for the target writer. Defaults to IngestTargetWriterConfig.
+
+            Returns:
+                DataIngestionServiceConfig: A new instance of the DataIngestionServiceConfig class.
+
+            Raises:
+                RuntimeError: If an error occurs while creating the readers or writer.
     """
 
+    phase: Phase = Phase.DATAPREP
     stage: Stage = DataPrepStage.INGEST
-    reader: Reader = Reader(config=IngestSourceDataConfig())
-    writer: Writer = Writer(config=IngestTargetDataConfig())
-    partition_cols: list = field(default_factory=lambda: ["category"])
     text_column: str = "content"
     encoding_sample: float = 0.01
     random_state: int = 22
@@ -129,50 +181,62 @@ class DataIngestionServiceConfig(ServiceConfig):
     )
     force: bool = False
 
+    @classmethod
+    def create(
+        cls,
+        source_reader_config: ReaderConfig = IngestSourceReaderConfig(),
+        target_reader_config: ReaderConfig = IngestTargetReaderConfig(),
+        target_writer_config: WriterConfig = IngestTargetWriterConfig(),
+    ) -> DataIngestionServiceConfig:
+        ds = DataService()
+        try:
+            sr = ds.get_reader(config=source_reader_config)
+            tr = ds.get_reader(config=target_reader_config)
+            tw = ds.get_writer(config=target_writer_config)
+        except Exception as e:
+            msg = f"Unknown error occured. Unable to create ServiceConfig.\n{e}"
+            logging.exception(msg)
+            raise RuntimeError(msg)
+
+        return cls(
+            source_reader=sr,
+            target_reader=tr,
+            target_writer=tw,
+        )
+
 
 # ------------------------------------------------------------------------------------------------ #
 #                         DATA INGESTION APPLICATION SERVICE                                       #
 # ------------------------------------------------------------------------------------------------ #
 class DataIngestionApplicationService(ApplicationService):
     """
-    Application service for orchestrating the data ingestion process.
+    DataIngestionApplicationService is an application service responsible for coordinating the execution
+    of the data ingestion process. It uses a domain service to perform the ingestion and processing of the data.
 
-    This service initializes the configuration for both source and target data, and delegates
-    the execution of the ingestion to the domain service.
+    Args:
+        config (DataIngestionServiceConfig): Configuration for the data ingestion service. Defaults to
+            a new instance of DataIngestionServiceConfig.
 
     Attributes:
-    -----------
-    _domain_service : DataIngestionDomainService
-        The domain service responsible for executing the core data ingestion logic.
+        _domain_service (DataIngestionDomainService): The domain service that performs the actual data ingestion
+            logic based on the provided configuration.
     """
 
     def __init__(
         self,
-        config: DataIngestionServiceConfig = DataIngestionServiceConfig(),
+        config: Optional[DataIngestionServiceConfig] = None,
     ) -> None:
-        """
-        Initializes the data ingestion application service with the provided configuration.
-
-        This method sets up the configuration for the ingestion process and initializes the
-        domain service that will handle the ingestion execution.
-
-        Parameters:
-        -----------
-        config : DataIngestionServiceConfig, optional
-            The configuration object that specifies the source and target data settings for the ingestion.
-            Defaults to `DataIngestionServiceConfig`.
-        """
+        """"""
+        self._config = DataIngestionServiceConfig.create()
         super().__init__(config=config)
 
         self._domain_service = DataIngestionDomainService(config=self._config)
 
     def run(self) -> Any:
         """
-        Executes the data ingestion process by calling the domain service.
+        Runs the data ingestion process by delegating execution to the domain service.
 
         Returns:
-        --------
-        Any:
-            The result of the data ingestion process as executed by the domain service.
+            Any: The result of the data ingestion process, as defined by the domain service.
         """
         return self._domain_service.run()

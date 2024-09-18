@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 17th 2024 01:08:56 am                                             #
+# Modified   : Tuesday September 17th 2024 09:38:24 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,6 +27,7 @@ import pandas as pd
 from pandarallel import pandarallel
 
 from discover.domain.base.pipeline import Pipeline, PipelineBuilder
+from discover.domain.service.core.monitor.announcer import pipeline_announcer
 from discover.domain.service.data.dqa.task import (
     DetectDuplicateRowTask,
     DetectEmailTask,
@@ -63,6 +64,7 @@ class DQAPipeline(Pipeline):
         self._data = None
         self._qa_data = pd.DataFrame()
 
+    @pipeline_announcer
     def _run_pipeline(self) -> Any:
         """Orchestrates the execution of the data quality pipeline"""
 

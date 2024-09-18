@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Monday September 16th 2024 08:52:01 pm                                              #
+# Modified   : Tuesday September 17th 2024 01:26:52 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pandas as pd
 
 from discover.domain.base.repo import Repo
 from discover.domain.value_objects.file import FileFormat
-from discover.domain.value_objects.lifecycle import Stage
+from discover.domain.value_objects.lifecycle import Phase, Stage
 from discover.infra.config.reader import ConfigReader
 
 
@@ -72,6 +72,8 @@ class ReviewRepo(Repo):
         Abstract method for writing data to a file. To be implemented by subclasses.
     """
 
+    __Phase: Phase = Phase.DATAPREP
+
     def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
         """
         Initializes the ReviewRepo with the specified file format and configuration.
@@ -85,8 +87,8 @@ class ReviewRepo(Repo):
         """
         super().__init__()
         self._config_reader = config_reader_cls()
-        self._basedir = self._config_reader.get_config(section="data").basedir
-        self._file_ext = self._config_reader.get_config(section="data").format
+        self._basedir = self._config_reader.get_config(section="workspace")
+        self._file_ext = self._config_reader.get_config(section="dataset").file_ext
 
     def add(
         self,
@@ -227,11 +229,10 @@ class ReviewRepo(Repo):
         str:
             The constructed file path.
         """
-        env = self._config_reader.get_environment()
-
-        file_ext = format.value or self._file_ext
-
-        return os.path.join(self._basedir, env, stage.value, name) + file_ext
+        return (
+            os.path.join(self._basedir, self.__phase.value, stage.value, name)
+            + self._file_ext
+        )
 
     @abstractmethod
     def _read(self, filepath: str) -> Any:

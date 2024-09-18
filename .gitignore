@@ -14,6 +14,7 @@ data/prod/
 data/test/
 data/ref/
 tests/data/
+workspace/
 
 # Cache
 cache/

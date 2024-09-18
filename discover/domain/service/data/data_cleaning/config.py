@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 10:08:16 am                                                 #
-# Modified   : Monday September 16th 2024 01:47:18 pm                                              #
+# Modified   : Tuesday September 17th 2024 09:37:04 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -169,7 +169,7 @@ class DataCleaningTask(Task):
         self._issues_to_remove = issues_to_remove
         self._printer = Printer()
 
-    @announcer
+    @task_announcer
     @profiler
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task, cleaning the DataFrame based on configuration rules.

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 12:55:53 pm                                              #
-# Modified   : Monday September 16th 2024 01:04:56 pm                                              #
+# Modified   : Tuesday September 17th 2024 10:35:04 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -92,7 +92,9 @@ class ThirdDateFormatter:
         """
         if utc:
             dt = self.to_utc_datetime(dt=dt)
-        return dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
+            return dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
+        else:
+            return dt.strftime("%a, %d %b %Y %H:%M:%S")
 
     def to_utc_datetime(self, dt: datetime, local_tz: Optional[str] = None) -> datetime:
         """

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday July 1st 2024 01:26:24 am                                                    #
-# Modified   : Tuesday September 17th 2024 10:52:23 am                                             #
+# Modified   : Tuesday September 17th 2024 12:52:23 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,8 +45,9 @@ class Phase(Enum):
         A human-readable description of the phase (e.g., "Data Preparation Phase", "Analysis Phase").
     """
 
-    DATAPREP = ("data_prep", "Data Preparation Phase")
-    ANALYSIS = ("analysis", "Analysis Phase")
+    DATAPREP = ("00_dataprep", "Data Preparation Phase")
+    ANALYSIS = ("01_analysis", "Analysis Phase")
+    GENAI = ("02_genai", "Generative AI Phase")
 
     def __new__(cls, value: str, description: str) -> Phase:
         """

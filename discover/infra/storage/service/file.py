@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 15th 2024 04:21:04 am                                              #
-# Modified   : Monday September 16th 2024 04:08:13 pm                                              #
+# Modified   : Tuesday September 17th 2024 03:09:23 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -247,7 +247,7 @@ class PandasReader(Reader):
                 f"Reading data: stage={self._config.stage.description}, name={self._config.name}, format={self._config.format.value}"
             )
             data = self._repo.get(
-                stage=self._config.stage,
+                stage=self._config.io_stage,
                 name=self._config.name,
                 format=self._config.format,
             )
@@ -337,10 +337,11 @@ class PandasWriter(Writer):
             )
             self._repo.add(
                 data=data,
-                stage=self._config.stage,
+                stage=self._config.io_stage,
                 name=self._config.name,
                 format=self._config.format,
                 partition_cols=self._config.partition_cols,
+                existing_data_behavior=self._config.existing_data_behavior,
             )
             self._logger.info(f"Successfully wrote data to {self._config.name}.")
         except Exception as e:
@@ -428,7 +429,7 @@ class SparkReader(Reader):
                 f"Reading data: stage={self._config.stage.description}, name={self._config.name}, format={self._config.format.value}"
             )
             data = self._repo.get(
-                stage=self._config.stage,
+                stage=self._config.io_stage,
                 name=self._config.name,
                 format=self._config.format,
             )
@@ -447,7 +448,12 @@ class SparkReader(Reader):
         ValueError
             If the configuration contains invalid or missing values.
         """
-        if not self._config.stage or not self._config.name or not self._config.format:
+        if (
+            not self._config.stage
+            or not self._config.io_stage
+            or not self._config.name
+            or not self._config.format
+        ):
             self._logger.error("Invalid configuration: Missing stage, name, or format.")
             raise ValueError(
                 "Invalid configuration: stage, name, and format are required."
@@ -518,7 +524,7 @@ class SparkWriter(Writer):
             )
             self._repo.add(
                 data=data,
-                stage=self._config.stage,
+                stage=self._config.io_stage,
                 name=self._config.name,
                 format=self._config.format,
             )
@@ -536,7 +542,12 @@ class SparkWriter(Writer):
         ValueError
             If the configuration contains invalid or missing values.
         """
-        if not self._config.stage or not self._config.name or not self._config.format:
+        if (
+            not self._config.stage
+            or not self._config.io_stage
+            or not self._config.name
+            or not self._config.format
+        ):
             self._logger.error("Invalid configuration: Missing stage, name, or format.")
             raise ValueError(
                 "Invalid configuration: stage, name, and format are required."

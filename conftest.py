@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday September 17th 2024 03:11:51 am                                             #
+# Modified   : Tuesday September 17th 2024 10:03:15 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from discover.infra.storage.local.file_io import IOService
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = ["**/test_ingestion*.py"]
+collect_ignore_glob = ["**/test_dqa_*.py"]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -127,7 +127,7 @@ def pandas_df():
     Pytest fixture that reads a CSV file into a pandas DataFrame.
     Modify this to point to the correct CSV file.
     """
-    FILEPATH = "data/test/00_raw/reviews"
+    FILEPATH = "workspace/test/00_dataprep/00_raw/reviews"
     return IOService.read(FILEPATH)
 
 

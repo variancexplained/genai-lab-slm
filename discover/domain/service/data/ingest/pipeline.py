@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 17th 2024 01:36:53 am                                             #
+# Modified   : Tuesday September 17th 2024 09:55:34 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,14 +19,19 @@
 """Stage Module"""
 
 
+from typing import Any
+
 from dotenv import load_dotenv
 from pandarallel import pandarallel
 
 from discover.domain.base.pipeline import Pipeline, PipelineBuilder
-from discover.domain.service.core.data import Reader, Writer
-from discover.domain.service.data.ingest.task import IngestTask
+from discover.domain.service.core.monitor.announcer import pipeline_announcer
+from discover.domain.service.data.ingest.task import (
+    CastDataTypeTask,
+    RemoveNewlinesTask,
+    VerifyEncodingTask,
+)
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.lifecycle import DataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -36,33 +41,44 @@ pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 class IngestPipeline(Pipeline):
     """
-    A pipeline class responsible for handling the ingestion stage of a data processing workflow.
-    This class inherits from the base `Pipeline` and specifically sets the stage to `INGEST`.
+    IngestPipeline orchestrates the data ingestion process by reading from the source, executing
+    a sequence of tasks (such as data transformations or validations), and writing the final data
+    to the target destination. This pipeline is designed to be flexible and extendable, allowing
+    tasks to be added to the pipeline and executed in sequence.
 
-    Attributes:
-    -----------
-    __STAGE : Stage
-        A constant that defines the pipeline's current stage as the ingestion stage.
+    Args:
+        config (ServiceConfig): Configuration object that provides the source reader, target reader,
+            target writer, and other necessary parameters for the pipeline.
 
     Methods:
-    --------
-    __init__(config: ServiceConfig) -> None
-        Initializes the `IngestPipeline` with the provided service configuration and sets the
-        pipeline stage to ingestion.
-
-    Parameters:
-    -----------
-    config : ServiceConfig
-        The configuration object containing necessary settings for the pipeline's execution.
+        _run_pipeline() -> Any:
+            Orchestrates the execution of the pipeline by reading data from the source,
+            running each task in sequence on the data, and writing the processed data to the target.
     """
 
-    __STAGE = DataPrepStage.INGEST
+    def __init__(self, config: ServiceConfig) -> None:
+        super().__init__(config=config)
 
-    def __init__(
-        self,
-        config: ServiceConfig,
-    ) -> None:
-        super().__init__(config=config, stage=self.__STAGE)
+    @pipeline_announcer
+    def _run_pipeline(self) -> Any:
+        """
+        Orchestrates the execution of the data ingestion pipeline.
+
+        This method reads data from the source, executes each task in sequence on the data,
+        and writes the processed data to the target destination. The final processed data is returned.
+
+        Returns:
+        --------
+        Any:
+            The final processed data after executing all tasks in the pipeline.
+        """
+        data = self._source_reader.read()
+
+        for task in self._tasks:
+            data = task.run(data)
+
+        self._target_writer.write(data=data)
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -115,21 +131,13 @@ class IngestPipelineBuilder(PipelineBuilder):
         # Instantiate pipeline
         pipe = self._pipeline_cls(config=self._config)
 
-        # Instantiate Tasks
-        load = Reader(
-            config=self._config.source_data_config,
-            pipeline_context=pipe.context,
-        )
-        save = Writer(
-            config=self._config.target_data_config,
-            pipeline_context=pipe.context,
-            partition_cols=self._config.partition_cols,
-        )
-        ingest = IngestTask(config=self._config, pipeline_context=pipe.context)
+        newlines = RemoveNewlinesTask(config=self._config)
+        encoding = VerifyEncodingTask(config=self._config)
+        dtypes = CastDataTypeTask(config=self._config)
 
         # Add tasks to pipeline
-        pipe.add_task(load)
-        pipe.add_task(ingest)
-        pipe.add_task(save)
+        pipe.add_task(newlines)
+        pipe.add_task(encoding)
+        pipe.add_task(dtypes)
 
         return pipe

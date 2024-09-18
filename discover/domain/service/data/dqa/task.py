@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 17th 2024 01:06:42 am                                             #
+# Modified   : Tuesday September 17th 2024 09:48:07 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,7 +36,7 @@ from tqdm import tqdm
 from discover.core.data import split_dataframe
 from discover.domain.base.task import Task
 from discover.domain.service.core.cache import Cache, cachenow
-from discover.domain.service.core.monitor.announcer import announcer
+from discover.domain.service.core.monitor.announcer import task_announcer
 from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.context import Context
 
@@ -107,7 +107,7 @@ class DetectDuplicateRowTask(DataQualityAssessmentTask):
         self._column_names = column_names
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -147,7 +147,7 @@ class DetectNullValuesTask(DataQualityAssessmentTask):
         )
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -212,7 +212,7 @@ class DetectNonEnglishTask(DataQualityAssessmentTask):
         self._model_filepath = os.getenv("FASTTEXT_MODEL")
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task to detect non-English text in the specified column and add a new column with the results.
@@ -267,7 +267,7 @@ class DetectEmojiTask(DataQualityAssessmentTask):
         self._text_column = text_column
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """
@@ -329,7 +329,7 @@ class DetectSpecialCharacterTask(DataQualityAssessmentTask):
         self._threshold = threshold
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """
@@ -387,7 +387,7 @@ class DetectInvalidDatesTask(DataQualityAssessmentTask):
         )
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """
@@ -435,7 +435,7 @@ class DetectInvalidRatingsTask(DataQualityAssessmentTask):
         )
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """
@@ -514,7 +514,7 @@ class DetectProfanityTask(DataQualityAssessmentTask):
         self._n_jobs = n_jobs
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """
@@ -566,7 +566,7 @@ class DetectEmailTask(DataQualityAssessmentTask):
         self._text_column = text_column
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """Detects special patterns (emails, URLs, phone numbers) in the specified text column
@@ -624,7 +624,7 @@ class DetectURLTask(DataQualityAssessmentTask):
         self._text_column = text_column
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
@@ -682,7 +682,7 @@ class DetectPhoneNumberTask(DataQualityAssessmentTask):
         self._text_column = text_column
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
@@ -740,7 +740,7 @@ class DetectOutliersTask(DataQualityAssessmentTask):
         self._column_name = column_name
 
     @profiler
-    @announcer
+    @task_announcer
     @cachenow
     def run(self, data: pd.DataFrame):
         """Detects outliers in three columns

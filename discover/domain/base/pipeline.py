@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Monday September 16th 2024 04:34:24 pm                                              #
+# Modified   : Tuesday September 17th 2024 04:15:44 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,12 +23,7 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.domain.base.task import Task
-from discover.domain.service.core.cache import Cache
-from discover.domain.service.core.monitor.announcer import announcer
-from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.context import Context
-from discover.domain.value_objects.lifecycle import Stage
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -36,47 +31,39 @@ from discover.domain.value_objects.lifecycle import Stage
 # ------------------------------------------------------------------------------------------------ #
 class Pipeline(ABC):
     """
-    Abstract base class for managing and executing a sequence of tasks.
+    Pipeline serves as an abstract base class for creating data processing pipelines. It manages the configuration,
+    task execution, and data flow between source readers, target readers, and target writers. Subclasses are expected
+    to implement the `_run_pipeline` method to define specific pipeline behavior.
 
-    This class represents a pipeline that organizes a series of tasks,
-    executes them in sequence, and manages the context and configuration
-    throughout the execution process. Subclasses must define the `stage` property
-    to specify the pipeline's stage (e.g., INGEST, TRANSFORM).
+    Args:
+        config (ServiceConfig): The configuration object that provides source/target readers and writers, as well
+            as phase and stage information.
 
-    Attributes:
-    -----------
-    _config : ServiceConfig
-        Configuration object for the pipeline, which provides settings and
-        environment-specific details, including source and target repositories.
-    _context : Context
-        Context object used to track metadata related to the pipeline execution,
-        such as service type, name, stage, and run ID.
-    _tasks : List[Task]
-        A list of tasks that the pipeline will execute in sequence.
-    _logger : logging.Logger
-        Logger instance used for logging pipeline-specific events and messages.
+    Methods:
+        logger() -> logging.Logger:
+            Provides read-only access to the logger instance associated with the pipeline.
+
+        add_task(task: Task):
+            Adds a task to the pipeline's sequence of tasks.
+
+        run() -> Any:
+            Executes the pipeline, running tasks sequentially or reading from the existing target endpoint if it exists.
+
+        read_endpoint() -> Any:
+            Attempts to read the target data from the repository. Returns None if the data doesn't exist or an error occurs.
+
+    Abstract Methods:
+        _run_pipeline() -> Any:
+            Subclasses must implement this method to define the logic for executing the pipeline tasks. This is where
+            the actual processing pipeline is executed.
     """
 
-    def __init__(self, config: ServiceConfig, cache_cls: type[Cache] = Cache):
-        """
-        Initializes the pipeline with the provided configuration and context.
-
-        The pipeline tracks the context and configuration to manage the execution
-        of tasks, and it automatically sets the service type, name, and stage.
-
-        Parameters:
-        -----------
-        config : ServiceConfig
-            Configuration object containing environment details, including the source and target repositories.
-        context : Context
-            Context object used to track execution metadata, including service type, name, stage, and run ID.
-        """
+    def __init__(self, config: ServiceConfig):
         self._config = config
-        self._stage = config.stage
-        self._cache = cache_cls(name=self._config.cache_name)
-        self._context = Context(
-            process_type="Pipeline", process_name=self.name, stage=self.stage
-        )
+        self._source_reader = self._config.source_reader
+        self._target_reader = self._config.target_reader
+        self._target_writer = self._config.target_writer
+
         self._tasks = []
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -92,46 +79,6 @@ class Pipeline(ABC):
         """
         return self._logger
 
-    @property
-    def name(self) -> str:
-        """
-        Returns the name of the pipeline, which is the class name of the pipeline.
-
-        Returns:
-        --------
-        str:
-            The name of the class implementing the pipeline.
-        """
-        return self.__class__.__name__
-
-    @property
-    def context(self) -> Context:
-        """
-        Provides read-only access to the context object for this pipeline.
-
-        The context tracks metadata such as service type, name, stage, and run ID.
-
-        Returns:
-        --------
-        Context:
-            The context object for this pipeline.
-        """
-        return self._context
-
-    @property
-    def stage(self) -> Stage:
-        """
-        Abstract property that must be implemented by subclasses to define the pipeline's current stage.
-
-        The stage represents the lifecycle stage of the pipeline, such as INGEST, TRANSFORM, or LOAD.
-
-        Returns:
-        --------
-        Stage:
-            The current stage of the pipeline.
-        """
-        return self._stage
-
     def add_task(self, task: Task):
         """
         Adds a task to the pipeline's sequence of tasks.
@@ -142,9 +89,10 @@ class Pipeline(ABC):
             A task object to add to the pipeline for execution.
         """
         self._tasks.append(task)
-        self._logger.info(f"Added {task.name} to the {self.name} pipeline.")
+        self._logger.info(
+            f"Added {task.name} to the {self.__class__.__name__} pipeline."
+        )
 
-    @profiler
     def run(self) -> Any:
         """
         Executes the pipeline tasks in sequence.
@@ -158,30 +106,16 @@ class Pipeline(ABC):
         Any:
             The result of the pipeline execution or the data from the existing endpoint.
         """
+        data = None
 
         if self._config.force:
-            return self._run_pipeline()
-        elif self.endpoint_exists():
-            return self.read_endpoint()
+            data = self._run_pipeline()
         else:
-            return self._run_pipeline()
+            data = self.read_endpoint()
+            if data is None or len(data) == 0:
+                data = self._run_pipeline()
 
-    def endpoint_exists(self) -> bool:
-        """
-        Checks if the target endpoint for the pipeline already exists.
-
-        Returns:
-        --------
-        bool:
-            True if the target data already exists, False otherwise.
-        """
-        self._logger.debug(f"Checking if endpoint for {self.name} exists.")
-        repo = self._config.target_data_config.repo
-
-        return repo.exists(
-            stage=self._config.target_data_config.stage,
-            name=self._config.target_data_config.name,
-        )
+        return data
 
     def read_endpoint(self) -> Any:
         """
@@ -192,31 +126,27 @@ class Pipeline(ABC):
         Returns:
         --------
         Any:
-            The target data from the repository.
+            The target data from the repository, or None if an error occurs or no data exists.
         """
-        self._logger.info(f"Endpoint {self.name} exists. Returning data from endpoint.")
-        repo = self._config.target_data_config.repo
-        return repo.get(
-            stage=self._config.target_data_config.stage,
-            name=self._config.target_data_config.name,
-        )
+        data = None
+        try:
+            data = self._target_reader.read()
+        except Exception:
+            pass
+        return data
 
-    @announcer
+    @abstractmethod
     def _run_pipeline(self) -> Any:
         """
-        Runs the pipeline by executing all the tasks in sequence.
-
-        Each task is run in order, passing the result of one task to the next.
+        Abstract method for running the pipeline. Subclasses must implement this method to define the actual
+        pipeline execution process.
 
         Returns:
         --------
         Any:
-            The result of the final task in the pipeline.
+            The result of the pipeline execution, typically the final output after all tasks have been completed.
         """
-        data = None
-        for task in self._tasks:
-            data = task.run(data)
-        return data
+        pass
 
 
 # ------------------------------------------------------------------------------------------------ #

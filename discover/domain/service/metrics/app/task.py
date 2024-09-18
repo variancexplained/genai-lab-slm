@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 07:21:26 pm                                                   #
-# Modified   : Monday September 16th 2024 01:47:20 pm                                              #
+# Modified   : Tuesday September 17th 2024 09:37:16 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -215,7 +215,7 @@ class CategoryMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @announcer
+    @task_announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the category level.
@@ -300,7 +300,7 @@ class AuthorMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @announcer
+    @task_announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the author level.
@@ -384,7 +384,7 @@ class AppMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @announcer
+    @task_announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the app level.
@@ -465,7 +465,7 @@ class CategoryAuthorMetricsTask(MetricsTask):
     def __init__(self) -> None:
         super().__init__()
 
-    @announcer
+    @task_announcer
     @profiler
     def run(self, data: DataFrame) -> DataFrame:
         """Aggregates and creates metrics at the category/author level.

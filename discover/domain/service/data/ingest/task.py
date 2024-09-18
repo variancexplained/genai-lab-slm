@@ -11,23 +11,21 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 17th 2024 01:39:00 am                                             #
+# Modified   : Tuesday September 17th 2024 04:44:46 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Ingest Task Module"""
-from typing import Any, Dict
 
 import pandas as pd
 from dotenv import load_dotenv
 from pandarallel import pandarallel
 
 from discover.domain.base.task import Task
-from discover.domain.service.core.cache import cachenow
+from discover.domain.service.core.monitor.announcer import task_announcer
 from discover.domain.service.core.monitor.profiler import profiler
 from discover.domain.value_objects.config import ServiceConfig
-from discover.domain.value_objects.context import Context
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -35,121 +33,112 @@ pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
 
 
 # ------------------------------------------------------------------------------------------------ #
-class IngestTask(Task):
+class RemoveNewlinesTask(Task):
     """
-    A task class responsible for ingesting and preprocessing data as part of a pipeline. This task performs
-    a series of transformations on the data, such as removing newlines, verifying text encoding, casting
-    datatypes, and trimming unnecessary data from the dataset.
+    RemoveNewlinesTask is responsible for removing newline characters from the specified text column
+    in a DataFrame. It replaces all newline characters (`\n`) with spaces, ensuring the text is in a single line.
 
-    Attributes:
-    -----------
-    _config : ServiceConfig
-        Configuration object containing settings for the ingest task, including data columns, datatypes,
-        and text column information.
-
-    pipeline_context : Context
-        Context object that tracks task execution metadata such as the current stage and service type.
+    Args:
+        config (ServiceConfig): Configuration object that provides:
+            - `text_column`: The name of the column containing text where newlines need to be removed.
 
     Methods:
-    --------
-    __init__(config: ServiceConfig, pipeline_context: Context) -> None
-        Initializes the IngestTask with the given configuration and pipeline context.
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Executes the task of removing newline characters from the specified text column in the DataFrame.
 
-    run(data: Any) -> Any
-        Executes the data preprocessing steps such as removing newlines, verifying encoding,
-        casting datatypes, and trimming the dataset.
+            Parameters:
+            -----------
+            data : pd.DataFrame
+                The input DataFrame containing the text data.
 
-    _remove_newlines(data: pd.DataFrame) -> pd.DataFrame
-        Removes newline characters from the specified text column in the dataset.
-
-    _verify_encoding(data: pd.DataFrame) -> pd.DataFrame
-        Verifies and normalizes the encoding of the specified text column, re-encoding it if necessary.
-
-    _cast_datatypes(data: pd.DataFrame, datatypes: Dict[str, type]) -> pd.DataFrame
-        Casts columns to their expected data types as defined in the configuration.
-
-    _trim_dataset(data: pd.DataFrame) -> pd.DataFrame
-        Removes unnecessary categories from the dataset, specifically trimming the "Shopping" category.
+            Returns:
+            --------
+            pd.DataFrame:
+                The updated DataFrame with newline characters replaced by spaces in the specified text column.
     """
 
-    def __init__(self, config: ServiceConfig, pipeline_context: Context):
-        """
-        Initializes the IngestTask with the given configuration and context.
-
-        Parameters:
-        -----------
-        config : ServiceConfig
-            Configuration object containing settings such as data columns and datatypes.
-        context : Context
-            Context object used to track task execution metadata such as stage and service type.
-        """
-        super().__init__(config=config, pipeline_context=pipeline_context)
+    def __init__(self, config: ServiceConfig) -> None:
+        super().__init__(config=config)
 
     @profiler
-    @cachenow
-    def run(self, data: Any):
+    @task_announcer
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        Executes the preprocessing of text data by removing newlines, verifying encoding,
-        casting datatypes, and trimming the dataset.
-
-        Parameters:
-        -----------
-        data : Any
-            The input data to be preprocessed.
-
-        Returns:
-        --------
-        Any:
-            The preprocessed data after performing all transformations.
-        """
-        super().run(data=data)
-
-        data = self._remove_newlines(data=data)
-        data = self._verify_encoding(data=data)
-        data = self._cast_datatypes(data=data, datatypes=self._config.datatypes)
-        data = self._trim_dataset(data=data)
-
-        return data
-
-    def _remove_newlines(self, data):
-        """
-        Removes newline characters from the specified text column.
+        Removes newline characters from the specified text column in the DataFrame by replacing them with spaces.
 
         Parameters:
         -----------
         data : pd.DataFrame
-            The input data containing the text column.
+            The input DataFrame that contains the text column with newline characters.
 
         Returns:
         --------
         pd.DataFrame:
-            The data with newlines removed from the text column.
+            The updated DataFrame with newlines replaced by spaces in the specified text column.
         """
         data[self._config.text_column] = data[self._config.text_column].str.replace(
             "\n", " "
         )
-        self._logger.debug("Removed newlines")
         return data
 
-    def _verify_encoding(self, data):
-        """
-        Verifies and normalizes the encoding of the specified text column.
 
-        A sample of the data is checked for encoding issues. If encoding issues are
-        detected, the entire column is re-encoded. Otherwise, the encoding is skipped.
+# ------------------------------------------------------------------------------------------------ #
+class VerifyEncodingTask(Task):
+    """
+    VerifyEncodingTask is responsible for verifying and re-encoding text data in a specified column
+    of a DataFrame to ensure it is properly encoded in UTF-8. It samples the data to check for encoding issues,
+    and if issues are found, it re-encodes the entire column to handle potential errors.
+
+    Args:
+        config (ServiceConfig): Configuration object that provides:
+            - `text_column`: The name of the column containing text to be verified for encoding.
+            - `encoding_sample`: The fraction of the dataset to sample for encoding verification.
+            - `random_state`: The random seed for reproducibility of the sampling process.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Verifies the UTF-8 encoding of the text data in the specified column. If encoding issues
+            are detected in the sample, the entire column is re-encoded to handle these issues.
+
+            Parameters:
+            -----------
+            data : pd.DataFrame
+                The input DataFrame that contains the text data to be verified and potentially re-encoded.
+
+            Returns:
+            --------
+            pd.DataFrame:
+                The updated DataFrame with the text column re-encoded if necessary.
+    """
+
+    def __init__(self, config: ServiceConfig) -> None:
+        super().__init__(config=config)
+
+    @profiler
+    @task_announcer
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Verifies the UTF-8 encoding of the text column in the DataFrame. If encoding issues are found in the sample,
+        the entire column is re-encoded to fix the issues.
 
         Parameters:
         -----------
         data : pd.DataFrame
-            The input data containing the text column.
+            The input DataFrame that contains the text data to be checked and potentially re-encoded.
 
         Returns:
         --------
         pd.DataFrame:
-            The data with normalized encoding in the text column.
+            The updated DataFrame with re-encoded text, if encoding issues were found.
+
+        Raises:
+        -------
+        UnicodeEncodeError:
+            If an encoding issue is detected during sample verification or re-encoding.
         """
 
         def check_sample_encoding(sample) -> bool:
+            """Checks if the sampled data has any UTF-8 encoding issues."""
             try:
                 sample.parallel_apply(lambda x: x.encode("utf-8").decode("utf-8"))
                 return False  # No encoding issues found
@@ -157,7 +146,7 @@ class IngestTask(Task):
                 return True  # Encoding issues found
 
         def re_encode_text(text):
-            """Re-encodes text to handle encoding issues."""
+            """Re-encodes a text string to UTF-8, handling encoding issues."""
             try:
                 return text.encode("utf-8").decode("utf-8")
             except UnicodeEncodeError:
@@ -180,51 +169,55 @@ class IngestTask(Task):
             )
         return data
 
-    def _cast_datatypes(
-        self, data: pd.DataFrame, datatypes: Dict[str, type]
-    ) -> pd.DataFrame:
+
+# ------------------------------------------------------------------------------------------------ #
+class CastDataTypeTask(Task):
+    """
+    CastDataTypeTask is responsible for casting the data types of specified columns in a DataFrame
+    based on the configuration provided. It iterates through the defined column-datatype mappings
+    and ensures that the specified columns in the DataFrame are cast to the desired types.
+
+    Args:
+        config (ServiceConfig): Configuration object that contains the datatype mappings.
+            The configuration's `datatypes` attribute should provide a dictionary where the keys
+            are column names and the values are the target data types.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Executes the task of casting the data types of specified columns in the DataFrame.
+            If a column specified in the configuration is not found in the DataFrame, a ValueError
+            is raised and an exception is logged.
+    """
+
+    def __init__(self, config: ServiceConfig) -> None:
+        super().__init__(config=config)
+
+    @profiler
+    @task_announcer
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        Casts columns to the designated data types as specified in the configuration.
+        Casts the data types of specified columns in the input DataFrame based on the configuration.
 
         Parameters:
         -----------
         data : pd.DataFrame
-            The input data containing columns to be cast.
-        datatypes : dict
-            A dictionary mapping column names to their expected data types.
+            The DataFrame that contains the data whose columns need to be cast to different data types.
 
         Returns:
         --------
         pd.DataFrame:
-            The data with columns cast to the specified data types.
+            The updated DataFrame with columns cast to their new data types.
+
+        Raises:
+        -------
+        ValueError:
+            Raised if a column specified in the configuration is not found in the DataFrame.
         """
-        self._logger.debug("Cast data types")
-        for column, dtype in datatypes.items():
+        for column, dtype in self._config.datatypes.items():
             if column in data.columns:
                 data[column] = data[column].astype(dtype)
             else:
                 msg = f"Column {column} not found in DataFrame"
                 self._logger.exception(msg)
                 raise ValueError(msg)
-
-        return data
-
-    def _trim_dataset(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Removes the "Shopping" category from the dataset and drops unused categories.
-
-        Parameters:
-        -----------
-        data : pd.DataFrame
-            The input data containing a "category" column.
-
-        Returns:
-        --------
-        pd.DataFrame:
-            The trimmed dataset with the "Shopping" category removed.
-        """
-        # We only have about 9 reviews in this category.
-        data = data.loc[data["category"] != "Shopping"]
-        data["category"] = data["category"].cat.remove_unused_categories()
-        self._logger.debug("Trimmed dataset of unused categories.")
         return data
