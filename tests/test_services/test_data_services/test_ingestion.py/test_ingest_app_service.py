@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 11:23:02 pm                                              #
-# Modified   : Saturday September 14th 2024 05:18:15 pm                                            #
+# Modified   : Wednesday September 18th 2024 02:59:15 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from discover.application.service.data.ingest import DataIngestionApplicationService
+from discover.application.service.data.ingest import IngestService
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -69,7 +69,7 @@ class TestIngest:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        ingest = DataIngestionApplicationService(config=data_ingestion_service_config)
+        ingest = IngestService(config=data_ingestion_service_config)
         data = ingest.run()
         assert isinstance(data, pd.DataFrame)
         logger.info(data.head())

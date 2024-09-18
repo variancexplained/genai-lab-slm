@@ -11,30 +11,23 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:30:37 pm                                            #
-# Modified   : Tuesday September 17th 2024 10:58:16 pm                                             #
+# Modified   : Wednesday September 18th 2024 03:24:34 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Key Value Store Module"""
-import logging
 import os
 import shelve
 import shutil
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Optional, Union
 
 import pandas as pd
 import pyspark
 
-from discover.core.data import DataClass
+from discover.application.ops.cache import Cache, CacheRegistration, CacheState
 from discover.core.date_time import ThirdDateFormatter
-from discover.domain.service.core.cache import Cache
-from discover.domain.value_objects.cache import CacheState
-from discover.domain.value_objects.lifecycle import Stage
-from discover.infra.config.reader import ConfigReader
-from discover.infra.storage.local.file_io import IOService
 from discover.infra.utils.file_utils.compress import TarGzHandler
 
 # ------------------------------------------------------------------------------------------------ #
@@ -43,48 +36,30 @@ dt4mtr = ThirdDateFormatter()
 
 
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
-class CacheRegistration(DataClass):
-    stage: Stage
-    key: str
-    filepath: str
-    dt_added: datetime
-    dt_accessed: Optional[datetime] = None  # Datetime for cache hits.
-    dt_modified: Optional[datetime] = (
-        None  # This is for state changes, i.e. expiration, eviction.
-    )
-    n_accessed: int = 0
-    state: CacheState = CacheState.ACTIVE
-
-
+#                                  DISCOVER CACHE                                                  #
 # ------------------------------------------------------------------------------------------------ #
 class DiscoverCache(Cache):
-    """ """
+    """
+    DiscoverCache is a specialized cache system that handles key-value storage, retrieval, and management.
+    It supports item registration, expiration, eviction, and data archiving. The cache uses a file-based
+    registry and directories for persisting cache data.
 
-    def __init__(
-        self,
-        stage: Stage,
-        config_reader_cls: type[ConfigReader] = ConfigReader,
-        io_cls: type[IOService] = IOService,
-    ) -> None:
-        super().__init__(stage=stage, config_reader_cls=config_reader_cls)
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self._io = io_cls()
+    Args:
+        stage (Stage): Defines the cache's operational context (e.g., development, production).
+        config_reader_cls (type[ConfigReader], optional): Class responsible for reading configuration settings.
+            Defaults to ConfigReader.
+        io_cls (type[IOService], optional): Class responsible for handling input/output operations (e.g., file reading/writing).
+            Defaults to IOService.
 
-        # Establish cache file structure
-        self._registry_filepath = os.path.join(self._config.basedir, "registry")
-        self._data_directory = os.path.join(self._config.basedir, "data")
-        self._archive_directory = os.path.join(self._config.basedir, "archive")
-
-        self._validate_cache()
+    """
 
     def __len__(self) -> int:
-        """Returns the number of keys in the Cache."""
+        """Returns the number of keys in the cache registry."""
         with shelve.open(self._registry_filepath) as kvs:
             return len(kvs)
 
     def __iter__(self):
-        """Returns an iterator for iterating through keys in the KVS."""
+        """Returns an iterator for iterating through keys in the cache registry."""
         self._kvs = shelve.open(self._registry_filepath)
         self._iter_keys = iter(self._kvs.keys())
         return self
@@ -99,25 +74,37 @@ class DiscoverCache(Cache):
             raise
 
     def add_item(self, key: str, data: Any, **kwargs) -> None:
-        """Persists the object in the Cache.
+        """
+        Adds a new item to the cache, replacing it if the key already exists.
 
-        If it already exists, the user is prompted to confirm replacement.
+        If the key already exists, the existing item is evicted before adding the new item.
 
         Args:
-            key (str): Key for the entry.
-            value (Any): Value to be stored.
+            key (str): The key for the cache entry.
+            data (Any): The value/data to be stored in the cache.
 
         Raises:
-            FileExistsError: If the key already exists.
+            FileExistsError: If the key already exists and cannot be evicted.
         """
-
         if self.exists(key=key):
             self.evict(key=key)
-
         self._admit(key=key, data=data, **kwargs)
         self._logger.debug(f"Added {key} to {self._stage.description} Cache.")
 
     def exists(self, key: str) -> bool:
+        """
+        Checks whether a key exists in the cache.
+
+        Args:
+            key (str): The key to check.
+
+        Returns:
+            bool: True if the key exists, False otherwise.
+
+        Raises:
+            FileNotFoundError: If the registry file is not found.
+            Exception: If there is an unknown issue while reading the registry.
+        """
         try:
             with shelve.open(self._registry_filepath) as registry:
                 return key in registry.keys()
@@ -128,21 +115,44 @@ class DiscoverCache(Cache):
             self._logger.exception(msg)
             raise
         except Exception as e:
-            msg = f"Unknown exception occurred while reading registry for the {self._stage.description} cache.\n{e}"
+            msg = f"Unknown error occurred while reading registry for {self._stage.description} cache.\n{e}"
             self._logger.exception(msg)
             raise
 
     def get_item(self, key: str) -> Any:
+        """
+        Retrieves an item from the cache based on the provided key.
+
+        Args:
+            key (str): The key for the cache entry.
+
+        Returns:
+            Any: The data associated with the key, or None if the key does not exist.
+        """
         registration = self._read_registry(key=key)
         if registration:
             return self._read_data(registration=registration)
-        else:
-            return None
+        return None
 
     def get_registration(self, key: str) -> CacheRegistration:
+        """
+        Retrieves the registration metadata for a cache entry.
+
+        Args:
+            key (str): The key for the cache entry.
+
+        Returns:
+            CacheRegistration: The metadata associated with the key.
+        """
         return self._read_registry(key=key)
 
     def evict(self, key: str, **kwargs) -> None:
+        """
+        Evicts a cache entry, archives the associated data, and updates the cache registry.
+
+        Args:
+            key (str): The key to be evicted.
+        """
         registration = self._read_registry(key=key)
         archive_filepath = self._get_archive_filepath(key)
         tgz.compress_directory(
@@ -153,11 +163,16 @@ class DiscoverCache(Cache):
         registration.state = CacheState.EVICTED
         registration.dt_modified = datetime.now()
         self._write_registration(registration=registration)
-
         msg = f"Key {key} has been evicted from the {self._stage.description} cache."
         self._logger.info(msg)
 
     def evict_expired(self) -> None:
+        """
+        Evicts all expired cache entries.
+
+        Raises:
+            Exception: If an unknown error occurs during the eviction process.
+        """
         try:
             with shelve.open(self._registry_filepath) as kvs:
                 for key, registration in kvs.items():
@@ -169,10 +184,11 @@ class DiscoverCache(Cache):
             raise
 
     def reset(self) -> None:
-        """Resets the KVS by clearing all entries.
+        """
+        Resets the cache by clearing all entries after a confirmation prompt.
 
         Raises:
-            Exception: For any issues during the reset operation.
+            Exception: If an error occurs during the reset operation.
         """
         confirmation = input(
             f"Are you sure you want to reset the {self._stage.description} cache? This action cannot be undone. (yes/no): "
@@ -180,7 +196,6 @@ class DiscoverCache(Cache):
         if confirmation.lower() != "yes":
             print("Reset operation aborted.")
             return
-
         try:
             with shelve.open(self._registry_filepath) as kvs:
                 for key, registration in kvs.items():
@@ -193,6 +208,15 @@ class DiscoverCache(Cache):
             raise
 
     def check_expiry(self) -> None:
+        """
+        Checks and updates the expiration status of cache items based on the TTL (Time-to-Live).
+
+        If an item has expired, it updates its state to EXPIRED.
+
+        Raises:
+            FileNotFoundError: If the cache registry file is not found.
+            Exception: If an error occurs during the expiry check process.
+        """
         try:
             with shelve.open(self._registry_filepath) as kvs:
                 for key, registration in kvs.items():
@@ -213,51 +237,69 @@ class DiscoverCache(Cache):
             raise
 
     def _admit(self, key: str, data: Any, **kwargs) -> None:
+        """
+        Admits a new cache item by registering it and persisting its data.
+
+        Args:
+            key (str): The key to register and store data under.
+            data (Any): The data to be stored.
+        """
         registration = self._register(key=key)
         self._write_registration(registration=registration)
         self._write_data(registration=registration, data=data, **kwargs)
 
     def _read_registry(self, key: str) -> Optional[CacheRegistration]:
-        """Reads an object from the Cache.
+        """
+        Reads an entry's metadata (registration) from the cache registry.
 
         Args:
-            key (str): Key for the entry.
+            key (str): The key for the cache entry.
 
         Returns:
-            Any: The value associated with the key.
+            CacheRegistration: The metadata associated with the key, or None if the key does not exist.
 
         Raises:
-            KeyError: If the key does not exist.
+            KeyError: If the key does not exist in the cache registry.
         """
         try:
             with shelve.open(self._registry_filepath) as kvs:
                 registration = kvs[key]
                 if registration.state == CacheState.EVICTED:
-                    msg = f"Item key {key} was evicted from {self._stage.description} cache on {dt4mtr.to_HTTP_format(registration.dt_modified)}"
+                    msg = f"Item key {key} was evicted from {self._stage.description} cache on {registration.dt_modified}"
                     self._logger.warning(msg)
                     return None
-                else:
-                    return registration
-
+                return registration
         except KeyError as ke:
             msg = f"No key {key} found in the {self._stage.description} cache.\n{ke}"
             self._logger.exception(msg)
             raise
 
     def _write_registration(self, registration: CacheRegistration) -> None:
+        """
+        Writes or updates a cache entry's registration in the registry.
+
+        Args:
+            registration (CacheRegistration): The cache entry metadata to write.
+        """
         try:
             with shelve.open(self._registry_filepath) as registry:
                 registry[registration.key] = registration
         except FileNotFoundError as fnfe:
-            msg = f"Cache Corruption Error. Registery not found for {self._stage.description} cache.\n{fnfe}"
+            msg = f"Cache Corruption Error. Registry not found for {self._stage.description} cache.\n{fnfe}"
             self._logger.exception(msg)
             raise
         except Exception as e:
-            msg = f"Unknown error occured while updating registry key: {registration.key} in the {self._stage.description} cache.\n{e}"
+            msg = f"Unknown error occurred while updating registry key: {registration.key} in the {self._stage.description} cache.\n{e}"
             self._logger.exception(msg)
             raise
 
     def _remove_registration(self, key: str) -> None:
+        """
+        Removes a cache entry's registration from the registry.
+
+        Args:
+            key (str): The key to remove from the registry.
+        """
         try:
             with shelve.open(self._registry_filepath) as kvs:
                 del kvs[key]
@@ -268,6 +310,20 @@ class DiscoverCache(Cache):
     def _read_data(
         self, registration: CacheRegistration, **kwargs
     ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
+        """
+        Reads and returns the data associated with a cache registration.
+
+        Args:
+            registration (CacheRegistration): The cache registration metadata.
+            **kwargs: Additional parameters for the I/O operation.
+
+        Returns:
+            Union[pd.DataFrame, pyspark.sql.DataFrame]: The data read from the cache.
+
+        Raises:
+            FileNotFoundError: If the file associated with the key is not found.
+            Exception: For other unknown errors.
+        """
         try:
             data = self._io.read(filepath=registration.filepath, **kwargs)
             registration.dt_accessed = datetime.now()
@@ -279,7 +335,7 @@ class DiscoverCache(Cache):
             self._logger.exception(msg)
             raise
         except Exception as e:
-            msg = f"Unknown error occured while reading key: {registration.key} from the cache.\n{e}"
+            msg = f"Unknown error occurred while reading key: {registration.key} from the cache.\n{e}"
             self._logger.exception(msg)
             raise
 
@@ -289,14 +345,31 @@ class DiscoverCache(Cache):
         data: Union[pd.DataFrame, pyspark.sql.DataFrame],
         **kwargs,
     ) -> None:
+        """
+        Writes the cache data to disk for a given registration.
+
+        Args:
+            registration (CacheRegistration): The cache registration metadata.
+            data (Union[pd.DataFrame, pyspark.sql.DataFrame]): The data to be written.
+            **kwargs: Additional parameters for the I/O operation.
+
+        Raises:
+            Exception: If an unknown error occurs while writing the data.
+        """
         try:
             self._io.write(filepath=registration.filepath, data=data, **kwargs)
         except Exception as e:
-            msg = f"Unknown error occured while writing key: {registration.key} to the {self._stage.description} cache.\n{e}"
+            msg = f"Unknown error occurred while writing key: {registration.key} to the {self._stage.description} cache.\n{e}"
             self._logger.exception(msg)
             raise
 
-    def _remove_data(self, registration: CacheRegistration) -> str:
+    def _remove_data(self, registration: CacheRegistration) -> None:
+        """
+        Removes the data associated with a cache registration from disk.
+
+        Args:
+            registration (CacheRegistration): The cache registration metadata.
+        """
         if os.path.isdir(registration.filepath):
             shutil.rmtree(registration.filepath)
         else:
@@ -306,25 +379,21 @@ class DiscoverCache(Cache):
                 pass
 
     def _get_data_filepath(self, key: str) -> str:
-        """ """
+        """Constructs and returns the filepath where a cache item’s data is stored."""
         return os.path.join(self._data_directory, key) + ""
 
     def _get_archive_filepath(self, key: str) -> str:
-        """ """
+        """Constructs and returns the filepath where a cache item’s archived data will be stored."""
         return os.path.join(self._archive_directory, key) + ".tar.gz"
 
     def _validate_cache(self) -> None:
-        """Ensures cache exists and is accessible.
-
-        Cache is comprised of:
-        - CacheRegistry
-        - Data Directory
-        - Archive Directory
-
-        This method ensures that these components exist and
-        are accessible.
         """
-        # Cache Registry
+        Ensures the cache exists and is accessible.
+
+        This method ensures that:
+        - The cache registry file exists and can be accessed.
+        - The data and archive directories exist.
+        """
         os.makedirs(os.path.dirname(self._registry_filepath), exist_ok=True)
         try:
             with shelve.open(self._registry_filepath):
@@ -339,13 +408,19 @@ class DiscoverCache(Cache):
                 f"Exception occurred while reading {self._registry_filepath}.\n{e}"
             )
             raise
-
-        # Data Directory
         os.makedirs(self._data_directory, exist_ok=True)
-        # Archive Directory
         os.makedirs(self._archive_directory, exist_ok=True)
 
     def _register(self, key: str) -> CacheRegistration:
+        """
+        Registers a new cache item with metadata and an active state.
+
+        Args:
+            key (str): The key for the cache entry.
+
+        Returns:
+            CacheRegistration: The newly created cache registration.
+        """
         now = datetime.now()
         return CacheRegistration(
             stage=self._stage,

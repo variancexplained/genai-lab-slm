@@ -4,61 +4,49 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/domain/service/data/ingest/service.py                                     #
+# Filename   : /discover/application/service/data/ingest/ingest.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday September 14th 2024 03:22:51 am                                            #
-# Modified   : Monday September 16th 2024 12:27:23 pm                                              #
+# Created    : Wednesday September 18th 2024 12:25:12 am                                           #
+# Modified   : Wednesday September 18th 2024 03:00:15 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from typing import Any
 
-from discover.domain.base.service import DomainService
-from discover.domain.service.data.ingest.pipeline import IngestPipelineBuilder
-from discover.domain.value_objects.config import ServiceConfig
+from typing import Any, Optional
+
+from discover.application.service.base.service import ApplicationService
+from discover.application.service.data.ingest.config import DataIngestionServiceConfig
+from discover.application.service.data.ingest.pipeline import IngestPipelineBuilder
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                           DATA INGESTION DOMAIN SERVICE                                          #
+#                         DATA INGESTION APPLICATION SERVICE                                       #
 # ------------------------------------------------------------------------------------------------ #
-class DataIngestionDomainService(DomainService):
+class IngestService(ApplicationService):
     """
-    Domain service responsible for executing the data ingestion process.
+    IngestService is an application service responsible for coordinating the execution
+    of the data ingestion process. It uses a domain service to perform the ingestion and processing of the data.
 
-    This service orchestrates the creation and execution of the ingestion pipeline,
-    using the provided configuration to set up the necessary components.
+    Args:
+        config (DataIngestionServiceConfig): Configuration for the data ingestion service. Defaults to
+            a new instance of DataIngestionServiceConfig.
 
-    Methods:
-    --------
-    __init__(config: DataIngestionServiceConfig) -> None
-        Initializes the domain service with the provided configuration.
-
-    run() -> Any
-        Executes the data ingestion process by constructing and running the ingestion pipeline.
-
-        Returns:
-        --------
-        Any:
-            The result of the pipeline execution.
+    Attributes:
+        _domain_service (DataIngestionDomainService): The domain service that performs the actual data ingestion
+            logic based on the provided configuration.
     """
 
     def __init__(
         self,
-        config: ServiceConfig,
+        config: Optional[DataIngestionServiceConfig] = None,
     ) -> None:
-        """
-        Initializes the DataIngestionDomainService with the provided configuration.
-
-        Parameters:
-        -----------
-        config : DataIngestionServiceConfig
-            Configuration object for setting up the data ingestion process.
-        """
+        """"""
+        self._config = DataIngestionServiceConfig.create()
         super().__init__(config=config)
 
     def run(self) -> Any:

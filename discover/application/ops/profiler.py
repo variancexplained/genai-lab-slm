@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/domain/service/core/monitor/profiler.py                                   #
+# Filename   : /discover/application/ops/profiler.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Tuesday September 17th 2024 11:00:31 am                                             #
+# Modified   : Wednesday September 18th 2024 03:24:34 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ from typing import Callable
 
 import psutil  # For gathering system resource usage
 
+from discover.application.ops.profile import Profile
 from discover.container import DiscoverContainer
-from discover.domain.service.core.monitor.profile import Profile
 
 # ------------------------------------------------------------------------------------------------ #
 # Initialize the repository once at the module level

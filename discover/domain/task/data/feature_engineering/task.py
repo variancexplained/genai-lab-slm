@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data/feature_engineering/task.py                           #
+# Filename   : /discover/domain/task/data/feature_engineering/task.py                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday May 30th 2024 12:47:36 pm                                                  #
-# Modified   : Tuesday September 17th 2024 09:55:58 pm                                             #
+# Modified   : Wednesday September 18th 2024 02:16:40 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,7 +33,7 @@ from discover.application.pipeline import Pipeline, PipelineBuilder, ServiceConf
 from discover.data_prep import profiler
 from discover.data_prep.io import Reader, WriteTask
 from discover.domain.base.task import Task
-from discover.domain.service.core.monitor.announcer import task_announcer
+from discover.domain.task.core.monitor.announcer import task_announcer
 from discover.utils.base import Reader, Writer
 from discover.utils.cast import CastPandas
 from discover.utils.io import PandasReader, PandasWriter

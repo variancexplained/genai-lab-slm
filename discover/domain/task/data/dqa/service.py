@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/domain/service/data/dqa/service.py                                        #
+# Filename   : /discover/domain/task/data/dqa/service.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:04:14 pm                                            #
-# Modified   : Monday September 16th 2024 04:10:31 pm                                              #
+# Modified   : Wednesday September 18th 2024 02:41:35 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,9 +19,9 @@
 import logging
 from typing import Any, Type
 
+from discover.application.service.io.config import ServiceConfig
 from discover.domain.base.service import DomainService
-from discover.domain.service.data.dqa.pipeline import DQAPipelineBuilder
-from discover.domain.value_objects.config import ServiceConfig
+from discover.domain.task.data.dqa.pipeline import DQAPipelineBuilder
 
 
 # ------------------------------------------------------------------------------------------------ #

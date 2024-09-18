@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 07:54:12 pm                                            #
-# Modified   : Tuesday September 17th 2024 09:57:32 pm                                             #
+# Modified   : Wednesday September 18th 2024 03:24:34 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,11 +23,11 @@ import logging
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from discover.application.base.service import ApplicationService
-from discover.domain.service.core.cache import Cache
-from discover.domain.service.core.data import Reader, Writer
-from discover.domain.service.data.dqa.service import DQADomainService
-from discover.domain.value_objects.config import ServiceConfig
+from discover.application.ops.cache import Cache
+from discover.application.service.base.service import ApplicationService
+from discover.application.service.io.config import ServiceConfig
+from discover.domain.task.core.data import Reader, Writer
+from discover.domain.task.data.dqa.service import DQADomainService
 from discover.domain.value_objects.lifecycle import DataPrepStage, Phase, Stage
 from discover.infra.storage.service.file import FileService
 

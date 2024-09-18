@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 02:29:44 pm                                              #
-# Modified   : Monday September 16th 2024 02:33:48 pm                                              #
+# Modified   : Wednesday September 18th 2024 02:29:02 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime
 import pytest
 
 from discover.application.service.data.dqa import DQAApplicationService
-from discover.infra.storage.local.file_io import IOService
+from discover.infra.storage.local.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

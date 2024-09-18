@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_services/test_data_services/test_ingestion.py/test_ingest_domain_service.py #
+# Filename   : /tests/test_domain/test_ingest_domain_service.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 11:23:02 pm                                              #
-# Modified   : Saturday September 14th 2024 05:26:23 pm                                            #
+# Modified   : Wednesday September 18th 2024 02:16:40 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from discover.domain.service.data.ingest.service import DataIngestionDomainService
+from discover.domain.task.data.ingest.service import DataIngestionDomainService
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

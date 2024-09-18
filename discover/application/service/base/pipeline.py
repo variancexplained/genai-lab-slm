@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/base/pipeline.py                                                   #
+# Filename   : /discover/application/service/base/pipeline.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Tuesday September 17th 2024 04:15:44 pm                                             #
+# Modified   : Wednesday September 18th 2024 03:25:17 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,11 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
+from discover.application.ops.announcer import task_announcer
+from discover.application.ops.cache import cachenow
+from discover.application.ops.profiler import profiler
+from discover.application.service.io.config import ServiceConfig
 from discover.domain.base.task import Task
-from discover.domain.value_objects.config import ServiceConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -147,6 +150,12 @@ class Pipeline(ABC):
             The result of the pipeline execution, typically the final output after all tasks have been completed.
         """
         pass
+
+    @task_announcer
+    @profiler
+    @cachenow
+    def _run_task(self, data: Any, task: Task) -> Any:
+        return task.run(data=data)
 
 
 # ------------------------------------------------------------------------------------------------ #

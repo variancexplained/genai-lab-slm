@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 02:58:50 pm                                               #
-# Modified   : Saturday September 14th 2024 09:09:55 pm                                            #
+# Modified   : Wednesday September 18th 2024 02:29:03 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ import pandas as pd
 
 from discover.infra.config.reader import ConfigReader
 from discover.infra.repo.base import ReviewRepo
-from discover.infra.storage.local.file_io import IOService
+from discover.infra.storage.local.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #

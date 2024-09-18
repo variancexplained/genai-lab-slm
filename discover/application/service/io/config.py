@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/domain/value_objects/config.py                                            #
+# Filename   : /discover/application/service/io/config.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:55 pm                                             #
-# Modified   : Tuesday September 17th 2024 09:35:59 pm                                             #
+# Modified   : Wednesday September 18th 2024 03:24:34 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,6 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
+from discover.application.service.io.base import Reader, Writer
 from discover.core.data import DataClass
 from discover.domain.value_objects.data_structure import DataStructure
 from discover.domain.value_objects.file import FileFormat
@@ -152,8 +153,6 @@ class ServiceConfig(DataClass):
         force (bool): Optional flag to force execution, bypassing certain checks or validations (default is False).
             When set to True, the service will proceed regardless of existing data or other conditions.
     """
-
-    from discover.domain.service.core.data import Reader, Writer
 
     source_reader: Reader
     target_reader: Reader

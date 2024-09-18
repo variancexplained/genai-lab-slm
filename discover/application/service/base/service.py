@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/application/base/service.py                                               #
+# Filename   : /discover/application/service/base/service.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 05:41:52 pm                                              #
-# Modified   : Monday September 16th 2024 12:27:25 pm                                              #
+# Modified   : Wednesday September 18th 2024 02:41:15 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from discover.domain.value_objects.config import ServiceConfig
+from discover.application.service.io.config import ServiceConfig
 
 
 # ------------------------------------------------------------------------------------------------ #

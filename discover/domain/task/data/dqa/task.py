@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data/dqa/task.py                                           #
+# Filename   : /discover/domain/task/data/dqa/task.py                                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 17th 2024 09:48:07 pm                                             #
+# Modified   : Wednesday September 18th 2024 03:24:35 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,12 +33,12 @@ from pandarallel import pandarallel
 from profanity_check import predict
 from tqdm import tqdm
 
+from discover.application.ops.cache import Cache, cachenow
 from discover.core.data import split_dataframe
 from discover.domain.base.task import Task
-from discover.domain.service.core.cache import Cache, cachenow
-from discover.domain.service.core.monitor.announcer import task_announcer
-from discover.domain.service.core.monitor.profiler import profiler
-from discover.domain.value_objects.context import Context
+from discover.domain.task.context import Context
+from discover.domain.task.core.monitor.announcer import task_announcer
+from discover.domain.task.core.monitor.profiler import profiler
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)

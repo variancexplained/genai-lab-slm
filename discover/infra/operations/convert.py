@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday May 28th 2024 01:40:18 pm                                                   #
-# Modified   : Tuesday September 17th 2024 09:50:17 pm                                             #
+# Modified   : Wednesday September 18th 2024 02:16:40 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,8 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from discover.domain.base.task import Task
-from discover.domain.service.core.monitor.announcer import task_announcer
-from discover.domain.service.core.monitor.profiler import profiler
+from discover.domain.task.core.monitor.announcer import task_announcer
+from discover.domain.task.core.monitor.profiler import profiler
 from discover.domain.value_objects.lifecycle import DataPrepStage
 from discover.infra.utils.data_utils.converter import Converter
 from discover.infra.utils.file_utils.tempfile import TempFileMgr

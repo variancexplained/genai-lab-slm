@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 01:22:08 am                                            #
-# Modified   : Tuesday September 17th 2024 01:34:10 am                                             #
+# Modified   : Wednesday September 18th 2024 02:40:25 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,11 +23,12 @@ from datetime import datetime
 
 import pytest
 
-from discover.domain.service.data.ingest.pipeline import (
+from discover.application.service.data.ingest.pipeline import (
     IngestPipeline,
     IngestPipelineBuilder,
 )
-from discover.domain.value_objects.context import Context
+from discover.domain.task.context import Context
+from discover.domain.value_objects.lifecycle import DataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data/ingest/task.py                                        #
+# Filename   : /discover/domain/service/data/ingest.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 17th 2024 04:44:46 pm                                             #
+# Modified   : Wednesday September 18th 2024 02:41:41 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,9 +23,9 @@ from dotenv import load_dotenv
 from pandarallel import pandarallel
 
 from discover.domain.base.task import Task
-from discover.domain.service.core.monitor.announcer import task_announcer
-from discover.domain.service.core.monitor.profiler import profiler
-from discover.domain.value_objects.config import ServiceConfig
+from discover.domain.task.core.monitor.announcer import task_announcer
+from discover.domain.task.core.monitor.profiler import profiler
+from discover.application.service.io.config import ServiceConfig
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

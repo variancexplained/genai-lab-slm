@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_domain/test_core_services/test_cache.py                                 #
+# Filename   : /tests/test_domain/test_core_services/test_cachenow.py                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 01:11:48 am                                             #
-# Modified   : Tuesday September 17th 2024 09:46:11 pm                                             #
+# Modified   : Wednesday September 18th 2024 03:24:29 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,9 +25,11 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
+from discover.application.ops.cache import cachenow
+from discover.application.service.io.config import ServiceConfig
 from discover.domain.base.task import Task
-from discover.domain.service.core.cache import cachenow
-from discover.domain.value_objects.config import ServiceConfig
+from discover.domain.value_objects.lifecycle import DataPrepStage
+from discover.infra.storage.local.cache import DiscoverCache
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -51,7 +53,8 @@ class TestCachenow:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        shutil.rmtree("ops/test/cache", ignore_errors=True)
+        cache = DiscoverCache(stage=DataPrepStage.DQA)
+        cache.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)

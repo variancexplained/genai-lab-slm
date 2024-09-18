@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/application/service/data/ingest.py                                        #
+# Filename   : /discover/application/service/data/ingest/config.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday September 13th 2024 05:35:17 pm                                              #
-# Modified   : Tuesday September 17th 2024 10:01:58 pm                                             #
+# Created    : Wednesday September 18th 2024 12:24:56 am                                           #
+# Modified   : Wednesday September 18th 2024 03:22:18 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,12 +21,9 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Optional
 
-from discover.application.base.service import ApplicationService
-from discover.domain.service.core.data import DataService
-from discover.domain.service.data.ingest.service import DataIngestionDomainService
-from discover.domain.value_objects.config import (
+from discover.application.service.io import DataService
+from discover.application.service.io.config import (
     ReaderConfig,
     ServiceConfig,
     WriterConfig,
@@ -203,40 +200,3 @@ class DataIngestionServiceConfig(ServiceConfig):
             target_reader=tr,
             target_writer=tw,
         )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                         DATA INGESTION APPLICATION SERVICE                                       #
-# ------------------------------------------------------------------------------------------------ #
-class DataIngestionApplicationService(ApplicationService):
-    """
-    DataIngestionApplicationService is an application service responsible for coordinating the execution
-    of the data ingestion process. It uses a domain service to perform the ingestion and processing of the data.
-
-    Args:
-        config (DataIngestionServiceConfig): Configuration for the data ingestion service. Defaults to
-            a new instance of DataIngestionServiceConfig.
-
-    Attributes:
-        _domain_service (DataIngestionDomainService): The domain service that performs the actual data ingestion
-            logic based on the provided configuration.
-    """
-
-    def __init__(
-        self,
-        config: Optional[DataIngestionServiceConfig] = None,
-    ) -> None:
-        """"""
-        self._config = DataIngestionServiceConfig.create()
-        super().__init__(config=config)
-
-        self._domain_service = DataIngestionDomainService(config=self._config)
-
-    def run(self) -> Any:
-        """
-        Runs the data ingestion process by delegating execution to the domain service.
-
-        Returns:
-            Any: The result of the data ingestion process, as defined by the domain service.
-        """
-        return self._domain_service.run()

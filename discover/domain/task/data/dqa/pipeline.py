@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/domain/service/data/dqa/pipeline.py                                       #
+# Filename   : /discover/domain/task/data/dqa/pipeline.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday May 24th 2024 02:47:03 am                                                    #
-# Modified   : Tuesday September 17th 2024 09:38:24 pm                                             #
+# Modified   : Wednesday September 18th 2024 02:41:41 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,9 +26,10 @@ import fasttext
 import pandas as pd
 from pandarallel import pandarallel
 
-from discover.domain.base.pipeline import Pipeline, PipelineBuilder
-from discover.domain.service.core.monitor.announcer import pipeline_announcer
-from discover.domain.service.data.dqa.task import (
+from discover.application.service.base.pipeline import Pipeline, PipelineBuilder
+from discover.application.service.io.config import ServiceConfig
+from discover.domain.task.core.monitor.announcer import pipeline_announcer
+from discover.domain.task.data.dqa.task import (
     DetectDuplicateRowTask,
     DetectEmailTask,
     DetectEmojiTask,
@@ -42,7 +43,6 @@ from discover.domain.service.data.dqa.task import (
     DetectSpecialCharacterTask,
     DetectURLTask,
 )
-from discover.domain.value_objects.config import ServiceConfig
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
