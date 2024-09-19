@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday September 18th 2024 05:27:44 pm                                           #
+# Modified   : Wednesday September 18th 2024 10:02:49 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from discover.infra.storage.local.io import IOService
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = ["**/test_dqa_*.py"]
+collect_ignore_glob = []
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -161,10 +161,21 @@ def test_config(pandas_df):
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def ingest_config(pandas_df):
+def ingest_config():
     """
     Constructs an ingest service configuration
     """
     from discover.application.service.data.ingest.config import IngestServiceConfig
 
     return IngestServiceConfig()
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dqa_config():
+    """
+    Constructs an dqa service configuration
+    """
+    from discover.application.service.data.dqa.config import DQAServiceConfig
+
+    return DQAServiceConfig()

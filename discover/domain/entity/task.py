@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/domain/base/task.py                                                       #
+# Filename   : /discover/domain/entity/task.py                                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Wednesday September 18th 2024 05:14:05 pm                                           #
+# Modified   : Thursday September 19th 2024 01:11:50 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from discover.application.service.base.config import ServiceConfig
-from discover.domain.task.context import Context
+from discover.domain.entity.config import ServiceConfig
+from discover.domain.entity.context import Context
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -92,7 +92,9 @@ class Task(ABC):
 
         # Create task context from pipeline context stage
         self._context = Context(
-            phase=config.phase, stage=config.stage, task=self.__class__.__name__
+            phase=config.context.phase,
+            stage=config.context.stage,
+            task=config.task.__name__,
         )
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")

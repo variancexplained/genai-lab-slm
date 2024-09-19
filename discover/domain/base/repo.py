@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Wednesday September 18th 2024 05:14:22 pm                                           #
+# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from discover.application.service.base.config import DataConfig
+from discover.domain.entity.config import DataConfig
 
 
 # ------------------------------------------------------------------------------------------------ #

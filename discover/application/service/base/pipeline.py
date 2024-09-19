@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Wednesday September 18th 2024 07:24:31 pm                                           #
+# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,8 @@ from typing import Any
 from discover.application.ops.announcer import task_announcer
 from discover.application.ops.cachenow import cachenow
 from discover.application.ops.profiler import profiler
-from discover.application.service.base.config import ServiceConfig
-from discover.domain.base.task import Task
+from discover.domain.entity.config import ServiceConfig
+from discover.domain.entity.task import Task
 
 
 # ------------------------------------------------------------------------------------------------ #

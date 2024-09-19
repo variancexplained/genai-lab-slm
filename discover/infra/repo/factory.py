@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 04:40:56 pm                                           #
-# Modified   : Wednesday September 18th 2024 05:14:21 pm                                           #
+# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,8 @@ import logging
 
 from pyspark.sql import SparkSession
 
-from discover.application.service.base.config import DataConfig
 from discover.domain.base.repo import RepoFactory
+from discover.domain.entity.config import DataConfig
 from discover.domain.value_objects.data_structure import DataStructure
 from discover.infra.repo.base import ReviewRepo
 from discover.infra.repo.mckinney import McKinneyRepo

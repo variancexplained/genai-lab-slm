@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 05:40:36 pm                                                  #
-# Modified   : Tuesday September 17th 2024 01:34:20 am                                             #
+# Modified   : Thursday September 19th 2024 01:11:50 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 """Extract File Module"""
 import os
 
-from discover.domain.base.task import Task
+from discover.domain.entity.task import Task
 from discover.infra.utils.file_utils.compress import TarGzHandler
 
 

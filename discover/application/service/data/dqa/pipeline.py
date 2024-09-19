@@ -4,7 +4,7 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/application/service/data/ingest/pipeline.py                               #
+# Filename   : /discover/application/service/data/dqa/pipeline.py                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
@@ -16,29 +16,32 @@
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-
-
+"""Data Quality Assessment Pipeline Module"""
+import warnings
 from typing import Any
 
+import fasttext
+import pandas as pd
 from pandarallel import pandarallel
 
 from discover.application.ops.announcer import pipeline_announcer
 from discover.application.service.base.pipeline import Pipeline, PipelineBuilder
+from discover.application.service.data import dqa
 from discover.domain.entity.config import ServiceConfig
-from discover.domain.task.data.ingest import (
-    CastDataTypeTask,
-    RemoveNewlinesTask,
-    VerifyEncodingTask,
-)
 
 # ------------------------------------------------------------------------------------------------ #
-pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
+pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
+# ------------------------------------------------------------------------------------------------ #
+warnings.filterwarnings("ignore")
+fasttext.FastText.eprint = lambda x: None
+
+fasttext
 
 
 # ------------------------------------------------------------------------------------------------ #
-class IngestPipeline(Pipeline):
+class DQAPipeline(Pipeline):
     """
-    IngestPipeline orchestrates the data ingestion process by reading from the source, executing
+    DQAPipeline orchestrates the data ingestion process by reading from the source, executing
     a sequence of tasks (such as data transformations or validations), and writing the final data
     to the target destination. This pipeline is designed to be flexible and extendable, allowing
     tasks to be added to the pipeline and executed in sequence.
@@ -69,26 +72,45 @@ class IngestPipeline(Pipeline):
         Any:
             The final processed data after executing all tasks in the pipeline.
         """
+        # Obtain source data
         data = self._repo.get(
             stage=self._config.source_data_config.stage,
             name=self._config.source_data_config.name,
         )
+        # Initialize data with sorting by id
+        data = self._initialize(data=data)
+        # dqa_data will contain a DataFrame of indicator values for each row and
+        # data quality aspect
+        dqa_data = pd.DataFrame()
 
         for task in self._tasks:
-            data = self._run_task(data=data, task=task)
+            result = self._run_task(data=data, task=task)
+            dqa_data = pd.concat([dqa_data, result.to_frame()], axis=1)
+
+        # Concatenate data with quality indicators
+        data = self._finalize(data=data, dqa_data=dqa)
 
         self._repo.add(
             stage=self._config.target_data_config.stage,
             name=self._config.target_data_config.name,
             data=data,
         )
+
         return data
+
+    def _initialize(self, data: pd.DataFrame) -> pd.DataFrame:
+        data = data.reset_index().set_index(keys=[self._config.init_sort_by])
+        data = data.sort_index(ascending=True)
+        return data.reset_index()
+
+    def _finalize(self, data: pd.DataFrame, qa_data: pd.DataFrame) -> pd.DataFrame:
+        return pd.concat([data, qa_data], axis=1)
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                INGEST PIPELINE BUILDER                                            #
 # ------------------------------------------------------------------------------------------------ #
-class IngestPipelineBuilder(PipelineBuilder):
+class DQAPipelineBuilder(PipelineBuilder):
     """
     Builder class for constructing the data ingestion pipeline.
 
@@ -99,16 +121,16 @@ class IngestPipelineBuilder(PipelineBuilder):
 
     Methods:
     --------
-    create_pipeline() -> IngestPipeline:
+    create_pipeline() -> DQAPipeline:
         Constructs the data ingestion pipeline, adds the relevant tasks,
         and returns the configured pipeline.
     """
 
     def __init__(
-        self, config: ServiceConfig, pipeline_cls: type[Pipeline] = IngestPipeline
+        self, config: ServiceConfig, pipeline_cls: type[Pipeline] = DQAPipeline
     ) -> None:
         """
-        Initializes the IngestPipelineBuilder with the provided configuration and context.
+        Initializes the DQAPipelineBuilder with the provided configuration and context.
 
         Parameters:
         -----------
@@ -119,7 +141,7 @@ class IngestPipelineBuilder(PipelineBuilder):
         """
         super().__init__(config=config, pipeline_cls=pipeline_cls)
 
-    def create_pipeline(self) -> IngestPipeline:
+    def create_pipeline(self) -> DQAPipeline:
         """
         Creates and configures the ingestion pipeline with the necessary tasks.
 
@@ -129,19 +151,28 @@ class IngestPipelineBuilder(PipelineBuilder):
 
         Returns:
         --------
-        IngestPipeline:
+        DQAPipeline:
             The fully configured data ingestion pipeline with all tasks.
         """
         # Instantiate pipeline
         pipe = self._pipeline_cls(config=self._config)
 
-        newlines = RemoveNewlinesTask(config=self._config)
-        encoding = VerifyEncodingTask(config=self._config)
-        dtypes = CastDataTypeTask(config=self._config)
-
-        # Add tasks to pipeline
-        pipe.add_task(newlines)
-        pipe.add_task(encoding)
-        pipe.add_task(dtypes)
+        # Add tasks to pipeline, starting with the lower resource intensive tasks.
+        pipe.add_task(self._config.t01_dup1)
+        pipe.add_task(self._config.t02_dup2)
+        pipe.add_task(self._config.t03_null)
+        pipe.add_task(self._config.t04_outlier)
+        pipe.add_task(self._config.t05_outlier)
+        pipe.add_task(self._config.t06_non_english)
+        pipe.add_task(self._config.t07_non_english)
+        pipe.add_task(self._config.t08_emoji)
+        pipe.add_task(self._config.t09_chars)
+        pipe.add_task(self._config.t10_dates)
+        pipe.add_task(self._config.t11_ratings)
+        pipe.add_task(self._config.t12_profanity)
+        pipe.add_task(self._config.t13_emails)
+        pipe.add_task(self._config.t14_urls)
+        pipe.add_task(self._config.t15_phones)
+        return pipe
 
         return pipe

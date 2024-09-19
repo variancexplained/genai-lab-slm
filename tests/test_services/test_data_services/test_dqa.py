@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_domain/test_core_services/test_profiler.py                              #
+# Filename   : /tests/test_services/test_data_services/test_dqa.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Tuesday September 17th 2024 01:11:48 am                                             #
-# Modified   : Thursday September 19th 2024 01:11:50 pm                                            #
+# Created    : Wednesday September 18th 2024 09:59:32 pm                                           #
+# Modified   : Wednesday September 18th 2024 10:02:32 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,10 +23,9 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from discover.application.ops.profiler import profiler
-from discover.domain.entity.config import ServiceConfig
-from discover.domain.entity.task import Task
-from discover.infra.storage.local.io import IOService
+from discover.application.service.data.dqa.dqa import DQAService
+from discover.infra.repo.mckinney import McKinneyRepo
+from discover.infra.storage.local.cache import DiscoverCache
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -37,22 +36,26 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
 double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
-# ------------------------------------------------------------------------------------------------ #
-FILEPATH = "tests/data/test_domain/test_core/test_profiler.csv"
 
 
-@pytest.mark.profiler
-class TestProfiler:  # pragma: no cover
+@pytest.mark.dqa
+class TestDQA:  # pragma: no cover
     # ============================================================================================ #
-    def test_setup(self, container, caplog) -> None:
+    def test_setup(self, dqa_config, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.repo.profile()
-        repo.remove_all()
+        repo = McKinneyRepo()
+        try:
+            repo.remove(stage=dqa_config.stage, name="reviews")
+        except Exception:
+            pass
+
+        cache = DiscoverCache()
+        cache.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -63,38 +66,19 @@ class TestProfiler:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_profiler(self, container, test_config, pandas_df, caplog) -> None:
+    def test_dqa(self, dqa_config, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
-
         # ---------------------------------------------------------------------------------------- #
-        class TestTask(Task):
-            def __init__(self, *args, config: ServiceConfig, **kwargs) -> None:
-                super().__init__(*args, config=config, **kwargs)
-
-            @profiler
-            def run(self, df: pd.DataFrame):
-                x = df.describe()
-                return x
-
-        # Validate data is pandas dataframe
-        assert isinstance(pandas_df, (pd.DataFrame, pd.core.frame.DataFrame))
-
-        # Execute several run steps for the task
-        test_task = TestTask(config=test_config)
-        for i in range(5):
-            test_task.run(df=pandas_df)
-
-        # Confirm size of profile repository
-        repo = container.repo.profile()
-        assert len(repo) == 5
-        profile = repo.get_all()
-        assert isinstance(profile, (pd.DataFrame, pd.core.frame.DataFrame))
-        IOService.write(filepath=FILEPATH, data=profile)
-        logger.info(profile)
+        repo = McKinneyRepo()
+        dqa = DQAService(config=dqa_config)
+        data = dqa.run()
+        assert isinstance(data, (pd.core.frame.DataFrame, pd.DataFrame))
+        logger.info(data.head())
+        assert repo.exists(stage=dqa_config.stage, name="reviews")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -106,15 +90,20 @@ class TestProfiler:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_teardown(self, container, caplog) -> None:
+    def test_teardown(self, dqa_config, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.repo.profile()
-        repo.remove_all()
+        repo = McKinneyRepo()
+        try:
+            repo.remove(stage=dqa_config.stage, name="reviews")
+        except Exception:
+            pass
+        cache = DiscoverCache()
+        cache.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
