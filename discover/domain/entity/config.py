@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:55 pm                                             #
-# Modified   : Thursday September 19th 2024 02:14:24 pm                                            #
+# Modified   : Thursday September 19th 2024 02:37:23 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,7 +30,7 @@ from discover.domain.entity.task import Task
 from discover.domain.exception.config import InvalidConfigException
 from discover.domain.value_objects.data_structure import DataStructure
 from discover.domain.value_objects.file import ExistingDataBehavior, FileFormat
-from discover.domain.value_objects.lifecycle import Phase, Stage
+from discover.domain.value_objects.lifecycle import Stage
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -39,18 +39,54 @@ from discover.domain.value_objects.lifecycle import Phase, Stage
 @dataclass
 class Config(DataClass):
     """
-    Base configuration class that defines the structure for validating configuration objects.
+    Base configuration class for services within the pipeline.
 
-    Subclasses must implement the `validate` method to enforce specific validation logic for the configuration.
+    This class acts as a foundation for more specific configuration classes and ensures that
+    the essential `service_context` is valid and properly configured.
+
+    Attributes:
+    -----------
+    service_context : ServiceContext
+        The execution context for the service, containing metadata about the current phase and stage.
 
     Methods:
-        validate() -> None: Validates the configuration. Raises an exception if the configuration is invalid.
+    --------
+    validate() -> None:
+        Validates the configuration by ensuring that `service_context` is an instance of `ServiceContext`.
+        Calls the `validate()` method of the `service_context` to ensure that its internal data is also valid.
+        Raises an `InvalidConfigException` if any validation checks fail.
     """
+
+    service_context: ServiceContext
 
     @abstractmethod
     def validate(self) -> None:
-        """Validates the configuration, raising an exception if invalid."""
-        pass
+        """
+        Validates the base configuration.
+
+        Ensures that `service_context` is an instance of `ServiceContext` and calls its `validate()` method
+        to perform deeper validation. If `service_context` is invalid or misconfigured, an `InvalidConfigException`
+        is raised with an appropriate error message.
+
+        Raises:
+        -------
+        InvalidConfigException:
+            If `service_context` is not a valid instance of `ServiceContext`, or if the validation of the
+            `service_context` fails.
+        """
+        errors = []
+        if not isinstance(self.service_context, ServiceContext):
+            errors.append(
+                f"Invalid {self.__class__.__name__}. Expected a ServiceContext instance. Encountered {type(self.service_context).__name__}."
+            )
+
+        if errors:
+            error_msg = "\n".join(errors)
+            logging.error(error_msg)
+            raise InvalidConfigException(error_msg)
+
+        # Validate the service context itself
+        self.service_context.validate()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -59,81 +95,81 @@ class Config(DataClass):
 @dataclass
 class DataConfig(Config):
     """
-    Configuration class for handling data-related tasks within a pipeline.
+    Configuration class for managing the dataset's structure, format, and behavior in a data pipeline.
 
-    This class defines various configurations necessary for processing data in different stages
-    of the pipeline, such as lifecycle phases, dataset structure, file formats, and partitioning options.
-    It also manages behaviors related to existing data when processing or writing datasets.
+    This class defines various configurations required for reading or writing data in different stages
+    of the pipeline, such as dataset structure, file format, and behavior when encountering existing data.
 
     Attributes:
     -----------
-    phase : Phase
-        The lifecycle phase, e.g., DATAPREP, ANALYSIS, or GENAI, indicating the current stage
-        of the data processing lifecycle.
-
     stage : Stage
-        The specific stage of the service pipeline (e.g., DQA, CLEAN, FEATURE) during which
-        this configuration applies.
+        The specific stage of the pipeline where the data will be read or written (e.g., INGEST, TRANSFORM).
 
     name : str
         The name of the dataset being processed or created.
 
     data_structure : DataStructure, default=DataStructure.PANDAS
-        Defines the structure of the dataset, such as whether it is a Pandas DataFrame or another
-        data structure (e.g., Spark DataFrame).
+        Defines the structure of the dataset, such as whether it is a Pandas DataFrame or another data structure
+        (e.g., Spark DataFrame).
 
     format : FileFormat, default=FileFormat.PARQUET_PARTITIONED
         Specifies the file format of the dataset, e.g., Parquet partitioned or other formats.
 
     partition_cols : List[str], default=[]
-        Columns by which the dataset is partitioned when saved, used primarily for partitioned file
-        formats like Parquet.
+        The list of columns by which the dataset is partitioned when saved, primarily for use with partitioned
+        file formats like Parquet.
 
     existing_data_behavior : Optional[ExistingDataBehavior], default=None
-        Defines the behavior when existing data is encountered, such as whether to overwrite or delete
+        Defines the behavior when encountering existing data, such as whether to overwrite or delete
         matching records.
 
     Methods:
     --------
     __post_init__() -> None:
         A post-initialization hook that sets default values for `partition_cols` and `existing_data_behavior`
-        if the file format is `PARQUET_PARTITIONED`. Ensures that partitioning is applied correctly based
-        on the dataset format.
+        when the file format is `PARQUET_PARTITIONED`. Ensures that the partitioning behavior is applied
+        correctly when working with partitioned datasets.
 
     validate() -> None:
-        Validates the configuration, ensuring that all required attributes are correctly set.
-
-        This method performs type checks on the attributes `phase`, `stage`, `name`, `data_structure`, `format`,
-        `partition_cols`, and `existing_data_behavior`. It raises an `InvalidConfigException` if any attribute
-        is invalid, with a clear message indicating the invalid attribute and its expected type.
-
-        Logs an error message before raising the exception, allowing for easier debugging.
+        Validates the configuration by checking that `stage`, `name`, `data_structure`, `format`,
+        `partition_cols`, and `existing_data_behavior` (if provided) are correctly set. Inherits the base
+        validation from `Config` and raises an `InvalidConfigException` if any attribute is invalid.
     """
 
-    phase: Phase  # Lifecycle phase, i.e. DATAPREP, ANALYSIS, or GENAI
     stage: Stage  # The Stage to/from the data will be written/read.
     name: str  # The name of the dataset
     data_structure: DataStructure = DataStructure.PANDAS  # The dataset data structure.
     format: FileFormat = FileFormat.PARQUET_PARTITIONED  # The dataset file format.
     partition_cols: List[str] = field(default_factory=list)
-    existing_data_behavior: Optional[ExistingDataBehavior] = None
+    existing_data_behavior: Optional[str] = None
 
     def __post_init__(self) -> None:
         """
         A post-initialization hook that sets default values for `partition_cols` and `existing_data_behavior`
-        if the file format is `PARQUET_PARTITIONED`. This ensures partitioning is correctly applied for
-        partitioned datasets.
+        when the file format is `PARQUET_PARTITIONED`. This ensures that partitioning columns and data behavior
+        are applied correctly when working with partitioned datasets.
         """
         if self.format == FileFormat.PARQUET_PARTITIONED:
-            self.partition_cols: List[str] = field(default_factory=lambda: ["category"])
-            self.existing_data_behavior: str = "delete_matching"
+            self.partition_cols = ["category"]
+            self.existing_data_behavior = ExistingDataBehavior.DELETE_MATCHING.value
 
     def validate(self) -> None:
+        """
+        Validates the DataConfig.
+
+        Inherits the base validation from `Config` to ensure the service context is valid. Additionally, this method
+        checks:
+        - `stage` is an instance of `Stage`.
+        - `name` is a string.
+        - `data_structure` is an instance of `DataStructure`.
+        - `format` is an instance of `FileFormat`.
+        - `partition_cols` is a list.
+        - `existing_data_behavior` is either `None` or an instance of `ExistingDataBehavior`.
+
+        If any of these checks fail, an `InvalidConfigException` is raised with a detailed error message.
+        """
+        super().validate()
         errors = []
-        if not isinstance(self.phase, Phase):
-            errors.append(
-                f"Invalid {self.__class__.__name__}. Expected a Phase instance. Encountered {type(self.phase).__name__}."
-            )
         if not isinstance(self.stage, Stage):
             errors.append(
                 f"Invalid {self.__class__.__name__}. Expected a Stage instance. Encountered {type(self.stage).__name__}."
@@ -173,50 +209,43 @@ class DataConfig(Config):
 @dataclass
 class TaskConfig(Config):
     """
-    Configuration class for defining a task within a pipeline.
+    Configuration class for defining a task within the pipeline.
 
-    This class holds the basic configuration for a task, including the lifecycle phase,
-    the stage of the task in the pipeline, and the task class type itself.
+    This class holds the configuration for a task, ensuring that the task is a valid subclass of `Task`.
+    It extends the base `Config` class, inheriting its validation logic while adding task-specific checks.
 
     Attributes:
     -----------
-    phase : Phase
-        The lifecycle phase during which the task is executed (e.g., DATAPREP, ANALYSIS).
-
-    stage : Stage
-        The specific stage of the task within the phase (e.g., INGEST, CLEAN, DQA).
-
     task : Type[Task]
-        A Task class type representing the task to be executed. Must be a subclass of `Task`.
+        A Task class type representing the task to be executed. The class must be a subclass of `Task`.
 
     Methods:
     --------
     validate() -> None:
-        Validates the task configuration, checking if the phase, stage, and task type are correctly set.
-        Raises an `InvalidConfigException` if any of the values are invalid or missing.
+        Validates the task configuration by ensuring that `task` is a valid subclass of `Task`.
+        It inherits the base validation from `Config` and raises an `InvalidConfigException`
+        if the task type is invalid.
     """
 
-    phase: Phase
-    stage: Stage
     task: Type[Task]
 
     def validate(self) -> None:
         """
-        Validates the task configuration.
+        Validates the TaskConfig.
 
-        Ensures that `phase` is an instance of `Phase`, `stage` is an instance of `Stage`,
-        and `task` is a subclass of `Task`. Raises an `InvalidConfigException` with a detailed
-        error message if any of the checks fail.
+        This method performs validation to ensure that `task` is a subclass of `Task`. If `task` is
+        not a subclass of `Task`, an `InvalidConfigException` is raised with a descriptive error message.
+        It also calls the `validate()` method of the base `Config` class to ensure that any other
+        required configuration elements are valid.
+
+        Raises:
+        -------
+        InvalidConfigException:
+            If `task` is not a valid subclass of `Task`, or if the base configuration fails validation.
         """
+        super().validate()
         errors = []
-        if not isinstance(self.phase, Phase):
-            errors.append(
-                f"Invalid {self.__class__.__name__}. Expected a Phase instance. Encountered {type(self.phase).__name__}."
-            )
-        if not isinstance(self.stage, Stage):
-            errors.append(
-                f"Invalid {self.__class__.__name__}. Expected a Stage instance. Encountered {type(self.stage).__name__}."
-            )
+
         if not issubclass(self.task, Task):
             errors.append(
                 f"Invalid {self.__class__.__name__}. Expected a subclass of Task. Encountered {self.task.__name__}."
@@ -234,62 +263,58 @@ class TaskConfig(Config):
 @dataclass
 class ServiceConfig(Config):
     """
-    Configuration class for defining service-specific settings within the pipeline.
+    Configuration class for managing service-related settings in the pipeline.
 
-    This class manages the execution context, source data configuration, target data configuration,
-    and an optional `force` flag that determines if the service should re-execute, even if previous tasks
-    were completed.
+    This class handles the configuration of source and target data within the service and includes
+    an optional flag, `force`, which determines whether tasks should be re-executed even if they
+    were completed previously.
 
     Attributes:
     -----------
-    context : ServiceContext
-        The execution context for the service, containing phase and stage metadata.
-
     source_data_config : DataConfig
-        The configuration for the source data, defining how the input data will be handled.
+        The configuration for the source data, defining how the input data is handled.
 
     target_data_config : DataConfig
-        The configuration for the target data, specifying how and where the processed data will be stored.
+        The configuration for the target data, specifying where and how the processed data will be stored.
 
     force : bool, default=False
-        A flag indicating whether to force the service to re-execute tasks, even if they were already completed.
+        A flag indicating whether to force the re-execution of tasks, even if they have been previously completed.
 
     Methods:
     --------
     validate() -> None:
-        Validates the service configuration, ensuring that the context, source data, and target data configurations
-        are correctly set. It also validates that the `force` attribute is a boolean. Raises an `InvalidConfigException`
-        if any attribute is invalid or misconfigured.
+        Validates the service configuration by ensuring that `source_data_config` and `target_data_config`
+        are valid instances of `DataConfig`, and that `force` is a boolean value. It also validates
+        the `source_data_config` and `target_data_config` by invoking their respective `validate()` methods.
+        Raises an `InvalidConfigException` if any attribute is invalid.
     """
 
-    context: ServiceContext
     source_data_config: DataConfig
     target_data_config: DataConfig
     force: bool = False
 
     def validate(self) -> None:
         """
-        Validates the service configuration.
+        Validates the ServiceConfig.
 
-        Ensures that:
-        - `context` is an instance of `ServiceContext`.
-        - `source_data_config` and `target_data_config` are instances of `DataConfig`.
+        This method checks:
+        - `source_data_config` is an instance of `DataConfig`.
+        - `target_data_config` is an instance of `DataConfig`.
         - `force` is a boolean value.
 
-        Additionally, it validates the `context`, `source_data_config`, and `target_data_config`
-        by calling their respective `validate()` methods.
+        It also calls the `validate()` method of both `source_data_config` and `target_data_config` to ensure
+        they are valid configurations themselves. If any validation fails, an `InvalidConfigException` is raised
+        with a detailed error message.
 
         Raises:
         -------
         InvalidConfigException:
-            If any of the attributes are invalid, the error messages are collected, logged, and raised as an exception.
+            If any of the configuration attributes are invalid, or if validation of the `source_data_config`
+            or `target_data_config` fails.
         """
+        super().validate()
         errors = []
 
-        if not isinstance(self.context, ServiceContext):
-            errors.append(
-                f"Invalid {self.__class__.__name__}. Expected a ServiceContext instance. Encountered {type(self.context).__name__}."
-            )
         if not isinstance(self.source_data_config, DataConfig):
             errors.append(
                 f"Invalid {self.__class__.__name__}. Expected a DataConfig instance. Encountered {type(self.source_data_config).__name__}."
@@ -300,11 +325,10 @@ class ServiceConfig(Config):
             )
         if not isinstance(self.force, bool):
             errors.append(
-                f"Invalid {self.__class__.__name__}. Expected a boolean type. Encountered {type(self.stage).__name__}."
+                f"Invalid {self.__class__.__name__}. Expected a boolean type. Encountered {type(self.force).__name__}."
             )
 
-        # Ensure members are valid
-        self.context.validate()
+        # Validate the source and target configs
         self.source_data_config.validate()
         self.target_data_config.validate()
 

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:25:06 am                                           #
-# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
+# Modified   : Thursday September 19th 2024 03:19:49 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,11 +25,6 @@ from pandarallel import pandarallel
 from discover.application.ops.announcer import pipeline_announcer
 from discover.application.service.base.pipeline import Pipeline, PipelineBuilder
 from discover.domain.entity.config import ServiceConfig
-from discover.domain.task.data.ingest import (
-    CastDataTypeTask,
-    RemoveNewlinesTask,
-    VerifyEncodingTask,
-)
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
@@ -134,14 +129,9 @@ class IngestPipelineBuilder(PipelineBuilder):
         """
         # Instantiate pipeline
         pipe = self._pipeline_cls(config=self._config)
-
-        newlines = RemoveNewlinesTask(config=self._config)
-        encoding = VerifyEncodingTask(config=self._config)
-        dtypes = CastDataTypeTask(config=self._config)
-
-        # Add tasks to pipeline
-        pipe.add_task(newlines)
-        pipe.add_task(encoding)
-        pipe.add_task(dtypes)
+        # Extract the task and task configs, configure and add to pipeline.
+        for task_config in self._config.task_configs:
+            task = task_config.task(task_config)
+            pipe.add_task(task)
 
         return pipe

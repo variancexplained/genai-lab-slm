@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 08:39:32 pm                                           #
-# Modified   : Thursday September 19th 2024 01:11:55 pm                                            #
+# Modified   : Thursday September 19th 2024 03:18:56 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from pandarallel import pandarallel
 
-from discover.domain.entity.config import ServiceConfig
+from discover.domain.entity.config import TaskConfig
 from discover.domain.entity.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
@@ -37,7 +37,7 @@ class RemoveNewlinesTask(Task):
     in a DataFrame. It replaces all newline characters (`\n`) with spaces, ensuring the text is in a single line.
 
     Args:
-        config (ServiceConfig): Configuration object that provides:
+        config (TaskConfig): Configuration object that provides:
             - `text_column`: The name of the column containing text where newlines need to be removed.
 
     Methods:
@@ -55,7 +55,7 @@ class RemoveNewlinesTask(Task):
                 The updated DataFrame with newline characters replaced by spaces in the specified text column.
     """
 
-    def __init__(self, config: ServiceConfig) -> None:
+    def __init__(self, config: TaskConfig) -> None:
         super().__init__(config=config)
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -86,7 +86,7 @@ class VerifyEncodingTask(Task):
     and if issues are found, it re-encodes the entire column to handle potential errors.
 
     Args:
-        config (ServiceConfig): Configuration object that provides:
+        config (TaskConfig): Configuration object that provides:
             - `text_column`: The name of the column containing text to be verified for encoding.
             - `encoding_sample`: The fraction of the dataset to sample for encoding verification.
             - `random_state`: The random seed for reproducibility of the sampling process.
@@ -107,7 +107,7 @@ class VerifyEncodingTask(Task):
                 The updated DataFrame with the text column re-encoded if necessary.
     """
 
-    def __init__(self, config: ServiceConfig) -> None:
+    def __init__(self, config: TaskConfig) -> None:
         super().__init__(config=config)
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -172,7 +172,7 @@ class CastDataTypeTask(Task):
     and ensures that the specified columns in the DataFrame are cast to the desired types.
 
     Args:
-        config (ServiceConfig): Configuration object that contains the datatype mappings.
+        config (TaskConfig): Configuration object that contains the datatype mappings.
             The configuration's `datatypes` attribute should provide a dictionary where the keys
             are column names and the values are the target data types.
 
@@ -183,7 +183,7 @@ class CastDataTypeTask(Task):
             is raised and an exception is logged.
     """
 
-    def __init__(self, config: ServiceConfig) -> None:
+    def __init__(self, config: TaskConfig) -> None:
         super().__init__(config=config)
 
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
