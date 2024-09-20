@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:24:56 am                                           #
-# Modified   : Thursday September 19th 2024 09:10:40 pm                                            #
+# Modified   : Friday September 20th 2024 01:03:55 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from discover.domain.base.repo import Repo
 from discover.domain.entity.config.dataset import DatasetConfig
@@ -29,7 +29,6 @@ from discover.domain.entity.config.service import ServiceConfig
 from discover.domain.entity.config.task import TaskConfig
 from discover.domain.entity.context.service import ServiceContext
 from discover.domain.entity.task import Task
-from discover.domain.exception.config import InvalidConfigException
 from discover.domain.task.data.ingest import (
     CastDataTypeTask,
     RemoveNewlinesTask,
@@ -148,7 +147,7 @@ class IngestTaskConfig(TaskConfig):
     service_context: IngestContext = IngestContext()
     text_column: str = "content"
 
-    def validate(self) -> None:
+    def _validate(self) -> list:
         """
         Validates the IngestTaskConfig.
 
@@ -165,8 +164,7 @@ class IngestTaskConfig(TaskConfig):
             If `service_context` is not an `IngestContext` or `text_column` is not a valid string, or if the base
             validation fails.
         """
-        super().validate()
-        errors = []
+        errors = super()._validate()
 
         if not isinstance(self.service_context, IngestContext):
             errors.append(
@@ -177,10 +175,7 @@ class IngestTaskConfig(TaskConfig):
                 f"Invalid {self.__class__.__name__}. Expected a string for text_column. Encountered {type(self.text_column).__name__}."
             )
 
-        if errors:
-            error_msg = "\n".join(errors)
-            logging.error(error_msg)
-            raise InvalidConfigException(error_msg)
+        return errors
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -196,7 +191,7 @@ class RemoveNewLinesTaskConfig(IngestTaskConfig):
         task (type[Task]): The specific task type, default is RemoveNewlinesTask.
     """
 
-    task: type[Task] = RemoveNewlinesTask
+    task: Type[Task] = RemoveNewlinesTask
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -230,11 +225,11 @@ class VerifyEncodingTaskConfig(IngestTaskConfig):
         for additional validation. Raises an `InvalidConfigException` if any validation fails.
     """
 
-    task: type[Task] = VerifyEncodingTask
+    task: Type[Task] = VerifyEncodingTask
     encoding_sample: float = 0.2
     random_state: int = 55
 
-    def validate(self) -> None:
+    def _validate(self) -> list:
         """
         Validates the VerifyEncodingTaskConfig.
 
@@ -252,8 +247,7 @@ class VerifyEncodingTaskConfig(IngestTaskConfig):
             If `encoding_sample` is not a valid number or `random_state` is not an integer or `None`, or if
             any base validation fails.
         """
-        super().validate()
-        errors = []
+        errors = super()._validate()
 
         if not isinstance(self.encoding_sample, (int, float)):
             errors.append(
@@ -265,10 +259,7 @@ class VerifyEncodingTaskConfig(IngestTaskConfig):
                 f"Invalid {self.__class__.__name__}. Expected an integer or None for random_state. Encountered {type(self.random_state).__name__}."
             )
 
-        if errors:
-            error_msg = "\n".join(errors)
-            logging.error(error_msg)
-            raise InvalidConfigException(error_msg)
+        return errors
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -299,7 +290,7 @@ class CastDataTypeTaskConfig(IngestTaskConfig):
         Raises an `InvalidConfigException` if any validation fails.
     """
 
-    task: type[Task] = CastDataTypeTask
+    task: Type[Task] = CastDataTypeTask
     datatypes: dict = field(
         default_factory=lambda: {
             "id": "string",
@@ -316,7 +307,7 @@ class CastDataTypeTaskConfig(IngestTaskConfig):
         }
     )
 
-    def validate(self) -> None:
+    def _validate(self) -> list:
         """
         Validates the CastDataTypeTaskConfig.
 
@@ -329,18 +320,14 @@ class CastDataTypeTaskConfig(IngestTaskConfig):
         InvalidConfigException:
             If `datatypes` is empty or invalid, or if any base validation fails.
         """
-        errors = []
-        super().validate()
+        errors = super()._validate()
 
         if not self.datatypes:
             errors.append(
                 f"Invalid {self.__class__.__name__}. Expected a non-empty dictionary containing a datatype mapping."
             )
 
-        if errors:
-            error_msg = "\n".join(errors)
-            logging.error(error_msg)
-            raise InvalidConfigException(error_msg)
+        return errors
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -402,12 +389,14 @@ class IngestServiceConfig(ServiceConfig):
         This method initializes the repository using the `source_data_config` and appends default task configurations
         for removing new lines, verifying encoding, and casting data types to the `task_configs` list.
         """
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.repo = repo_factory.get_repo(config=self.source_data_config)
         self.task_configs.append(RemoveNewLinesTaskConfig())
         self.task_configs.append(VerifyEncodingTaskConfig())
         self.task_configs.append(CastDataTypeTaskConfig())
+        super().__post_init__()
 
-    def validate(self) -> None:
+    def _validate(self) -> list:
         """
         Validates the IngestServiceConfig.
 
@@ -424,8 +413,7 @@ class IngestServiceConfig(ServiceConfig):
         InvalidConfigException:
             If the repository, task configurations, or data configurations are invalid or missing.
         """
-        super().validate()
-        errors = []
+        errors = super()._validate()
 
         if not isinstance(self.repo, ReviewRepo):
             errors.append(
@@ -436,17 +424,4 @@ class IngestServiceConfig(ServiceConfig):
             errors.append(
                 f"Invalid {self.__class__.__name__}. Tasks have not been configured."
             )
-
-        if errors:
-            error_msg = "\n".join(errors)
-            logging.error(error_msg)
-            raise InvalidConfigException(error_msg)
-
-        # Validate the source and target configs
-        self.service_context.validate()
-        self.source_data_config.validate()
-        self.target_data_config.validate()
-
-        # Validate the task configs
-        for config in self.task_configs:
-            config.validate()
+        return errors

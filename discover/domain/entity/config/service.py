@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:55 pm                                             #
-# Modified   : Thursday September 19th 2024 09:10:02 pm                                            #
+# Modified   : Friday September 20th 2024 01:03:55 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,12 +19,10 @@
 """Abstract Base Class for Data Processing Stage Configurations"""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 
 from discover.domain.entity.config.base import Config
 from discover.domain.entity.config.dataset import DatasetConfig
-from discover.domain.exception.config import InvalidConfigException
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -63,7 +61,7 @@ class ServiceConfig(Config):
     target_data_config: DatasetConfig
     force: bool = False
 
-    def validate(self) -> None:
+    def _validate(self) -> list:
         """
         Validates the ServiceConfig.
 
@@ -82,8 +80,7 @@ class ServiceConfig(Config):
             If any of the configuration attributes are invalid, or if validation of the `source_data_config`
             or `target_data_config` fails.
         """
-        super().validate()
-        errors = []
+        errors = super()._validate()
 
         if not isinstance(self.source_data_config, DatasetConfig):
             errors.append(
@@ -98,11 +95,4 @@ class ServiceConfig(Config):
                 f"Invalid {self.__class__.__name__}. Expected a boolean type. Encountered {type(self.force).__name__}."
             )
 
-        # Validate the source and target configs
-        self.source_data_config.validate()
-        self.target_data_config.validate()
-
-        if errors:
-            error_msg = "\n".join(errors)
-            logging.error(error_msg)
-            raise InvalidConfigException(error_msg)
+        return errors

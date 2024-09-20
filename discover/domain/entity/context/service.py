@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 02:12:54 pm                                              #
-# Modified   : Thursday September 19th 2024 09:04:21 pm                                            #
+# Modified   : Friday September 20th 2024 01:03:55 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,4 +32,5 @@ class ServiceContext(Context):
     future service-specific context details.
     """
 
-    pass
+    def _validate(self) -> list:
+        return super()._validate()

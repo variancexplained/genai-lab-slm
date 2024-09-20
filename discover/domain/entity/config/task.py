@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday September 19th 2024 09:04:41 pm                                            #
-# Modified   : Thursday September 19th 2024 09:28:39 pm                                            #
+# Modified   : Friday September 20th 2024 01:03:55 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,13 +19,11 @@
 """Abstract Base Classes for the Task Subclasses w/in the Domain Services Layer"""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from typing import Type
 
 from discover.domain.entity.config.base import Config
 from discover.domain.entity.task import Task
-from discover.domain.exception.config import InvalidConfigException
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -58,7 +56,7 @@ class TaskConfig(Config):
     task: Type[Task] = Task
     force: bool = False
 
-    def validate(self) -> None:
+    def _validate(self) -> list:
         """
         Validates the TaskConfig.
 
@@ -72,15 +70,16 @@ class TaskConfig(Config):
         InvalidConfigException:
             If `task` is not a valid subclass of `Task`, or if the base configuration fails validation.
         """
-        super().validate()
-        errors = []
+        errors = super()._validate()
 
         if not issubclass(self.task, Task):
             errors.append(
-                f"Invalid {self.__class__.__name__}. Expected a subclass of Task. Encountered {self.task.__name__}."
+                f"Invalid {self.__class__.__name__}. Expected a subclass of Task. Encountered {type(self.task).__name__}."
             )
 
-        if errors:
-            error_msg = "\n".join(errors)
-            logging.error(error_msg)
-            raise InvalidConfigException(error_msg)
+        if not isinstance(self.force, bool):
+            errors.append(
+                f"Invalid {self.__class__.__name__}. Expected a boolean type for force. Encountered {type(self.force).__name__}."
+            )
+
+        return errors

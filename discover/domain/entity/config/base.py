@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:55 pm                                             #
-# Modified   : Thursday September 19th 2024 09:10:40 pm                                            #
+# Modified   : Friday September 20th 2024 12:57:45 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,23 +21,26 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    CONFIG                                                        #
+# ------------------------------------------------------------------------------------------------ #
 from dataclasses import dataclass
+from typing import List
 
 from discover.core.data import DataClass
 from discover.domain.entity.context.service import ServiceContext
 from discover.domain.exception.config import InvalidConfigException
 
 
-# ------------------------------------------------------------------------------------------------ #
-#                                    CONFIG                                                        #
-# ------------------------------------------------------------------------------------------------ #
 @dataclass
 class Config(DataClass):
     """
     Base configuration class for services within the pipeline.
 
-    This class acts as a foundation for more specific configuration classes and ensures that
-    the essential `service_context` is valid and properly configured.
+    This class provides a standardized validation process for all subclasses. It ensures that subclasses
+    implement a `validate()` method that returns a list of errors, which will be automatically logged and raised
+    if validation fails. It also handles setting up the logger for each subclass.
 
     Attributes:
     -----------
@@ -46,39 +49,56 @@ class Config(DataClass):
 
     Methods:
     --------
-    validate() -> None:
-        Validates the configuration by ensuring that `service_context` is an instance of `ServiceContext`.
-        Calls the `validate()` method of the `service_context` to ensure that its internal data is also valid.
-        Raises an `InvalidConfigException` if any validation checks fail.
+    __post_init__() -> None:
+        Initializes the logger, runs validation, and handles error logging and raising if needed.
+
+    validate() -> list:
+        Abstract method that must be implemented by subclasses to return a list of validation errors.
+        Each subclass should define its own specific validation logic.
+
+    log_and_raise(errors: List[str]) -> None:
+        Logs any validation errors and raises an `InvalidConfigException` if errors are found.
     """
 
     service_context: ServiceContext
 
-    @abstractmethod
-    def validate(self) -> None:
+    def __post_init__(self) -> None:
         """
-        Validates the base configuration.
+        Initializes the logger and runs validation. If any validation errors are found, they are logged
+        and an exception is raised.
+        """
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self.validate()
 
-        Ensures that `service_context` is an instance of `ServiceContext` and calls its `validate()` method
-        to perform deeper validation. If `service_context` is invalid or misconfigured, an `InvalidConfigException`
-        is raised with an appropriate error message.
+    def validate(self) -> None:
+        """Invokes the validation subclass specific validation logic."""
+        errors = self._validate()
+        self._log_and_raise(errors=errors)
 
-        Raises:
-        -------
-        InvalidConfigException:
-            If `service_context` is not a valid instance of `ServiceContext`, or if the validation of the
-            `service_context` fails.
+    @abstractmethod
+    def _validate(self) -> list:
+        """
+        Abstract method for subclasses to implement their specific validation logic.
+        This method should return a list of validation errors, if any are found.
         """
         errors = []
+
         if not isinstance(self.service_context, ServiceContext):
             errors.append(
                 f"Invalid {self.__class__.__name__}. Expected a ServiceContext instance. Encountered {type(self.service_context).__name__}."
             )
+        return errors
 
+    def _log_and_raise(self, errors: List[str]) -> None:
+        """
+        Logs the provided list of errors and raises an `InvalidConfigException` if errors are present.
+
+        Parameters:
+        -----------
+        errors : List[str]
+            A list of validation error messages.
+        """
         if errors:
             error_msg = "\n".join(errors)
-            logging.error(error_msg)
+            self._logger.error(error_msg)
             raise InvalidConfigException(error_msg)
-
-        # Validate the service context itself
-        self.service_context.validate()

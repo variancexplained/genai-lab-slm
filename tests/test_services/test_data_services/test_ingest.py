@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 11:23:02 pm                                              #
-# Modified   : Thursday September 19th 2024 03:36:46 pm                                            #
+# Modified   : Friday September 20th 2024 01:05:24 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -87,6 +87,26 @@ class TestIngest:  # pragma: no cover
         assert isinstance(data, (pd.core.frame.DataFrame, pd.DataFrame))
         logger.info(data.head())
         assert repo.exists(stage=config.target_data_config.stage, name="reviews")
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_validation(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        with pytest.raises(AttributeError):
+            IngestService(config={"some": "dict"})
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:55 pm                                             #
-# Modified   : Thursday September 19th 2024 09:10:02 pm                                            #
+# Modified   : Friday September 20th 2024 01:03:55 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,12 +19,10 @@
 """Abstract Base Class for Data Processing Stage Configurations"""
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass, field
 from typing import List, Optional
 
 from discover.domain.entity.config.base import Config
-from discover.domain.exception.config import InvalidConfigException
 from discover.domain.value_objects.data_structure import DataStructure
 from discover.domain.value_objects.file import ExistingDataBehavior, FileFormat
 from discover.domain.value_objects.lifecycle import Stage
@@ -91,10 +89,13 @@ class DatasetConfig(Config):
         are applied correctly when working with partitioned datasets.
         """
         if self.format == FileFormat.PARQUET_PARTITIONED:
-            self.partition_cols = ["category"]
+            self.partition_cols = (
+                ["category"] if not self.partition_cols else self.partition_cols
+            )
             self.existing_data_behavior = ExistingDataBehavior.DELETE_MATCHING.value
+        super().__post_init__()
 
-    def validate(self) -> None:
+    def _validate(self) -> list:
         """
         Validates the DatasetConfig.
 
@@ -109,8 +110,8 @@ class DatasetConfig(Config):
 
         If any of these checks fail, an `InvalidConfigException` is raised with a detailed error message.
         """
-        super().validate()
-        errors = []
+        errors = super()._validate()
+
         if not isinstance(self.stage, Stage):
             errors.append(
                 f"Invalid {self.__class__.__name__}. Expected a Stage instance. Encountered {type(self.stage).__name__}."
@@ -132,13 +133,10 @@ class DatasetConfig(Config):
                 f"Invalid {self.__class__.__name__}. Expected a list for partition_cols. Encountered {type(self.partition_cols).__name__}."
             )
         if self.existing_data_behavior and not isinstance(
-            self.existing_data_behavior, ExistingDataBehavior
+            self.existing_data_behavior, str
         ):
             errors.append(
                 f"Invalid {self.__class__.__name__}. Expected an ExistingDataBehavior instance. Encountered {type(self.existing_data_behavior).__name__}."
             )
 
-        if errors:
-            error_msg = "\n".join(errors)
-            logging.error(error_msg)
-            raise InvalidConfigException(error_msg)
+        return errors

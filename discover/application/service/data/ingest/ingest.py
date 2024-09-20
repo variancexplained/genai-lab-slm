@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:25:12 am                                           #
-# Modified   : Thursday September 19th 2024 09:22:16 pm                                            #
+# Modified   : Friday September 20th 2024 12:58:06 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -43,7 +43,7 @@ class IngestService(ApplicationService):
     """
 
     def __init__(self, config: IngestServiceConfig = IngestServiceConfig()) -> None:
-        """"""
+        config.validate()
         super().__init__(config=config)
 
     def run(self) -> Any:
