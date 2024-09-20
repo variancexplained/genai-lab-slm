@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 08:38:32 pm                                           #
-# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
+# Modified   : Thursday September 19th 2024 09:14:42 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from profanity_check import predict
 from tqdm import tqdm
 
 from discover.core.data import split_dataframe
-from discover.domain.entity.config import ServiceConfig
+from discover.domain.entity.config.service import ServiceConfig
 from discover.domain.entity.task import Task
 
 # ------------------------------------------------------------------------------------------------ #

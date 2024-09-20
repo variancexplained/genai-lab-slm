@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
+# Modified   : Thursday September 19th 2024 09:08:44 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
-from discover.domain.entity.config import DataConfig
+from discover.domain.entity.config.dataset import DatasetConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -147,13 +147,13 @@ class RepoFactory(ABC):
 
     Methods:
     --------
-    get_repo(config: DataConfig) -> Repo:
+    get_repo(config: DatasetConfig) -> Repo:
         Abstract method that, when implemented, returns a repository instance based
         on the given configuration.
 
         Parameters:
         -----------
-        config : DataConfig
+        config : DatasetConfig
             Configuration object containing necessary information to initialize
             the repository (e.g., database URL, credentials, etc.).
 
@@ -165,5 +165,5 @@ class RepoFactory(ABC):
     """
 
     @abstractmethod
-    def get_repo(self, config: DataConfig) -> Repo:
+    def get_repo(self, config: DatasetConfig) -> Repo:
         """Returns a repository based upon the configuration provided."""

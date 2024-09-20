@@ -4,44 +4,32 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/application/service/base/service.py                                       #
+# Filename   : /discover/domain/entity/context/service.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday September 13th 2024 05:41:52 pm                                              #
-# Modified   : Thursday September 19th 2024 09:14:41 pm                                            #
+# Created    : Friday September 13th 2024 02:12:54 pm                                              #
+# Modified   : Thursday September 19th 2024 09:04:21 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from abc import ABC, abstractmethod
-from typing import Any, Optional
+"""Context entity module"""
 
-from discover.domain.entity.config.service import ServiceConfig
+from dataclasses import dataclass
+
+from discover.domain.entity.context.base import Context
 
 
 # ------------------------------------------------------------------------------------------------ #
-class ApplicationService(ABC):
-    """Abstract base class for application layer services.
-
-    This class defines the interface for services in the application layer,
-    ensuring that any subclass must implement the `run` method. The `run` method
-    is intended to encapsulate the execution logic of a service.
+@dataclass
+class ServiceContext(Context):
+    """
+    Represents a context for a service-level process, inheriting from the base `Context`.
+    This class currently does not add any additional attributes but serves as a placeholder for
+    future service-specific context details.
     """
 
-    def __init__(
-        self,
-        config: ServiceConfig,
-    ) -> None:
-        self._config = config
-
-    @abstractmethod
-    def run(self) -> Optional[Any]:
-        """Runs an application layer service.
-
-        This method must be implemented by any subclass to define the specific
-        behavior of the service. The implementation of this method typically
-        involves executing the core functionality of the service.
-        """
+    pass

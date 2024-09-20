@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:25:12 am                                           #
-# Modified   : Wednesday September 18th 2024 09:48:12 pm                                           #
+# Modified   : Thursday September 19th 2024 09:22:16 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,9 +19,10 @@
 """Ingest Service Module"""
 from typing import Any
 
+from discover.application.service.base.pipeline import PipelineBuilder
 from discover.application.service.base.service import ApplicationService
 from discover.application.service.data.ingest.config import IngestServiceConfig
-from discover.application.service.data.ingest.pipeline import IngestPipelineBuilder
+from discover.application.service.data.ingest.pipeline import IngestPipeline
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -56,6 +57,6 @@ class IngestService(ApplicationService):
         Any:
             The result of the ingestion pipeline execution.
         """
-        builder = IngestPipelineBuilder(config=self._config)
+        builder = PipelineBuilder(config=self._config, pipeline_cls=IngestPipeline)
         pipeline = builder.create_pipeline()
         return pipeline.run()

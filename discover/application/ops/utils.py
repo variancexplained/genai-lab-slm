@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
+# Modified   : Thursday September 19th 2024 09:13:43 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from typing import Union
 import pandas as pd
 from pyspark.sql import DataFrame as SparkDataFrame
 
-from discover.domain.entity.context import Context
+from discover.domain.entity.context.base import Context
 from discover.domain.entity.task import Task
 
 

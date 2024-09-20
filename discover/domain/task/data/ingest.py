@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 08:39:32 pm                                           #
-# Modified   : Thursday September 19th 2024 03:18:56 pm                                            #
+# Modified   : Thursday September 19th 2024 09:15:05 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from pandarallel import pandarallel
 
-from discover.domain.entity.config import TaskConfig
+from discover.domain.entity.config.task import TaskConfig
 from discover.domain.entity.task import Task
 
 # ------------------------------------------------------------------------------------------------ #

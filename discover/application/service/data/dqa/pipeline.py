@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:25:06 am                                           #
-# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
+# Modified   : Thursday September 19th 2024 09:14:41 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from pandarallel import pandarallel
 from discover.application.ops.announcer import pipeline_announcer
 from discover.application.service.base.pipeline import Pipeline, PipelineBuilder
 from discover.application.service.data import dqa
-from discover.domain.entity.config import ServiceConfig
+from discover.domain.entity.config.service import ServiceConfig
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)

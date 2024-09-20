@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Thursday September 19th 2024 03:13:06 pm                                            #
+# Modified   : Thursday September 19th 2024 09:26:50 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-from discover.domain.entity.config import ServiceConfig
-from discover.domain.entity.context import Context
+from discover.domain.entity.config.service import ServiceConfig
+from discover.domain.entity.context.base import Context
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -89,9 +89,10 @@ class Task(ABC):
 
         self._config = config
         self._kwargs = kwargs
+        from discover.domain.entity.context.task import TaskContext
 
         # Create task context from pipeline context stage
-        self._context = Context(
+        self._context = TaskContext(
             phase=config.service_context.phase,
             stage=config.service_context.stage,
             task=self.__class__.__name__,

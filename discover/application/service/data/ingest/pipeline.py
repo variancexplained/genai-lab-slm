@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:25:06 am                                           #
-# Modified   : Thursday September 19th 2024 03:19:49 pm                                            #
+# Modified   : Thursday September 19th 2024 09:14:41 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,8 @@ from typing import Any
 from pandarallel import pandarallel
 
 from discover.application.ops.announcer import pipeline_announcer
-from discover.application.service.base.pipeline import Pipeline, PipelineBuilder
-from discover.domain.entity.config import ServiceConfig
+from discover.application.service.base.pipeline import Pipeline
+from discover.domain.entity.config.service import ServiceConfig
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
@@ -78,60 +78,3 @@ class IngestPipeline(Pipeline):
             data=data,
         )
         return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                INGEST PIPELINE BUILDER                                            #
-# ------------------------------------------------------------------------------------------------ #
-class IngestPipelineBuilder(PipelineBuilder):
-    """
-    Builder class for constructing the data ingestion pipeline.
-
-    This class is responsible for creating a data ingestion pipeline by
-    assembling the required tasks (e.g., reading, ingesting, writing)
-    and returning a configured pipeline ready for execution. The pipeline
-    handles tasks related to data ingestion and quality analysis.
-
-    Methods:
-    --------
-    create_pipeline() -> IngestPipeline:
-        Constructs the data ingestion pipeline, adds the relevant tasks,
-        and returns the configured pipeline.
-    """
-
-    def __init__(
-        self, config: ServiceConfig, pipeline_cls: type[Pipeline] = IngestPipeline
-    ) -> None:
-        """
-        Initializes the IngestPipelineBuilder with the provided configuration and context.
-
-        Parameters:
-        -----------
-        config : ServiceConfig
-            Configuration object that contains settings and parameters for building the pipeline.
-        context : Context
-            Context object that tracks metadata related to the pipeline's execution.
-        """
-        super().__init__(config=config, pipeline_cls=pipeline_cls)
-
-    def create_pipeline(self) -> IngestPipeline:
-        """
-        Creates and configures the ingestion pipeline with the necessary tasks.
-
-        This method sets up the pipeline by adding tasks such as reading from the source,
-        ingesting data, and writing to the target. It returns a fully constructed
-        pipeline ready for execution.
-
-        Returns:
-        --------
-        IngestPipeline:
-            The fully configured data ingestion pipeline with all tasks.
-        """
-        # Instantiate pipeline
-        pipe = self._pipeline_cls(config=self._config)
-        # Extract the task and task configs, configure and add to pipeline.
-        for task_config in self._config.task_configs:
-            task = task_config.task(task_config)
-            pipe.add_task(task)
-
-        return pipe

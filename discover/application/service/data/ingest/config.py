@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:24:56 am                                           #
-# Modified   : Thursday September 19th 2024 03:11:16 pm                                            #
+# Modified   : Thursday September 19th 2024 09:10:40 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,10 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from discover.domain.base.repo import Repo
-from discover.domain.entity.config import DataConfig, ServiceConfig, TaskConfig
-from discover.domain.entity.context import ServiceContext
+from discover.domain.entity.config.dataset import DatasetConfig
+from discover.domain.entity.config.service import ServiceConfig
+from discover.domain.entity.config.task import TaskConfig
+from discover.domain.entity.context.service import ServiceContext
 from discover.domain.entity.task import Task
 from discover.domain.exception.config import InvalidConfigException
 from discover.domain.task.data.ingest import (
@@ -62,11 +64,11 @@ class IngestContext(ServiceContext):
 #                                      DATA CONFIG                                                 #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class IngestSourceDataConfig(DataConfig):
+class IngestSourceDatasetConfig(DatasetConfig):
     """
     Configuration class for managing the source data specifically for the ingest stage of the pipeline.
 
-    This class extends `DataConfig` and provides default values for the ingest process, such as the
+    This class extends `DatasetConfig` and provides default values for the ingest process, such as the
     stage of data preparation and the name of the dataset.
 
     Attributes:
@@ -88,11 +90,11 @@ class IngestSourceDataConfig(DataConfig):
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class IngestTargetDataConfig(DataConfig):
+class IngestTargetDatasetConfig(DatasetConfig):
     """
     Configuration class for managing the target data specifically for the ingest stage of the pipeline.
 
-    This class extends `DataConfig` and provides default values for the target data configuration in the
+    This class extends `DatasetConfig` and provides default values for the target data configuration in the
     ingest process, such as the stage of data preparation and the name of the dataset.
 
     Attributes:
@@ -362,10 +364,10 @@ class IngestServiceConfig(ServiceConfig):
         The repository used for managing data in the ingest process. The repository is automatically initialized
         using the `source_data_config` during the post-initialization step.
 
-    source_data_config : DataConfig, default=IngestSourceDataConfig()
+    source_data_config : DatasetConfig, default=IngestSourceDatasetConfig()
         Configuration for the source data, defining how data is ingested.
 
-    target_data_config : DataConfig, default=IngestTargetDataConfig()
+    target_data_config : DatasetConfig, default=IngestTargetDatasetConfig()
         Configuration for the target data, defining how data is stored after processing.
 
     task_configs : List[TaskConfig], default=[]
@@ -388,8 +390,8 @@ class IngestServiceConfig(ServiceConfig):
 
     service_context: ServiceContext = IngestContext()
     repo: Optional[Repo] = None
-    source_data_config: DataConfig = IngestSourceDataConfig()
-    target_data_config: DataConfig = IngestTargetDataConfig()
+    source_data_config: DatasetConfig = IngestSourceDatasetConfig()
+    target_data_config: DatasetConfig = IngestTargetDatasetConfig()
     task_configs: List[TaskConfig] = field(default_factory=list)
     force: bool = False
 

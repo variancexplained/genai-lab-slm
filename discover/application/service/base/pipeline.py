@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 30th 2024 03:42:28 am                                                   #
-# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
+# Modified   : Thursday September 19th 2024 09:21:49 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from typing import Any
 from discover.application.ops.announcer import task_announcer
 from discover.application.ops.cachenow import cachenow
 from discover.application.ops.profiler import profiler
-from discover.domain.entity.config import ServiceConfig
+from discover.domain.entity.config.service import ServiceConfig
 from discover.domain.entity.task import Task
 
 
@@ -214,8 +214,8 @@ class PipelineBuilder(ABC):
 
     def __init__(
         self,
+        pipeline_cls: type[Pipeline],
         config: ServiceConfig,
-        pipeline_cls: type[Pipeline] = Pipeline,
         **kwargs,
     ) -> None:
         """
@@ -236,18 +236,24 @@ class PipelineBuilder(ABC):
         self._pipeline_cls = pipeline_cls
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    @abstractmethod
     def create_pipeline(self) -> Pipeline:
         """
-        Constructs the pipeline that executes a series of tasks.
+        Creates and configures the ingestion pipeline with the necessary tasks.
 
-        Subclasses must implement this method to define the logic for creating a pipeline.
-        The pipeline is responsible for executing a series of tasks, each of which contributes
-        to processing, transformation, or other steps in the pipeline's workflow.
+        This method sets up the pipeline by adding tasks such as reading from the source,
+        ingesting data, and writing to the target. It returns a fully constructed
+        pipeline ready for execution.
 
         Returns:
         --------
-        Pipeline:
-            An instance of the pipeline to be executed.
+        IngestPipeline:
+            The fully configured data ingestion pipeline with all tasks.
         """
-        pass
+        # Instantiate pipeline
+        pipe = self._pipeline_cls(config=self._config)
+        # Extract the task and task configs, configure and add to pipeline.
+        for task_config in self._config.task_configs:
+            task = task_config.task(task_config)
+            pipe.add_task(task)
+
+        return pipe

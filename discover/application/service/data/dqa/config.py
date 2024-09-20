@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 12:24:56 am                                           #
-# Modified   : Thursday September 19th 2024 01:11:54 pm                                            #
+# Modified   : Thursday September 19th 2024 09:07:43 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,8 @@ from dataclasses import dataclass
 from typing import Optional
 
 from discover.domain.base.repo import Repo
-from discover.domain.entity.config import DataConfig, ServiceConfig
+from discover.domain.entity.config.dataset import DatasetConfig
+from discover.domain.entity.config.service import ServiceConfig
 from discover.domain.task.data.dqa import (
     DetectDuplicateRowTask,
     DetectEmailTask,
@@ -47,11 +48,11 @@ repo_factory = ReviewRepoFactory()
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class DQASourceDataConfig(DataConfig):
+class DQASourceDatasetConfig(DatasetConfig):
     """
     Configuration class for source data in the Data Quality Assessment (DQA) phase.
 
-    This class extends `DataConfig` and provides specific default values for the DQA process,
+    This class extends `DatasetConfig` and provides specific default values for the DQA process,
     particularly for the data ingestion stage. It is designed to configure the source data
     during the Data Quality Assessment phase of the data preparation pipeline.
 
@@ -71,8 +72,8 @@ class DQASourceDataConfig(DataConfig):
 
     Inherits:
     ---------
-    DataConfig:
-        Inherits all attributes and methods from the `DataConfig` class, which manages configuration
+    DatasetConfig:
+        Inherits all attributes and methods from the `DatasetConfig` class, which manages configuration
         for data structures, file formats, partitioning, and other dataset-specific details.
     """
 
@@ -83,11 +84,11 @@ class DQASourceDataConfig(DataConfig):
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class DQATargetDataConfig(DataConfig):
+class DQATargetDatasetConfig(DatasetConfig):
     """
     Configuration class for target data in the Data Quality Assessment (DQA) phase.
 
-    This class extends `DataConfig` and provides default values for the DQA process,
+    This class extends `DatasetConfig` and provides default values for the DQA process,
     specifically for configuring the target data during the DQA stage. It is designed
     to manage the target dataset settings used during the Data Quality Assessment
     phase of the data preparation pipeline.
@@ -108,8 +109,8 @@ class DQATargetDataConfig(DataConfig):
 
     Inherits:
     ---------
-    DataConfig:
-        Inherits all attributes and methods from the `DataConfig` class, which manages configuration
+    DatasetConfig:
+        Inherits all attributes and methods from the `DatasetConfig` class, which manages configuration
         for data structures, file formats, partitioning, and other dataset-specific details.
     """
 
@@ -135,10 +136,10 @@ class DQAServiceConfig(ServiceConfig):
         The repository object used to access data. It is initialized in `__post_init__`
         based on the `source_data_config`.
 
-    source_data_config : DataConfig, default=DQASourceDataConfig()
+    source_data_config : DatasetConfig, default=DQASourceDatasetConfig()
         Configuration object for the source data, detailing the source dataset for the DQA process.
 
-    target_data_config : DataConfig, default=DQATargetDataConfig()
+    target_data_config : DatasetConfig, default=DQATargetDatasetConfig()
         Configuration object for the target data, defining how the data should be written or handled
         after processing.
 
@@ -216,8 +217,8 @@ class DQAServiceConfig(ServiceConfig):
 
     repo: Optional[Repo] = None
     # Data configuration
-    source_data_config: DataConfig = DQASourceDataConfig()
-    target_data_config: DataConfig = DQATargetDataConfig()
+    source_data_config: DatasetConfig = DQASourceDatasetConfig()
+    target_data_config: DatasetConfig = DQATargetDatasetConfig()
     # Stage config
     phase: Phase = Phase.DATAPREP
     stage: Stage = DataPrepStage.DQA
