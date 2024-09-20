@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday September 19th 2024 09:04:41 pm                                            #
-# Modified   : Friday September 20th 2024 01:03:55 am                                              #
+# Modified   : Friday September 20th 2024 01:40:41 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -71,11 +71,6 @@ class TaskConfig(Config):
             If `task` is not a valid subclass of `Task`, or if the base configuration fails validation.
         """
         errors = super()._validate()
-
-        if not issubclass(self.task, Task):
-            errors.append(
-                f"Invalid {self.__class__.__name__}. Expected a subclass of Task. Encountered {type(self.task).__name__}."
-            )
 
         if not isinstance(self.force, bool):
             errors.append(
