@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 01:07:21 am                                              #
-# Modified   : Friday September 20th 2024 01:18:21 am                                              #
+# Modified   : Friday September 20th 2024 08:06:29 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,10 +22,10 @@ from datetime import datetime
 
 import pytest
 
-from discover.domain.entity.config.dataset import DatasetConfig
-from discover.domain.entity.context.service import ServiceContext
-from discover.domain.exception.config import InvalidConfigException
-from discover.domain.value_objects.lifecycle import DataPrepStage, Phase
+from discover.substance.entity.config.dataset import DatasetConfig
+from discover.substance.entity.context.service import ServiceContext
+from discover.substance.exception.config import InvalidConfigException
+from discover.substance.value_objects.lifecycle import EDataPrepStage, EPhase
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -51,9 +51,9 @@ class TestDatasetConfig:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         config = DatasetConfig(
             service_context=ServiceContext(
-                phase=Phase.DATAPREP, stage=DataPrepStage.DQA
+                phase=EPhase.DATAPREP, estage=EDataPrepStage.DQA
             ),
-            stage=DataPrepStage.DQA,
+            estage=EDataPrepStage.DQA,
             name="some_name",
         )
         assert isinstance(config, DatasetConfig)
@@ -77,7 +77,7 @@ class TestDatasetConfig:  # pragma: no cover
         with pytest.raises(InvalidConfigException):
             _ = DatasetConfig(
                 service_context="some string",
-                stage=6,
+                estage=6,
                 name=2,
                 data_structure=5,
                 format="str",

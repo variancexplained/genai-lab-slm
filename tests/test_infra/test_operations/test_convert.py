@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 10:35:29 am                                           #
-# Modified   : Saturday September 14th 2024 06:45:22 pm                                            #
+# Modified   : Friday September 20th 2024 07:54:00 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,8 @@ import pandas as pd
 import pytest
 from pyspark.sql import DataFrame
 
-from discover.infra.operations.convert import ConvertTask
-from discover.infra.utils.data_utils.converter import ToPandas, ToSpark
+from discover.core.operations.convert import ConvertTask
+from discover.core.tools.data.conversion import ToPandas, ToSpark
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 # ------------------------------------------------------------------------------------------------ #
-STAGE = "00_raw"
+ESTAGE = "00_raw"
 NAME = "reviews"
 
 

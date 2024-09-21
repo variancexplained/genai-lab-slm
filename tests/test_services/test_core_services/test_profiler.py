@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 01:11:48 am                                             #
-# Modified   : Thursday September 19th 2024 09:14:41 pm                                            #
+# Modified   : Friday September 20th 2024 08:17:29 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,9 +24,9 @@ import pandas as pd
 import pytest
 
 from discover.application.ops.profiler import profiler
-from discover.domain.entity.config.service import ServiceConfig
-from discover.domain.entity.task import Task
-from discover.infra.storage.local.io import IOService
+from discover.core.storage.local.io import IOService
+from discover.substance.entity.config.service import StageConfig
+from discover.substance.entity.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -72,7 +72,7 @@ class TestProfiler:  # pragma: no cover
 
         # ---------------------------------------------------------------------------------------- #
         class TestTask(Task):
-            def __init__(self, *args, config: ServiceConfig, **kwargs) -> None:
+            def __init__(self, *args, config: StageConfig, **kwargs) -> None:
                 super().__init__(*args, config=config, **kwargs)
 
             @profiler

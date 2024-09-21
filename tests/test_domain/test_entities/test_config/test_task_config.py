@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 01:07:21 am                                              #
-# Modified   : Friday September 20th 2024 01:33:25 am                                              #
+# Modified   : Friday September 20th 2024 08:06:29 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,11 +22,11 @@ from datetime import datetime
 
 import pytest
 
-from discover.domain.entity.config.task import TaskConfig
-from discover.domain.entity.context.service import ServiceContext
-from discover.domain.entity.task import Task
-from discover.domain.exception.config import InvalidConfigException
-from discover.domain.value_objects.lifecycle import DataPrepStage, Phase
+from discover.substance.entity.config.task import TaskConfig
+from discover.substance.entity.context.service import ServiceContext
+from discover.substance.entity.task import Task
+from discover.substance.exception.config import InvalidConfigException
+from discover.substance.value_objects.lifecycle import EDataPrepStage, EPhase
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -52,7 +52,7 @@ class TestTaskConfig:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         config = TaskConfig(
             service_context=ServiceContext(
-                phase=Phase.DATAPREP, stage=DataPrepStage.DQA
+                phase=EPhase.DATAPREP, estage=EDataPrepStage.DQA
             ),
             task=Task,
         )

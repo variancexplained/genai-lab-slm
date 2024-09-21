@@ -1,0 +1,190 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : AppVoCAI-Discover                                                                   #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.10.14                                                                             #
+# Filename   : /tests/test_services/test_data_services/test_dqa.py                                 #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john@variancexplained.com                                                           #
+# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Friday September 13th 2024 11:23:02 pm                                              #
+# Modified   : Friday September 20th 2024 08:17:29 pm                                              #
+# ------------------------------------------------------------------------------------------------ #
+# License    : MIT License                                                                         #
+# Copyright  : (c) 2024 John James                                                                 #
+# ================================================================================================ #
+import inspect
+import logging
+from datetime import datetime
+
+import pandas as pd
+import pytest
+
+from discover.application.service.data.dqa.config import DQAStageConfig
+from discover.application.service.data.dqa.dqa import DQAService
+from discover.core.repo.mckinney import McKinneyRepo
+from discover.core.storage.local.cache import DiscoverCache
+
+# ------------------------------------------------------------------------------------------------ #
+# pylint: disable=missing-class-docstring, line-too-long
+# mypy: ignore-errors
+# ------------------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------------------ #
+logger = logging.getLogger(__name__)
+# ------------------------------------------------------------------------------------------------ #
+double_line = f"\n{100 * '='}"
+single_line = f"\n{100 * '-'}"
+
+
+@pytest.mark.dqa
+class TestDQA:  # pragma: no cover
+    # ============================================================================================ #
+    def test_setup(self, dqa_config, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        cache = DiscoverCache()
+        cache.reset()
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_dqa(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        # Remove prior endpoint datasets
+        repo = McKinneyRepo()
+        config = DQAStageConfig()
+        repo.remove(config=config.target_data_config)
+
+        # Instantiate and run the service.
+        dqa = DQAService(config=config)
+        data = dqa.run()
+        assert isinstance(data, (pd.core.frame.DataFrame, pd.DataFrame))
+        logger.info(data.head())
+        assert repo.exists(config=config.target_data_config)
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_dqa_force(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        # Instantiate and run the service, with force = True, should ignore endpoint, but use cache.
+        config = DQAStageConfig(force=True)
+        dqa = DQAService(config=config)
+        data = dqa.run()
+        assert isinstance(data, (pd.core.frame.DataFrame, pd.DataFrame))
+        logger.info(data.head())
+
+        # Confirm the endpoint exists.
+        repo = McKinneyRepo()
+        assert repo.exists(config=config.target_data_config)
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_dqa_from_endpoint(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        # Instantiate and run the service, with force = False, should run fast.
+        config = DQAStageConfig()
+        dqa = DQAService(config=config)
+        data = dqa.run()
+        assert isinstance(data, (pd.core.frame.DataFrame, pd.DataFrame))
+        logger.info(data.head())
+
+        # Confirm the endpoint exists.
+        repo = McKinneyRepo()
+        assert repo.exists(config=config.target_data_config)
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_validation(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        with pytest.raises(AttributeError):
+            DQAService(config={"some": "dict"})
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_teardown(self, dqa_config, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        # Remove the endpoint
+        config = DQAStageConfig()
+        repo = McKinneyRepo()
+        repo.remove(config=config.target_data_config)
+        # Reset the cache
+        cache = DiscoverCache()
+        cache.reset()
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)

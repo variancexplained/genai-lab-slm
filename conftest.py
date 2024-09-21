@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday September 18th 2024 10:02:49 pm                                           #
+# Modified   : Friday September 20th 2024 08:17:23 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,11 +25,11 @@ from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
-from discover.domain.value_objects.lifecycle import DataPrepStage, Phase
-from discover.infra.config.reader import ConfigReader
-from discover.infra.database.schema import schema
-from discover.infra.storage.cloud.aws import S3Handler
-from discover.infra.storage.local.io import IOService
+from discover.core.config.reader import ConfigReader
+from discover.core.database.schema import schema
+from discover.core.storage.cloud.aws import S3Handler
+from discover.core.storage.local.io import IOService
+from discover.substance.value_objects.lifecycle import EDataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -152,8 +152,8 @@ def test_config(pandas_df):
 
     @dataclass
     class TestConfig:
-        phase: Phase = Phase.DATAPREP
-        stage: DataPrepStage = DataPrepStage.DQA
+        ephase: EPhase = EPhase.DATAPREP
+        estage: EDataPrepStage = EDataPrepStage.DQA
         force: bool = False
 
     return TestConfig()
@@ -165,9 +165,9 @@ def ingest_config():
     """
     Constructs an ingest service configuration
     """
-    from discover.application.service.data.ingest.config import IngestServiceConfig
+    from discover.application.service.data.ingest.config import IngestStageConfig
 
-    return IngestServiceConfig()
+    return IngestStageConfig()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -176,6 +176,6 @@ def dqa_config():
     """
     Constructs an dqa service configuration
     """
-    from discover.application.service.data.dqa.config import DQAServiceConfig
+    from discover.application.service.data.dqa.config import DQAStageConfig
 
-    return DQAServiceConfig()
+    return DQAStageConfig()

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 01:07:21 am                                              #
-# Modified   : Friday September 20th 2024 01:28:46 am                                              #
+# Modified   : Friday September 20th 2024 08:17:29 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,11 +22,11 @@ from datetime import datetime
 
 import pytest
 
-from discover.domain.entity.config.dataset import DatasetConfig
-from discover.domain.entity.config.service import ServiceConfig
-from discover.domain.entity.context.service import ServiceContext
-from discover.domain.exception.config import InvalidConfigException
-from discover.domain.value_objects.lifecycle import DataPrepStage, Phase
+from discover.substance.entity.config.dataset import DatasetConfig
+from discover.substance.entity.config.service import StageConfig
+from discover.substance.entity.context.service import ServiceContext
+from discover.substance.exception.config import InvalidConfigException
+from discover.substance.value_objects.lifecycle import EDataPrepStage, EPhase
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -41,7 +41,7 @@ single_line = f"\n{100 * '-'}"
 
 @pytest.mark.config
 @pytest.mark.service
-class TestServiceConfig:  # pragma: no cover
+class TestStageConfig:  # pragma: no cover
     # ============================================================================================ #
     def test_valid_config(self, caplog) -> None:
         start = datetime.now()
@@ -50,26 +50,26 @@ class TestServiceConfig:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        config = ServiceConfig(
+        config = StageConfig(
             service_context=ServiceContext(
-                phase=Phase.DATAPREP, stage=DataPrepStage.DQA
+                phase=EPhase.DATAPREP, estage=EDataPrepStage.DQA
             ),
             source_data_config=DatasetConfig(
                 service_context=ServiceContext(
-                    phase=Phase.ANALYSIS, stage=DataPrepStage.AGGTRICS
+                    phase=EPhase.ANALYSIS, estage=EDataPrepStage.AGGTRICS
                 ),
                 name="somename",
-                stage=DataPrepStage.DQA,
+                estage=EDataPrepStage.DQA,
             ),
             target_data_config=DatasetConfig(
                 service_context=ServiceContext(
-                    phase=Phase.ANALYSIS, stage=DataPrepStage.AGGTRICS
+                    phase=EPhase.ANALYSIS, estage=EDataPrepStage.AGGTRICS
                 ),
                 name="somename",
-                stage=DataPrepStage.DQA,
+                estage=EDataPrepStage.DQA,
             ),
         )
-        assert isinstance(config, ServiceConfig)
+        assert isinstance(config, StageConfig)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -88,7 +88,7 @@ class TestServiceConfig:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         with pytest.raises(InvalidConfigException):
-            _ = ServiceConfig(
+            _ = StageConfig(
                 service_context=2, source_data_config=3, target_data_config=3, force=9
             )
 
