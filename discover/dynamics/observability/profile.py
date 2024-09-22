@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/observability/profile.py                                                  #
+# Filename   : /discover/dynamics/observability/profile.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Friday September 20th 2024 08:12:27 pm                                              #
+# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,13 +23,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, Optional, Union
 
-from discover.core.structure.data_class import DataClass
-from discover.substance.value_objects.lifecycle import (
+from discover.element.value_objects.lifecycle import (
     EAnalysisStage,
     EDataPrepStage,
     EPhase,
     ModelingStage,
 )
+from discover.infra.structure.data_class import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #

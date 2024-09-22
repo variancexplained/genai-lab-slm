@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 01:07:21 am                                              #
-# Modified   : Friday September 20th 2024 08:06:29 pm                                              #
+# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,10 +22,10 @@ from datetime import datetime
 
 import pytest
 
-from discover.substance.entity.config.dataset import DatasetConfig
-from discover.substance.entity.context.service import ServiceContext
-from discover.substance.exception.config import InvalidConfigException
-from discover.substance.value_objects.lifecycle import EDataPrepStage, EPhase
+from discover.element.entity.config.dataset import DatasetConfig
+from discover.element.entity.context.service import ServiceContext
+from discover.element.exception.config import InvalidConfigException
+from discover.element.value_objects.lifecycle import EDataPrepStage, EPhase
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

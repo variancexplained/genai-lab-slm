@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Friday September 20th 2024 07:17:14 pm                                              #
+# Modified   : Sunday September 22nd 2024 02:25:58 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,7 @@ from typing import Union
 import pandas as pd
 from pyspark.sql import DataFrame as SparkDataFrame
 
-from discover.substance.entity.context.base import Context
-from discover.substance.entity.task import Task
+from discover.dynamics.base.task import Task
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -64,41 +63,6 @@ def find_dataframe(args, kwargs) -> Union[pd.DataFrame, SparkDataFrame]:
                 df = value
                 break
     return df
-
-
-# ------------------------------------------------------------------------------------------------ #
-def find_task(args, kwargs) -> Context:
-    """
-    This function is invoked by decorators that expect a Task object as an argument or a keyword
-    argument. Searches for a Task object in the positional and keyword arguments and returns
-    the context attribute of the Task.
-
-    Parameters:
-    -----------
-    args : tuple
-        The positional arguments of the function.
-    kwargs : dict
-        The keyword arguments of the function.
-
-    Returns:
-    --------
-    context : Context or None
-        Returns the found Context, or None if no Context object is found.
-    """
-    task = None
-    # Search through args first for a Task object
-    for arg in args:
-        if isinstance(arg, Task):
-            task = arg
-            break
-
-    # If no context found in args, search through kwargs
-    if task is None:
-        for key, value in kwargs.items():
-            if isinstance(value, Task):
-                task = value
-                break
-    return task
 
 
 # ------------------------------------------------------------------------------------------------ #

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Friday September 20th 2024 07:51:52 pm                                              #
+# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 
-from discover.core.config.reader import ConfigReader
-from discover.core.structure.data_class import DataClass
+from discover.infra.config.reader import ConfigReader
+from discover.infra.structure.data_class import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #

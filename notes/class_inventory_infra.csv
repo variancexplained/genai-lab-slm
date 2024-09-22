@@ -9,7 +9,7 @@
 7,SQLiteDB,infra.database.sqlite
 8,SQLiteDBA,infra.database.sqlite
 9,ProfileRepo,infra.repo.profile
-10,FileFormat,infra.repo.base
+10,StorageFormat,infra.repo.base
 11,ReviewRepo,infra.repo.base
 12,McKinneyRepo,infra.repo.mckinney
 13,ZahariaRepo,infra.repo.zaharia

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_infra/test_operations/test_download.py                                  #
+# Filename   : /tests/test_core/test_operations/test_download.py                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 02:27:48 pm                                           #
-# Modified   : Friday September 20th 2024 05:23:09 pm                                              #
+# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.core.config.reader import ConfigReader
+from discover.infra.config.reader import ConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

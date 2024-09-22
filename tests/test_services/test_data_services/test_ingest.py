@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 11:23:02 pm                                              #
-# Modified   : Friday September 20th 2024 08:17:29 pm                                              #
+# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,8 @@ import pytest
 
 from discover.application.service.data.ingest.config import IngestStageConfig
 from discover.application.service.data.ingest.ingest import IngestService
-from discover.core.repo.mckinney import McKinneyRepo
-from discover.core.storage.local.cache import DiscoverCache
+from discover.infra.repo.mckinney import McKinneyRepo
+from discover.infra.storage.local.cache import DiscoverCache
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Friday September 20th 2024 05:23:09 pm                                              #
+# Modified   : Saturday September 21st 2024 08:37:12 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,9 +24,10 @@ import logging.config  # pragma: no cover
 
 from dependency_injector import containers, providers
 
-from discover.core.config.reader import ConfigReader
-from discover.core.database.sqlite import SQLiteDB, SQLiteDBA
-from discover.core.repo.profile import ProfileRepo
+from discover.infra.database.sqlite import SQLiteDB, SQLiteDBA
+from discover.infra.frameworks.spark.session import SparkSessionProvider
+from discover.infra.repo.profile import ProfileRepo
+from discover.space.config.reader import ConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 # mypy: ignore-errors
@@ -43,6 +44,18 @@ class LoggingContainer(containers.DeclarativeContainer):
     main = providers.Resource(
         logging.config.dictConfig,
         config=config.logging,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   SPARK CONTAINER                                                #
+# ------------------------------------------------------------------------------------------------ #
+class SparkContainer(containers.DeclarativeContainer):
+
+    config = providers.Configuration()
+
+    provide = providers.Singleton(
+        SparkSessionProvider, memory=config.core.frameworks.spark.memory
     )
 
 
@@ -91,5 +104,8 @@ class DiscoverContainer(containers.DeclarativeContainer):
     # Configure the database by injecting the config data
     db = providers.Container(DatabaseContainer, config=config_data)
 
-    # Configure the database by injecting the config data
+    # Configure the repository by injecting the database.
     repo = providers.Container(RepoContainer, db=db)
+
+    # Configure the spark container with configuration.
+    spark = providers.Container(SparkContainer, config=config_data)

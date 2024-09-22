@@ -11,25 +11,23 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday September 20th 2024 08:17:23 pm                                              #
+# Modified   : Saturday September 21st 2024 11:41:22 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 import sys
-from dataclasses import dataclass
 
 import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
-from discover.core.config.reader import ConfigReader
-from discover.core.database.schema import schema
-from discover.core.storage.cloud.aws import S3Handler
-from discover.core.storage.local.io import IOService
-from discover.substance.value_objects.lifecycle import EDataPrepStage
+from discover.infra.database.schema import schema
+from discover.infra.storage.cloud.aws import S3Handler
+from discover.infra.storage.local.io import IOService
+from discover.space.config.reader import ConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -48,7 +46,7 @@ def container() -> DiscoverContainer:
     container = DiscoverContainer()
     container.init_resources()
     container.wire(
-        packages=[],
+        modules=["discover.core.storage.local.io"],
     )
 
     return container
@@ -140,42 +138,3 @@ def spark_df(spark, pandas_df):
     """
 
     return spark.createDataFrame(pandas_df)
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def test_config(pandas_df):
-    """
-    Pytest fixture that converts a pandas DataFrame to a Spark DataFrame.
-    Requires the spark fixture and pandas_df_from_csv fixture.
-    """
-
-    @dataclass
-    class TestConfig:
-        ephase: EPhase = EPhase.DATAPREP
-        estage: EDataPrepStage = EDataPrepStage.DQA
-        force: bool = False
-
-    return TestConfig()
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def ingest_config():
-    """
-    Constructs an ingest service configuration
-    """
-    from discover.application.service.data.ingest.config import IngestStageConfig
-
-    return IngestStageConfig()
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def dqa_config():
-    """
-    Constructs an dqa service configuration
-    """
-    from discover.application.service.data.dqa.config import DQAStageConfig
-
-    return DQAStageConfig()

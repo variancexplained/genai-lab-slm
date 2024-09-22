@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 08:52:38 pm                                             #
-# Modified   : Friday September 20th 2024 07:59:11 pm                                              #
+# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,8 @@ import pandas as pd
 import pytest
 
 from discover.application.ops.cache import CacheState
-from discover.core.storage.local.cache import CacheRegistration, DiscoverCache
-from discover.substance.value_objects.lifecycle import EDataPrepStage
+from discover.element.value_objects.lifecycle import EDataPrepStage
+from discover.infra.storage.local.cache import CacheRegistration, DiscoverCache
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

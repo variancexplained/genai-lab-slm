@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/dynamics/ops/cachenow.py                                                  #
+# Filename   : /discover/dynamics/optimization/cachenow.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Friday September 20th 2024 05:23:08 pm                                              #
+# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from discover.application.ops.utils import (
     find_task,
     get_dataset_cache_id,
 )
-from discover.core.storage.local.cache import DiscoverCache
+from discover.infra.storage.local.cache import DiscoverCache
 
 
 # ------------------------------------------------------------------------------------------------ #

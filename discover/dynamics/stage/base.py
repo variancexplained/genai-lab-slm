@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Friday September 20th 2024 08:17:23 pm                                              #
+# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,11 +23,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from discover.dynamics.optimization.cachenow import cachenow
-from discover.observability.announcer import task_announcer
-from discover.observability.profiler import profiler
-from discover.substance.entity.config.service import StageConfig
-from discover.substance.entity.task import Task
+from discover.dynamics.base.task import Task
+from discover.element.entity.config.service import StageConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -111,11 +108,11 @@ class Stage(ABC):
         data = None
 
         if self._config.force:
-            data = self._run_pipeline()
+            data = self._run()
         elif self.endpoint_exists():
             data = self.read_endpoint()
         else:
-            data = self._run_pipeline()
+            data = self._run()
 
         return data
 
@@ -144,7 +141,7 @@ class Stage(ABC):
         return data
 
     @abstractmethod
-    def _run_pipeline(self) -> Any:
+    def _run(self) -> Any:
         """
         Abstract method for running the pipeline. Subclasses must implement this method to define the actual
         pipeline execution process.
@@ -155,9 +152,3 @@ class Stage(ABC):
             The result of the pipeline execution, typically the final output after all tasks have been completed.
         """
         pass
-
-    @task_announcer
-    @profiler
-    @cachenow
-    def _run_task(self, data: Any, task: Task) -> Any:
-        return task.run(data=data)

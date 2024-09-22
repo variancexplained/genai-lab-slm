@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Friday September 20th 2024 05:23:09 pm                                              #
+# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,9 +22,9 @@ import logging
 from dependency_injector.wiring import Provide, inject
 
 from discover.container import DiscoverContainer
-from discover.core.config.reader import ConfigReader
-from discover.core.database.schema import schema
-from discover.core.database.sqlite import SQLiteDBA
+from discover.infra.config.reader import ConfigReader
+from discover.infra.database.schema import schema
+from discover.infra.database.sqlite import SQLiteDBA
 
 # ------------------------------------------------------------------------------------------------ #
 logger = logging.getLogger(__name__)
