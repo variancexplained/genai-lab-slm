@@ -11,22 +11,71 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Sunday September 22nd 2024 02:17:34 am                                              #
+# Modified   : Monday September 23rd 2024 02:34:52 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 
 from dataclasses import dataclass
+from typing import Optional
+
+import pandas as pd
+import pyspark
 
 from discover.element.base.define import Element
 from discover.element.dataset.store import (
-    DatasetStorageConfig,
     PandasDatasetStorageConfig,
+    PandasPartitionedDatasetStorageConfig,
+    SparkDatasetStorageConfig,
+    SparkPartitionedDatasetStorageConfig,
 )
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class Dataset(Element):
-    storage: DatasetStorageConfig = PandasDatasetStorageConfig(partitioned=True)
+    storage_config: Optional[PandasDatasetStorageConfig] = None
+    nrows: int = 0
+    ncols: int = 0
+    size: float = 0
+
+
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class PandasDataset(Dataset):
+    content: Optional[pd.DataFrame] = None
+    storage_config: Optional[PandasDatasetStorageConfig] = None
+    nrows: int = 0
+    ncols: int = 0
+    size: float = 0
+
+
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class PandasPartitionedDataset(Dataset):
+    content: Optional[pd.DataFrame] = None
+    storage_config: Optional[PandasPartitionedDatasetStorageConfig] = None
+    nrows: int = 0
+    ncols: int = 0
+    size: float = 0
+
+
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class SparkDataset(Dataset):
+    content: Optional[pyspark.sql.DataFrame] = None
+    storage_config: Optional[SparkDatasetStorageConfig] = None
+    nrows: int = 0
+    ncols: int = 0
+    size: float = 0
+
+
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class SparkPartitionedDataset(Dataset):
+    content: Optional[pyspark.sql.DataFrame] = None
+    storage_config: Optional[SparkPartitionedDatasetStorageConfig] = None
+    nrows: int = 0
+    ncols: int = 0
+    size: float = 0

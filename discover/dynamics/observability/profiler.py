@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/observability/profiler.py                                                 #
+# Filename   : /discover/dynamics/observability/profiler.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Friday September 20th 2024 07:59:11 pm                                              #
+# Modified   : Sunday September 22nd 2024 04:25:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,9 +22,9 @@ from typing import Callable
 
 import psutil  # For gathering system resource usage
 
-from discover.application.ops.profile import Profile
 from discover.application.ops.utils import find_task
 from discover.container import DiscoverContainer
+from discover.dynamics.observability.profile import Profile
 
 # ------------------------------------------------------------------------------------------------ #
 # Initialize the repository once at the module level
@@ -113,7 +113,7 @@ def profiler(func: Callable) -> Callable:
             # Create the Profile object with the computed metrics
             profile = Profile(
                 phase=task.context.phase.description,
-                estage=task.context.estage.description,
+                stage=task.context.stage.description,
                 task=task.context.task.__name__,
                 start_time=start_time,
                 end_time=end_time,

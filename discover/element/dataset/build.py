@@ -11,8 +11,297 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:11 am                                              #
-# Modified   : Sunday September 22nd 2024 01:35:11 am                                              #
+# Modified   : Monday September 23rd 2024 02:31:35 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+from __future__ import annotations
+
+import logging
+from abc import abstractmethod
+from typing import Union
+
+import pandas as pd
+import pyspark
+
+from discover.core.flow import PhaseDef, StageDef
+from discover.element.base.build import ElementBuilder
+from discover.element.dataset.define import (
+    Dataset,
+    PandasDataset,
+    PandasPartitionedDataset,
+    SparkDataset,
+    SparkPartitionedDataset,
+)
+from discover.element.dataset.store import (
+    PandasDatasetStorageConfig,
+    PandasPartitionedDatasetStorageConfig,
+    SparkDatasetStorageConfig,
+    SparkPartitionedDatasetStorageConfig,
+)
+from discover.infra.config.reader import ConfigReader
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DatasetBuilder(ElementBuilder):
+    """
+    Abstract base class for building an Dataset instance.
+
+    The builder provides methods for configuring various properties of an Dataset
+    before constructing it via the build() method.
+    """
+
+    def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
+        super().__init__()
+        self._config_reader = config_reader_cls()
+        self._dataset_config = self._config_reader.get_config(
+            section="dataset", namespace=True
+        )
+        self._id = None
+        self._name = "review"
+        self._phase = None
+        self._stage = None
+        self._content = None
+        self._partitioned = False
+        self._partition_cols = None
+        self._storage_config = None
+
+    def reset(self) -> None:
+        self._id = None
+        self._name = "review"
+        self._phase = None
+        self._stage = None
+        self._content = None
+        self._partitioned = False
+        self._partition_cols = None
+        self._storage_config = None
+
+    def name(self, name: str) -> DatasetBuilder:
+        """Sets the name in which the element is called.
+
+        Args:
+            name (str): The name associated with the element.
+
+        Returns:
+            DatasetBuilder: The builder instance, for chaining.
+        """
+        self._name = name
+        return self
+
+    def phase(self, phase: PhaseDef) -> DatasetBuilder:
+        """Sets the phase in which the element is created.
+
+        Args:
+            phase (PhaseDef): The phase associated with the element.
+
+        Returns:
+            DatasetBuilder: The builder instance, for chaining.
+        """
+        self._phase = phase
+        return self
+
+    def stage(self, stage: StageDef) -> DatasetBuilder:
+        """Sets the stage in which the element is created.
+
+        Args:
+            stage (StageDef): The stage associated with the element.
+
+        Returns:
+            DatasetBuilder: The builder instance, for chaining.
+        """
+        self._stage = stage
+        return self
+
+    def content(
+        self, content: Union[pd.DataFrame, pyspark.sql.DataFrame]
+    ) -> DatasetBuilder:
+        """Sets the content of the element.
+
+        Args:
+            content (Any): The data or content to be associated with the element.
+
+        Returns:
+            DatasetBuilder: The builder instance, for chaining.
+        """
+        self._content = content
+        return self
+
+    @abstractmethod
+    def build(self) -> Dataset:
+        """Constructs and returns the requested element.
+
+        Returns:
+            Dataset: The constructed element instance.
+        """
+
+
+# ------------------------------------------------------------------------------------------------ #
+class PandasDatasetBuilder(DatasetBuilder):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._partitioned = False
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def build(self) -> PandasDataset:
+        id = self.get_next_id()
+        self._storage_config = PandasDatasetStorageConfig.create(
+            id=id,
+            phase=self._phase,
+            stage=self._stage,
+            name=self._name,
+            partitioned=self._partitioned,
+            engine=self._dataset_config.pandas.engine,
+            compression=self._dataset_config.pandas.compression,
+            index=self._dataset_config.pandas.index,
+        )
+
+        dataset = PandasDataset(
+            id=id,
+            name=self._name,
+            phase=self._phase,
+            stage=self._stage,
+            storage_config=self._storage_config,
+            content=self._content,
+        )
+
+        self.reset()
+
+        return dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+class PandasPartitionedDatasetBuilder(DatasetBuilder):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._partitioned = True
+        self._partition_cols = self._dataset_config.pandas.partition_cols
+        self._existing_data_behavior = (
+            self._dataset_config.pandas.existing_data_behavior
+        )
+
+        self._kwargs = self._dataset_config.pandas
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def partition_cols(self, partition_cols: list) -> PandasPartitionedDatasetBuilder:
+        self._partition_cols = partition_cols
+        return self
+
+    def existing_data_behavior(
+        self, existing_data_behavior
+    ) -> PandasPartitionedDatasetBuilder:
+        self._existing_data_behavior = existing_data_behavior
+        return self
+
+    def build(self) -> PandasPartitionedDataset:
+        id = self.get_next_id()
+        self._storage_config = PandasPartitionedDatasetStorageConfig.create(
+            id=id,
+            phase=self._phase,
+            stage=self._stage,
+            name=self._name,
+            partitioned=self._partitioned,
+            engine=self._dataset_config.pandas.engine,
+            compression=self._dataset_config.pandas.compression,
+            index=self._dataset_config.pandas.index,
+            partition_cols=self._partition_cols,
+            existing_data_behavior=self._existing_data_behavior,
+        )
+
+        dataset = PandasPartitionedDataset(
+            id=id,
+            name=self._name,
+            phase=self._phase,
+            stage=self._stage,
+            storage_config=self._storage_config,
+            content=self._content,
+        )
+
+        self.reset()
+
+        return dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+class SparkDatasetBuilder(DatasetBuilder):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._partitioned = False
+        self._mode = self._dataset_config.spark.mode
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def mode(self, mode: str) -> SparkDatasetBuilder:
+        self._mode = mode
+        return self
+
+    def build(self) -> SparkDataset:
+        id = self.get_next_id()
+        self._storage_config = SparkDatasetStorageConfig.create(
+            id=id,
+            phase=self._phase,
+            stage=self._stage,
+            name=self._name,
+            mode=self._mode,
+            partitioned=self._partitioned,
+        )
+
+        dataset = SparkDataset(
+            id=id,
+            name=self._name,
+            phase=self._phase,
+            stage=self._stage,
+            storage_config=self._storage_config,
+            content=self._content,
+        )
+
+        self.reset()
+
+        return dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+class SparkPartitionedDatasetBuilder(DatasetBuilder):
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._partitioned = True
+        self._mode = self._dataset_config.spark.mode
+        self._partition_cols = self._dataset_config.spark.partition_cols
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def mode(self, mode: str) -> SparkPartitionedDatasetBuilder:
+        self._mode = mode
+        return self
+
+    def partition_cols(self, partition_cols) -> SparkPartitionedDatasetBuilder:
+        self._partition_cols = partition_cols
+        return self
+
+    def build(self) -> SparkPartitionedDataset:
+        id = self.get_next_id()
+        self._storage_config = SparkPartitionedDatasetStorageConfig.create(
+            id=id,
+            phase=self._phase,
+            stage=self._stage,
+            name=self._name,
+            partitioned=self._partitioned,
+            mode=self._dataset_config.spark.mode,
+            partition_cols=self._dataset_config.spark.partition_cols,
+        )
+
+        dataset = SparkPartitionedDataset(
+            id=id,
+            name=self._name,
+            phase=self._phase,
+            stage=self._stage,
+            storage_config=self._storage_config,
+            content=self._content,
+        )
+
+        self.reset()
+
+        return dataset

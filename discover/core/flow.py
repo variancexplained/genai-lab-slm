@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Saturday September 21st 2024 09:25:08 pm                                            #
+# Modified   : Sunday September 22nd 2024 02:34:32 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -60,32 +60,62 @@ class DataPrepStageDef(StageDef):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class AnalysisStageDef(StageDef):
+class EDAStageDef(StageDef):
     """
-    Enum representing the stages of a data analysis pipeline.
+    EDAStageDef is an enumeration that defines different stages of Exploratory Data Analysis (EDA).
 
-    These stages correspond to steps in the analysis process, such as data ingestion,
-    data quality analysis, exploratory data analysis (EDA), and sentiment analysis.
+    Attributes:
+    -----------
+    UNIVARIATE : tuple
+        Represents the univariate analysis stage in EDA.
+        - value: "00_univariate"
+        - description: "EDA - Univariate Analysis"
 
-    Enum Members:
-    -------------
-    INGEST : str
-        Represents the data ingestion analysis stage, labeled as "00_ingest".
-    DQA : str
-        Represents the data quality analysis stage, labeled as "01_dqa".
-    EDA : str
-        Represents the exploratory data analysis stage, labeled as "O2_eda".
-    SENTIMENT : str
-        Represents the sentiment and opinion analysis stage, labeled as "03_sentiment".
+    BIVARIATE : tuple
+        Represents the bivariate analysis stage in EDA.
+        - value: "01_bivariate"
+        - description: "EDA - Bivariate Analysis"
+
+    MULTIVARIATE : tuple
+        Represents the multivariate analysis stage in EDA.
+        - value: "02_multivariate"
+        - description: "EDA - Multivariate Analysis"
+
+    Methods:
+    --------
+    __new__(cls, value: str, description: str) -> EDAStageDef:
+        Creates a new instance of EDAStageDef with the specified value and description.
+
+    Parameters:
+    -----------
+    value : str
+        The internal value representing the EDA stage.
+
+    description : str
+        A human-readable description of the EDA stage.
     """
 
-    INGEST = ("00_ingest", "Data Ingestion Analysis")
-    DQA = ("01_dqa", "Data Quality Analysis")
-    EDA = ("O2_eda", "Exploratory Data Analysis")
-    SENTIMENT = ("03_sentiment", "Sentiment and Opinion Analysis")
+    UNIVARIATE = ("00_univariate", "EDA - Univariate Analysis")
+    BIVARIATE = ("01_bivariate", "EDA - Bivariate Analysis")
+    MULTIVARIATE = ("02_multivariate", "EDA - Multivariate Analysis")
 
-    def __new__(cls, value: str, description: str) -> AnalysisStageDef:
+    def __new__(cls, value: str, description: str) -> EDAStageDef:
         obj = object.__new__(cls)
         obj._value_ = value
         obj.description = description
         return obj
+
+
+# ------------------------------------------------------------------------------------------------ #
+class ModelingStageDef(StageDef):
+    """Modeling stage definition"""
+
+
+# ------------------------------------------------------------------------------------------------ #
+class SentimentStageDef(StageDef):
+    """Sentiment Analysis stage definition"""
+
+
+# ------------------------------------------------------------------------------------------------ #
+class OpportunityStageDef(StageDef):
+    """Sentiment Analysis stage definition"""

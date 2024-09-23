@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Sunday September 22nd 2024 12:26:55 pm                                              #
+# Modified   : Sunday September 22nd 2024 04:25:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pandas as pd
 
 from discover.element.base.store import Repo
 from discover.element.entity.config.dataset import DatasetConfig
-from discover.space.config.reader import ConfigReader
+from discover.infra.config.reader import ConfigReader
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -119,7 +119,7 @@ class ReviewRepo(Repo):
         Raises an exception if the file is not found or an error occurs during removal.
         """
         confirm = input(
-            f"Removing {config.name} from {config.estage.description} is permanent. Confirm [Y/N]."
+            f"Removing {config.name} from {config.stage.description} is permanent. Confirm [Y/N]."
         )
         if confirm.lower() == "y":
             filepath = self._get_filepath(config=config)
@@ -135,7 +135,7 @@ class ReviewRepo(Repo):
                 shutil.rmtree(filepath, ignore_errors=ignore_errors)
         else:
             self._logger.info(
-                f"Removal of {config.name} from {config.estage.description} aborted."
+                f"Removal of {config.name} from {config.stage.description} aborted."
             )
 
     def exists(self, config: DatasetConfig) -> bool:
@@ -161,7 +161,7 @@ class ReviewRepo(Repo):
         """"""
         return (
             os.path.join(
-                self._basedir, config.ephase.value, config.estage.value, config.name
+                self._basedir, config.phase.value, config.stage.value, config.name
             )
             + config.format.value
         )

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 10:14:56 am                                           #
-# Modified   : Sunday September 22nd 2024 12:26:55 pm                                              #
+# Modified   : Sunday September 22nd 2024 08:18:42 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,9 +21,9 @@ import logging
 
 import pandas as pd
 
-from discover.application.ops.profile import Profile
+from discover.core.flow import PhaseDef
+from discover.dynamics.observability.profile import Profile
 from discover.element.base.store import Repo
-from discover.element.value_objects.lifecycle import EPhase
 from discover.infra.database.base import Database
 
 
@@ -97,7 +97,7 @@ class ProfileRepo(Repo):
         with self._database as db:
             return db.query(query=query)
 
-    def get_by_phase(self, phase: EPhase) -> pd.DataFrame:
+    def get_by_phase(self, phase: PhaseDef) -> pd.DataFrame:
         query = """SELECT * FROM profile WHERE phase = :phase;"""
         params = {"phase": phase.description}
         with self._database as db:
@@ -105,7 +105,7 @@ class ProfileRepo(Repo):
 
     def get_by_stage(self, stage: str) -> pd.DataFrame:
         query = """SELECT * FROM profile WHERE stage = :stage;"""
-        params = {"stage": estage.description}
+        params = {"stage": stage.description}
         with self._database as db:
             return db.query(query=query, params=params)
 
@@ -116,7 +116,7 @@ class ProfileRepo(Repo):
             db.command(query=query, params=params)
         self._logger.info(f"Removed profile for profile_id: {profile_id}.")
 
-    def remove_by_phase(self, phase: EPhase) -> None:
+    def remove_by_phase(self, phase: PhaseDef) -> None:
         query = """DELETE FROM profile WHERE phase = :phase;"""
         params = {"phase": phase.description}
         with self._database as db:
@@ -125,7 +125,7 @@ class ProfileRepo(Repo):
 
     def remove_by_stage(self, stage: str) -> None:
         query = """DELETE FROM profile WHERE stage = :stage;"""
-        params = {"stage": estage.description}
+        params = {"stage": stage.description}
         with self._database as db:
             db.command(query=query, params=params)
         self._logger.info(f"Removed profile data for stage: {stage.description}.")

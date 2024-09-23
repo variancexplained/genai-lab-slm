@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:55 pm                                             #
-# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
+# Modified   : Sunday September 22nd 2024 08:18:42 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,9 +28,9 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import List
 
+from discover.core.data_class import DataClass
 from discover.element.entity.context.service import ServiceContext
 from discover.element.exception.config import InvalidConfigException
-from discover.infra.structure.data_class import DataClass
 
 
 @dataclass

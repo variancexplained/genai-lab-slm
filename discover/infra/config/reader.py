@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/space/config/reader.py                                                    #
+# Filename   : /discover/infra/config/reader.py                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
+# Modified   : Sunday September 22nd 2024 08:18:41 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from typing import Any, Dict, Optional, Union
 import yaml
 from dotenv import dotenv_values, load_dotenv
 
-from discover.infra.structure.data_class import NestedNamespace
+from discover.core.data_class import NestedNamespace
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

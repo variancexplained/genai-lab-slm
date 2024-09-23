@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 08:52:38 pm                                             #
-# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
+# Modified   : Sunday September 22nd 2024 04:27:27 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,7 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from discover.application.ops.cache import CacheState
-from discover.element.value_objects.lifecycle import EDataPrepStage
+from discover.dynamics.optimization.cache import CacheState
 from discover.infra.storage.local.cache import CacheRegistration, DiscoverCache
 
 # ------------------------------------------------------------------------------------------------ #
@@ -53,7 +52,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(estage=EDataPrepStage.DQA)
+        cache = DiscoverCache(stage=DataPrepStageDef.DQA)
         cache.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -72,7 +71,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(estage=EDataPrepStage.DQA)
+        cache = DiscoverCache(stage=DataPrepStageDef.DQA)
         cache.add_item(
             key=KEY1,
             data=pandas_df,
@@ -82,7 +81,7 @@ class TestCache:  # pragma: no cover
         registry = cache.get_registration(key=KEY1)
         assert isinstance(registry, CacheRegistration)
         assert registry.key == "somekey1"
-        assert registry.stage == EDataPrepStage.DQA
+        assert registry.stage == DataPrepStageDef.DQA
         assert os.path.exists(registry.filepath)
         assert isinstance(registry.dt_added, datetime)
         assert isinstance(registry.dt_accessed, datetime)
@@ -116,7 +115,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(estage=EDataPrepStage.DQA)
+        cache = DiscoverCache(stage=DataPrepStageDef.DQA)
         with pytest.raises(KeyError):
             cache.get_item(key=KEY2)
 
@@ -142,7 +141,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(estage=EDataPrepStage.DQA)
+        cache = DiscoverCache(stage=DataPrepStageDef.DQA)
         assert cache.exists(key=KEY1)
         assert not cache.exists(key=KEY2)
         # ---------------------------------------------------------------------------------------- #
@@ -162,7 +161,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(estage=EDataPrepStage.DQA)
+        cache = DiscoverCache(stage=DataPrepStageDef.DQA)
         cache.check_expiry()
         reg = cache.get_registration(key=KEY1)
         assert reg.state == CacheState.EXPIRED
@@ -184,7 +183,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(estage=EDataPrepStage.DQA)
+        cache = DiscoverCache(stage=DataPrepStageDef.DQA)
         cache.add_item(key=KEY2, data=pandas_df)
         cache.evict(key=KEY2)
 

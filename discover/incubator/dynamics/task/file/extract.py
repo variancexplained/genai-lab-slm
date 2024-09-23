@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 05:40:36 pm                                                  #
-# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
+# Modified   : Sunday September 22nd 2024 04:27:27 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,7 +35,7 @@ class ExtractFileTask(Task):
         force (bool, optional): If True, forces the extraction even if the destination directory already exists. Defaults to False.
     """
 
-    __ESTAGE = EDataPrepStage.RAW
+    __ESTAGE = DataPrepStageDef.RAW
 
     def __init__(
         self,
@@ -49,7 +49,7 @@ class ExtractFileTask(Task):
 
         Sets up the source and destination paths, initializes the TarGzHandler, and configures the task parameters.
         """
-        super().__init__(estage=self.__STAGE)
+        super().__init__(stage=self.__STAGE)
         self._source = source
         self._destination = destination
         self._targz = targz_cls()

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:44:50 pm                                               #
-# Modified   : Saturday September 21st 2024 08:37:10 pm                                            #
+# Modified   : Sunday September 22nd 2024 08:18:41 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import pandas as pd
 import sqlalchemy
 from sqlalchemy.exc import SQLAlchemyError
 
-from discover.infra.structure.data_class import DataClass
+from discover.core.data_class import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #

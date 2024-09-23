@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 05:40:36 pm                                                  #
-# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
+# Modified   : Sunday September 22nd 2024 04:27:27 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,7 +38,7 @@ class DownloadFileTask(Task):
         force (bool, optional): If True, forces the download even if the file already exists locally. Defaults to False.
     """
 
-    __ESTAGE = EDataPrepStage.RAW
+    __ESTAGE = DataPrepStageDef.RAW
 
     def __init__(
         self,
@@ -55,7 +55,7 @@ class DownloadFileTask(Task):
 
         Loads environment variables, sets up the S3 handler and file system handler, and configures the task parameters.
         """
-        super().__init__(estage=self.__STAGE)
+        super().__init__(stage=self.__STAGE)
         self._aws_bucket_name = aws_bucket_name
         self._aws_folder = aws_folder
         self._aws_s3_key = aws_s3_key

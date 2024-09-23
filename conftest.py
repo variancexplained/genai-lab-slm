@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday September 21st 2024 11:41:22 pm                                            #
+# Modified   : Sunday September 22nd 2024 10:30:46 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,10 +24,10 @@ from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
+from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
 from discover.infra.storage.cloud.aws import S3Handler
 from discover.infra.storage.local.io import IOService
-from discover.space.config.reader import ConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -46,7 +46,7 @@ def container() -> DiscoverContainer:
     container = DiscoverContainer()
     container.init_resources()
     container.wire(
-        modules=["discover.core.storage.local.io"],
+        modules=["discover.infra.storage.local.io", "discover.element.base.build"],
     )
 
     return container
@@ -126,7 +126,7 @@ def pandas_df():
     Modify this to point to the correct CSV file.
     """
     FILEPATH = "workspace/test/00_dataprep/00_raw/reviews"
-    return IOService.read(FILEPATH)
+    return IOService.read(filepath=FILEPATH)
 
 
 # ------------------------------------------------------------------------------------------------ #

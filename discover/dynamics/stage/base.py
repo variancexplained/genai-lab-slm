@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
+# Modified   : Sunday September 22nd 2024 04:25:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -135,7 +135,7 @@ class Stage(ABC):
         try:
             data = self._repo.get(config=self._config.target_data_config)
         except Exception as e:
-            msg = f"Unable to read endpoint for Stage: {self._config.target_data_config.estage.description} object: {self._config.target_data_config.name}.\n{e}"
+            msg = f"Unable to read endpoint for Stage: {self._config.target_data_config.stage.description} object: {self._config.target_data_config.name}.\n{e}"
             self._logger.exception(msg)
             raise
         return data

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Saturday September 21st 2024 08:37:12 pm                                            #
+# Modified   : Sunday September 22nd 2024 10:29:54 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,13 +24,12 @@ import logging.config  # pragma: no cover
 
 from dependency_injector import containers, providers
 
+from discover.infra.config.reader import ConfigReader
 from discover.infra.database.sqlite import SQLiteDB, SQLiteDBA
 from discover.infra.frameworks.spark.session import SparkSessionProvider
+from discover.infra.identity.idgen import IDGen
 from discover.infra.repo.profile import ProfileRepo
-from discover.space.config.reader import ConfigReader
 
-# ------------------------------------------------------------------------------------------------ #
-# mypy: ignore-errors
 # ------------------------------------------------------------------------------------------------ #
 
 
@@ -57,6 +56,14 @@ class SparkContainer(containers.DeclarativeContainer):
     provide = providers.Singleton(
         SparkSessionProvider, memory=config.core.frameworks.spark.memory
     )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   IDGEN CONTAINER                                                #
+# ------------------------------------------------------------------------------------------------ #
+class IDGenContainer(containers.DeclarativeContainer):
+
+    gen = providers.Singleton(IDGen)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -109,3 +116,6 @@ class DiscoverContainer(containers.DeclarativeContainer):
 
     # Configure the spark container with configuration.
     spark = providers.Container(SparkContainer, config=config_data)
+
+    # Configure the id generator container.
+    id = providers.Container(IDGenContainer)

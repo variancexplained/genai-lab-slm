@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
+# Modified   : Sunday September 22nd 2024 08:18:42 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 
+from discover.core.data_class import DataClass
 from discover.infra.config.reader import ConfigReader
-from discover.infra.structure.data_class import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -40,7 +40,7 @@ class Cache(ABC):
 
     Attributes:
     -----------
-    _estage: EStage
+    _stage: StageDef
         The stage of the pipeline or process for which this cache is used.
     _config : Config
         Configuration settings related to caching, typically retrieved from a configuration file.

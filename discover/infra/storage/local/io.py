@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Sunday September 22nd 2024 02:35:05 am                                              #
+# Modified   : Monday September 23rd 2024 01:43:11 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -361,6 +361,8 @@ class ParquetSparkIO(IO):  # pragma: no cover
 
         """
         spark = session_provider.spark
+        # Set the row group (block) size to 1 GB (1 GB = 1024 * 1024 * 1024 bytes)
+        spark.conf.set("parquet.block.size", str(1024 * 1024 * 1024))
         data = spark.read.parquet(filepath, **kwargs)
         logging.debug(
             f"Read file using {cls.__name__} and returning a {type(data).__name__}"
@@ -383,10 +385,12 @@ class ParquetSparkIO(IO):  # pragma: no cover
         """
         logging.debug(f"Writing file of {type(data).__name__} using {cls.__name__}.")
 
-        if "partition_cols" in kwargs.keys():
-            data.write.partitionBy(kwargs["partition_cols"]).parquet(filepath)
+        if "partitionBy" in kwargs.keys():
+            data.write.mode(kwargs["mode"]).partitionBy(kwargs["partitionBy"]).parquet(
+                filepath
+            )
         else:
-            data.write.parquet(filepath)
+            data.mode(kwargs["mode"]).write.parquet(filepath)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -464,44 +468,30 @@ class IOService:  # pragma: no cover
         "pickle": PickleIO,
         "xlsx": ExcelIO,
         "xls": ExcelIO,
+        "parquet": ParquetPandasIO,
+        "": ParquetPandasIO,
     }
     _logger = logging.getLogger(
         f"{__module__}.{__name__}",
     )
 
     @classmethod
-    def read(cls, *args, filepath: str, **kwargs) -> Any:
-        io = cls._get_io(*args, filepath, **kwargs)
-        return io.read(*args, filepath, **kwargs)
+    def read(cls, filepath: str, **kwargs) -> Any:
+        io = cls._get_io(filepath, **kwargs)
+        return io.read(filepath, **kwargs)
 
     @classmethod
-    def write(cls, *args, filepath: str, data: Any, **kwargs) -> None:
-        io = cls._get_io(*args, filepath, **kwargs)
+    def write(cls, filepath: str, data: Any, **kwargs) -> None:
+        io = cls._get_io(filepath, **kwargs)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        io.write(*args, filepath=filepath, data=data, **kwargs)
+        io.write(filepath=filepath, data=data, **kwargs.write_kwargs)
 
     @classmethod
-    def _get_io(cls, *args, filepath: str, **kwargs) -> IO:
+    def _get_io(cls, filepath: str, **kwargs) -> IO:
         try:
             # Attempt to obtain the io class based on the file format
             file_format = os.path.splitext(filepath)[-1].replace(".", "")
-            try:
-                return IOService.__io[file_format]
-            except KeyError:
-                # If key error has occurred, check for a parquet storage config in the arguments.
-                storage_config = cls._get_storage_config(*args, **kwargs)
-                # If a storage config object is found, the is_spark member indicates which  parquet
-                # io class to return.
-                if storage_config is not None:
-                    if storage_config.is_spark:
-                        return ParquetSparkIO
-                    else:
-                        return ParquetPandasIO
-                else:
-                    msg = f"File format {file_format} is not supported and no storage_config object was provided."
-                    logging.error(msg)
-                    raise
-
+            return IOService.__io[file_format]
         except TypeError as exc:
             if filepath is None:
                 msg = "Filepath is None"
@@ -513,14 +503,9 @@ class IOService:  # pragma: no cover
             raise ValueError(msg) from exc
 
     @classmethod
-    def _get_storage_config(cls, *args, **kwargs) -> Optional[StorageConfig]:
+    def _get_storage_config(cls, **kwargs) -> Optional[StorageConfig]:
         """Finds te storage configuration among the args and kwargs"""
         storage_config = None
-        # Search through args first for StorageConfig object
-        for arg in args:
-            if isinstance(arg, StorageConfig):
-                storage_config = arg
-                break
 
         # If not found in args, search the kwargs
         if storage_config is None:

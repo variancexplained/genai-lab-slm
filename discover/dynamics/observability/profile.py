@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Saturday September 21st 2024 11:45:21 pm                                            #
+# Modified   : Sunday September 22nd 2024 08:18:41 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,24 +21,31 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Optional, Union
+from typing import Optional, Union
 
-from discover.element.value_objects.lifecycle import (
-    EAnalysisStage,
-    EDataPrepStage,
-    EPhase,
-    ModelingStage,
+from discover.core.data_class import DataClass
+from discover.core.flow import (
+    DataPrepStageDef,
+    EDAStageDef,
+    ModelingStageDef,
+    OpportunityStageDef,
+    PhaseDef,
+    SentimentStageDef,
 )
-from discover.infra.structure.data_class import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class Profile(DataClass):
-    ephase: EPhase  # EPhase i.e. DataPrep, Analysis
-    estage: Union[
-        EDataPrepStage, EAnalysisStage, ModelingStage
-    ]  # Stage within EPhase, i.e. DQA
+    phase: PhaseDef  # PhaseDef i.e. DataPrep, Analysis
+    stage: Union[
+        DataPrepStageDef,
+        PhaseDef,
+        EDAStageDef,
+        ModelingStageDef,
+        SentimentStageDef,
+        OpportunityStageDef,
+    ]  # Stage within PhaseDef, i.e. DQA
     task: str  # Class name for the task to which the context applies.
     start_time: datetime  # Task start time
     end_time: datetime  # Task end time
@@ -59,8 +66,3 @@ class Profile(DataClass):
         0  # Number of exceptions raised during process execution (default 0)
     )
     id: Optional[int] = None  # Unique identifier for each run.
-
-    @classmethod
-    def create(cls, data: Dict[str, Any]) -> Profile:
-        """Used to create an instance from data obtained from the repository."""
-        return cls(**data)

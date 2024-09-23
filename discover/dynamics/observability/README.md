@@ -51,7 +51,7 @@ Ensure that you have Python installed along with the necessary dependencies.
 
    profile = Profile(
        env="production",
-       estage ="data_cleaning",
+       stage ="data_cleaning",
        process_name="AnonymizeReviewsTask",
        task_start_time=datetime.now(),
        task_end_time=datetime.now(),
