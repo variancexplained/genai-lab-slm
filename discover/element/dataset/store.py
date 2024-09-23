@@ -11,13 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:16 am                                              #
-# Modified   : Monday September 23rd 2024 02:40:18 am                                              #
+# Modified   : Monday September 23rd 2024 03:27:43 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from __future__ import annotations
 
+from ast import List
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Dict, Optional
@@ -58,7 +59,6 @@ class DatasetStorageConfig(StorageConfig):
     structure: DataStructure = DataStructure.PANDAS  # Default structure
     partitioned: bool = True  # Indicates if the dataset is partitioned
     filepath: Optional[str] = None  # The generated file path for the dataset
-    compression: Optional[str] = None
     row_group_size: Optional[int] = None
     read_kwargs: Dict[str, Any] = field(
         default_factory=dict
@@ -196,12 +196,16 @@ class PandasPartitionedDatasetStorageConfig(DatasetStorageConfig):
         engine: str = "pyarrow",
         compression: str = "snappy",
         index: bool = False,
-        partition_cols: list = ["category"],
+        partition_cols: Optional[List] = None,
         existing_data_behavior: str = "delete_matching",
     ) -> PandasPartitionedDatasetStorageConfig:
         """"""
         # Create a base file path that includes phase, stage, name, current date, and ID
         filepath = cls.format_filepath(id=id, phase=phase, stage=stage, name=name)
+
+        # Handle mutable default
+        if partition_cols is None:
+            partition_cols = ["category"]
 
         # Return a PandasDatasetStorageConfig with write configurations for Pandas
         return cls(
@@ -302,7 +306,7 @@ class SparkPartitionedDatasetStorageConfig(DatasetStorageConfig):
         name: str,
         mode: str = "error",
         partitioned: bool = True,
-        partition_cols: list = ["category"],
+        partition_cols: Optional[List] = None,
     ) -> SparkDatasetStorageConfig:
         """
         A factory method to create a SparkDatasetStorageConfig object, generating a file path
@@ -331,10 +335,13 @@ class SparkPartitionedDatasetStorageConfig(DatasetStorageConfig):
         # Create a base file path that includes phase, stage, name, current date, and ID
         filepath = cls.format_filepath(id=id, phase=phase, stage=stage, name=name)
 
+        if partition_cols is None:
+            partition_cols = ["category"]
+
         # Return a SparkDatasetStorageConfig with write configurations for Spark
 
         return cls(
             partitioned=partitioned,
             filepath=filepath,
-            write_kwargs={"partitionBy": partition_cols, "mode": mode},
+            write_kwargs={"partition_cols": partition_cols, "mode": mode},
         )

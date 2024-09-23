@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:11 am                                              #
-# Modified   : Monday September 23rd 2024 02:31:35 am                                              #
+# Modified   : Monday September 23rd 2024 03:05:57 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -209,6 +209,8 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
             partition_cols=self._partition_cols,
             existing_data_behavior=self._existing_data_behavior,
         )
+
+        self._logger.info(self._storage_config.write_kwargs)
 
         dataset = PandasPartitionedDataset(
             id=id,

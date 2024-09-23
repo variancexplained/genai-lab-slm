@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Monday September 23rd 2024 01:43:11 am                                              #
+# Modified   : Monday September 23rd 2024 03:28:25 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -385,10 +385,10 @@ class ParquetSparkIO(IO):  # pragma: no cover
         """
         logging.debug(f"Writing file of {type(data).__name__} using {cls.__name__}.")
 
-        if "partitionBy" in kwargs.keys():
-            data.write.mode(kwargs["mode"]).partitionBy(kwargs["partitionBy"]).parquet(
-                filepath
-            )
+        if "partition_cols" in kwargs.keys():
+            data.write.mode(kwargs["mode"]).partitionBy(
+                kwargs["partition_cols"]
+            ).parquet(filepath)
         else:
             data.mode(kwargs["mode"]).write.parquet(filepath)
 

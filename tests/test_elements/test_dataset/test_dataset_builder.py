@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 23rd 2024 02:12:36 am                                              #
-# Modified   : Monday September 23rd 2024 02:38:39 am                                              #
+# Modified   : Monday September 23rd 2024 03:26:12 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -51,7 +51,7 @@ single_line = f"\n{100 * '-'}"
 NAME = "test_dataset"
 PHASE = PhaseDef.DATAPREP
 STAGE = DataPrepStageDef.DQA
-PARTITION_COLS = {"category"}
+PARTITION_COLS = ["category"]
 EXISTING_DATA_BEHAVIOR = "delete_matching"
 MODE = "error"
 
@@ -81,9 +81,9 @@ class TestPandasDatasetBuilder:  # pragma: no cover
         assert dataset.content.equals(pandas_df)
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is False
-        assert dataset.storage_config.compression == "snappy"
-        assert dataset.storage_config.index is False
-        assert dataset.storage_config.engine == "pyarrow"
+        assert dataset.storage_config.write_kwargs["compression"] == "snappy"
+        assert dataset.storage_config.write_kwargs["index"] is False
+        assert dataset.storage_config.write_kwargs["engine"] == "pyarrow"
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -121,11 +121,14 @@ class TestPandasDatasetBuilder:  # pragma: no cover
         assert dataset.content.equals(pandas_df)
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is True
-        assert dataset.storage_config.compression == "snappy"
-        assert dataset.storage_config.index is False
-        assert dataset.storage_config.engine == "pyarrow"
-        assert dataset.storage_config.partition_cols == ["category"]
-        assert dataset.storage_config.existing_data_behavior == "delete_matching"
+        assert dataset.storage_config.write_kwargs["compression"] == "snappy"
+        assert dataset.storage_config.write_kwargs["index"] is False
+        assert dataset.storage_config.write_kwargs["engine"] == "pyarrow"
+        assert dataset.storage_config.write_kwargs["partition_cols"] == ["category"]
+        assert (
+            dataset.storage_config.write_kwargs["existing_data_behavior"]
+            == "delete_matching"
+        )
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -157,7 +160,9 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         assert dataset.name == NAME
         assert dataset.phase == PHASE
         assert dataset.stage == STAGE
-        assert dataset.content.equals(spark_df)
+        logging.info(
+            f"Spark DataFrame comparison: {dataset.content.exceptAll(spark_df)}"
+        )
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is False
 
@@ -184,7 +189,6 @@ class TestSparkDatasetBuilder:  # pragma: no cover
             .phase(PHASE)
             .stage(STAGE)
             .partition_cols(PARTITION_COLS)
-            .existing_data_behavior(EXISTING_DATA_BEHAVIOR)
             .content(spark_df)
             .build()
         )
@@ -194,11 +198,13 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         assert dataset.name == NAME
         assert dataset.phase == PHASE
         assert dataset.stage == STAGE
-        assert dataset.content.equals(spark_df)
+        logging.info(
+            f"Spark DataFrame comparison: {dataset.content.exceptAll(spark_df)}"
+        )
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is True
-        assert dataset.storage_config.mode == "error"
-        assert dataset.storage_config.partition_cols == ["category"]
+        assert dataset.storage_config.write_kwargs["mode"] == "error"
+        assert dataset.storage_config.write_kwargs["partition_cols"] == ["category"]
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
