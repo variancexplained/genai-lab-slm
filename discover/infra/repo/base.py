@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:41:17 am                                           #
-# Modified   : Sunday September 22nd 2024 04:25:19 pm                                              #
+# Modified   : Monday September 23rd 2024 10:56:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -161,7 +161,10 @@ class ReviewRepo(Repo):
         """"""
         return (
             os.path.join(
-                self._basedir, config.phase.value, config.stage.value, config.name
+                self._basedir,
+                config.phase.directory,
+                config.stage.directory,
+                config.name,
             )
             + config.format.value
         )

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:44:50 pm                                               #
-# Modified   : Sunday September 22nd 2024 08:18:41 pm                                              #
+# Modified   : Monday September 23rd 2024 08:35:40 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,6 @@ from typing import Any, Dict, Optional
 import pandas as pd
 import sqlalchemy
 from sqlalchemy.exc import SQLAlchemyError
-
-from discover.core.data_class import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -235,40 +233,3 @@ class DBA(ABC):
         Args:
             filepath (str): Filepath to backup file.
         """
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                   DATA ACCESS LAYER                                              #
-# ------------------------------------------------------------------------------------------------ #
-class DAL(ABC):
-    """Abstract base class for Data Access Layers.
-
-    For this project, data are immutable. Hence, update and delete are not supported in the
-    data access layers.
-    """
-
-    @abstractmethod
-    def create(self, data: DataClass):
-        """
-        Create a new record in the database.
-
-        Args:
-            data (Any): The data for the new record.
-
-        Raises:
-            NotImplementedError: If the method is not implemented.
-        """
-        pass
-
-    @abstractmethod
-    def read(self, record_id: int) -> Optional[DataClass]:
-        """
-        Read a single record from the database.
-
-        Args:
-            record_id (int): The ID of the record to read.
-
-        Returns:
-            Optional[DataClass]: The data of the record, or None if not found.
-        """
-        pass

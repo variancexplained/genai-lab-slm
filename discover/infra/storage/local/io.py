@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Monday September 23rd 2024 03:28:25 am                                              #
+# Modified   : Monday September 23rd 2024 09:30:53 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -350,7 +350,7 @@ class ParquetSparkIO(IO):  # pragma: no cover
         cls,
         filepath: str,
         session_provider: SparkSessionProvider = Provide[
-            DiscoverContainer.spark.provide
+            DiscoverContainer.spark.modestia
         ],
         **kwargs,
     ) -> pyspark.sql.DataFrame:
@@ -361,8 +361,6 @@ class ParquetSparkIO(IO):  # pragma: no cover
 
         """
         spark = session_provider.spark
-        # Set the row group (block) size to 1 GB (1 GB = 1024 * 1024 * 1024 bytes)
-        spark.conf.set("parquet.block.size", str(1024 * 1024 * 1024))
         data = spark.read.parquet(filepath, **kwargs)
         logging.debug(
             f"Read file using {cls.__name__} and returning a {type(data).__name__}"

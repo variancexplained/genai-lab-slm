@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday June 3rd 2024 02:33:11 pm                                                    #
-# Modified   : Tuesday September 10th 2024 07:36:58 pm                                             #
+# Modified   : Tuesday September 24th 2024 01:23:09 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import nbformat as nbf
 
 DEFAULT_TAG_MAPPING = {
     "import": "hide-input",  # Hide the input w/ a button to show
-    "SparkSessionFactory": "remove-output",
+    "SparkSessionPool": "remove-output",
     "jbook": "remove-cell",
 }
 JBOOK_CWD = "../.."

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
-# Modified   : Sunday September 22nd 2024 08:18:42 pm                                              #
+# Modified   : Monday September 23rd 2024 08:38:18 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,15 +20,19 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.core.flow import PhaseDef, StageDef
-from discover.element.base.define import Element
 
 
+# ------------------------------------------------------------------------------------------------ #
 class DAO(ABC):
 
     @abstractmethod
-    def create(self, element: Element, **kwargs) -> None:
-        """Adds an element to the underlying storage mechanism."""
+    def create(self, *args, **kwargs) -> None:
+        """Adds data to an underlying storage mechanism."""
 
     @abstractmethod
-    def read(self, phase: PhaseDef, stage: StageDef, name: str, **kwargs) -> Any:
-        """Reads an element from"""
+    def read(self, *args, **kwargs) -> Any:
+        """Reads data from an underlying storage mechanism"""
+
+    @abstractmethod
+    def delete(self, phase: PhaseDef, stage: StageDef, name: str, **kwargs) -> Any:
+        """Deletes data from an underlying storage mechanism."""

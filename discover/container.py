@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Sunday September 22nd 2024 10:29:54 pm                                              #
+# Modified   : Tuesday September 24th 2024 02:22:47 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,8 @@ from dependency_injector import containers, providers
 
 from discover.infra.config.reader import ConfigReader
 from discover.infra.database.sqlite import SQLiteDB, SQLiteDBA
-from discover.infra.frameworks.spark.session import SparkSessionProvider
+from discover.infra.frameworks.spark.nlp import SparkSessionPoolNLP
+from discover.infra.frameworks.spark.standard import SparkSessionPoolStandard
 from discover.infra.identity.idgen import IDGen
 from discover.infra.repo.profile import ProfileRepo
 
@@ -51,11 +52,8 @@ class LoggingContainer(containers.DeclarativeContainer):
 # ------------------------------------------------------------------------------------------------ #
 class SparkContainer(containers.DeclarativeContainer):
 
-    config = providers.Configuration()
-
-    provide = providers.Singleton(
-        SparkSessionProvider, memory=config.core.frameworks.spark.memory
-    )
+    standard = providers.Singleton(SparkSessionPoolStandard)
+    nlp = providers.Singleton(SparkSessionPoolNLP)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -115,7 +113,7 @@ class DiscoverContainer(containers.DeclarativeContainer):
     repo = providers.Container(RepoContainer, db=db)
 
     # Configure the spark container with configuration.
-    spark = providers.Container(SparkContainer, config=config_data)
+    spark = providers.Container(SparkContainer)
 
     # Configure the id generator container.
     id = providers.Container(IDGenContainer)
