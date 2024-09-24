@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 23rd 2024 02:12:36 am                                              #
-# Modified   : Monday September 23rd 2024 06:40:09 pm                                              #
+# Modified   : Tuesday September 24th 2024 03:47:26 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -54,6 +54,7 @@ STAGE = DataPrepStageDef.DQA
 PARTITION_COLS = ["category"]
 EXISTING_DATA_BEHAVIOR = "delete_matching"
 MODE = "error"
+RGS = 268435456
 
 
 @pytest.mark.pandas
@@ -84,6 +85,7 @@ class TestPandasDatasetBuilder:  # pragma: no cover
         assert dataset.storage_config.write_kwargs["compression"] == "snappy"
         assert dataset.storage_config.write_kwargs["index"] is False
         assert dataset.storage_config.write_kwargs["engine"] == "pyarrow"
+        assert dataset.storage_config.row_group_size == RGS
         logging.info(dataset.storage_config)
 
         # ---------------------------------------------------------------------------------------- #
@@ -130,6 +132,7 @@ class TestPandasDatasetBuilder:  # pragma: no cover
             dataset.storage_config.write_kwargs["existing_data_behavior"]
             == "delete_matching"
         )
+        assert dataset.storage_config.row_group_size == RGS
 
         logging.info(dataset.storage_config)
 
@@ -168,6 +171,8 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         )
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is False
+        assert dataset.storage_config.row_group_size == RGS
+        assert dataset.storage_config.spark_session_name == "leviathan"
 
         logging.info(dataset.storage_config)
 
@@ -210,6 +215,7 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         assert dataset.storage_config.partitioned is True
         assert dataset.storage_config.write_kwargs["mode"] == "error"
         assert dataset.storage_config.write_kwargs["partition_cols"] == ["category"]
+        assert dataset.storage_config.spark_session_name == "leviathan"
 
         logging.info(dataset.storage_config)
 

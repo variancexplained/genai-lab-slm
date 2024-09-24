@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:16 am                                              #
-# Modified   : Monday September 23rd 2024 07:27:15 pm                                              #
+# Modified   : Tuesday September 24th 2024 03:44:15 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -233,6 +233,7 @@ class SparkParquetDatasetStorageConfig(DatasetStorageConfig):
     """ """
 
     structure: DataStructure = DataStructure.SPARK  # Set the default structure to Spark
+    spark_session_name: Optional[str] = None
 
     @classmethod
     def create(
@@ -241,6 +242,7 @@ class SparkParquetDatasetStorageConfig(DatasetStorageConfig):
         phase: PhaseDef,
         stage: StageDef,
         name: str,
+        spark_session_name: str,
         mode: str = "error",
         partitioned: bool = False,
         row_group_size: int = 128 * 1024 * 1024,  # 128 MB
@@ -279,6 +281,7 @@ class SparkParquetDatasetStorageConfig(DatasetStorageConfig):
             partitioned=partitioned,
             filepath=filepath,
             row_group_size=row_group_size,
+            spark_session_name=spark_session_name,
             write_kwargs={"mode": mode},
         )
 
@@ -306,6 +309,7 @@ class SparkParquetPartitionedDatasetStorageConfig(DatasetStorageConfig):
     """
 
     structure: DataStructure = DataStructure.SPARK  # Set the default structure to Spark
+    spark_session_name: Optional[str] = None
 
     @classmethod
     def create(
@@ -314,6 +318,7 @@ class SparkParquetPartitionedDatasetStorageConfig(DatasetStorageConfig):
         phase: PhaseDef,
         stage: StageDef,
         name: str,
+        spark_session_name: str,
         mode: str = "error",
         partitioned: bool = True,
         partition_cols: Optional[List] = None,
@@ -355,5 +360,6 @@ class SparkParquetPartitionedDatasetStorageConfig(DatasetStorageConfig):
             partitioned=partitioned,
             row_group_size=row_group_size,
             filepath=filepath,
+            spark_session_name=spark_session_name,
             write_kwargs={"partition_cols": partition_cols, "mode": mode},
         )

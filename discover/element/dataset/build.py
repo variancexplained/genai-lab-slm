@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:11 am                                              #
-# Modified   : Monday September 23rd 2024 07:29:36 pm                                              #
+# Modified   : Tuesday September 24th 2024 03:46:43 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import logging
 from abc import abstractmethod
-from typing import Union
+from typing import List, Union
 
 import pandas as pd
 import pyspark
@@ -56,9 +56,13 @@ class DatasetBuilder(ElementBuilder):
     def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
         super().__init__()
         self._config_reader = config_reader_cls()
-        self._dataset_config = self._config_reader.get_config(
-            section="dataset", namespace=True
-        )
+
+        # Configuration data
+        self._dataset_config = None
+        self._spark_config = None
+        self._spark_session_name = None
+        self._row_group_size = None
+
         self._id = None
         self._name = "review"
         self._phase = None
@@ -135,6 +139,55 @@ class DatasetBuilder(ElementBuilder):
         Returns:
             Dataset: The constructed element instance.
         """
+        self._validate()
+
+        # Obtain the configs that will be used by builder subclasses.
+        self._dataset_config = self._config_reader.get_config(
+            section="dataset", namespace=True
+        )
+        # Spark config contains a mapping between phases and spark sessions contained
+        # in the SparkSession pool. It also contains spark session configuration
+        # parameters such as memory and retries.
+        self._spark_config = self._config_reader.get_config(
+            section="spark", namespace=False
+        )
+        # Obtain the session name for the current phase
+        self._spark_session_name = self._spark_config[self._phase.value]
+
+        # Get the row group size for the designated session name.
+        self._row_group_size = self._config_reader.get_config(
+            section="session", namespace=False
+        )[self._spark_session_name]
+
+    def _validate(self) -> None:
+        errors = []
+        if not self._phase:
+            msg = "Phase must be provided."
+            errors.append(msg)
+        if not self._stage:
+            msg = "Stage must be provided."
+            errors.append(msg)
+        if not self._name:
+            msg = "Name must be provided."
+            errors.append(msg)
+        if self._content is None:
+            msg = "Content must be provided."
+            errors.append(msg)
+        self._log_and_raise(errors=errors)
+
+    def _log_and_raise(self, errors: List[str]) -> None:
+        """
+        Logs the provided list of errors and raises an `InvalidConfigException` if errors are present.
+
+        Parameters:
+        -----------
+        errors : List[str]
+            A list of validation error messages.
+        """
+        if errors:
+            error_msg = "\n".join(errors)
+            self._logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -147,6 +200,8 @@ class PandasDatasetBuilder(DatasetBuilder):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def build(self) -> PandasDataset:
+        super().build()
+
         id = self.get_next_id()
         self._storage_config = PandasParquetDatasetStorageConfig.create(
             id=id,
@@ -203,6 +258,7 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
         return self
 
     def build(self) -> PandasPartitionedDataset:
+        super().build()
         id = self.get_next_id()
 
         self._storage_config = PandasParquetPartitionedDatasetStorageConfig.create(
@@ -251,6 +307,8 @@ class SparkDatasetBuilder(DatasetBuilder):
         return self
 
     def build(self) -> SparkDataset:
+
+        super().build()
         id = self.get_next_id()
         self._storage_config = SparkParquetDatasetStorageConfig.create(
             id=id,
@@ -260,6 +318,7 @@ class SparkDatasetBuilder(DatasetBuilder):
             mode=self._mode,
             partitioned=self._partitioned,
             row_group_size=self._row_group_size,
+            spark_session_name=self._spark_session_name,
         )
 
         # Obtain memory footprint
@@ -307,6 +366,8 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
         return self
 
     def build(self) -> SparkPartitionedDataset:
+
+        super().build()
         id = self.get_next_id()
         self._storage_config = SparkParquetPartitionedDatasetStorageConfig.create(
             id=id,
@@ -317,6 +378,7 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
             mode=self._dataset_config.spark.mode,
             partition_cols=self._dataset_config.spark.partition_cols,
             row_group_size=self._row_group_size,
+            spark_session_name=self._spark_session_name,
         )
         # Obtain memory footprint
         # Cache the DataFrame in memory

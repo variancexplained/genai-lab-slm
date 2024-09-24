@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Tuesday September 24th 2024 02:14:26 am                                             #
+# Modified   : Tuesday September 24th 2024 03:03:12 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,6 @@ from abc import ABC, abstractmethod
 
 from pyspark.sql import SparkSession
 
-from discover.core.flow import PhaseDef
 from discover.infra.config.reader import ConfigReader
 
 
@@ -96,7 +95,7 @@ class SparkSessionPool(ABC):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
 
-def get_or_create(self, phase: PhaseDef = None) -> SparkSession:
+def get_or_create(self, session_name: str) -> SparkSession:
     """
     Retrieves an existing Spark session or creates a new one based on the specified phase.
 
@@ -125,12 +124,6 @@ def get_or_create(self, phase: PhaseDef = None) -> SparkSession:
         >>> print(session)
         <pyspark.sql.session.SparkSession object ...>
     """
-
-    if phase is None:
-        self._logger.warning("No phase provided. Defaulting to Leviathan session.")
-        phase = PhaseDef.LEVIATHAN
-
-    session_name = self._get_session_name(phase=phase)
 
     if session_name == "leviathan":
         if not self._leviathan:
@@ -175,14 +168,6 @@ def get_or_create(self, phase: PhaseDef = None) -> SparkSession:
                 retries=self._session_config.retries,
             )
         return self._leviathan
-
-    def _get_session_name(self, phase: PhaseDef) -> str:
-        try:
-            return self._spark_config[phase.value]
-        except KeyError:
-            msg = f"Phase {phase.value} not supported by the SparkSession factory. Returning Modestia session."
-            self._logger.warning(msg)
-            return "modestia"
 
     @abstractmethod
     def create_session(
