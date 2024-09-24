@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Monday September 23rd 2024 09:30:53 pm                                              #
+# Modified   : Tuesday September 24th 2024 07:29:17 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,16 +24,10 @@ import logging
 import os
 import pickle
 from abc import ABC, abstractmethod
-from typing import Any, List, Optional, Union
+from typing import Any, List, Union
 
 import pandas as pd
-import pyspark
 import yaml
-from dependency_injector.wiring import Provide, inject
-
-from discover.container import DiscoverContainer
-from discover.element.base.store import StorageConfig
-from discover.infra.frameworks.spark.session import SparkSessionProvider
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -307,7 +301,7 @@ class PickleIO(IO):  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 
 
-class ParquetPandasIO(IO):  # pragma: no cover
+class ParquetIO(IO):  # pragma: no cover
     @classmethod
     def _read(cls, filepath: str, **kwargs) -> pd.DataFrame:
         """Reads using pyarrow API.
@@ -338,57 +332,6 @@ class ParquetPandasIO(IO):  # pragma: no cover
         """
         logging.debug(f"Writing file of {type(data).__name__} using {cls.__name__}.")
         data.to_parquet(path=filepath, **kwargs)
-
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-class ParquetSparkIO(IO):  # pragma: no cover
-    @classmethod
-    @inject
-    def _read(
-        cls,
-        filepath: str,
-        session_provider: SparkSessionProvider = Provide[
-            DiscoverContainer.spark.modestia
-        ],
-        **kwargs,
-    ) -> pyspark.sql.DataFrame:
-        """Reads using pyarrow API.
-
-        Args:
-            filepath (str): Can be a file or directory path.
-
-        """
-        spark = session_provider.spark
-        data = spark.read.parquet(filepath, **kwargs)
-        logging.debug(
-            f"Read file using {cls.__name__} and returning a {type(data).__name__}"
-        )
-        return data
-
-    @classmethod
-    def _write(
-        cls,
-        filepath: str,
-        data: pyspark.sql.DataFrame,
-        **kwargs,
-    ) -> None:
-        """Writes a parquet file using pyarrow API.
-
-        Args:
-            filepath (str): Can be a directory or file path.
-            data (pd.DataFrame): Pandas DataFrame
-
-        """
-        logging.debug(f"Writing file of {type(data).__name__} using {cls.__name__}.")
-
-        if "partition_cols" in kwargs.keys():
-            data.write.mode(kwargs["mode"]).partitionBy(
-                kwargs["partition_cols"]
-            ).parquet(filepath)
-        else:
-            data.mode(kwargs["mode"]).write.parquet(filepath)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -466,8 +409,8 @@ class IOService:  # pragma: no cover
         "pickle": PickleIO,
         "xlsx": ExcelIO,
         "xls": ExcelIO,
-        "parquet": ParquetPandasIO,
-        "": ParquetPandasIO,
+        "parquet": ParquetIO,
+        "": ParquetIO,
     }
     _logger = logging.getLogger(
         f"{__module__}.{__name__}",
@@ -499,17 +442,3 @@ class IOService:  # pragma: no cover
             msg = "File type {} is not supported.".format(file_format)
             logging.exception(msg)
             raise ValueError(msg) from exc
-
-    @classmethod
-    def _get_storage_config(cls, **kwargs) -> Optional[StorageConfig]:
-        """Finds te storage configuration among the args and kwargs"""
-        storage_config = None
-
-        # If not found in args, search the kwargs
-        if storage_config is None:
-            for key, value in kwargs.items():
-                if isinstance(value, StorageConfig):
-                    storage_config = value
-                    break
-
-        return storage_config

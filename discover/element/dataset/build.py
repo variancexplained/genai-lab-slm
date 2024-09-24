@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:11 am                                              #
-# Modified   : Tuesday September 24th 2024 03:46:43 am                                             #
+# Modified   : Tuesday September 24th 2024 07:47:34 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -196,7 +196,6 @@ class PandasDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = False
-        self._row_group_size = self._dataset_config.pandas.row_group_size
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def build(self) -> PandasDataset:
@@ -238,13 +237,7 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = True
-        self._partition_cols = self._dataset_config.pandas.partition_cols
-        self._existing_data_behavior = (
-            self._dataset_config.pandas.existing_data_behavior
-        )
-        self._row_group_size = self._dataset_config.pandas.row_group_size
 
-        self._kwargs = self._dataset_config.pandas
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def partition_cols(self, partition_cols: list) -> PandasPartitionedDatasetBuilder:
@@ -260,6 +253,11 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
     def build(self) -> PandasPartitionedDataset:
         super().build()
         id = self.get_next_id()
+
+        self._partition_cols = self._dataset_config.pandas.partition_cols
+        self._existing_data_behavior = (
+            self._dataset_config.pandas.existing_data_behavior
+        )
 
         self._storage_config = PandasParquetPartitionedDatasetStorageConfig.create(
             id=id,
@@ -298,8 +296,8 @@ class SparkDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = False
-        self._mode = self._dataset_config.spark.mode
-        self._row_group_size = self._dataset_config.spark.row_group_size
+        self._mode = None
+
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def mode(self, mode: str) -> SparkDatasetBuilder:
@@ -309,6 +307,9 @@ class SparkDatasetBuilder(DatasetBuilder):
     def build(self) -> SparkDataset:
 
         super().build()
+
+        self._mode = self._mode or self._dataset_config.spark.mode
+
         id = self.get_next_id()
         self._storage_config = SparkParquetDatasetStorageConfig.create(
             id=id,
@@ -351,9 +352,7 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = True
-        self._mode = self._dataset_config.spark.mode
-        self._partition_cols = self._dataset_config.spark.partition_cols
-        self._row_group_size = self._dataset_config.spark.row_group_size
+        self._mode = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -361,13 +360,19 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
         self._mode = mode
         return self
 
-    def partition_cols(self, partition_cols) -> SparkPartitionedDatasetBuilder:
+    def partition_cols(self, partition_cols: list) -> PandasPartitionedDatasetBuilder:
         self._partition_cols = partition_cols
         return self
 
     def build(self) -> SparkPartitionedDataset:
 
         super().build()
+
+        self._mode = self._mode or self._dataset_config.spark.mode
+        self._partition_cols = (
+            self._partition_cols or self._dataset_config.spark.partition_cols
+        )
+
         id = self.get_next_id()
         self._storage_config = SparkParquetPartitionedDatasetStorageConfig.create(
             id=id,
