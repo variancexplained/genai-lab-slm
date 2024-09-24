@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 03:33:40 pm                                            #
-# Modified   : Tuesday September 24th 2024 02:23:06 am                                             #
+# Modified   : Tuesday September 24th 2024 03:13:19 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -40,6 +40,9 @@ class SparkSessionPoolStandard(SparkSessionPool):
         create_session(name: str, memory: str, row_group_size: int, retries: int) -> SparkSession:
             Creates and returns a Spark session for standard workloads.
     """
+
+    def __init__(self) -> None:
+        super().__init__()
 
     def create_session(
         self, name: str, memory: str, row_group_size: int, retries: int

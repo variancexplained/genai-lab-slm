@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday September 24th 2024 02:28:51 pm                                             #
+# Modified   : Tuesday September 24th 2024 03:42:36 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -54,7 +54,11 @@ def container() -> DiscoverContainer:
     container = DiscoverContainer()
     container.init_resources()
     container.wire(
-        modules=["discover.infra.storage.local.io", "discover.element.base.build"],
+        modules=[
+            "discover.infra.storage.local.io",
+            "discover.element.base.build",
+            "discover.infra.dal.file.distributed",
+        ],
     )
 
     return container
@@ -211,7 +215,7 @@ def spark_storage(stage):
         stage=stage,
         partitioned=False,
         name="test_spark_storage",
-        spark_session_name="paul",
+        spark_session_name="modestia",
     )
 
 
@@ -223,6 +227,34 @@ def spark_partitioned_storage(stage):
         phase=PhaseDef.DATAPREP,
         stage=stage,
         partitioned=True,
+        name="test_spark_partitioned_storage",
+        spark_session_name=None,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="function")
+def spark_storage_nlp(stage):
+    return SparkParquetDatasetStorageConfig.create(
+        id=423,
+        phase=PhaseDef.DATAPREP,
+        stage=stage,
+        nlp=True,
+        partitioned=False,
+        name="test_spark_storage",
+        spark_session_name="modestia",
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="function")
+def spark_partitioned_storage_nlp(stage):
+    return SparkParquetPartitionedDatasetStorageConfig.create(
+        id=424,
+        phase=PhaseDef.DATAPREP,
+        stage=stage,
+        partitioned=True,
+        nlp=True,
         name="test_spark_partitioned_storage",
         spark_session_name=None,
     )

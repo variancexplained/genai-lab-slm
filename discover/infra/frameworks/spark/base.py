@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Tuesday September 24th 2024 03:03:12 am                                             #
+# Modified   : Tuesday September 24th 2024 03:39:16 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -57,7 +57,7 @@ class SparkSessionPool(ABC):
             Returns an existing Spark session or creates a new one for the specified phase.
         create_session(name: str, memory: str, row_group_size: int, retries: int) -> SparkSession:
             Abstract method to create a Spark session with specified configurations.
-        _get_session_name(phase: PhaseDef) -> str:
+        _get_spark_session_name(phase: PhaseDef) -> str:
             Returns the session name associated with the specified phase.
 
     Example usage:
@@ -94,83 +94,92 @@ class SparkSessionPool(ABC):
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
+    def get_or_create(self, spark_session_name: str) -> SparkSession:
+        """
+        Retrieves an existing Spark session or creates a new one based on the specified phase.
 
-def get_or_create(self, session_name: str) -> SparkSession:
-    """
-    Retrieves an existing Spark session or creates a new one based on the specified phase.
+        If no phase is provided or an unsupported phase is given, the Leviathan session is used as
+        the default fallback since it is the most frequently used session.
 
-    If no phase is provided or an unsupported phase is given, the Leviathan session is used as
-    the default fallback since it is the most frequently used session.
+        Args:
+            phase (PhaseDef, optional): The phase for which a Spark session is required. If not
+                                        provided or if the phase is unsupported, Leviathan is used.
 
-    Args:
-        phase (PhaseDef, optional): The phase for which a Spark session is required. If not
-                                    provided or if the phase is unsupported, Leviathan is used.
+            spark_session_name (str): The name of the spark session to obtain from the SparkSession
+                pool.
 
-    Returns:
-        SparkSession: The Spark session corresponding to the specified phase. If no phase or
-                      an unsupported phase is provided, the Leviathan session is returned.
+        Returns:
+            SparkSession: The Spark session corresponding to the specified phase. If no phase or
+                        an unsupported phase is provided, the Leviathan session is returned.
 
-    Raises:
-        RuntimeError: If an error occurs while creating a session.
+        Raises:
+            RuntimeError: If an error occurs while creating a session.
 
-    Example usage:
-        >>> pool = SparkSessionPoolStandard()
-        >>> session = pool.get_or_create(PhaseDef.DATAPREP)
-        >>> print(session)
-        <pyspark.sql.session.SparkSession object ...>
+        Example usage:
+            >>> pool = SparkSessionPoolStandard()
+            >>> session = pool.get_or_create(PhaseDef.DATAPREP)
+            >>> print(session)
+            <pyspark.sql.session.SparkSession object ...>
 
-        >>> session = pool.get_or_create()
-        WARNING: No phase provided. Defaulting to Leviathan session.
-        >>> print(session)
-        <pyspark.sql.session.SparkSession object ...>
-    """
+            >>> session = pool.get_or_create("leviathan")
+            WARNING: No phase provided. Defaulting to Leviathan session.
+            >>> print(session)
+            <pyspark.sql.session.SparkSession object ...>
+        """
+        if not spark_session_name:
+            spark_session_name = "leviathan"
+        self._logger.debug(
+            f"Obtained the {spark_session_name} session from the SparkSession pool."
+        )
+        if spark_session_name == "leviathan":
+            if not self._leviathan:
+                self._logger.debug(f"Creating the {spark_session_name} session.")
+                self._leviathan = self.create_session(
+                    name=spark_session_name,
+                    memory=self._spark_config["memory"],
+                    row_group_size=self._session_config.leviathan,
+                    retries=self._spark_config["retries"],
+                )
+                atexit.register(shutdown, self._leviathan)
+            return self._leviathan
 
-    if session_name == "leviathan":
-        if not self._leviathan:
-            self._leviathan = self.create_session(
-                name=session_name,
-                memory=self._session_config.memory,
-                row_group_size=self._session_config.leviathan,
-                retries=self._session_config.retries,
-            )
-            atexit.register(shutdown, self._leviathan)
-        return self._leviathan
+        elif spark_session_name == "modestia":
+            if not self._modestia:
+                self._logger.debug(f"Creating the {spark_session_name} session.")
+                self._modestia = self.create_session(
+                    name=spark_session_name,
+                    memory=self._spark_config["memory"],
+                    row_group_size=self._session_config.modestia,
+                    retries=self._spark_config["retries"],
+                )
+                atexit.register(shutdown, self._modestia)
+            return self._modestia
 
-    elif session_name == "modestia":
-        if not self._modestia:
-            self._modestia = self.create_session(
-                name=session_name,
-                memory=self._session_config.memory,
-                row_group_size=self._session_config.modestia,
-                retries=self._session_config.retries,
-            )
-            atexit.register(shutdown, self._modestia)
-        return self._modestia
+        elif spark_session_name == "paul":
+            if not self._paul:
+                self._logger.debug(f"Creating the {spark_session_name} session.")
+                self._paul = self.create_session(
+                    name=spark_session_name,
+                    memory=self._spark_config["memory"],
+                    row_group_size=self._session_config.paul,
+                    retries=self._spark_config["retries"],
+                )
+                atexit.register(shutdown, self._paul)
+            return self._paul
+        else:
+            msg = f"The SparkSession pool does not have support for the {spark_session_name} session. Falling back to the Leviathan session."
+            self._logger.warning(msg)
+            if not self._leviathan:
+                self._leviathan = self.create_session(
+                    name="leviathan",
+                    memory=self._spark_config["memory"],
+                    row_group_size=self._session_config.leviathan,
+                    retries=self._spark_config["retries"],
+                )
+            return self._leviathan
 
-    elif session_name == "paul":
-        if not self._paul:
-            self._paul = self.create_session(
-                name=session_name,
-                memory=self._session_config.memory,
-                row_group_size=self._session_config.paul,
-                retries=self._session_config.retries,
-            )
-            atexit.register(shutdown, self._paul)
-        return self._paul
-    else:
-        msg = f"The SparkSession pool does not have support for the {session_name} session. Falling back to the Leviathan session."
-        self._logger.warning(msg)
-        if not self._leviathan:
-            self._leviathan = self.create_session(
-                name="leviathan",
-                memory=self._session_config.memory,
-                row_group_size=self._session_config.leviathan,
-                retries=self._session_config.retries,
-            )
-        return self._leviathan
-
-    @abstractmethod
-    def create_session(
-        self, name: str, memory: str, row_group_size: int, retries: int
-    ) -> SparkSession:
-        """Returns a SparkSession with the designated row group size."""
+        @abstractmethod
+        def create_session(
+            self, name: str, memory: str, row_group_size: int, retries: int
+        ) -> SparkSession:
+            """Returns a SparkSession with the designated row group size."""

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 07:31:28 pm                                             #
-# Modified   : Tuesday September 24th 2024 02:20:15 am                                             #
+# Modified   : Tuesday September 24th 2024 03:13:42 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,6 +31,9 @@ class SparkSessionPoolNLP(SparkSessionPool):
     Factory class for creating and managing Spark sessions specifically tailored for
     natural language processing (NLP) workloads.
     """
+
+    def __init__(self) -> None:
+        super().__init__()
 
     def create_session(
         self, name: str, memory: str, row_group_size: int, retries: int

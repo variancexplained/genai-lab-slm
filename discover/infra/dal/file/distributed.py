@@ -11,11 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:42 pm                                              #
-# Modified   : Tuesday September 24th 2024 01:49:31 pm                                             #
+# Modified   : Tuesday September 24th 2024 03:11:22 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import os
+
 import pyspark
 from dependency_injector.wiring import Provide, inject
 
@@ -28,24 +30,29 @@ from discover.infra.frameworks.spark.standard import SparkSessionPoolStandard
 # ------------------------------------------------------------------------------------------------ #
 class DistributedFileSystemDAO(FileSystemDAO):
     """
-    A specialized Data Access Object (DAO) for interacting with a distributed file system,
-    handling data in PySpark DataFrame format. This class inherits from the FileSystemDAO
-    and implements reading and writing of Parquet files using PySpark.
+    Data Access Object (DAO) for distributed file systems, supporting read and write operations for Spark and Pandas DataFrames.
 
-    The distributed file system is environment-specific, and the file paths passed to the
-    create, read, and delete methods are converted from environment-agnostic paths using
-    the base directory set in the configuration.
+    This class manages file I/O operations, such as reading and writing parquet files, leveraging a session pool to manage
+    Spark sessions efficiently. The class supports both Pandas and Spark DataFrames for reading and writing.
 
     Attributes:
-        _logger (logging.Logger): Inherited from FileSystemDAO, used for logging errors and tracking operations.
-        _basedir (str): Inherited from FileSystemDAO, defines the base directory for file operations.
+    -----------
+    _session_pool : SparkSessionPoolStandard
+        A pool of Spark sessions, injected to manage Spark session lifecycle.
 
     Methods:
-        _read(filepath, **kwargs):
-            Reads a Parquet file from the distributed file system into a PySpark DataFrame.
+    --------
+    __init__(session_pool: SparkSessionPoolStandard):
+        Initializes the DAO with a session pool for Spark sessions.
 
-        _write(filepath, data, **kwargs):
-            Writes a PySpark DataFrame to a Parquet file in the distributed file system.
+    read(filepath: str, spark_session_name: str, **kwargs) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
+        Reads a parquet file from the specified file path using the provided Spark session. Raises a FileNotFoundError if the file does not exist.
+
+    _read(filepath: str, spark_session_name: str, **kwargs) -> pyspark.sql.DataFrame:
+        Internal method to perform the actual Spark DataFrame read operation from a parquet file.
+
+    _write(filepath: str, data: pyspark.sql.DataFrame, spark_session_name: str, **kwargs) -> None:
+        Internal method to write a Spark DataFrame to a parquet file. Supports partitioning and various write modes.
     """
 
     @inject
@@ -55,47 +62,41 @@ class DistributedFileSystemDAO(FileSystemDAO):
             DiscoverContainer.spark.standard
         ],
     ) -> None:
-        """
-        Initializes the DistributedFileSystemDAO by calling the parent FileSystemDAO constructor.
-        The base directory is set using the configuration reader class, which is responsible for
-        retrieving environment-specific settings.
-
-        Args:
-            config_reader_cls (type[ConfigReader], optional): The configuration reader class
-                responsible for retrieving the base directory for distributed storage. Defaults
-                to ConfigReader.
-        """
+        """"""
         super().__init__()
         self._session_pool = session_pool
 
-    def _read(
-        self, filepath: str, session_name: str, **kwargs
+    def read(
+        self, filepath: str, spark_session_name: str, **kwargs
     ) -> pyspark.sql.DataFrame:
-        """
-        Reads a Parquet file from the distributed file system and loads it into a PySpark DataFrame.
+        """"""
+        # Check if the file exists before reading
+        if os.path.exists(filepath):
+            return self._read(
+                filepath=filepath, spark_session_name=spark_session_name, **kwargs
+            )
+        else:
+            msg = f"File {os.path.basename(filepath)} does not exist in {os.path.dirname(filepath)}."
+            self._logger.error(msg)
+            raise FileNotFoundError(msg)
 
-        Args:
-            filepath (str): The full path to the Parquet file in the distributed file system.
-            **kwargs: Additional keyword arguments for reading the Parquet file.
-
-        Returns:
-            pyspark.sql.DataFrame: The data read from the file, loaded into a PySpark DataFrame.
-        """
+    def _read(
+        self, filepath: str, spark_session_name: str, **kwargs
+    ) -> pyspark.sql.DataFrame:
+        """"""
         # Obtain a spark session from the pool
-        spark_session = self._session_pool.get_or_create(session_name=session_name)
+        spark_session = self._session_pool.get_or_create(
+            spark_session_name=spark_session_name
+        )
         return spark_session.read.parquet(filepath, **kwargs)
 
     def _write(
-        self, filepath: str, data: pyspark.sql.DataFrame, session_name: str, **kwargs
+        self,
+        filepath: str,
+        data: pyspark.sql.DataFrame,
+        **kwargs,
     ) -> None:
-        """
-        Writes a PySpark DataFrame to a Parquet file in the distributed file system.
-
-        Args:
-            filepath (str): The full path where the Parquet file will be written in the distributed system.
-            data (pyspark.sql.DataFrame): The PySpark DataFrame containing the data to be written.
-            **kwargs: Additional keyword arguments for writing the Parquet file.
-        """
+        """"""
         # Extract arguments from kwargs
         mode = kwargs.get("mode", None)
         partition_cols = kwargs.get("partition_cols", None)
@@ -110,83 +111,13 @@ class DistributedFileSystemDAO(FileSystemDAO):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DistributedFileSystemNLPDAO(FileSystemDAO):
-    """
-    A specialized Data Access Object (DAO) for interacting with a distributed file system
-    optimized for NLP work loads, handling data in PySpark DataFrame format.
-    This class inherits from the FileSystemDAO and implements reading and writing of
-    Parquet files using PySpark.
-
-    The distributed file system is environment-specific, and the file paths passed to the
-    create, read, and delete methods are converted from environment-agnostic paths using
-    the base directory set in the configuration.
-
-    Attributes:
-        _logger (logging.Logger): Inherited from FileSystemDAO, used for logging errors and tracking operations.
-        _basedir (str): Inherited from FileSystemDAO, defines the base directory for file operations.
-
-    Methods:
-        _read(filepath, **kwargs):
-            Reads a Parquet file from the distributed file system into a PySpark DataFrame.
-
-        _write(filepath, data, **kwargs):
-            Writes a PySpark DataFrame to a Parquet file in the distributed file system.
-    """
+class DistributedFileSystemNLPDAO(DistributedFileSystemDAO):
+    """"""
 
     @inject
     def __init__(
         self,
         session_pool: SparkSessionPoolNLP = Provide[DiscoverContainer.spark.nlp],
     ) -> None:
-        """
-        Initializes the DistributedFileSystemDAO by calling the parent FileSystemDAO constructor.
-        The base directory is set using the configuration reader class, which is responsible for
-        retrieving environment-specific settings.
-
-        Args:
-            config_reader_cls (type[ConfigReader], optional): The configuration reader class
-                responsible for retrieving the base directory for distributed storage. Defaults
-                to ConfigReader.
-        """
-        super().__init__()
-        self._session_pool = session_pool
-
-    def _read(
-        self, filepath: str, session_name: str, **kwargs
-    ) -> pyspark.sql.DataFrame:
-        """
-        Reads a Parquet file from the distributed file system and loads it into a PySpark DataFrame.
-
-        Args:
-            filepath (str): The full path to the Parquet file in the distributed file system.
-            **kwargs: Additional keyword arguments for reading the Parquet file.
-
-        Returns:
-            pyspark.sql.DataFrame: The data read from the file, loaded into a PySpark DataFrame.
-        """
-        # Obtain a spark session from the pool
-        spark_session = self._session_pool.get_or_create(session_name=session_name)
-        return spark_session.read.parquet(filepath, **kwargs)
-
-    def _write(
-        self, filepath: str, data: pyspark.sql.DataFrame, session_name: str, **kwargs
-    ) -> None:
-        """
-        Writes a PySpark DataFrame to a Parquet file in the distributed file system.
-
-        Args:
-            filepath (str): The full path where the Parquet file will be written in the distributed system.
-            data (pyspark.sql.DataFrame): The PySpark DataFrame containing the data to be written.
-            **kwargs: Additional keyword arguments for writing the Parquet file.
-        """
-        # Extract arguments from kwargs
-        mode = kwargs.get("mode", None)
-        partition_cols = kwargs.get("partition_cols", None)
-
-        # Construct pyspark write command based upon kwargs
-        if mode and partition_cols:
-            data.write.mode(mode).partitionBy(partition_cols).parquet(filepath)
-        elif mode:
-            data.write.mode(mode).parquet(filepath)
-        elif partition_cols:
-            data.write.partitionBy(partition_cols).parquet(filepath)
+        """"""
+        super().__init__(session_pool=session_pool)
