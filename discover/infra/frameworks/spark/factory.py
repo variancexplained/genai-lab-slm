@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/core/frameworks/spark/factory.py                                          #
+# Filename   : /discover/infra/frameworks/spark/factory.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 07:31:28 pm                                             #
-# Modified   : Saturday September 21st 2024 03:30:00 pm                                            #
+# Modified   : Monday September 23rd 2024 07:44:38 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,7 @@
 """Spark Utils Module"""
 
 import logging
+import os
 
 from pyspark.sql import SparkSession
 
@@ -51,6 +52,7 @@ class SparkSessionFactory:
     ) -> SparkSession:
         """Returns a standard Spark Session"""
         try:
+            log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
             return (
                 SparkSession.builder.appName(name)
                 .master("local[*]")
@@ -59,6 +61,14 @@ class SparkSessionFactory:
                 .config("spark.sql.parquet.outputTimestampType", "TIMESTAMP_MICROS")
                 .config("spark.sql.execution.arrow.pyspark.enabled", "true")
                 .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "false")
+                .config(
+                    "spark.driver.extraJavaOptions",
+                    f"-Dlog4j.configuration={log4j_conf_path}",
+                )
+                .config(
+                    "spark.executor.extraJavaOptions",
+                    f"-Dlog4j.configuration={log4j_conf_path}",
+                )
                 .getOrCreate()
             )
         except Exception as e:
@@ -70,6 +80,7 @@ class SparkSessionFactory:
     ) -> SparkSession:
         """Returns a Spark Session configured for Spark NLP operations."""
         try:
+            log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
             return (
                 SparkSession.builder.appName(name)
                 .master("local[*]")
@@ -84,6 +95,14 @@ class SparkSessionFactory:
                 .config("spark.driver.maxResultSize", "0")
                 .config(
                     "spark.jars.packages", "com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3"
+                )
+                .config(
+                    "spark.driver.extraJavaOptions",
+                    f"-Dlog4j.configuration={log4j_conf_path}",
+                )
+                .config(
+                    "spark.executor.extraJavaOptions",
+                    f"-Dlog4j.configuration={log4j_conf_path}",
                 )
                 .getOrCreate()
             )

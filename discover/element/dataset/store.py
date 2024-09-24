@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:16 am                                              #
-# Modified   : Monday September 23rd 2024 03:27:43 am                                              #
+# Modified   : Monday September 23rd 2024 07:27:15 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -128,7 +128,7 @@ class DatasetStorageConfig(StorageConfig):
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class PandasDatasetStorageConfig(DatasetStorageConfig):
+class PandasParquetDatasetStorageConfig(DatasetStorageConfig):
     """"""
 
     structure: DataStructure = DataStructure.PANDAS
@@ -144,7 +144,8 @@ class PandasDatasetStorageConfig(DatasetStorageConfig):
         engine: str = "pyarrow",
         compression: str = "snappy",
         index: bool = False,
-    ) -> PandasDatasetStorageConfig:
+        row_group_size: int = 128 * 1024 * 1024,  # 128 MB
+    ) -> PandasParquetDatasetStorageConfig:
         """"""
         # Create a base file path that includes phase, stage, name, current date, and ID
         filepath = (
@@ -153,17 +154,19 @@ class PandasDatasetStorageConfig(DatasetStorageConfig):
         return cls(
             partitioned=partitioned,
             filepath=filepath,
+            row_group_size=row_group_size,
             write_kwargs={
                 "engine": engine,
                 "compression": compression,
                 "index": index,
+                "row_group_size": row_group_size,
             },
         )
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class PandasPartitionedDatasetStorageConfig(DatasetStorageConfig):
+class PandasParquetPartitionedDatasetStorageConfig(DatasetStorageConfig):
     """
     A specialized data class for handling storage-related information specific to datasets
     in Pandas DataFrame format. This class extends DatasetStorageConfig and provides additional
@@ -178,7 +181,7 @@ class PandasPartitionedDatasetStorageConfig(DatasetStorageConfig):
 
     Methods:
         create(cls, id, phase, stage, name, partitioned=True, partition_cols=["category"]):
-            A factory method that creates a PandasDatasetStorageConfig object, generating
+            A factory method that creates a PandasParquetDatasetStorageConfig object, generating
             a file path based on the provided phase, stage, name, and the current date, and
             including partitioning options and Pandas-specific writing configurations.
     """
@@ -196,9 +199,10 @@ class PandasPartitionedDatasetStorageConfig(DatasetStorageConfig):
         engine: str = "pyarrow",
         compression: str = "snappy",
         index: bool = False,
+        row_group_size: int = 128 * 1024 * 1024,  # 128 MB
         partition_cols: Optional[List] = None,
         existing_data_behavior: str = "delete_matching",
-    ) -> PandasPartitionedDatasetStorageConfig:
+    ) -> PandasParquetPartitionedDatasetStorageConfig:
         """"""
         # Create a base file path that includes phase, stage, name, current date, and ID
         filepath = cls.format_filepath(id=id, phase=phase, stage=stage, name=name)
@@ -207,14 +211,16 @@ class PandasPartitionedDatasetStorageConfig(DatasetStorageConfig):
         if partition_cols is None:
             partition_cols = ["category"]
 
-        # Return a PandasDatasetStorageConfig with write configurations for Pandas
+        # Return a PandasParquetDatasetStorageConfig with write configurations for Pandas
         return cls(
             partitioned=partitioned,
             filepath=filepath,
+            row_group_size=row_group_size,
             write_kwargs={
                 "engine": engine,
                 "compression": compression,
                 "index": index,
+                "row_group_size": row_group_size,
                 "partition_cols": partition_cols,
                 "existing_data_behavior": existing_data_behavior,
             },
@@ -223,7 +229,7 @@ class PandasPartitionedDatasetStorageConfig(DatasetStorageConfig):
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class SparkDatasetStorageConfig(DatasetStorageConfig):
+class SparkParquetDatasetStorageConfig(DatasetStorageConfig):
     """ """
 
     structure: DataStructure = DataStructure.SPARK  # Set the default structure to Spark
@@ -237,9 +243,10 @@ class SparkDatasetStorageConfig(DatasetStorageConfig):
         name: str,
         mode: str = "error",
         partitioned: bool = False,
-    ) -> SparkDatasetStorageConfig:
+        row_group_size: int = 128 * 1024 * 1024,  # 128 MB
+    ) -> SparkParquetDatasetStorageConfig:
         """
-        A factory method to create a SparkDatasetStorageConfig object, generating a file path
+        A factory method to create a SparkParquetDatasetStorageConfig object, generating a file path
         based on the provided phase, stage, name, and the current date. It also configures
         Spark-specific write options, including partitioning by columns if provided.
 
@@ -259,7 +266,7 @@ class SparkDatasetStorageConfig(DatasetStorageConfig):
                 Defaults to ["category"].
 
         Returns:
-            SparkDatasetStorageConfig: A new instance of SparkDatasetStorageConfig with the appropriate
+            SparkParquetDatasetStorageConfig: A new instance of SparkParquetDatasetStorageConfig with the appropriate
             file path and Spark-specific write configurations.
         """
         # Create a base file path that includes phase, stage, name, current date, and ID
@@ -267,15 +274,18 @@ class SparkDatasetStorageConfig(DatasetStorageConfig):
             cls.format_filepath(id=id, phase=phase, stage=stage, name=name) + ".parquet"
         )
 
-        # Return a SparkDatasetStorageConfig with write configurations for Spark
+        # Return a SparkParquetDatasetStorageConfig with write configurations for Spark
         return cls(
-            partitioned=partitioned, filepath=filepath, write_kwargs={"mode": mode}
+            partitioned=partitioned,
+            filepath=filepath,
+            row_group_size=row_group_size,
+            write_kwargs={"mode": mode},
         )
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class SparkPartitionedDatasetStorageConfig(DatasetStorageConfig):
+class SparkParquetPartitionedDatasetStorageConfig(DatasetStorageConfig):
     """
     A specialized data class for handling storage-related information specific to datasets
     in PySpark DataFrame format. This class extends DatasetStorageConfig and provides additional
@@ -290,7 +300,7 @@ class SparkPartitionedDatasetStorageConfig(DatasetStorageConfig):
 
     Methods:
         create(cls, id, phase, stage, name, partitioned=True, partition_cols=["category"]):
-            A factory method that creates a SparkDatasetStorageConfig object, generating
+            A factory method that creates a SparkParquetDatasetStorageConfig object, generating
             a file path based on the provided phase, stage, name, and the current date, and
             including partitioning options for Spark.
     """
@@ -307,9 +317,10 @@ class SparkPartitionedDatasetStorageConfig(DatasetStorageConfig):
         mode: str = "error",
         partitioned: bool = True,
         partition_cols: Optional[List] = None,
-    ) -> SparkDatasetStorageConfig:
+        row_group_size: int = 128 * 1024 * 1024,  # 128 MB
+    ) -> SparkParquetPartitionedDatasetStorageConfig:
         """
-        A factory method to create a SparkDatasetStorageConfig object, generating a file path
+        A factory method to create a SparkParquetDatasetStorageConfig object, generating a file path
         based on the provided phase, stage, name, and the current date. It also configures
         Spark-specific write options, including partitioning by columns if provided.
 
@@ -329,7 +340,7 @@ class SparkPartitionedDatasetStorageConfig(DatasetStorageConfig):
                 Defaults to ["category"].
 
         Returns:
-            SparkDatasetStorageConfig: A new instance of SparkDatasetStorageConfig with the appropriate
+            SparkParquetDatasetStorageConfig: A new instance of SparkParquetDatasetStorageConfig with the appropriate
             file path and Spark-specific write configurations.
         """
         # Create a base file path that includes phase, stage, name, current date, and ID
@@ -338,10 +349,11 @@ class SparkPartitionedDatasetStorageConfig(DatasetStorageConfig):
         if partition_cols is None:
             partition_cols = ["category"]
 
-        # Return a SparkDatasetStorageConfig with write configurations for Spark
+        # Return a SparkParquetDatasetStorageConfig with write configurations for Spark
 
         return cls(
             partitioned=partitioned,
+            row_group_size=row_group_size,
             filepath=filepath,
             write_kwargs={"partition_cols": partition_cols, "mode": mode},
         )

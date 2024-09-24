@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Sunday September 22nd 2024 10:30:46 pm                                              #
+# Modified   : Monday September 23rd 2024 07:48:39 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -106,11 +106,21 @@ def spark():
     Pytest fixture to create a Spark session.
     This fixture is session-scoped, meaning it will be created once per test session.
     """
+    # Assuming the log4j.properties file is in the root directory
+    log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
     spark_session = (
         SparkSession.builder.appName("pytest-spark-session")
         .master("local[*]")
+        .config(
+            "spark.driver.extraJavaOptions", f"-Dlog4j.configuration={log4j_conf_path}"
+        )
+        .config(
+            "spark.executor.extraJavaOptions",
+            f"-Dlog4j.configuration={log4j_conf_path}",
+        )
         .getOrCreate()
     )
+    spark_session.sparkContext.setLogLevel("ERROR")
 
     yield spark_session
 

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 23rd 2024 02:12:36 am                                              #
-# Modified   : Monday September 23rd 2024 03:26:12 am                                              #
+# Modified   : Monday September 23rd 2024 06:40:09 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -84,6 +84,7 @@ class TestPandasDatasetBuilder:  # pragma: no cover
         assert dataset.storage_config.write_kwargs["compression"] == "snappy"
         assert dataset.storage_config.write_kwargs["index"] is False
         assert dataset.storage_config.write_kwargs["engine"] == "pyarrow"
+        logging.info(dataset.storage_config)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -130,6 +131,8 @@ class TestPandasDatasetBuilder:  # pragma: no cover
             == "delete_matching"
         )
 
+        logging.info(dataset.storage_config)
+
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -165,6 +168,8 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         )
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is False
+
+        logging.info(dataset.storage_config)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -205,6 +210,8 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         assert dataset.storage_config.partitioned is True
         assert dataset.storage_config.write_kwargs["mode"] == "error"
         assert dataset.storage_config.write_kwargs["partition_cols"] == ["category"]
+
+        logging.info(dataset.storage_config)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:11 am                                              #
-# Modified   : Monday September 23rd 2024 03:05:57 am                                              #
+# Modified   : Monday September 23rd 2024 07:29:36 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ from typing import Union
 
 import pandas as pd
 import pyspark
+from pyspark import StorageLevel
 
 from discover.core.flow import PhaseDef, StageDef
 from discover.element.base.build import ElementBuilder
@@ -35,10 +36,10 @@ from discover.element.dataset.define import (
     SparkPartitionedDataset,
 )
 from discover.element.dataset.store import (
-    PandasDatasetStorageConfig,
-    PandasPartitionedDatasetStorageConfig,
-    SparkDatasetStorageConfig,
-    SparkPartitionedDatasetStorageConfig,
+    PandasParquetDatasetStorageConfig,
+    PandasParquetPartitionedDatasetStorageConfig,
+    SparkParquetDatasetStorageConfig,
+    SparkParquetPartitionedDatasetStorageConfig,
 )
 from discover.infra.config.reader import ConfigReader
 
@@ -142,11 +143,12 @@ class PandasDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = False
+        self._row_group_size = self._dataset_config.pandas.row_group_size
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def build(self) -> PandasDataset:
         id = self.get_next_id()
-        self._storage_config = PandasDatasetStorageConfig.create(
+        self._storage_config = PandasParquetDatasetStorageConfig.create(
             id=id,
             phase=self._phase,
             stage=self._stage,
@@ -155,6 +157,7 @@ class PandasDatasetBuilder(DatasetBuilder):
             engine=self._dataset_config.pandas.engine,
             compression=self._dataset_config.pandas.compression,
             index=self._dataset_config.pandas.index,
+            row_group_size=self._row_group_size,
         )
 
         dataset = PandasDataset(
@@ -164,6 +167,9 @@ class PandasDatasetBuilder(DatasetBuilder):
             stage=self._stage,
             storage_config=self._storage_config,
             content=self._content,
+            nrows=self._content.shape[0],
+            ncols=self._content.shape[1],
+            size=self._content.memory_usage(deep=True).sum(),
         )
 
         self.reset()
@@ -181,6 +187,7 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
         self._existing_data_behavior = (
             self._dataset_config.pandas.existing_data_behavior
         )
+        self._row_group_size = self._dataset_config.pandas.row_group_size
 
         self._kwargs = self._dataset_config.pandas
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -197,7 +204,8 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
 
     def build(self) -> PandasPartitionedDataset:
         id = self.get_next_id()
-        self._storage_config = PandasPartitionedDatasetStorageConfig.create(
+
+        self._storage_config = PandasParquetPartitionedDatasetStorageConfig.create(
             id=id,
             phase=self._phase,
             stage=self._stage,
@@ -208,9 +216,8 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
             index=self._dataset_config.pandas.index,
             partition_cols=self._partition_cols,
             existing_data_behavior=self._existing_data_behavior,
+            row_group_size=self._row_group_size,
         )
-
-        self._logger.info(self._storage_config.write_kwargs)
 
         dataset = PandasPartitionedDataset(
             id=id,
@@ -219,6 +226,9 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
             stage=self._stage,
             storage_config=self._storage_config,
             content=self._content,
+            nrows=self._content.shape[0],
+            ncols=self._content.shape[1],
+            size=self._content.memory_usage(deep=True).sum(),
         )
 
         self.reset()
@@ -233,6 +243,7 @@ class SparkDatasetBuilder(DatasetBuilder):
         super().__init__()
         self._partitioned = False
         self._mode = self._dataset_config.spark.mode
+        self._row_group_size = self._dataset_config.spark.row_group_size
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def mode(self, mode: str) -> SparkDatasetBuilder:
@@ -241,14 +252,22 @@ class SparkDatasetBuilder(DatasetBuilder):
 
     def build(self) -> SparkDataset:
         id = self.get_next_id()
-        self._storage_config = SparkDatasetStorageConfig.create(
+        self._storage_config = SparkParquetDatasetStorageConfig.create(
             id=id,
             phase=self._phase,
             stage=self._stage,
             name=self._name,
             mode=self._mode,
             partitioned=self._partitioned,
+            row_group_size=self._row_group_size,
         )
+
+        # Obtain memory footprint
+        # Cache the DataFrame in memory
+        self._content.persist(StorageLevel.MEMORY_ONLY)
+
+        # Calculate the size in bytes of each partition and sum them
+        total_size_in_bytes = self._content.rdd.map(lambda row: len(str(row))).sum()
 
         dataset = SparkDataset(
             id=id,
@@ -257,6 +276,9 @@ class SparkDatasetBuilder(DatasetBuilder):
             stage=self._stage,
             storage_config=self._storage_config,
             content=self._content,
+            nrows=self._content.count(),
+            ncols=len(self._content.columns),
+            size=total_size_in_bytes,
         )
 
         self.reset()
@@ -272,6 +294,7 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
         self._partitioned = True
         self._mode = self._dataset_config.spark.mode
         self._partition_cols = self._dataset_config.spark.partition_cols
+        self._row_group_size = self._dataset_config.spark.row_group_size
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -285,7 +308,7 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
 
     def build(self) -> SparkPartitionedDataset:
         id = self.get_next_id()
-        self._storage_config = SparkPartitionedDatasetStorageConfig.create(
+        self._storage_config = SparkParquetPartitionedDatasetStorageConfig.create(
             id=id,
             phase=self._phase,
             stage=self._stage,
@@ -293,7 +316,14 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
             partitioned=self._partitioned,
             mode=self._dataset_config.spark.mode,
             partition_cols=self._dataset_config.spark.partition_cols,
+            row_group_size=self._row_group_size,
         )
+        # Obtain memory footprint
+        # Cache the DataFrame in memory
+        self._content.persist(StorageLevel.MEMORY_ONLY)
+
+        # Calculate the size in bytes of each partition and sum them
+        total_size_in_bytes = self._content.rdd.map(lambda row: len(str(row))).sum()
 
         dataset = SparkPartitionedDataset(
             id=id,
@@ -302,6 +332,9 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
             stage=self._stage,
             storage_config=self._storage_config,
             content=self._content,
+            nrows=self._content.count(),
+            ncols=len(self._content.columns),
+            size=total_size_in_bytes,
         )
 
         self.reset()

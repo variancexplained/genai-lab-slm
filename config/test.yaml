@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Monday September 23rd 2024 02:57:23 am                                              #
+# Modified   : Monday September 23rd 2024 08:06:16 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -36,11 +36,18 @@ logging:
     file:
       backupCount: 0
       class: logging.handlers.TimedRotatingFileHandler
-      filename: logs/test.log
+      filename: logs/test/log
       formatter: file
       interval: 1
       level: DEBUG
       when: midnight
+  loggers:
+    py4j:  # Add this block to suppress py4j logging
+      level: ERROR
+      handlers:
+        - console
+        - file
+      propagate: false  # Prevent py4j logs from being propagated to the root logger
   root:
     handlers:
     - console
@@ -67,6 +74,7 @@ dataset:
     existing_data_behavior: delete_matching
   spark:
     mode: error
+    row_group_size: 1073741824   # 1Gb
     partition_cols: [category]
 
 # ------------------------------------------------------------------------------------------------ #
