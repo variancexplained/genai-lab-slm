@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:11 am                                              #
-# Modified   : Tuesday September 24th 2024 07:47:34 am                                             #
+# Modified   : Tuesday September 24th 2024 08:47:21 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -237,8 +237,15 @@ class PandasPartitionedDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = True
-
+        self._partition_cols = None
+        self._existing_data_behavior = "error"
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def reset(self) -> None:
+        super().reset()
+        self._partitioned = True
+        self._partition_cols = None
+        self._existing_data_behavior = "error"
 
     def partition_cols(self, partition_cols: list) -> PandasPartitionedDatasetBuilder:
         self._partition_cols = partition_cols
@@ -296,12 +303,22 @@ class SparkDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = False
-        self._mode = None
+        self._mode = "error"
+        self._nlp = False
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
+    def reset(self) -> None:
+        super().reset()
+        self._mode = "error"
+        self._nlp = False
+
     def mode(self, mode: str) -> SparkDatasetBuilder:
         self._mode = mode
+        return self
+
+    def nlp(self) -> SparkDatasetBuilder:
+        self._nlp = True
         return self
 
     def build(self) -> SparkDataset:
@@ -316,6 +333,7 @@ class SparkDatasetBuilder(DatasetBuilder):
             phase=self._phase,
             stage=self._stage,
             name=self._name,
+            nlp=self._nlp,
             mode=self._mode,
             partitioned=self._partitioned,
             row_group_size=self._row_group_size,
@@ -352,12 +370,22 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
     def __init__(self) -> None:
         super().__init__()
         self._partitioned = True
-        self._mode = None
+        self._mode = "error"
+        self._nlp = False
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
+    def reset(self) -> None:
+        super().reset()
+        self._mode = "error"
+        self._nlp = False
+
     def mode(self, mode: str) -> SparkPartitionedDatasetBuilder:
         self._mode = mode
+        return self
+
+    def nlp(self) -> SparkPartitionedDatasetBuilder:
+        self._nlp = True
         return self
 
     def partition_cols(self, partition_cols: list) -> PandasPartitionedDatasetBuilder:
@@ -379,9 +407,10 @@ class SparkPartitionedDatasetBuilder(DatasetBuilder):
             phase=self._phase,
             stage=self._stage,
             name=self._name,
+            nlp=self._nlp,
             partitioned=self._partitioned,
-            mode=self._dataset_config.spark.mode,
-            partition_cols=self._dataset_config.spark.partition_cols,
+            mode=self._mode,
+            partition_cols=self._partition_cols,
             row_group_size=self._row_group_size,
             spark_session_name=self._spark_session_name,
         )

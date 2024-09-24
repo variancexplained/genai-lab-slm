@@ -11,20 +11,21 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday September 23rd 2024 09:41:22 pm                                              #
+# Modified   : Tuesday September 24th 2024 02:28:51 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 import sys
+from enum import Enum
 
 import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef
 from discover.element.dataset.store import (
     PandasParquetDatasetStorageConfig,
     PandasParquetPartitionedDatasetStorageConfig,
@@ -162,44 +163,66 @@ def spark_df(spark, pandas_df):
 # ------------------------------------------------------------------------------------------------ #
 #                                 STORAGE CONFIGS                                                  #
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def pandas_storage():
+@pytest.fixture(scope="function")
+def stage():
+    class TestStage(Enum):
+        TEST = ("test", "99_test", "Test Stage")
+
+        def __new__(cls, name: str, directory: str, description: str):
+            obj = object.__new__(cls)
+            obj._value_ = name
+            obj.directory = directory
+            obj.description = description
+            return obj
+
+    return TestStage.TEST
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="function")
+def pandas_storage(stage):
     return PandasParquetDatasetStorageConfig.create(
-        id=420,
-        phase=PhaseDef.SENTIMENT,
-        stage=DataPrepStageDef.DQA,
+        id=421,
+        phase=PhaseDef.DATAPREP,
+        stage=stage,
         partitioned=False,
+        name="test_pandas_storage",
     )
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def pandas_partitioned_storage():
+@pytest.fixture(scope="function")
+def pandas_partitioned_storage(stage):
     return PandasParquetPartitionedDatasetStorageConfig.create(
-        id=420,
-        phase=PhaseDef.SENTIMENT,
-        stage=DataPrepStageDef.DQA,
+        id=422,
+        phase=PhaseDef.DATAPREP,
+        stage=stage,
         partitioned=True,
+        name="test_pandas_partitioned_storage",
     )
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def spark_storage():
+@pytest.fixture(scope="function")
+def spark_storage(stage):
     return SparkParquetDatasetStorageConfig.create(
-        id=420,
-        phase=PhaseDef.SENTIMENT,
-        stage=DataPrepStageDef.DQA,
+        id=423,
+        phase=PhaseDef.DATAPREP,
+        stage=stage,
         partitioned=False,
+        name="test_spark_storage",
+        spark_session_name="paul",
     )
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def spark_partitioned_storage():
+@pytest.fixture(scope="function")
+def spark_partitioned_storage(stage):
     return SparkParquetPartitionedDatasetStorageConfig.create(
-        id=420,
-        phase=PhaseDef.SENTIMENT,
-        stage=DataPrepStageDef.DQA,
+        id=424,
+        phase=PhaseDef.DATAPREP,
+        stage=stage,
         partitioned=True,
+        name="test_spark_partitioned_storage",
+        spark_session_name=None,
     )

@@ -11,21 +11,29 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Sunday September 22nd 2024 08:18:41 pm                                              #
+# Modified   : Tuesday September 24th 2024 01:18:29 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Repository Interface Module"""
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Dict
 
 from discover.core.data_class import DataClass
+from discover.infra.dal.file.filepath import FilePathService
+
+# ------------------------------------------------------------------------------------------------ #
+filepath_service = FilePathService()
 
 
 # ------------------------------------------------------------------------------------------------ #
+@dataclass
 class StorageConfig(DataClass):
     """Base class for element storage configuration."""
+
+    filepath_service: FilePathService = filepath_service
 
 
 # ------------------------------------------------------------------------------------------------ #

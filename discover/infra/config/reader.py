@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Sunday September 22nd 2024 08:18:41 pm                                              #
+# Modified   : Tuesday September 24th 2024 02:02:42 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from typing import Any, Dict, Optional, Union
 import yaml
 from dotenv import dotenv_values, load_dotenv
 
-from discover.core.data_class import NestedNamespace
+from discover.core.namespace import NestedNamespace
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -326,4 +326,7 @@ class ConfigReader:
         NestedNamespace:
             The configuration wrapped in a `NestedNamespace` object, allowing dot notation access.
         """
-        return NestedNamespace(config)
+        if isinstance(config, dict):
+            return NestedNamespace(config)
+        else:
+            return config

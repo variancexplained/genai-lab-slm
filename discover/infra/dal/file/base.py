@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 06:05:13 pm                                              #
-# Modified   : Monday September 23rd 2024 08:41:21 pm                                              #
+# Modified   : Tuesday September 24th 2024 02:12:17 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,6 @@ from typing import Union
 import pandas as pd
 import pyspark.sql
 
-from discover.infra.config.reader import ConfigReader
 from discover.infra.dal.base import DAO
 
 
@@ -41,7 +40,6 @@ class FileSystemDAO(DAO):
 
     Attributes:
         _logger (logging.Logger): Logger instance for error logging and tracking.
-        _basedir (str): The base directory for file storage, retrieved from the configuration.
 
     Methods:
         create(filepath, data, **kwargs):
@@ -56,27 +54,13 @@ class FileSystemDAO(DAO):
             Deletes a file from the file system, converting the provided environment-agnostic
             path to an environment-specific path.
 
-        _format_fullpath(filepath):
+        _format_filepath(filepath):
             Converts an environment-agnostic file path into an environment-specific file path
             by prepending the base directory.
     """
 
-    def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
-        """
-        Initializes the FileSystemDAO with a logger and base directory for file operations.
-        The base directory is retrieved from the configuration, ensuring that the file paths
-        used by the DAO are environment-specific.
-
-        Args:
-            config_reader_cls (type[ConfigReader], optional): The configuration reader class
-                responsible for retrieving the base directory from the configuration. Defaults
-                to ConfigReader.
-        """
+    def __init__(self) -> None:
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self._basedir = config_reader_cls().get_config(
-            section="workspace", namespace=False
-        )
-        # ^ Base directory for environment-specific file storage.
 
     def create(
         self,
@@ -98,16 +82,15 @@ class FileSystemDAO(DAO):
         Raises:
             FileExistsError: If a file with the same name already exists in the specified location.
         """
-        fullpath = self._format_fullpath(filepath=filepath)
 
         # Check if the file already exists before writing
-        if os.path.exists(fullpath):
+        if os.path.exists(filepath):
             msg = f"File {os.path.basename(filepath)} already exists in {os.path.dirname(filepath)}."
             self._logger.error(msg)
             raise FileExistsError(msg)
 
-        self._write(filepath=fullpath, data=data, **kwargs)
-        # ^ The actual writing operation is delegated to the `_write` method.
+        # ^ The actual writing operation is delegated to the `_write` method of subclass.
+        self._write(filepath=filepath, data=data, **kwargs)
 
     def read(
         self, filepath: str, **kwargs
@@ -128,11 +111,9 @@ class FileSystemDAO(DAO):
         Raises:
             FileNotFoundError: If the specified file does not exist.
         """
-        fullpath = self._format_fullpath(filepath=filepath)
-
         # Check if the file exists before reading
-        if os.path.exists(fullpath):
-            return self._read(filepath=fullpath, **kwargs)
+        if os.path.exists(filepath):
+            return self._read(filepath=filepath, **kwargs)
         else:
             msg = f"File {os.path.basename(filepath)} does not exist in {os.path.dirname(filepath)}."
             self._logger.error(msg)
@@ -152,29 +133,14 @@ class FileSystemDAO(DAO):
         Raises:
             Exception: If an unknown error occurs during file or directory deletion.
         """
-        fullpath = self._format_fullpath(filepath=filepath)
 
         # Check if it's a directory and remove the directory tree
-        if os.path.isdir(fullpath):
-            shutil.rmtree(fullpath, ignore_errors=True)
+        if os.path.isdir(filepath):
+            shutil.rmtree(filepath, ignore_errors=True)
         else:
             try:
-                os.remove(path=fullpath)  # Remove the file if it exists
+                os.remove(path=filepath)  # Remove the file if it exists
             except Exception as e:
                 msg = f"Unknown exception occurred while deleting file {os.path.basename(filepath)} in {os.path.dirname(filepath)}.\n{e}"
                 self._logger.exception(msg)
                 raise
-
-    def _format_fullpath(self, filepath: str) -> str:
-        """
-        Converts an environment-agnostic file path into an environment-specific file path by
-        prepending the base directory, which is determined by the environment configuration.
-
-        Args:
-            filepath (str): The environment-agnostic file path.
-
-        Returns:
-            str: The environment-specific file path, constructed by combining the base directory
-            with the provided filepath.
-        """
-        return os.path.join(self._basedir, filepath)

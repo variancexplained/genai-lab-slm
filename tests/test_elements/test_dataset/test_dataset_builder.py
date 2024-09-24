@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 23rd 2024 02:12:36 am                                              #
-# Modified   : Tuesday September 24th 2024 03:47:26 am                                             #
+# Modified   : Tuesday September 24th 2024 08:44:52 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -171,6 +171,7 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         )
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is False
+        assert dataset.storage_config.nlp is False
         assert dataset.storage_config.row_group_size == RGS
         assert dataset.storage_config.spark_session_name == "leviathan"
 
@@ -213,9 +214,55 @@ class TestSparkDatasetBuilder:  # pragma: no cover
         )
         assert isinstance(dataset.storage_config, StorageConfig)
         assert dataset.storage_config.partitioned is True
+        assert dataset.storage_config.nlp is False
         assert dataset.storage_config.write_kwargs["mode"] == "error"
         assert dataset.storage_config.write_kwargs["partition_cols"] == ["category"]
         assert dataset.storage_config.spark_session_name == "leviathan"
+
+        logging.info(dataset.storage_config)
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_spark_nlp_dataset_builder(self, spark_df, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        builder = SparkPartitionedDatasetBuilder()
+        dataset = (
+            builder.name(NAME)
+            .phase(PHASE)
+            .stage(STAGE)
+            .nlp()
+            .partition_cols(PARTITION_COLS)
+            .content(spark_df)
+            .build()
+        )
+        assert isinstance(dataset, SparkPartitionedDataset)
+        logging.info(dataset)
+        assert isinstance(dataset.id, int)
+        assert dataset.name == NAME
+        assert dataset.phase == PHASE
+        assert dataset.stage == STAGE
+        logging.info(
+            f"Spark DataFrame comparison: {dataset.content.exceptAll(spark_df)}"
+        )
+        assert isinstance(dataset.storage_config, StorageConfig)
+        assert dataset.storage_config.partitioned is True
+        assert dataset.storage_config.write_kwargs["mode"] == "error"
+        assert dataset.storage_config.write_kwargs["partition_cols"] == ["category"]
+        assert dataset.storage_config.spark_session_name == "leviathan"
+        assert dataset.storage_config.nlp is True
 
         logging.info(dataset.storage_config)
 

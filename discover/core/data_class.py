@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/core/structure/data_class.py                                              #
+# Filename   : /discover/core/data_class.py                                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Friday September 20th 2024 05:51:23 pm                                              #
+# Modified   : Tuesday September 24th 2024 02:00:29 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,12 +23,10 @@ from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from types import SimpleNamespace
-from typing import Any, Dict, Mapping, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from dependency_injector.providers import ConfigurationOption
 
 # ------------------------------------------------------------------------------------------------ #
 # mypy: allow-any-generics
@@ -133,16 +131,3 @@ class DataClass(ABC):  # noqa
         """Returns the project in DataFrame format"""
         d = self.as_dict()
         return pd.DataFrame(data=d, index=[0])
-
-
-# ------------------------------------------------------------------------------------------------ #
-class NestedNamespace(SimpleNamespace):
-    def __init__(
-        self, dictionary: Union[Mapping[str, Union[int, float]], ConfigurationOption]
-    ) -> None:
-        super().__init__()
-        for key, value in dictionary.items():
-            if isinstance(value, dict):
-                self.__setattr__(key, NestedNamespace(value))
-            else:
-                self.__setattr__(key, value)
