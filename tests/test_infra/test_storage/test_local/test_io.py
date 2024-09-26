@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 04:28:20 pm                                            #
-# Modified   : Monday September 23rd 2024 07:27:16 pm                                              #
+# Modified   : Wednesday September 25th 2024 10:29:57 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,10 +24,7 @@ from datetime import datetime
 import pandas as pd
 import pytest
 
-from discover.element.dataset.store import (
-    PandasParquetDatasetStorageConfig,
-    SparkParquetDatasetStorageConfig,
-)
+from discover.element.dataset.store import DatasetStorageConfig
 from discover.infra.storage.local.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
@@ -57,7 +54,7 @@ class TestIOService:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         # Obtain a storage configuration object.
-        config = PandasParquetDatasetStorageConfig(partitioned=False)
+        config = DatasetStorageConfig(partitioned=False)
         # Instantiate the IOService and write the file, passing the storage config object.
         io = IOService()
         io.write(filepath=OFP_PANDAS, data=pandas_df, storage_config=config)
@@ -86,7 +83,7 @@ class TestIOService:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         # Obtain a storage configuration object.
-        config = PandasParquetDatasetStorageConfig(partitioned=True)
+        config = DatasetStorageConfig(partitioned=True)
         # Instantiate the IOService and write the file, passing the storage config object.
         io = IOService()
         io.write(filepath=OFP_PANDAS_PART, data=pandas_df, storage_config=config)
@@ -117,7 +114,7 @@ class TestIOService:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         # Obtain a storage configuration object.
-        config = SparkParquetDatasetStorageConfig(partitioned=False)
+        config = DatasetStorageConfig(partitioned=False)
         # Instantiate the IOService and write the file, passing the storage config object.
         io = IOService()
         io.write(filepath=OFP_SPARK, data=spark_df, storage_config=config)
@@ -146,7 +143,7 @@ class TestIOService:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         # Obtain a storage configuration object.
-        config = SparkParquetDatasetStorageConfig(partitioned=True)
+        config = DatasetStorageConfig(partitioned=True)
         # Instantiate the IOService and write the file, passing the storage config object.
         io = IOService()
         io.write(filepath=OFP_SPARK_PART, data=spark_df, storage_config=config)

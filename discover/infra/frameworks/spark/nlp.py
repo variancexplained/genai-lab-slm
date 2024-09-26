@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 07:31:28 pm                                             #
-# Modified   : Tuesday September 24th 2024 03:13:42 pm                                             #
+# Modified   : Wednesday September 25th 2024 08:03:34 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,7 +36,7 @@ class SparkSessionPoolNLP(SparkSessionPool):
         super().__init__()
 
     def create_session(
-        self, name: str, memory: str, row_group_size: int, retries: int
+        self, name: str, memory: str, parquet_block_size: int, retries: int
     ) -> SparkSession:
         """
         Creates and returns a Spark session for NLP workloads with specified configurations.
@@ -50,7 +50,7 @@ class SparkSessionPoolNLP(SparkSessionPool):
         Args:
             name (str): The name of the Spark session.
             memory (str): The memory allocation for the driver and executor (e.g., "32g").
-            row_group_size (int): The size of Parquet block size for row groups.
+            parquet_block_size (int): The size of Parquet block size for row groups.
             retries (int): The number of times to retry session creation if it fails.
 
         Returns:
@@ -64,7 +64,7 @@ class SparkSessionPoolNLP(SparkSessionPool):
             >>> session = pool.create_session(
             ...     name="nlp-session",
             ...     memory="32g",
-            ...     row_group_size=256 * 1024 * 1024,
+            ...     parquet_block_size=256 * 1024 * 1024,
             ...     retries=3
             ... )
             >>> print(session)
@@ -85,7 +85,7 @@ class SparkSessionPoolNLP(SparkSessionPool):
                     .master("local[*]")
                     .config("spark.driver.memory", memory)
                     .config("spark.executor.memory", memory)
-                    .config("spark.sql.parquet.block.size", row_group_size)
+                    .config("spark.sql.parquet.block.size", parquet_block_size)
                     .config("spark.sql.execution.arrow.pyspark.enabled", "true")
                     .config(
                         "spark.sql.execution.arrow.pyspark.fallback.enabled", "false"

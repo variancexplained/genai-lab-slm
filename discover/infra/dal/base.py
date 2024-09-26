@@ -11,28 +11,54 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
-# Modified   : Monday September 23rd 2024 08:38:18 pm                                              #
+# Modified   : Wednesday September 25th 2024 04:51:22 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
 from abc import ABC, abstractmethod
 from typing import Any
 
-from discover.core.flow import PhaseDef, StageDef
 
-
-# ------------------------------------------------------------------------------------------------ #
 class DAO(ABC):
+    """Abstract base class for data access objects."""
 
     @abstractmethod
     def create(self, *args, **kwargs) -> None:
-        """Adds data to an underlying storage mechanism."""
+        """Adds data to an underlying storage mechanism.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
 
     @abstractmethod
     def read(self, *args, **kwargs) -> Any:
-        """Reads data from an underlying storage mechanism"""
+        """Reads data from an underlying storage mechanism.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Any: The data read from the storage.
+        """
 
     @abstractmethod
-    def delete(self, phase: PhaseDef, stage: StageDef, name: str, **kwargs) -> Any:
-        """Deletes data from an underlying storage mechanism."""
+    def delete(self, *args, **kwargs) -> None:
+        """Deletes data from an underlying storage mechanism.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
+
+    @abstractmethod
+    def exists(self, *args, **kwargs) -> bool:
+        """Determines existence of an alement
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """

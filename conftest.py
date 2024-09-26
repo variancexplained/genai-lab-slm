@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday September 24th 2024 03:42:36 pm                                             #
+# Modified   : Wednesday September 25th 2024 10:28:50 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,12 +26,7 @@ from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
 from discover.core.flow import PhaseDef
-from discover.element.dataset.store import (
-    PandasParquetDatasetStorageConfig,
-    PandasParquetPartitionedDatasetStorageConfig,
-    SparkParquetDatasetStorageConfig,
-    SparkParquetPartitionedDatasetStorageConfig,
-)
+from discover.element.dataset.store import DatasetStorageConfig
 from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
 from discover.infra.storage.cloud.aws import S3Handler
@@ -185,7 +180,7 @@ def stage():
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def pandas_storage(stage):
-    return PandasParquetDatasetStorageConfig.create(
+    return DatasetStorageConfig.create(
         id=421,
         phase=PhaseDef.DATAPREP,
         stage=stage,
@@ -197,7 +192,7 @@ def pandas_storage(stage):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def pandas_partitioned_storage(stage):
-    return PandasParquetPartitionedDatasetStorageConfig.create(
+    return DatasetStorageConfig.create(
         id=422,
         phase=PhaseDef.DATAPREP,
         stage=stage,
@@ -209,7 +204,7 @@ def pandas_partitioned_storage(stage):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def spark_storage(stage):
-    return SparkParquetDatasetStorageConfig.create(
+    return DatasetStorageConfig.create(
         id=423,
         phase=PhaseDef.DATAPREP,
         stage=stage,
@@ -222,7 +217,7 @@ def spark_storage(stage):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def spark_partitioned_storage(stage):
-    return SparkParquetPartitionedDatasetStorageConfig.create(
+    return DatasetStorageConfig.create(
         id=424,
         phase=PhaseDef.DATAPREP,
         stage=stage,
@@ -235,7 +230,7 @@ def spark_partitioned_storage(stage):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def spark_storage_nlp(stage):
-    return SparkParquetDatasetStorageConfig.create(
+    return DatasetStorageConfig.create(
         id=423,
         phase=PhaseDef.DATAPREP,
         stage=stage,
@@ -249,7 +244,7 @@ def spark_storage_nlp(stage):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def spark_partitioned_storage_nlp(stage):
-    return SparkParquetPartitionedDatasetStorageConfig.create(
+    return DatasetStorageConfig.create(
         id=424,
         phase=PhaseDef.DATAPREP,
         stage=stage,

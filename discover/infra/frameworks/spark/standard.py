@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 03:33:40 pm                                            #
-# Modified   : Tuesday September 24th 2024 03:13:19 pm                                             #
+# Modified   : Wednesday September 25th 2024 08:00:06 pm                                           #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,7 +37,7 @@ class SparkSessionPoolStandard(SparkSessionPool):
     and retry logic in case of failures.
 
     Methods:
-        create_session(name: str, memory: str, row_group_size: int, retries: int) -> SparkSession:
+        create_session(name: str, memory: str, parquet_block_size: int, retries: int) -> SparkSession:
             Creates and returns a Spark session for standard workloads.
     """
 
@@ -45,7 +45,7 @@ class SparkSessionPoolStandard(SparkSessionPool):
         super().__init__()
 
     def create_session(
-        self, name: str, memory: str, row_group_size: int, retries: int
+        self, name: str, memory: str, parquet_block_size: int, retries: int
     ) -> SparkSession:
         """
         Creates and returns a standard Spark session with specified configurations.
@@ -58,7 +58,7 @@ class SparkSessionPoolStandard(SparkSessionPool):
         Args:
             name (str): The name of the Spark session.
             memory (str): The memory allocation for the driver and executor (e.g., "32g").
-            row_group_size (int): The size of the Parquet block size for row groups.
+            parquet_block_size (int): The size of the Parquet block size for row groups.
             retries (int): The number of retries to attempt in case of failure.
 
         Returns:
@@ -72,7 +72,7 @@ class SparkSessionPoolStandard(SparkSessionPool):
             >>> session = pool.create_session(
             ...     name="standard-session",
             ...     memory="16g",
-            ...     row_group_size=128 * 1024 * 1024,
+            ...     parquet_block_size=128 * 1024 * 1024,
             ...     retries=3
             ... )
             >>> print(session)
@@ -93,7 +93,7 @@ class SparkSessionPoolStandard(SparkSessionPool):
                     .master("local[*]")
                     .config("spark.driver.memory", memory)
                     .config("spark.executor.memory", memory)
-                    .config("spark.sql.parquet.block.size", row_group_size)
+                    .config("spark.sql.parquet.block.size", parquet_block_size)
                     .config("spark.sql.parquet.outputTimestampType", "TIMESTAMP_MICROS")
                     .config("spark.sql.execution.arrow.pyspark.enabled", "true")
                     .config(
