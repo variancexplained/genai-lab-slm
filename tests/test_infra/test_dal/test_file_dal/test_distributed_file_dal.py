@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 23rd 2024 08:45:15 pm                                              #
-# Modified   : Tuesday September 24th 2024 03:30:34 pm                                             #
+# Modified   : Thursday September 26th 2024 03:39:53 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,7 +44,7 @@ single_line = f"\n{100 * '-'}"
 @pytest.mark.dal
 class TestDistributedFileSystemDAO:  # pragma: no cover
     # ============================================================================================ #
-    def test_setup(self, spark_storage, caplog) -> None:
+    def test_setup(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -52,9 +52,9 @@ class TestDistributedFileSystemDAO:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         try:
-            shutil.rmtree(os.path.dirname(spark_storage.filepath))
+            shutil.rmtree(os.path.dirname(spark_ds.storage_config.filepath))
         except Exception:
-            os.remove(spark_storage.filepath)
+            os.remove(spark_ds.storage_config.filepath)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -65,7 +65,7 @@ class TestDistributedFileSystemDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_write(self, spark_df, spark_storage, caplog) -> None:
+    def test_write(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -74,21 +74,21 @@ class TestDistributedFileSystemDAO:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemDAO()
         dao.create(
-            filepath=spark_storage.filepath,
-            data=spark_df,
-            **spark_storage.write_kwargs,
+            filepath=spark_ds.storage_config.filepath,
+            data=spark_ds.content,
+            **spark_ds.storage_config.write_kwargs,
         )
-        assert os.path.exists(spark_storage.filepath)
+        assert os.path.exists(spark_ds.storage_config.filepath)
 
         df = dao.read(
-            filepath=spark_storage.filepath,
-            spark_session_name=spark_storage.spark_session_name,
-            **spark_storage.read_kwargs,
+            filepath=spark_ds.storage_config.filepath,
+            spark_session_name=spark_ds.storage_config.spark_session_name,
+            **spark_ds.storage_config.read_kwargs,
         )
 
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_ds.content.head())
+        assertDataFrameEqual(df, spark_ds.content)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -100,7 +100,7 @@ class TestDistributedFileSystemDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_read(self, spark_df, spark_storage, caplog) -> None:
+    def test_read(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -109,14 +109,14 @@ class TestDistributedFileSystemDAO:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemDAO()
         df = dao.read(
-            filepath=spark_storage.filepath,
-            spark_session_name=spark_storage.spark_session_name,
-            **spark_storage.read_kwargs,
+            filepath=spark_ds.storage_config.filepath,
+            spark_session_name=spark_ds.storage_config.spark_session_name,
+            **spark_ds.storage_config.read_kwargs,
         )
 
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_ds.content.head())
+        assertDataFrameEqual(df, spark_ds.content)
         assert isinstance(df, pyspark.sql.DataFrame)
 
         # ---------------------------------------------------------------------------------------- #
@@ -132,10 +132,11 @@ class TestDistributedFileSystemDAO:  # pragma: no cover
 @pytest.mark.distributed
 @pytest.mark.file
 @pytest.mark.dal
+@pytest.mark.nlp
 class TestDistributedFileSystemDAOPartitioned:  # pragma: no cover
 
     # ============================================================================================ #
-    def test_write(self, spark_df, spark_partitioned_storage, caplog) -> None:
+    def test_write(self, spark_partitioned_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -144,20 +145,20 @@ class TestDistributedFileSystemDAOPartitioned:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemDAO()
         dao.create(
-            filepath=spark_partitioned_storage.filepath,
-            data=spark_df,
-            **spark_partitioned_storage.write_kwargs,
+            filepath=spark_partitioned_ds.storage_config.filepath,
+            data=spark_partitioned_ds.content,
+            **spark_partitioned_ds.storage_config.write_kwargs,
         )
-        assert os.path.isdir(spark_partitioned_storage.filepath)
+        assert os.path.isdir(spark_partitioned_ds.storage_config.filepath)
 
         df = dao.read(
-            filepath=spark_partitioned_storage.filepath,
-            spark_session_name=spark_partitioned_storage.spark_session_name,
-            **spark_partitioned_storage.read_kwargs,
+            filepath=spark_partitioned_ds.storage_config.filepath,
+            spark_session_name=spark_partitioned_ds.storage_config.spark_session_name,
+            **spark_partitioned_ds.storage_config.read_kwargs,
         )
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_partitioned_ds.content.head())
+        assertDataFrameEqual(df, spark_partitioned_ds.content)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -169,7 +170,7 @@ class TestDistributedFileSystemDAOPartitioned:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_read(self, spark_df, spark_partitioned_storage, caplog) -> None:
+    def test_read(self, spark_df, spark_partitioned_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -178,13 +179,13 @@ class TestDistributedFileSystemDAOPartitioned:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemDAO()
         df = dao.read(
-            filepath=spark_partitioned_storage.filepath,
-            spark_session_name=spark_partitioned_storage.spark_session_name,
-            **spark_partitioned_storage.read_kwargs,
+            filepath=spark_partitioned_ds.storage_config.filepath,
+            spark_session_name=spark_partitioned_ds.storage_config.spark_session_name,
+            **spark_partitioned_ds.storage_config.read_kwargs,
         )
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_partitioned_ds.content.head())
+        assertDataFrameEqual(df, spark_partitioned_ds.content)
         assert isinstance(df, pyspark.sql.DataFrame)
 
         # ---------------------------------------------------------------------------------------- #

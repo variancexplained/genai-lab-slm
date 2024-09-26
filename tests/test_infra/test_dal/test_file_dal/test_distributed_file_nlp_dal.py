@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 23rd 2024 08:45:15 pm                                              #
-# Modified   : Tuesday September 24th 2024 03:46:46 pm                                             #
+# Modified   : Thursday September 26th 2024 03:39:52 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ single_line = f"\n{100 * '-'}"
 @pytest.mark.nlp
 class TestDistributedFileSystemNLPDAO:  # pragma: no cover
     # ============================================================================================ #
-    def test_setup(self, spark_storage_nlp, caplog) -> None:
+    def test_setup(self, spark_nlp_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -53,9 +53,9 @@ class TestDistributedFileSystemNLPDAO:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         try:
-            shutil.rmtree(os.path.dirname(spark_storage_nlp.filepath))
+            shutil.rmtree(os.path.dirname(spark_nlp_ds.storage_config.filepath))
         except Exception:
-            os.remove(spark_storage_nlp.filepath)
+            os.remove(spark_nlp_ds.storage_config.filepath)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -66,7 +66,7 @@ class TestDistributedFileSystemNLPDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_write(self, spark_df, spark_storage_nlp, caplog) -> None:
+    def test_write(self, spark_nlp_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -75,21 +75,21 @@ class TestDistributedFileSystemNLPDAO:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemNLPDAO()
         dao.create(
-            filepath=spark_storage_nlp.filepath,
-            data=spark_df,
-            **spark_storage_nlp.write_kwargs,
+            filepath=spark_nlp_ds.storage_config.filepath,
+            data=spark_nlp_ds.content,
+            **spark_nlp_ds.storage_config.write_kwargs,
         )
-        assert os.path.exists(spark_storage_nlp.filepath)
+        assert os.path.exists(spark_nlp_ds.storage_config.filepath)
 
         df = dao.read(
-            filepath=spark_storage_nlp.filepath,
-            spark_session_name=spark_storage_nlp.spark_session_name,
-            **spark_storage_nlp.read_kwargs,
+            filepath=spark_nlp_ds.storage_config.filepath,
+            spark_session_name=spark_nlp_ds.storage_config.spark_session_name,
+            **spark_nlp_ds.storage_config.read_kwargs,
         )
 
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_nlp_ds.content.head())
+        assertDataFrameEqual(df, spark_nlp_ds.content)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -101,7 +101,7 @@ class TestDistributedFileSystemNLPDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_read(self, spark_df, spark_storage_nlp, caplog) -> None:
+    def test_read(self, spark_nlp_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -110,14 +110,14 @@ class TestDistributedFileSystemNLPDAO:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemNLPDAO()
         df = dao.read(
-            filepath=spark_storage_nlp.filepath,
-            spark_session_name=spark_storage_nlp.spark_session_name,
-            **spark_storage_nlp.read_kwargs,
+            filepath=spark_nlp_ds.storage_config.filepath,
+            spark_session_name=spark_nlp_ds.storage_config.spark_session_name,
+            **spark_nlp_ds.storage_config.read_kwargs,
         )
 
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_nlp_ds.content.head())
+        assertDataFrameEqual(df, spark_nlp_ds.content)
         assert isinstance(df, pyspark.sql.DataFrame)
 
         # ---------------------------------------------------------------------------------------- #
@@ -137,7 +137,7 @@ class TestDistributedFileSystemNLPDAO:  # pragma: no cover
 class TestDistributedFileSystemDAOPartitionedNLP:  # pragma: no cover
 
     # ============================================================================================ #
-    def test_write(self, spark_df, spark_partitioned_storage_nlp, caplog) -> None:
+    def test_write(self, spark_partitioned_nlp_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -146,20 +146,20 @@ class TestDistributedFileSystemDAOPartitionedNLP:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemNLPDAO()
         dao.create(
-            filepath=spark_partitioned_storage_nlp.filepath,
-            data=spark_df,
-            **spark_partitioned_storage_nlp.write_kwargs,
+            filepath=spark_partitioned_nlp_ds.storage_config.filepath,
+            data=spark_partitioned_nlp_ds.content,
+            **spark_partitioned_nlp_ds.storage_config.write_kwargs,
         )
-        assert os.path.isdir(spark_partitioned_storage_nlp.filepath)
+        assert os.path.isdir(spark_partitioned_nlp_ds.storage_config.filepath)
 
         df = dao.read(
-            filepath=spark_partitioned_storage_nlp.filepath,
-            spark_session_name=spark_partitioned_storage_nlp.spark_session_name,
-            **spark_partitioned_storage_nlp.read_kwargs,
+            filepath=spark_partitioned_nlp_ds.storage_config.filepath,
+            spark_session_name=spark_partitioned_nlp_ds.storage_config.spark_session_name,
+            **spark_partitioned_nlp_ds.storage_config.read_kwargs,
         )
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_partitioned_nlp_ds.content.head())
+        assertDataFrameEqual(df, spark_partitioned_nlp_ds.content)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -171,7 +171,7 @@ class TestDistributedFileSystemDAOPartitionedNLP:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_read(self, spark_df, spark_partitioned_storage_nlp, caplog) -> None:
+    def test_read(self, spark_df, spark_partitioned_nlp_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -180,13 +180,13 @@ class TestDistributedFileSystemDAOPartitionedNLP:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         dao = DistributedFileSystemNLPDAO()
         df = dao.read(
-            filepath=spark_partitioned_storage_nlp.filepath,
-            spark_session_name=spark_partitioned_storage_nlp.spark_session_name,
-            **spark_partitioned_storage_nlp.read_kwargs,
+            filepath=spark_partitioned_nlp_ds.storage_config.filepath,
+            spark_session_name=spark_partitioned_nlp_ds.storage_config.spark_session_name,
+            **spark_partitioned_nlp_ds.storage_config.read_kwargs,
         )
         logger.info(df.head())
-        logger.info(spark_df.head())
-        assertDataFrameEqual(df, spark_df)
+        logger.info(spark_partitioned_nlp_ds.content.head())
+        assertDataFrameEqual(df, spark_partitioned_nlp_ds.content)
         assert isinstance(df, pyspark.sql.DataFrame)
 
         # ---------------------------------------------------------------------------------------- #

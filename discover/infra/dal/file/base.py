@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 06:05:13 pm                                              #
-# Modified   : Tuesday September 24th 2024 02:12:17 pm                                             #
+# Modified   : Thursday September 26th 2024 03:51:23 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -90,6 +90,7 @@ class FileSystemDAO(DAO):
             raise FileExistsError(msg)
 
         # ^ The actual writing operation is delegated to the `_write` method of subclass.
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         self._write(filepath=filepath, data=data, **kwargs)
 
     def read(
@@ -144,3 +145,11 @@ class FileSystemDAO(DAO):
                 msg = f"Unknown exception occurred while deleting file {os.path.basename(filepath)} in {os.path.dirname(filepath)}.\n{e}"
                 self._logger.exception(msg)
                 raise
+
+    def exists(self, filepath: str) -> bool:
+        """Evaluates existence of a file
+
+        Args:
+            filepath (str): The path to evaluate.
+        """
+        return os.path.exists(filepath)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Tuesday September 24th 2024 03:39:16 pm                                             #
+# Modified   : Thursday September 26th 2024 03:36:26 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -85,7 +85,9 @@ class SparkSessionPool(ABC):
         )
         # Contains mapping of sessions to row_group_size. Used by subclasses
         # to configure, construct, and return spark sessions
-        self._session_config = self._config_reader.get_config(section="session")
+        self._session_config = self._config_reader.get_config(
+            section="dataset"
+        ).spark.parquet_block_size
 
         # These objects will hold the sessions in the pool
         self._leviathan = None
@@ -137,7 +139,7 @@ class SparkSessionPool(ABC):
                 self._leviathan = self.create_session(
                     name=spark_session_name,
                     memory=self._spark_config["memory"],
-                    row_group_size=self._session_config.leviathan,
+                    parquet_block_size=self._session_config.leviathan,
                     retries=self._spark_config["retries"],
                 )
                 atexit.register(shutdown, self._leviathan)
@@ -149,7 +151,7 @@ class SparkSessionPool(ABC):
                 self._modestia = self.create_session(
                     name=spark_session_name,
                     memory=self._spark_config["memory"],
-                    row_group_size=self._session_config.modestia,
+                    parquet_block_size=self._session_config.modestia,
                     retries=self._spark_config["retries"],
                 )
                 atexit.register(shutdown, self._modestia)
@@ -161,7 +163,7 @@ class SparkSessionPool(ABC):
                 self._paul = self.create_session(
                     name=spark_session_name,
                     memory=self._spark_config["memory"],
-                    row_group_size=self._session_config.paul,
+                    parquet_block_size=self._session_config.paul,
                     retries=self._spark_config["retries"],
                 )
                 atexit.register(shutdown, self._paul)
@@ -173,7 +175,7 @@ class SparkSessionPool(ABC):
                 self._leviathan = self.create_session(
                     name="leviathan",
                     memory=self._spark_config["memory"],
-                    row_group_size=self._session_config.leviathan,
+                    parquet_block_size=self._session_config.leviathan,
                     retries=self._spark_config["retries"],
                 )
             return self._leviathan

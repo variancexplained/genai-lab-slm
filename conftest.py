@@ -11,22 +11,22 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday September 25th 2024 10:28:50 pm                                           #
+# Modified   : Thursday September 26th 2024 03:25:37 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 import sys
-from enum import Enum
 
 import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
-from discover.core.flow import PhaseDef
-from discover.element.dataset.store import DatasetStorageConfig
+from discover.core.data_structure import DataStructure
+from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.element.dataset.build import DatasetBuilder
 from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
 from discover.infra.storage.cloud.aws import S3Handler
@@ -144,7 +144,7 @@ def pandas_df():
     Pytest fixture that reads a CSV file into a pandas DataFrame.
     Modify this to point to the correct CSV file.
     """
-    FILEPATH = "workspace/test/00_dataprep/00_raw/reviews"
+    FILEPATH = "workspace/test/00_dataprep/01_ingest/reviews"
     return IOService.read(filepath=FILEPATH)
 
 
@@ -160,96 +160,110 @@ def spark_df(spark, pandas_df):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                 STORAGE CONFIGS                                                  #
+#                                  DATASETS                                                        #
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def stage():
-    class TestStage(Enum):
-        TEST = ("test", "99_test", "Test Stage")
-
-        def __new__(cls, name: str, directory: str, description: str):
-            obj = object.__new__(cls)
-            obj._value_ = name
-            obj.directory = directory
-            obj.description = description
-            return obj
-
-    return TestStage.TEST
+@pytest.fixture(scope="session")
+def pandas_ds(pandas_df):
+    builder = DatasetBuilder()
+    dataset = (
+        builder.name("pandas")
+        .phase(PhaseDef.DATAPREP)
+        .data_structure(DataStructure.PANDAS)
+        .not_partitioned()
+        .stage(DataPrepStageDef.RAW)
+        .content(pandas_df)
+        .build()
+    )
+    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_pandas_storage_dataset_20240924-001.parquet"
+    return dataset
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def pandas_storage(stage):
-    return DatasetStorageConfig.create(
-        id=421,
-        phase=PhaseDef.DATAPREP,
-        stage=stage,
-        partitioned=False,
-        name="test_pandas_storage",
+@pytest.fixture(scope="session")
+def pandas_partitioned_ds(pandas_df):
+    builder = DatasetBuilder()
+    dataset = (
+        builder.name("pandas_partitioned")
+        .phase(PhaseDef.DATAPREP)
+        .data_structure(DataStructure.PANDAS)
+        .partitioned()
+        .partition_cols("category")
+        .stage(DataPrepStageDef.RAW)
+        .content(pandas_df)
+        .build()
+    )
+    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_pandas_partitioned_storage_dataset_20240924-002"
+    return dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def spark_ds(spark_df):
+    builder = DatasetBuilder()
+    dataset = (
+        builder.name("spark")
+        .phase(PhaseDef.DATAPREP)
+        .data_structure(DataStructure.SPARK)
+        .not_partitioned()
+        .stage(DataPrepStageDef.RAW)
+        .content(spark_df)
+        .build()
+    )
+    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_storage_dataset_20240924-003.parquet"
+    return dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def spark_partitioned_ds(spark_df):
+    builder = DatasetBuilder()
+    dataset = (
+        builder.name("spark_partitioned")
+        .phase(PhaseDef.DATAPREP)
+        .data_structure(DataStructure.SPARK)
+        .partitioned()
+        .partition_cols("category")
+        .stage(DataPrepStageDef.RAW)
+        .content(spark_df)
+        .build()
+    )
+    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_partitioned_storage_dataset_20240924-004"
+    return dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def spark_nlp_ds(spark_df):
+    builder = DatasetBuilder()
+    dataset = (
+        builder.name("spark_nlp")
+        .phase(PhaseDef.DATAPREP)
+        .data_structure(DataStructure.SPARK)
+        .not_partitioned()
+        .nlp()
+        .stage(DataPrepStageDef.RAW)
+        .content(spark_df)
+        .build()
+    )
+    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_nlp_storage_dataset_20240924-005.parquet"
+    return dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def spark_partitioned_nlp_ds(spark_df):
+    builder = DatasetBuilder()
+    dataset = (
+        builder.name("spark_partitioned_nlp")
+        .phase(PhaseDef.DATAPREP)
+        .data_structure(DataStructure.SPARK)
+        .partitioned()
+        .nlp()
+        .partition_cols("category")
+        .stage(DataPrepStageDef.RAW)
+        .content(spark_df)
+        .build()
     )
 
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def pandas_partitioned_storage(stage):
-    return DatasetStorageConfig.create(
-        id=422,
-        phase=PhaseDef.DATAPREP,
-        stage=stage,
-        partitioned=True,
-        name="test_pandas_partitioned_storage",
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def spark_storage(stage):
-    return DatasetStorageConfig.create(
-        id=423,
-        phase=PhaseDef.DATAPREP,
-        stage=stage,
-        partitioned=False,
-        name="test_spark_storage",
-        spark_session_name="modestia",
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def spark_partitioned_storage(stage):
-    return DatasetStorageConfig.create(
-        id=424,
-        phase=PhaseDef.DATAPREP,
-        stage=stage,
-        partitioned=True,
-        name="test_spark_partitioned_storage",
-        spark_session_name=None,
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def spark_storage_nlp(stage):
-    return DatasetStorageConfig.create(
-        id=423,
-        phase=PhaseDef.DATAPREP,
-        stage=stage,
-        nlp=True,
-        partitioned=False,
-        name="test_spark_storage",
-        spark_session_name="modestia",
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def spark_partitioned_storage_nlp(stage):
-    return DatasetStorageConfig.create(
-        id=424,
-        phase=PhaseDef.DATAPREP,
-        stage=stage,
-        partitioned=True,
-        nlp=True,
-        name="test_spark_partitioned_storage",
-        spark_session_name=None,
-    )
+    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_nlp_partitioned_storage_dataset_20240924-006"
+    return dataset
