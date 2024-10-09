@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Tuesday October 8th 2024 08:19:37 pm                                                #
+# Modified   : Wednesday October 9th 2024 01:02:46 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,6 +27,7 @@ from discover.core.data_structure import DataStructure
 from discover.core.flow import PhaseDef, StageDef
 from discover.element.base.store import Repo
 from discover.element.dataset.define import Dataset
+from discover.infra.config.reader import ConfigReader
 from discover.infra.dal.db.dataset import DatasetDAO
 from discover.infra.dal.file.centralized import CentralizedFileSystemDAO as CFSDAO
 from discover.infra.dal.file.distributed import DistributedFileSystemDAO as DFSDAO
@@ -36,18 +37,20 @@ from discover.infra.dal.file.distributed import DistributedFileSystemDAO as DFSD
 class DatasetRepo(Repo):
     def __init__(
         self,
+        config_reader_cls: type[ConfigReader] = ConfigReader,
         dataset_dao_cls: type[DatasetDAO] = DatasetDAO,
         cfs_dao_cls: type[CFSDAO] = CFSDAO,
         dfs_dao_cls: type[DFSDAO] = DFSDAO,
     ) -> None:
+        self._config_reader = config_reader_cls()
         self._dataset_dao = dataset_dao_cls()
         self._cfs_dao = cfs_dao_cls()
         self._dfs_dao = dfs_dao_cls()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def add(self, dataset: Dataset) -> None:
-        if self._dataset_dao.exists(id=dataset.metadata.id):
-            msg = f"Dataset id: {dataset.metadata.id} already exists."
+        if self._dataset_dao.exists(id=dataset.id):
+            msg = f"Dataset id: {dataset.id} already exists."
             self._logger.error(msg)
             raise FileExistsError(msg)
 
@@ -86,7 +89,12 @@ class DatasetRepo(Repo):
         self._cfs_dao.delete(filepath=dataset.storage_config.filepath)
         self._dataset_dao.delete(id=id)
 
-    def _read_file(self, dataset: Dataset) -> Union[pd.DataFrame, pyspark.sql.Dataset]:
+    def exists(self, id: int) -> bool:
+        return self._dataset_dao.exists(id=id)
+
+    def _read_file(
+        self, dataset: Dataset
+    ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
 
         # Read content from file system
         if dataset.storage_config.data_structure == DataStructure.PANDAS:
@@ -97,8 +105,12 @@ class DatasetRepo(Repo):
     def _read_centralized_file(self, dataset: Dataset) -> pd.DataFrame:
         return self._cfs_dao.read(filepath=dataset.storage_config.filepath)
 
-    def _read_distributed_file(self, dataset: Dataset) -> pd.DataFrame:
-        return self._dfs_dao.read(filepath=dataset.storage_config.filepath)
+    def _read_distributed_file(self, dataset: Dataset) -> pyspark.sql.DataFrame:
+        spark_config = self._config_reader.get_config(section="spark", namespace=False)
+        session_name = spark_config[dataset.phase.value]
+        return self._dfs_dao.read(
+            filepath=dataset.storage_config.filepath, spark_session_name=session_name
+        )
 
     def _write_file(self, dataset: Dataset) -> None:
         if dataset.storage_config.data_structure == DataStructure.PANDAS:
