@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:16 am                                              #
-# Modified   : Wednesday September 25th 2024 11:10:31 pm                                           #
+# Modified   : Tuesday October 8th 2024 10:58:31 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from typing import Any, Dict, Optional
 
 from discover.core.data_structure import DataStructure
 from discover.core.flow import PhaseDef, StageDef
-from discover.element.base.store import StorageConfig
+from discover.element.base.store import StorageConfig, filepath_service
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -112,7 +112,7 @@ class DatasetStorageConfig(StorageConfig):
         """
         filename = f"{phase.value}_{stage.value}_{name}_dataset_{datetime.now().strftime('%Y%m%d')}-{str(id).zfill(4)}"
         filepath = os.path.join(phase.directory, stage.directory, filename)
-        return cls.filepath_service.get_filepath(filepath)
+        return filepath_service.get_filepath(filepath)
 
     @classmethod
     def create(

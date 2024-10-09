@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Tuesday October 8th 2024 10:06:44 pm                                                #
+# Modified   : Tuesday October 8th 2024 10:58:45 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,8 +32,6 @@ filepath_service = FilePathService()
 @dataclass
 class StorageConfig(DataClass):
     """Base class for element storage configuration."""
-
-    filepath_service: FilePathService = filepath_service
 
 
 # ------------------------------------------------------------------------------------------------ #
