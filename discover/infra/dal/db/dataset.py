@@ -11,13 +11,15 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Wednesday September 25th 2024 04:52:53 pm                                           #
+# Modified   : Tuesday October 8th 2024 10:51:24 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset DAO Module"""
+import copy
 import logging
+import os
 import shelve
 from typing import Any, Optional
 
@@ -52,18 +54,27 @@ class DatasetDAO(DAO):
         self._db_path = self._config_reader.get_config(section="ops").dataset
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def create(self, dataset: Dataset) -> None:
+    def create(self, dataset: Dataset) -> Dataset:
         """
         Adds a new dataset to the persistent storage.
 
+        Note: Dataset contents should be stored separately. This method ensures that
+        dataset content is none before persisting in this key value database.
+
         Args:
-            dataset (Dataset): The dataset object to be stored.
+            dataset (Dataset): The dataset object sans content to be stored.
 
         Returns:
-            None
+            Dataset: Updated dataset with persisted datetime and cost.
         """
+        dataset.persist()
+        serialized_dataset = copy.deepcopy(dataset)
+        serialized_dataset.content = (
+            None  # Ensure dataset content is not persisted here.
+        )
         with shelve.open(self._db_path, writeback=True) as db:
-            db[str(dataset.id)] = dataset
+            db[str(dataset.id)] = serialized_dataset
+        return dataset
 
     def read(self, id: int) -> Optional[Dataset]:
         """
@@ -79,21 +90,23 @@ class DatasetDAO(DAO):
             dataset = db.get(str(id), None)
             return dataset
 
-    def delete(self, id: int) -> None:
+    def read_all(self) -> pd.DataFrame:
         """
-        Deletes a dataset from the persistent storage.
-
-        Args:
-            id (int): The unique identifier of the dataset to delete.
+        Retrieves all datasets.
 
         Returns:
-            None
+            pd.DataFrame: DataFrame containing datasets.
         """
-        with shelve.open(self._db_path, writeback=True) as db:
-            if str(id) in db:
-                del db[str(id)]
-            else:
-                self._logger.warning(f"Dataset {id} not found for deletion.")
+        datasets_list = []
+        with shelve.open(self._db_path) as db:
+            for key in db:
+                dataset = db[key]
+                datasets_list.append(dataset.as_dict())
+
+        if len(datasets_list) == 0:
+            self._logger.info("No datasets found.")
+
+        return pd.DataFrame(datasets_list)
 
     def read_by_phase(self, phase: PhaseDef) -> pd.DataFrame:
         """
@@ -135,6 +148,41 @@ class DatasetDAO(DAO):
         """
         with shelve.open(self._db_path) as db:
             return str(id) in db
+
+    def delete(self, id: int) -> None:
+        """
+        Deletes a dataset from the persistent storage.
+
+        Args:
+            id (int): The unique identifier of the dataset to delete.
+
+        Returns:
+            None
+        """
+        with shelve.open(self._db_path, writeback=True) as db:
+            if str(id) in db:
+                del db[str(id)]
+            else:
+                self._logger.warning(f"Dataset {id} not found for deletion.")
+
+    def reset(self, force: bool = False) -> None:
+        """
+        Resets the dataset DAO.
+        """
+        if (
+            force
+            or "y"
+            in input("Resetting the DatasetDAO is permanent. Confirm. [Y/N] ").lower()
+        ):
+            self._reset()
+
+    def _reset(self) -> None:
+        """Resets the dataset dao"""
+        for ext in (".db", ".bak", ".dat", ".dir"):
+            try:
+                os.remove(self._db_path + ext)
+            except FileNotFoundError:
+                pass
 
     def _read_by_attribute(self, attribute: str, value: Any) -> pd.DataFrame:
         """

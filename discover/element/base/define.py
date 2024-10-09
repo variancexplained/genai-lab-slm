@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Wednesday September 25th 2024 10:56:46 pm                                           #
+# Modified   : Tuesday October 8th 2024 09:43:18 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,46 +34,59 @@ dt4mtr = ThirdDateFormatter()
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class ElementMetadata(DataClass):
+class Element(DataClass):
     """
-    Represents metadata for an element in the system.
+    Represents an element in the system, encapsulating its ID, name, phase, stage,
+    and associated content. Additionally, tracks storage configuration and timestamps
+    for creation and persistence.
 
     Attributes:
-        id (int): Unique identifier for the element.
-        name (str): Name of the element.
-        phase (PhaseDef): Phase in which the element is created.
-        stage (StageDef): Stage in which the element resides.
-        description (Optional[str]): Description of the element.
-        created (Optional[datetime]): Timestamp when the element was created.
-        persisted (Optional[datetime]): Timestamp when the element was persisted.
-        build_duration (float): Time taken to build the element.
-        element_type (Optional[str]): Type of the element, automatically set on creation.
+        id (int): The unique identifier of the element.
+        name (str): The name of the element.
+        phase (PhaseDef): Defines the current phase of the element.
+        stage (StageDef): Defines the current stage of the element.
+        content (Any): The payload associated with the element.
+        storage_config (StorageConfig): Configuration for storing the element.
+        description (Optional[str]): A description of the element, default is None.
+        cost (float): The duration in seconds between the creation and persistence of the element. Default is 0.0.
+        created (Optional[datetime]): The timestamp when the element was created. Default is None.
+        persisted (Optional[datetime]): The timestamp when the element was persisted. Default is None.
     """
 
     id: int
     name: str
     phase: PhaseDef
     stage: StageDef
+    content: Any  # The element payload
+    storage_config: StorageConfig  # Specifies storage configuration
     description: Optional[str] = None
-    created: Optional[datetime] = None
-    persisted: Optional[datetime] = None
-    build_duration: float = 0
-    element_type: Optional[str] = None
+    cost: float = 0.0  # number of seconds between created and persisted
+    created: Optional[datetime] = None  # DT instantiated
+    persisted: Optional[datetime] = None  # DT persisted
+    element_type: Optional[str] = None  # Type of element.
 
     def __post_init__(self) -> None:
         """
-        Initializes the created timestamp and element type,
-        and constructs the description based on phase and stage.
+        Initializes the created timestamp and constructs the element description
+        based on the phase and stage.
+
+        This method is called automatically after the class is instantiated. It sets
+        the `created` timestamp and generates a description string based on the
+        phase, stage, and name of the element.
         """
         self.created = datetime.now()
+        self.element_type = self.__class__.__name__
         self.description = (
             f"{self.phase.description} - {self.stage.description} {self.name} "
-            f"{self.element_type} created on {dt4mtr.to_HTTP_format(datetime.now())}."
+            f"{self.element_type} created on {dt4mtr.to_HTTP_format(self.created)}."
         )
 
     def __getstate__(self):
         """
-        Returns the state of the object for serialization.
+        Prepares the object's state for serialization.
+
+        This method converts the object's attributes into a dictionary
+        that can be serialized.
 
         Returns:
             dict: A dictionary representation of the object's state.
@@ -82,7 +95,10 @@ class ElementMetadata(DataClass):
 
     def __setstate__(self, state):
         """
-        Restores the state of the object from serialization.
+        Restores the object's state from a serialized format.
+
+        This method takes a dictionary representation of the object's state
+        and applies it to restore the object's attributes.
 
         Args:
             state (dict): The state to restore the object from.
@@ -92,27 +108,11 @@ class ElementMetadata(DataClass):
 
     def persist(self) -> None:
         """
-        Updates the persisted timestamp and calculates the build duration.
+        Marks the element as persisted and calculates the time taken to persist.
 
-        This method is called when the Dataset is saved to record the time
-        of persistence and the duration taken to build the element.
+        This method sets the `persisted` timestamp and updates the `cost` attribute,
+        representing the time difference between creation and persistence of the
+        element in seconds.
         """
         self.persisted = datetime.now()
-        self.build_duration = (self.persisted - self.created).total_seconds()
-
-
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class Element(DataClass):
-    """
-    Represents an element containing its metadata and content.
-
-    Attributes:
-        metadata (ElementMetadata): Metadata associated with the element.
-        content (Any): The actual data of the element.
-        storage_config (StorageConfig): Configuration for how the element's data is stored.
-    """
-
-    metadata: ElementMetadata
-    content: Any
-    storage_config: StorageConfig
+        self.cost = (self.persisted - self.created).total_seconds()

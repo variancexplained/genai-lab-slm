@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Sunday September 22nd 2024 04:25:19 pm                                              #
+# Modified   : Tuesday October 8th 2024 06:50:55 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,6 @@ from abc import ABC, abstractmethod
 from typing import Any
 
 from discover.dynamics.base.task import Task
-from discover.element.entity.config.service import StageConfig
 
 
 # ------------------------------------------------------------------------------------------------ #

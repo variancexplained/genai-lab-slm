@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Tuesday September 24th 2024 07:29:17 am                                             #
+# Modified   : Tuesday October 8th 2024 09:59:47 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -425,7 +425,7 @@ class IOService:  # pragma: no cover
     def write(cls, filepath: str, data: Any, **kwargs) -> None:
         io = cls._get_io(filepath, **kwargs)
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        io.write(filepath=filepath, data=data, **kwargs.write_kwargs)
+        io.write(filepath=filepath, data=data, **kwargs)
 
     @classmethod
     def _get_io(cls, filepath: str, **kwargs) -> IO:

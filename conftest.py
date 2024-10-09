@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday September 26th 2024 03:25:37 pm                                            #
+# Modified   : Tuesday October 8th 2024 10:18:24 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -170,11 +170,13 @@ def pandas_ds(pandas_df):
         .phase(PhaseDef.DATAPREP)
         .data_structure(DataStructure.PANDAS)
         .not_partitioned()
-        .stage(DataPrepStageDef.RAW)
+        .stage(DataPrepStageDef.DQA)
         .content(pandas_df)
         .build()
     )
-    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_pandas_storage_dataset_20240924-001.parquet"
+    dataset.storage_config.filepath = (
+        "workspace/test/00_dataprep/01_ingest/reviews.parquet"
+    )
     return dataset
 
 
@@ -192,7 +194,7 @@ def pandas_partitioned_ds(pandas_df):
         .content(pandas_df)
         .build()
     )
-    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_pandas_partitioned_storage_dataset_20240924-002"
+    dataset.storage_config.filepath = "workspace/test/00_dataprep/01_ingest/reviews"
     return dataset
 
 
@@ -202,10 +204,10 @@ def spark_ds(spark_df):
     builder = DatasetBuilder()
     dataset = (
         builder.name("spark")
-        .phase(PhaseDef.DATAPREP)
+        .phase(PhaseDef.TRANSFORMATION)
         .data_structure(DataStructure.SPARK)
         .not_partitioned()
-        .stage(DataPrepStageDef.RAW)
+        .stage(DataPrepStageDef.DQA)
         .content(spark_df)
         .build()
     )
@@ -219,7 +221,7 @@ def spark_partitioned_ds(spark_df):
     builder = DatasetBuilder()
     dataset = (
         builder.name("spark_partitioned")
-        .phase(PhaseDef.DATAPREP)
+        .phase(PhaseDef.TRANSFORMATION)
         .data_structure(DataStructure.SPARK)
         .partitioned()
         .partition_cols("category")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:11 am                                              #
-# Modified   : Thursday September 26th 2024 04:27:23 pm                                            #
+# Modified   : Tuesday October 8th 2024 09:22:02 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import pyspark
 from discover.core.data_structure import DataStructure
 from discover.core.flow import PhaseDef, StageDef
 from discover.element.base.build import ElementBuilder
-from discover.element.dataset.define import Dataset, DatasetMetadata
+from discover.element.dataset.define import Dataset
 from discover.element.dataset.store import DatasetStorageConfig
 from discover.infra.config.reader import ConfigReader
 
@@ -82,18 +82,85 @@ class DatasetBuilder(ElementBuilder):
         super().__init__()
         self._config_reader = config_reader_cls()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        # Configuration data
         self._dataset_config = self._config_reader.get_config(section="dataset")
         self._spark_config = self._config_reader.get_config(
             section="spark", namespace=False
         )
-        # Initialization of various attributes omitted for brevity.
+        self._id = None
+        self._name = "review"
+        self._phase = None
+        self._stage = None
+        self._content = None
+        # Common storage related members and default values
+        self._data_structure = DataStructure.PANDAS
+        self._element_type = Dataset.__name__
+        self._partitioned = False
+        self._partition_cols = None
+        # Pandas specific storage related members and default values
+        self._engine = None
+        self._compression = None
+        self._index = None
+        self._existing_data_behavior = None
+        self._row_group_size = None
+        # Spark specific storage related members and default values
+        self._mode = None
+        # Values that depend upon other member values set during the build process.
+        # These values will be set in the configure method called during the build process
+        self._spark_session_name = None  # Depends on the phase
+        self._row_group_size = None  # Depends on phase
+        self._storage_config = (
+            None  # Depends on pandas vs spark, and partitioned vs non-partitioned.
+        )
+        self._nlp = False
+        self._parquet_block_size = None
+        # IO Kwargs
+        self._read_kwargs = None
+        self._write_kwargs = None
+        # The following are content related metadata
+        self._nrows: int = 0
+        self._ncols: int = 0
+        self._size: float = 0
 
     def reset(self) -> None:
         """
         Resets all attributes of the builder to their default state. This is typically called
         after a dataset has been built to prepare the builder for constructing a new dataset.
         """
-        # Reset code omitted for brevity.
+        self._id = None
+        self._name = "review"
+        self._phase = None
+        self._stage = None
+        self._content = None
+        # Common storage related members and default values
+        self._data_structure = None
+        self._element_type = Dataset.__name__
+        self._partitioned = False
+        self._partition_cols = None
+        # Pandas specific storage related members and default values
+        self._engine = None
+        self._compression = None
+        self._index = None
+        self._existing_data_behavior = None
+        self._row_group_size = None
+        # Spark specific storage related members and default values
+        self._mode = None
+        # Values that depend upon other member values set during the build process.
+        # These values will be set in the configure method called during the build process
+        self._spark_session_name = None  # Depends on the phase
+        self._row_group_size = None  # Depends on phase
+        self._storage_config = (
+            None  # Depends on pandas vs spark, and partitioned vs non-partitioned.
+        )
+        self._nlp = False
+        self._parquet_block_size = None
+        # IO Kwargs
+        self._read_kwargs = None
+        self._write_kwargs = None
+        # The following are content related metadata
+        self._nrows: int = 0
+        self._ncols: int = 0
+        self._size: float = 0
 
     def name(self, name: str) -> DatasetBuilder:
         """
@@ -214,15 +281,26 @@ class DatasetBuilder(ElementBuilder):
             Dataset: The constructed dataset.
         """
         self._id = self.get_next_id()
-        self._validate()
-        self._configure_metadata()
-        self._configure_storage()
+        self._validate()  # Validate required fields
+        self._configure_metadata()  # Extract metadata from content
+        self._configure_storage()  # Configure storage for content
+
+        # Create Dataset
         dataset = Dataset(
-            metadata=self._metadata,
+            id=self._id,
+            name=self._name,
+            phase=self._phase,
+            stage=self._stage,
             content=self._content,
             storage_config=self._storage_config,
+            nrows=self._nrows,
+            ncols=self._ncols,
+            size=self._size,
         )
+
+        # Reset the builder
         self.reset()
+
         return dataset
 
     def _validate(self) -> None:
@@ -262,16 +340,6 @@ class DatasetBuilder(ElementBuilder):
             self._nrows = self._content.shape[0]
             self._ncols = self._content.shape[1]
             self._size = self._content.memory_usage(deep=True).sum()
-        self._metadata = DatasetMetadata.create(
-            id=self._id,
-            name=self._name,
-            phase=self._phase,
-            stage=self._stage,
-            nrows=self._nrows,
-            ncols=self._ncols,
-            size=self._size,
-            element_type=self._element_type,
-        )
 
     def _configure_storage(self) -> None:
         """Finalizes the builder prior to constructing the dataset"""
