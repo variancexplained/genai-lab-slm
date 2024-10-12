@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:42 pm                                              #
-# Modified   : Friday October 11th 2024 06:21:59 pm                                                #
+# Modified   : Saturday October 12th 2024 01:09:50 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -80,6 +80,10 @@ class DistributedFileSystemDAO(FileSystemDAO):
         """
         try:
             spark_session = self._session_pool.get_or_create(nlp=nlp)
+        except FileNotFoundError as e:
+            msg = f"Exception occurred while reading a Parquet file from {filepath}.File does not exist.\nKeyword Arguments: {kwargs}\n{e}"
+            self._logger.exception(msg)
+            raise
         except Exception as e:
             msg = f"Exception occurred while reading Parquet file from {filepath}. Unable to create a spark session."
             self._logger.exception(msg)

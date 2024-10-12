@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Friday October 11th 2024 03:19:31 am                                                #
+# Modified   : Saturday October 12th 2024 01:09:16 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -64,6 +64,10 @@ class CentralizedFileSystemDAO(FileSystemDAO):
         """
         try:
             return pd.read_parquet(path=filepath, **kwargs)
+        except FileNotFoundError as e:
+            msg = f"Exception occurred while reading a Parquet file from {filepath}.File does not exist.\nKeyword Arguments: {kwargs}\n{e}"
+            self._logger.exception(msg)
+            raise
         except Exception as e:
             msg = f"Exception occurred while reading a Parquet file from {filepath}.\nKeyword Arguments: {kwargs}"
             self._logger.exception(msg)

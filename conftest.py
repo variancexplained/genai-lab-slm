@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday October 11th 2024 12:33:52 am                                                #
+# Modified   : Saturday October 12th 2024 01:26:26 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -55,7 +55,7 @@ def container() -> DiscoverContainer:
     container.wire(
         modules=[
             "discover.infra.storage.local.io",
-            "discover.infra.dal.file.distributed",
+            "discover.infra.dal.fao.distributed",
         ],
     )
 
@@ -175,10 +175,9 @@ def pandas_ds(pandas_df):
         storage_config=storage_config,
     )
     repo = DatasetRepo()
-    if repo.exists(name=dataset.name):
-        repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -192,10 +191,9 @@ def pandas_partitioned_ds(pandas_df):
         storage_config=storage_config,
     )
     repo = DatasetRepo()
-    if repo.exists(name=dataset.name):
-        repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -209,10 +207,9 @@ def spark_ds(spark_df):
         storage_config=storage_config,
     )
     repo = DatasetRepo()
-    if repo.exists(name=dataset.name):
-        repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -226,10 +223,9 @@ def spark_partitioned_ds(spark_df):
         storage_config=storage_config,
     )
     repo = DatasetRepo()
-    if repo.exists(name=dataset.name):
-        repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -243,7 +239,6 @@ def spark_partitioned_nlp_ds(spark_df):
         storage_config=storage_config,
     )
     repo = DatasetRepo()
-    if repo.exists(name=dataset.name):
-        repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name)
+    repo.remove(name=dataset.name, ignore_errors=True)

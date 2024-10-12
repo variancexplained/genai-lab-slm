@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 10th 2024 04:58:59 pm                                              #
-# Modified   : Friday October 11th 2024 09:53:00 pm                                                #
+# Modified   : Saturday October 12th 2024 01:27:41 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -78,7 +78,6 @@ class CentralizedDatasetStorageConfig(StorageConfig):
         Raises:
             KeyError: If the "file" section or required settings are missing in the configuration file.
         """
-        super().__post_init__()
         file_config = config_reader.get_config(section="file")
 
         self.row_group_size = self.row_group_size or file_config.parquet.block_size

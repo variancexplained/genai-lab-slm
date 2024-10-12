@@ -4,25 +4,35 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_infra/test_repo/test_dataset_repo.py                                    #
+# Filename   : /tests/test_infra/test_repo/test_dataset_repo_centralized.py                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Thursday October 10th 2024 10:05:04 pm                                              #
+# Modified   : Saturday October 12th 2024 01:51:52 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import inspect
 import logging
+import os
+import shutil
 from datetime import datetime
 
+import pandas as pd
 import pytest
 
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.repo.dataset import DatasetRepo
+from discover.infra.repo.exception import (
+    DatasetExistsError,
+    DatasetIntegrityError,
+    DatasetNotFoundError,
+    DatasetRemovalError,
+)
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -35,11 +45,30 @@ double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
 
+# ------------------------------------------------------------------------------------------------ #
+def validate_dataset(dataset):
+    assert isinstance(dataset.phase, PhaseDef)
+    assert isinstance(dataset.stage, StageDef)
+    assert isinstance(dataset.content, (pd.DataFrame, pd.core.frame.DataFrame))
+    assert isinstance(dataset.created, datetime)
+    assert os.path.exists(dataset.storage_location)
+
+
+# ------------------------------------------------------------------------------------------------ #
+def remove_dataset_file(dataset):
+    if os.path.exists(dataset.storage_location):
+        try:
+            shutil.rmtree(dataset.storage_location)
+        except Exception:
+            os.remove(dataset.storage_location)
+
+
+# ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.repo
-class TestDatasetRepo:  # pragma: no cover
+class TestDatasetRepoCentralizedAdd:  # pragma: no cover
     # ============================================================================================ #
-    def test_centralized_dataset_repo(self, pandas_ds, caplog) -> None:
+    def test_add_dataset(self, pandas_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -47,26 +76,10 @@ class TestDatasetRepo:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         dataset = pandas_ds
-        logging.info(dataset.content.head())
-
         repo = DatasetRepo()
-        repo.add(dataset=dataset)
-        ds2 = repo.get(name=dataset.name)
-
-        logging.info(dataset)
-        logging.info(ds2)
-
-        logging.info(dataset.content.head())
-        logging.info(ds2.content.head())
-        assert ds2 == dataset
-
-        with pytest.raises(FileExistsError):
-            repo.add(dataset=dataset)
-
-        # Now delete
-        repo.remove(dataset.name)
-        assert not repo.exists(dataset.name)
-
+        ds = repo.add(dataset=dataset)
+        assert repo.exists(dataset.name)
+        validate_dataset(ds)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -77,7 +90,7 @@ class TestDatasetRepo:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_centralized_partitioned_dataset(self, pandas_ds, caplog) -> None:
+    def test_add_dataset_exists_error(self, pandas_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -85,25 +98,10 @@ class TestDatasetRepo:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         dataset = pandas_ds
-
-        # Persist in KVS
         repo = DatasetRepo()
         repo.add(dataset=dataset)
-        ds2 = repo.get(name=dataset.name)
-
-        logging.info(dataset)
-        logging.info(ds2)
-
-        logging.info(dataset.content.head())
-        logging.info(ds2.content.head())
-        assert ds2 == dataset
-
-        with pytest.raises(FileExistsError):
+        with pytest.raises(DatasetExistsError):
             repo.add(dataset=dataset)
-
-        # Now delete
-        repo.remove(dataset.name)
-        assert not repo.exists(dataset.name)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -113,34 +111,28 @@ class TestDatasetRepo:  # pragma: no cover
         )
         logger.info(single_line)
 
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.mark.dataset
+@pytest.mark.repo
+class TestDatasetRepoCentralizedGet:  # pragma: no cover
     # ============================================================================================ #
-    def test_distributed_dataset(self, spark_ds, caplog) -> None:
+    def test_get_dataset(self, pandas_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = spark_ds
-
-        # Persist in KVS
+        dataset = pandas_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
         ds2 = repo.get(name=dataset.name)
-
-        logging.info(dataset)
-        logging.info(ds2)
-
-        logging.info(dataset.content.head())
-        logging.info(ds2.content.head())
-        assert ds2 == dataset
-
-        with pytest.raises(FileExistsError):
-            repo.add(dataset=dataset)
-
-        # Now delete
-        repo.remove(dataset.name)
-        assert not repo.exists(dataset.name)
+        validate_dataset(ds2)
+        assert dataset == ds2
+        assert ds2.phase == dataset.phase
+        assert ds2.stage == dataset.stage
+        assert ds2.content.equals(dataset.content)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -152,35 +144,18 @@ class TestDatasetRepo:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_distributed_partitioned_dataset(
-        self, spark_partitioned_ds, caplog
-    ) -> None:
+    def test_get_dataset_does_not_exist_error(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = spark_partitioned_ds
-
-        # Persist in KVS
         repo = DatasetRepo()
-        repo.add(dataset=dataset)
-        ds2 = repo.get(name=dataset.name)
-
-        logging.info(dataset)
-        logging.info(ds2)
-
-        logging.info(dataset.content.head())
-        logging.info(ds2.content.head())
-        assert ds2 == dataset
-
-        with pytest.raises(FileExistsError):
-            repo.add(dataset=dataset)
-
-        # Now delete
-        repo.remove(dataset.name)
-        assert not repo.exists(dataset.name)
+        with pytest.raises(DatasetNotFoundError):
+            repo.get(name="bogus_dataset_name")
+        with pytest.raises(DatasetNotFoundError):
+            repo.get(name="dataprep_bogus")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -192,35 +167,71 @@ class TestDatasetRepo:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_distributed_partitioned_dataset_nlp(
-        self, spark_partitioned_nlp_ds, caplog
-    ) -> None:
+    def test_get_dataset_data_integrity_error(self, pandas_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = spark_partitioned_nlp_ds
+        dataset = pandas_ds
+        repo = DatasetRepo()
+        ds = repo.add(dataset=dataset)
+        remove_dataset_file(ds)
+        with pytest.raises(DatasetIntegrityError):
+            repo.get(name=ds.name)
 
-        # Persist in KVS
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.mark.dataset
+@pytest.mark.repo
+class TestDatasetRepoCentralizedRemove:  # pragma: no cover
+    # ============================================================================================ #
+    def test_remove_dataset(self, pandas_ds, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        dataset = pandas_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
-        ds2 = repo.get(name=dataset.name)
+        repo.remove(name=dataset.name)
+        assert not repo.exists(name=dataset.name)
+        assert not os.path.exists(dataset.storage_location)
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
 
-        logging.info(dataset)
-        logging.info(ds2)
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
 
-        logging.info(dataset.content.head())
-        logging.info(ds2.content.head())
-        assert ds2 == dataset
+    # ============================================================================================ #
+    def test_remove_dataset_exceptions(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        repo = DatasetRepo()
+        with pytest.raises(DatasetRemovalError):
+            repo.remove(name="bogus")
 
-        with pytest.raises(FileExistsError):
-            repo.add(dataset=dataset)
-
-        # Now delete
-        repo.remove(dataset.name)
-        assert not repo.exists(dataset.name)
+        # Should not raise exception
+        repo.remove(name="bogus", ignore_errors=True)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

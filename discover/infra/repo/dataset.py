@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Saturday October 12th 2024 12:19:04 am                                              #
+# Modified   : Saturday October 12th 2024 01:56:43 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,6 +37,7 @@ from discover.infra.repo.config import CentralizedDatasetStorageConfig
 from discover.infra.repo.exception import (
     DatasetCreationError,
     DatasetExistsError,
+    DatasetIntegrityError,
     DatasetIOError,
     DatasetNotFoundError,
     DatasetRemovalError,
@@ -129,13 +130,15 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET CREATION METHODS                                         #
     # -------------------------------------------------------------------------------------------- #
-    def add(self, dataset: Dataset) -> None:
+    def add(self, dataset: Dataset) -> Optional[Dataset]:
         """
         Adds a new dataset to the repository. Raises an error if the dataset ID already exists.
 
         Args:
             dataset (Dataset): The dataset object to be added.
 
+        Returns:
+            dataset (Dataset): The dataset object with storage location added.
         Raises:
             FileExistsError: If a dataset with the given ID already exists.
         """
@@ -165,7 +168,7 @@ class DatasetRepo(Repo):
 
             # Rollback the file write to maintain consistency.
             try:
-                self._cfs_dao.delete(filepath=dataset.storage_location)
+                self._remove_dataset_file_by_filepath(filepath=dataset.storage_location)
             except Exception as e:
                 fileio_msg = f"Exception occurred while rolling back dataset {dataset.name} persistence."
                 self._logger.exception(fileio_msg)
@@ -173,6 +176,8 @@ class DatasetRepo(Repo):
 
             # Raise the original exception
             raise DatasetCreationError(msg, e) from e
+
+        return dataset
 
     # -------------------------------------------------------------------------------------------- #
     def _validate_add(self, dataset: Dataset) -> None:
@@ -255,6 +260,10 @@ class DatasetRepo(Repo):
         try:
             dataset.content = self._read_file(dataset=dataset)
             return dataset
+        except FileNotFoundError as e:
+            msg = f"Exception occurred while reading dataset {dataset.name}. File containing dataset contents was not found at {dataset.storage_location}.\n{e}"
+            self._logger.exception(msg)
+            raise DatasetIntegrityError(msg)
         except Exception as e:
             msg = f"Exception occurred while reading dataset {dataset.name} contents from file."
             self._logger.exception(msg)
@@ -362,6 +371,10 @@ class DatasetRepo(Repo):
         # Obtain the dataset object and storage information from the repository
         try:
             dataset = self._dataset_dao.read(name=name)
+            # Delete the dataset file from the repository
+            self._remove_dataset_file_by_filepath(
+                filepath=dataset.storage_location, ignore_errors=ignore_errors
+            )
         except ObjectNotFoundError:
             msg = f"Exception occurred while removing dataset {name}.\nDataset object does not exist."
             if ignore_errors:
@@ -384,11 +397,6 @@ class DatasetRepo(Repo):
             else:
                 self._logger.exception(msg)
                 raise DatasetRemovalError(msg, e) from e
-
-        # Delete the dataset file from the repository
-        self._remove_dataset_file_by_filepath(
-            filepath=dataset.storage_location, ignore_errors=ignore_errors
-        )
 
         # Delete the dataset object from the repository.
         try:
@@ -423,20 +431,21 @@ class DatasetRepo(Repo):
             DatasetRemovalError: If any error occurs during the file removal process and `ignore_errors` is False.
         """
         # Reconstruct a filepath based on name
-        filepath = self._reconstruct_filepath(name=name)
+        filepath = self._reconstruct_filepath(name=name, ignore_errors=ignore_errors)
 
-        # Remove it if it exists.
-        if self._cfs_dao.exists(filepath=filepath):
-            self._remove_dataset_file_by_filepath(
-                filepath=filepath, ignore_errors=ignore_errors
-            )
-        else:
-            # Search and remove a non-partitioned parquet version file.
-            filepath = filepath + ".parquet"
+        if filepath:
+            # Remove it if it exists.
             if self._cfs_dao.exists(filepath=filepath):
                 self._remove_dataset_file_by_filepath(
                     filepath=filepath, ignore_errors=ignore_errors
                 )
+            else:
+                # Search and remove a non-partitioned parquet version file.
+                filepath = filepath + ".parquet"
+                if self._cfs_dao.exists(filepath=filepath):
+                    self._remove_dataset_file_by_filepath(
+                        filepath=filepath, ignore_errors=ignore_errors
+                    )
 
     # -------------------------------------------------------------------------------------------- #
     def _remove_dataset_file_by_filepath(
@@ -515,7 +524,9 @@ class DatasetRepo(Repo):
 
     # -------------------------------------------------------------------------------------------- #
 
-    def _reconstruct_filepath(self, name: str) -> str:
+    def _reconstruct_filepath(
+        self, name: str, ignore_errors: bool = False
+    ) -> Optional[str]:
         """
         Reconstructs the filepath for a dataset based on its name.
 
@@ -525,11 +536,23 @@ class DatasetRepo(Repo):
 
         Args:
             name (str): The name of the dataset, typically in the format "{phase}_{stage}".
+            ignore_errors (bool): Ignore exceptions if True.
 
         Returns:
             str: The fully reconstructed dataset filepath.
+
+        Raises:
+            ValueError if the name provided is not valid
         """
         phase_value = name.split("_")[0]
-        phase = PhaseDef.from_value(value=phase_value)
-        filepath = os.path.join(phase.directory, name)
-        return filepath_service.get_filepath(filepath=filepath)
+        try:
+            phase = PhaseDef.from_value(value=phase_value)
+            filepath = os.path.join(phase.directory, name)
+            return filepath_service.get_filepath(filepath=filepath)
+        except ValueError as e:
+            msg = f"Exception while reconstructing the filepath for dataset {name}. The name doesn't include a valid phase. Unable to reconstruct the dataset filepath.\n{e}"
+            if ignore_errors:
+                self._logger.warning(msg)
+            else:
+                self._logger.exception(msg)
+                raise
