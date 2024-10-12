@@ -11,23 +11,27 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Thursday October 10th 2024 09:16:06 pm                                              #
+# Modified   : Saturday October 12th 2024 01:24:49 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """AppVoCAI-Discover Dependency Container"""
+# %%
 from __future__ import annotations
 
 import logging
-import logging.config  # pragma: no cover
+import logging.config
 
 from dependency_injector import containers, providers
 
 from discover.infra.config.reader import ConfigReader
-from discover.infra.database.sqlite import SQLiteDB, SQLiteDBA
+from discover.infra.dal.dao.dataset import DatasetDAO
+from discover.infra.dal.fao.centralized import CentralizedFileSystemFAO
+from discover.infra.dal.fao.distributed import DistributedFileSystemFAO
+from discover.infra.dal.location import LocationService
 from discover.infra.frameworks.spark.session import SparkSessionPool
-from discover.infra.identity.idgen import IDGen
+from discover.infra.repo.dataset import DatasetRepo
 
 # ------------------------------------------------------------------------------------------------ #
 
@@ -50,15 +54,9 @@ class LoggingContainer(containers.DeclarativeContainer):
 # ------------------------------------------------------------------------------------------------ #
 class SparkContainer(containers.DeclarativeContainer):
 
-    session = providers.Singleton(SparkSessionPool)
+    config = providers.Configuration()
 
-
-# ------------------------------------------------------------------------------------------------ #
-#                                   IDGEN CONTAINER                                                #
-# ------------------------------------------------------------------------------------------------ #
-class IDGenContainer(containers.DeclarativeContainer):
-
-    gen = providers.Singleton(IDGen)
+    session_pool = providers.Singleton(SparkSessionPool, spark_config=config.spark)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -66,23 +64,43 @@ class IDGenContainer(containers.DeclarativeContainer):
 # ------------------------------------------------------------------------------------------------ #
 class RepoContainer(containers.DeclarativeContainer):
 
-    db = providers.DependenciesContainer()
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 DATABASE CONTAINER                                               #
-# ------------------------------------------------------------------------------------------------ #
-class DatabaseContainer(containers.DeclarativeContainer):
-
     config = providers.Configuration()
 
-    sqlite = providers.Singleton(
-        SQLiteDB,
-        connection_string=config.database.sqlite.url,
-        location=config.database.sqlite.filepath,
+    spark = providers.DependenciesContainer()
+
+    location_service = providers.Singleton(
+        LocationService,
+        workspace=config.workspace,
+        dataset_location=config.repository.dataset.objects.location,
+        file_location=config.repository.dataset.files.location,
+        model_location=config.repository.models.location,
     )
 
-    admin = providers.Singleton(SQLiteDBA, database=sqlite)
+    # Data Access Object
+    dao = providers.Singleton(DatasetDAO, location_service=location_service)
+
+    # Centralized File System File Access Object
+    fao_cfs = providers.Singleton(
+        CentralizedFileSystemFAO,
+        storage_config=config.repository.dataset.files.centralized,
+    )
+
+    # Distributed File System File Access Object
+    fao_dfs = providers.Singleton(
+        DistributedFileSystemFAO,
+        storage_config=config.repository.dataset.files.distributed,
+        session_pool=spark.session_pool,
+    )
+
+    # Dataset Repository
+    dataset_repo = providers.Singleton(
+        DatasetRepo,
+        dataset_dao=dao,
+        fao_cfs=fao_cfs,
+        fao_dfs=fao_dfs,
+        location_service=location_service,
+        partitioned=config.repository.dataset.files.partitioned,
+    )
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -91,24 +109,27 @@ class DatabaseContainer(containers.DeclarativeContainer):
 class DiscoverContainer(containers.DeclarativeContainer):
 
     # Provide the Config class instance dynamically
-    config = providers.Singleton(ConfigReader)
+    config_reader = providers.Singleton(ConfigReader)
 
     # Provide the actual config dictionary by calling get_config()
-    config_data = providers.Factory(
-        lambda: DiscoverContainer.config().get_config(namespace=False),
+    config = providers.Factory(
+        lambda: DiscoverContainer.config_reader().get_config(namespace=False),
     )
 
     # Configure the logs by injecting the config data
-    logs = providers.Container(LoggingContainer, config=config_data)
+    logs = providers.Container(LoggingContainer, config=config)
 
-    # Configure the database by injecting the config data
-    db = providers.Container(DatabaseContainer, config=config_data)
+    # Configure spark session pool
+    spark = providers.Container(SparkContainer, config=config)
 
     # Configure the repository by injecting the database.
-    repo = providers.Container(RepoContainer, db=db)
+    repo = providers.Container(RepoContainer, spark=spark, config=config)
 
-    # Configure the spark container with configuration.
-    spark = providers.Container(SparkContainer)
 
-    # Configure the id generator container.
-    id = providers.Container(IDGenContainer)
+# ------------------------------------------------------------------------------------------------ #
+# if __name__ == "__main__":
+#     container = DiscoverContainer()
+#     container.init_resources()
+
+#     assert container.config()["workspace"] == "workspace/test"
+#     logging.debug("Test Log message")

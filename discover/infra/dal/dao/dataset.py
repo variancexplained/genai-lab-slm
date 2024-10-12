@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Friday October 11th 2024 06:47:20 pm                                                #
+# Modified   : Saturday October 12th 2024 11:51:48 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,13 +27,13 @@ import pandas as pd
 
 from discover.core.flow import PhaseDef
 from discover.element.dataset import Dataset
-from discover.infra.config.reader import ConfigReader
 from discover.infra.dal.base import DAO
 from discover.infra.dal.dao.exception import (
     ObjectDatabaseNotFoundError,
     ObjectIOException,
     ObjectNotFoundError,
 )
+from discover.infra.dal.location import LocationService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -46,16 +46,12 @@ class DatasetDAO(DAO):
     persistence and provides methods for various operations like checking dataset
     existence and filtering datasets by specific attributes.
 
-    Attributes:
-        _config_reader (ConfigReader): An instance of a configuration reader to
-            retrieve database paths.
-        _db_path (str): The path to the shelve-based object database.
-        _logger (logging.Logger): Logger instance for recording operations and errors.
+    Args:
+        location_service (LocationService): Service encapsulating persistence locations.
     """
 
-    def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader):
-        self._config_reader = config_reader_cls()
-        self._db_path = self._config_reader.get_config(section="ops").dataset
+    def __init__(self, location_service: LocationService):
+        self._db_path = location_service.dataset_location
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(self, dataset: Dataset) -> None:

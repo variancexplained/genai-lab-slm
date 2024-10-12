@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Saturday October 12th 2024 01:09:16 am                                              #
+# Modified   : Saturday October 12th 2024 09:22:56 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,32 +19,36 @@
 """Module for the Centralized File System (CFS) Data Access Layer"""
 import pandas as pd
 
-from discover.infra.dal.fao.base import FileSystemDAO
+from discover.infra.dal.fao.base import FileSystemFAO
 from discover.infra.dal.fao.exception import FileIOException
 
 
 # ------------------------------------------------------------------------------------------------ #
-class CentralizedFileSystemDAO(FileSystemDAO):
+class CentralizedFileSystemFAO(FileSystemFAO):
     """
     Data Access Object (DAO) for interacting with a centralized file system using Pandas.
 
     This class handles reading and writing Parquet files using Pandas DataFrames for storage
     systems that are accessible as a centralized file system (e.g., local filesystem, NFS).
 
+    Args:
+        storage_config (dict): Persistence configuration
+
     Inherits from:
-        FileSystemDAO: Base class for file system-based data access operations.
+        FileSystemFAO: Base class for file system-based data access operations.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, storage_config: dict) -> None:
         """
-        Initializes the CentralizedFileSystemDAO.
+        Initializes the CentralizedFileSystemFAO.
 
         This constructor sets up the base functionality for handling file I/O
         using the centralized file system.
         """
         super().__init__()
+        self._storage_config = storage_config
 
-    def _read(self, filepath: str, **kwargs) -> pd.DataFrame:
+    def _read(self, filepath: str) -> pd.DataFrame:
         """
         Reads a Parquet file from a specified filepath into a Pandas DataFrame.
 
@@ -53,8 +57,6 @@ class CentralizedFileSystemDAO(FileSystemDAO):
 
         Args:
             filepath (str): The path of the Parquet file to read.
-            **kwargs: Additional keyword arguments to pass to the `pd.read_parquet` method,
-                such as options for columns, engine, etc.
 
         Returns:
             pd.DataFrame: The DataFrame containing the data read from the Parquet file.
@@ -63,17 +65,19 @@ class CentralizedFileSystemDAO(FileSystemDAO):
             FileIOException: If an error occurs while reading the Parquet file.
         """
         try:
-            return pd.read_parquet(path=filepath, **kwargs)
+            return pd.read_parquet(path=filepath, **self._storage_config["read_kwargs"])
         except FileNotFoundError as e:
-            msg = f"Exception occurred while reading a Parquet file from {filepath}.File does not exist.\nKeyword Arguments: {kwargs}\n{e}"
-            self._logger.exception(msg)
+            msg = f"Exception occurred while reading a Parquet file from {filepath}.File does not exist.\n{e}"
+            self._logger.error(msg)
             raise
         except Exception as e:
-            msg = f"Exception occurred while reading a Parquet file from {filepath}.\nKeyword Arguments: {kwargs}"
+            msg = (
+                f"Exception occurred while reading a Parquet file from {filepath}.\n{e}"
+            )
             self._logger.exception(msg)
             raise FileIOException(msg, e) from e
 
-    def _write(self, filepath: str, data: pd.DataFrame, **kwargs) -> None:
+    def _write(self, filepath: str, data: pd.DataFrame) -> None:
         """
         Writes a Pandas DataFrame to a specified filepath as a Parquet file.
 
@@ -83,15 +87,13 @@ class CentralizedFileSystemDAO(FileSystemDAO):
         Args:
             filepath (str): The path where the Parquet file will be written.
             data (pd.DataFrame): The DataFrame to write to the Parquet file.
-            **kwargs: Additional keyword arguments to configure the `to_parquet` method,
-                such as compression, engine, etc.
 
         Raises:
             FileIOException: If an error occurs while writing the Parquet file.
         """
         try:
-            data.to_parquet(path=filepath, **kwargs)
+            data.to_parquet(path=filepath, **self._storage_config["write_kwargs"])
         except Exception as e:
-            msg = f"Exception occurred while writing a Parquet file to {filepath}.\nKeyword Arguments: {kwargs}"
+            msg = f"Exception occurred while writing a Parquet file to {filepath}.\n{e}"
             self._logger.exception(msg)
             raise FileIOException(msg, e) from e

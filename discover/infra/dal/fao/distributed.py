@@ -11,23 +11,23 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:42 pm                                              #
-# Modified   : Saturday October 12th 2024 03:36:20 am                                              #
+# Modified   : Saturday October 12th 2024 09:42:23 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 
-import pyspark
-from dependency_injector.wiring import Provide, inject
+from typing import Dict
 
-from discover.container import DiscoverContainer
-from discover.infra.dal.fao.base import FileSystemDAO
+import pyspark
+
+from discover.infra.dal.fao.base import FileSystemFAO
 from discover.infra.dal.fao.exception import FileIOException
 from discover.infra.frameworks.spark.session import SparkSessionPool
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DistributedFileSystemDAO(FileSystemDAO):
+class DistributedFileSystemFAO(FileSystemFAO):
     """
     Data Access Object (DAO) for interacting with a distributed file system using PySpark.
 
@@ -35,29 +35,30 @@ class DistributedFileSystemDAO(FileSystemDAO):
     using PySpark DataFrames. It coordinates with a SparkSessionPool to obtain or create
     Spark sessions for executing distributed data operations.
 
-    Attributes:
-        _session_pool (SparkSessionPool): A pool of Spark sessions, injected for managing
-            Spark session lifecycles.
+    Args:
+        storage_config (Dict): File persistence configuration
+        session_pool (SparkSessionPool): A Spark session pool for obtaining or creating
+                Spark sessions
+
     """
 
-    @inject
     def __init__(
         self,
-        session_pool: SparkSessionPool = Provide[DiscoverContainer.spark.session],
+        storage_config: Dict,
+        session_pool: SparkSessionPool,
     ) -> None:
         """
-        Initializes the DistributedFileSystemDAO with a provided Spark session pool.
+        Initializes the DistributedFileSystemFAO with a provided Spark session pool.
 
         Args:
             session_pool (SparkSessionPool): A Spark session pool for obtaining or creating
                 Spark sessions, injected by the dependency injection framework.
         """
         super().__init__()
+        self._storage_config = storage_config
         self._session_pool = session_pool
 
-    def _read(
-        self, filepath: str, nlp: bool = False, **kwargs
-    ) -> pyspark.sql.DataFrame:
+    def _read(self, filepath: str, nlp: bool = False) -> pyspark.sql.DataFrame:
         """
         Reads a Parquet file from a specified filepath using PySpark.
 
@@ -68,8 +69,6 @@ class DistributedFileSystemDAO(FileSystemDAO):
         Args:
             filepath (str): The path of the Parquet file to read.
             nlp (bool): Whether to use a session configured for NLP processing (default is False).
-            **kwargs: Additional keyword arguments to pass to the `read.parquet` method, such as
-                options for schema, filters, etc.
 
         Returns:
             pyspark.sql.DataFrame: The PySpark DataFrame containing the data from the Parquet file.
@@ -81,8 +80,8 @@ class DistributedFileSystemDAO(FileSystemDAO):
         try:
             spark_session = self._session_pool.get_or_create(nlp=nlp)
         except FileNotFoundError as e:
-            msg = f"Exception occurred while reading a Parquet file from {filepath}.File does not exist.\nKeyword Arguments: {kwargs}\n{e}"
-            self._logger.exception(msg)
+            msg = f"Exception occurred while reading a Parquet file from {filepath}.File does not exist.\n{e}"
+            self._logger.error(msg)
             raise
         except Exception as e:
             msg = f"Exception occurred while reading Parquet file from {filepath}. Unable to create a spark session."
@@ -90,13 +89,13 @@ class DistributedFileSystemDAO(FileSystemDAO):
             raise FileIOException(msg, e) from e
 
         try:
-            return spark_session.read.parquet(filepath, **kwargs)
+            return spark_session.read.parquet(filepath)
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a Parquet file from {filepath}. The file does not exist."
             self._logger.exception(msg)
             raise FileIOException(msg, e) from e
         except Exception as e:
-            msg = f"Exception occurred while reading a Parquet file from {filepath}. \nKeyword arguments: {kwargs}."
+            msg = f"Exception occurred while reading a Parquet file from {filepath}."
             self._logger.exception(msg)
             raise FileIOException(msg, e) from e
 
@@ -123,9 +122,9 @@ class DistributedFileSystemDAO(FileSystemDAO):
         Raises:
             FileIOException: If an error occurs while writing the Parquet file.
         """
-        # Extract arguments from kwargs
-        mode = kwargs.get("mode", None)
-        partition_cols = kwargs.get("partitionBy", None)
+        # Extract kwargs from storage config
+        mode = self._storage_config["write_kwargs"].get("mode", None)
+        partition_cols = self._storage_config["write_kwargs"].get("partitionBy", None)
 
         # Construct pyspark write command based upon kwargs
         try:

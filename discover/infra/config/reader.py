@@ -11,15 +11,17 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Tuesday September 24th 2024 02:02:42 pm                                             #
+# Modified   : Saturday October 12th 2024 08:21:41 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Configuration Classes."""
-# %%
 import logging
 import os
+
+# %%
+from collections.abc import Mapping
 from typing import Any, Dict, Optional, Union
 
 import yaml
@@ -234,7 +236,8 @@ class ConfigReader:
         """
         base_config = self._load_base_config()
         env_config = self._load_env_config()
-        return {**base_config, **env_config}
+        final_config = self._merge_configs(base=base_config, override=env_config)
+        return final_config
 
     def _load_base_config(self) -> Dict[str, Any]:
         """
@@ -274,6 +277,15 @@ class ConfigReader:
             filepath=filepath,
             content=f"{self.current_environment} environment configuration",
         )
+
+    def _merge_configs(self, base, override):
+        """Recursively merge two configurations, with 'override' taking precedence."""
+        for key, value in override.items():
+            if isinstance(value, Mapping) and key in base:
+                base[key] = self._merge_configs(base[key], value)
+            else:
+                base[key] = value
+        return base
 
     def read_yaml(self, filepath: str, content: str) -> Dict[str, Any]:
         """

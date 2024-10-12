@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday October 12th 2024 01:26:26 am                                              #
+# Modified   : Saturday October 12th 2024 01:09:27 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,12 +27,6 @@ from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.element.dataset import Dataset
 from discover.infra.config.reader import ConfigReader
-from discover.infra.database.schema import schema
-from discover.infra.repo.config import (
-    CentralizedDatasetStorageConfig,
-    DistributedDatasetStorageConfig,
-)
-from discover.infra.repo.dataset import DatasetRepo
 from discover.infra.storage.cloud.aws import S3Handler
 from discover.infra.storage.local.io import IOService
 
@@ -79,24 +73,6 @@ def check_environment() -> None:
             )
         )
         sys.exit(1)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     DATABASE SETUP                                               #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session", autouse=True)
-def db_setup(container) -> None:
-    dba = container.db.admin()
-    dba.drop_table(tablename="profile")
-    dba.create_table(schema=schema["profile"])
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                      PROFILE REPO                                                #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def profile_repo(container):
-    return container.repo.profile
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -147,7 +123,7 @@ def pandas_df():
     Pytest fixture that reads a CSV file into a pandas DataFrame.
     Modify this to point to the correct CSV file.
     """
-    FILEPATH = "workspace/test/00_raw/reviews"
+    FILEPATH = "data/working/reviews"
     return IOService.read(filepath=FILEPATH)
 
 
@@ -166,15 +142,15 @@ def spark_df(spark, pandas_df):
 #                                  DATASETS                                                        #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
-def pandas_ds(pandas_df):
-    storage_config = CentralizedDatasetStorageConfig(partitioned=False)
+def centralized_ds(pandas_df, container):
     dataset = Dataset(
+        nlp=False,
+        distributed=False,
         phase=PhaseDef.DATAPREP,
         stage=DataPrepStageDef.DQA,
         content=pandas_df,
-        storage_config=storage_config,
     )
-    repo = DatasetRepo()
+    repo = container.repo.dataset_repo()
     repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
     repo.remove(name=dataset.name, ignore_errors=True)
@@ -182,47 +158,15 @@ def pandas_ds(pandas_df):
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
-def pandas_partitioned_ds(pandas_df):
-    storage_config = CentralizedDatasetStorageConfig()
+def distributed_ds(spark_df, container):
     dataset = Dataset(
+        nlp=False,
+        distributed=True,
         phase=PhaseDef.DATAPREP,
-        stage=DataPrepStageDef.NORM,
-        content=pandas_df,
-        storage_config=storage_config,
-    )
-    repo = DatasetRepo()
-    repo.remove(name=dataset.name, ignore_errors=True)
-    yield dataset
-    repo.remove(name=dataset.name, ignore_errors=True)
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def spark_ds(spark_df):
-    storage_config = DistributedDatasetStorageConfig(partitioned=False)
-    dataset = Dataset(
-        phase=PhaseDef.FEATURE,
-        stage=DataPrepStageDef.CLEAN,
-        content=spark_df,
-        storage_config=storage_config,
-    )
-    repo = DatasetRepo()
-    repo.remove(name=dataset.name, ignore_errors=True)
-    yield dataset
-    repo.remove(name=dataset.name, ignore_errors=True)
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def spark_partitioned_ds(spark_df):
-    storage_config = DistributedDatasetStorageConfig()
-    dataset = Dataset(
-        phase=PhaseDef.FEATURE,
         stage=DataPrepStageDef.DQA,
         content=spark_df,
-        storage_config=storage_config,
     )
-    repo = DatasetRepo()
+    repo = container.repo.dataset_repo()
     repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
     repo.remove(name=dataset.name, ignore_errors=True)
@@ -230,15 +174,15 @@ def spark_partitioned_ds(spark_df):
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
-def spark_partitioned_nlp_ds(spark_df):
-    storage_config = DistributedDatasetStorageConfig(nlp=True)
+def distributed_ds_nlp(spark_df, container):
     dataset = Dataset(
-        phase=PhaseDef.FEATURE,
-        stage=DataPrepStageDef.CLEAN,
+        nlp=True,
+        distributed=True,
+        phase=PhaseDef.DATAPREP,
+        stage=DataPrepStageDef.DQA,
         content=spark_df,
-        storage_config=storage_config,
     )
-    repo = DatasetRepo()
+    repo = container.repo.dataset_repo()
     repo.remove(name=dataset.name, ignore_errors=True)
     yield dataset
     repo.remove(name=dataset.name, ignore_errors=True)

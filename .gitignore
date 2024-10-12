@@ -8,12 +8,13 @@
 .coverage.*
 
 # Data
-data/dev/
 data/ext/
-data/prod/
-data/test/
-data/ref/
+data/raw/
+data/working/
+data/archive/
 tests/data/
+
+# Workspace
 workspace/
 
 # Cache

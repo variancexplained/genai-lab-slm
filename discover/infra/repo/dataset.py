@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Saturday October 12th 2024 04:02:28 am                                              #
+# Modified   : Saturday October 12th 2024 12:28:15 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,13 +27,11 @@ import pyspark
 from discover.core.flow import PhaseDef, StageDef
 from discover.element.dataset import Dataset
 from discover.element.repo import Repo
-from discover.infra.config.reader import ConfigReader
 from discover.infra.dal.dao.dataset import DatasetDAO
 from discover.infra.dal.dao.exception import ObjectNotFoundError
-from discover.infra.dal.fao.centralized import CentralizedFileSystemDAO as CFSDAO
-from discover.infra.dal.fao.distributed import DistributedFileSystemDAO as DFSDAO
-from discover.infra.dal.fao.filepath import FilePathService
-from discover.infra.repo.config import CentralizedDatasetStorageConfig
+from discover.infra.dal.fao.centralized import CentralizedFileSystemFAO as FAOCFS
+from discover.infra.dal.fao.distributed import DistributedFileSystemFAO as FAODFS
+from discover.infra.dal.location import LocationService
 from discover.infra.repo.exception import (
     DatasetCreationError,
     DatasetExistsError,
@@ -42,9 +40,6 @@ from discover.infra.repo.exception import (
     DatasetNotFoundError,
     DatasetRemovalError,
 )
-
-# ------------------------------------------------------------------------------------------------ #
-filepath_service = FilePathService()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -56,12 +51,13 @@ class DatasetRepo(Repo):
     read and write datasets to centralized (Pandas) or distributed (PySpark) file systems.
     It leverages DAOs (Data Access Objects) for interacting with underlying storage mechanisms.
 
-    Attributes:
-        _config_reader (ConfigReader): Instance to read configuration settings.
-        _dataset_dao (DatasetDAO): Data Access Object for dataset metadata.
-        _cfs_dao (CFSDAO): Data Access Object for centralized file storage (e.g., local filesystem).
-        _dfs_dao (DFSDAO): Data Access Object for distributed file storage (e.g., HDFS).
-        _logger (logging.Logger): Logger for logging operations and errors.
+    Args:
+        dataset_dao (DatasetDAO): Data Access Object for dataset metadata.
+        fao_cfs (FAOCFS): Data Access Object for centralized file storage (e.g., local filesystem).
+        fao_dfs (FAODFS): Data Access Object for distributed file storage (e.g., HDFS).
+        location_service (LocationService): Service that centralizes the assignment of filepaths.
+        partitioned (bool): Whether dataset files are to be partitioned parquet files. Default is True
+
 
     Methods:
         add(dataset: Dataset) -> None:
@@ -87,7 +83,7 @@ class DatasetRepo(Repo):
 
     Private Methods:
         _read_file(dataset: Dataset) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
-            Reads a dataset's content based on its storage configuration.
+            Reads a dataset's content
 
         _read_centralized_file(dataset: Dataset) -> pd.DataFrame:
             Reads a dataset's content from a centralized file system (e.g., local filesystem).
@@ -96,7 +92,7 @@ class DatasetRepo(Repo):
             Reads a dataset's content from a distributed file system (e.g., HDFS).
 
         _write_file(dataset: Dataset) -> None:
-            Writes a dataset's content based on its storage configuration.
+            Writes a dataset's content.
 
         _write_centralized_file(dataset: Dataset) -> None:
             Writes a dataset's content to a centralized file system.
@@ -107,24 +103,18 @@ class DatasetRepo(Repo):
 
     def __init__(
         self,
-        config_reader_cls: type[ConfigReader] = ConfigReader,
-        dataset_dao_cls: type[DatasetDAO] = DatasetDAO,
-        cfs_dao_cls: type[CFSDAO] = CFSDAO,
-        dfs_dao_cls: type[DFSDAO] = DFSDAO,
+        dataset_dao: DatasetDAO,
+        fao_cfs: FAOCFS,
+        fao_dfs: FAODFS,
+        location_service: LocationService,
+        partitioned: bool = True,
     ) -> None:
-        """
-        Initializes the DatasetRepo with instances of configuration reader and DAOs.
 
-        Args:
-            config_reader_cls (type[ConfigReader]): Class for reading configuration settings.
-            dataset_dao_cls (type[DatasetDAO]): Class for dataset metadata management.
-            cfs_dao_cls (type[CFSDAO]): Class for centralized file storage operations.
-            dfs_dao_cls (type[DFSDAO]): Class for distributed file storage operations.
-        """
-        self._config_reader = config_reader_cls()
-        self._dataset_dao = dataset_dao_cls()
-        self._cfs_dao = cfs_dao_cls()
-        self._dfs_dao = dfs_dao_cls()
+        self._dataset_dao = dataset_dao
+        self._fao_cfs = fao_cfs
+        self._fao_dfs = fao_dfs
+        self._location_service = location_service
+        self._partitioned = partitioned
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------------- #
@@ -149,7 +139,6 @@ class DatasetRepo(Repo):
         dataset.storage_location = self._format_filepath(
             phase=dataset.phase,
             stage=dataset.stage,
-            partitioned=dataset.storage_config.partitioned,
         )
 
         # Save dataset contents to file.
@@ -190,15 +179,15 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     def _write_file(self, dataset: Dataset) -> None:
         """
-        Writes a dataset's content based on its storage configuration.
+        Writes a dataset's content.
 
         Args:
             dataset (Dataset): The dataset to write.
         """
-        if isinstance(dataset.storage_config, CentralizedDatasetStorageConfig):
-            self._write_centralized_file(dataset=dataset)
-        else:
+        if dataset.distributed:
             self._write_distributed_file(dataset=dataset)
+        else:
+            self._write_centralized_file(dataset=dataset)
 
     # -------------------------------------------------------------------------------------------- #
     def _write_centralized_file(self, dataset: Dataset) -> None:
@@ -208,10 +197,9 @@ class DatasetRepo(Repo):
         Args:
             dataset (Dataset): The dataset to write.
         """
-        self._cfs_dao._write(
+        self._fao_cfs._write(
             filepath=dataset.storage_location,
             data=dataset.content,
-            **dataset.storage_config.write_kwargs,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -222,10 +210,9 @@ class DatasetRepo(Repo):
         Args:
             dataset (Dataset): The dataset to write.
         """
-        self._dfs_dao._write(
+        self._fao_dfs._write(
             filepath=dataset.storage_location,
             data=dataset.content,
-            **dataset.storage_config.write_kwargs,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -287,18 +274,13 @@ class DatasetRepo(Repo):
         Returns:
             Union[pd.DataFrame, pyspark.sql.DataFrame]: The dataset's content.
         """
-        filepath = self._format_filepath(
-            phase=dataset.phase,
-            stage=dataset.stage,
-            partitioned=dataset.storage_config.partitioned,
-        )
-        if isinstance(dataset.storage_config, CentralizedDatasetStorageConfig):
-            return self._read_centralized_file(dataset=dataset, filepath=filepath)
+        if dataset.distributed:
+            return self._read_distributed_file(dataset=dataset)
         else:
-            return self._read_distributed_file(dataset=dataset, filepath=filepath)
+            return self._read_centralized_file(dataset=dataset)
 
     # -------------------------------------------------------------------------------------------- #
-    def _read_centralized_file(self, dataset: Dataset, filepath: str) -> pd.DataFrame:
+    def _read_centralized_file(self, dataset: Dataset) -> pd.DataFrame:
         """
         Reads a dataset's content from a centralized file system.
 
@@ -308,14 +290,10 @@ class DatasetRepo(Repo):
         Returns:
             pd.DataFrame: The content of the dataset.
         """
-        return self._cfs_dao.read(
-            filepath=filepath, **dataset.storage_config.read_kwargs
-        )
+        return self._fao_cfs.read(filepath=dataset.storage_location)
 
     # -------------------------------------------------------------------------------------------- #
-    def _read_distributed_file(
-        self, dataset: Dataset, filepath: str
-    ) -> pyspark.sql.DataFrame:
+    def _read_distributed_file(self, dataset: Dataset) -> pyspark.sql.DataFrame:
         """
         Reads a dataset's content from a distributed file system.
 
@@ -326,7 +304,7 @@ class DatasetRepo(Repo):
             pyspark.sql.DataFrame: The content of the dataset.
         """
 
-        return self._dfs_dao.read(filepath=filepath, nlp=dataset.storage_config.nlp)
+        return self._fao_dfs.read(filepath=dataset.storage_location, nlp=dataset.nlp)
 
     # -------------------------------------------------------------------------------------------- #
     #                               DATASET LIST METHODS                                           #
@@ -400,8 +378,10 @@ class DatasetRepo(Repo):
         """
         Removes the dataset file associated with the dataset name.
 
-        This method reconstructs the filepath from the dataset name and attempts to remove the dataset file.
-        If the file does not exist, it will check for a non-partitioned Parquet version and attempt to remove that file.
+        This method is called when the dataset object and the storage location are not available.
+        Whether the dataset was stored as a partitioned dataset is not know. To ensure that
+        any file remnants associated with the name are removed, this method will remove any
+        file with the given name.
 
         Args:
             name (str): The name of the dataset whose file is to be removed.
@@ -411,15 +391,18 @@ class DatasetRepo(Repo):
         Raises:
             DatasetRemovalError: If any error occurs during the file removal process and `ignore_errors` is False.
         """
-        # Reconstruct a filepath based on name
-        filepath = self._reconstruct_filepath(name=name, ignore_errors=ignore_errors)
-
+        # Reconstruct a non-partitioned filepath based on name
+        filepath = self._reconstruct_filepath(
+            name=name, partitioned=False, ignore_errors=ignore_errors
+        )
+        filepath_partitioned = self._reconstruct_filepath(
+            name=name, partitioned=True, ignore_errors=ignore_errors
+        )
         if filepath:
             # Remove it if it exists.
             self._remove_dataset_file_by_filepath(filepath=filepath)
-            # Search and remove a non-partitioned parquet version file if it exists.
-            filepath = filepath + ".parquet"
-            self._remove_dataset_file_by_filepath(filepath=filepath)
+        if filepath_partitioned:
+            self._remove_dataset_file_by_filepath(filepath=filepath_partitioned)
 
     # -------------------------------------------------------------------------------------------- #
     def _remove_dataset_file_by_filepath(self, filepath: str) -> None:
@@ -429,8 +412,8 @@ class DatasetRepo(Repo):
         Args:
             filepath (str): The path of the dataset file to be removed.
         """
-        if self._cfs_dao.exists(filepath=filepath):
-            self._cfs_dao.delete(filepath)
+        if self._fao_cfs.exists(filepath=filepath):
+            self._fao_cfs.delete(filepath)
             msg = f"Removed dataset file at {filepath} from repository."
             self._logger.info(msg)
 
@@ -453,42 +436,41 @@ class DatasetRepo(Repo):
     #                             DATASET FILEPATH METHODS                                         #
     # -------------------------------------------------------------------------------------------- #
 
-    def _format_filepath(
-        self, phase: PhaseDef, stage: StageDef, partitioned: bool = True
-    ) -> str:
+    def _format_filepath(self, phase: PhaseDef, stage: StageDef) -> str:
         """
         Dynamically generates the dataset filepath based on the given phase, stage, and partitioning status.
 
         This method constructs a filename using the values of the provided `phase` and `stage`.
         It appends ".parquet" to the filename if the dataset is not partitioned. The full filepath is
         generated by combining the phase's directory with the filename, and it is further processed
-        by the `filepath_service` to prepend home and environment folders.
+        by the `location_service` to prepend home and environment folders.
 
         Args:
             phase (PhaseDef): The phase definition containing the directory and phase value.
             stage (StageDef): The stage definition containing the stage value.
-            partitioned (bool): If True, the filename does not include a ".parquet" extension,
-                indicating it is partitioned. If False, the ".parquet" extension is added.
 
         Returns:
             str: The fully formatted dataset filepath.
         """
         filename = f"{phase.value}_{stage.value}"
-        filename = filename + ".parquet" if not partitioned else filename
         filepath = os.path.join(phase.directory, filename)
-        return filepath_service.get_filepath(filepath=filepath)
+        filepath = filepath + ".parquet" if not self._partitioned else filepath
+        return os.path.join(self._location_service.dataset_location, filepath)
 
     # -------------------------------------------------------------------------------------------- #
 
     def _reconstruct_filepath(
-        self, name: str, ignore_errors: bool = False
+        self, name: str, partitioned: bool, ignore_errors: bool = False
     ) -> Optional[str]:
         """
         Reconstructs the filepath for a dataset based on its name.
 
         This method extracts the phase from the dataset's name, reconstructs the filepath
         by combining the phase's directory and the dataset name, and processes it through
-        the `filepath_service` to prepend the home and environment folders.
+        the `location_service` to prepend the home and environment folders.
+
+        Note: This method returns a filepath for a partitioned File.  extensions for non-partitioned files are not appended to the filepath. Calling
+        methods
 
         Args:
             name (str): The name of the dataset, typically in the format "{phase}_{stage}".
@@ -504,7 +486,8 @@ class DatasetRepo(Repo):
         try:
             phase = PhaseDef.from_value(value=phase_value)
             filepath = os.path.join(phase.directory, name)
-            return filepath_service.get_filepath(filepath=filepath)
+            filepath = filepath + ".parquet" if not partitioned else filepath
+            return os.path.join(self._location_service.dataset_location, filepath)
         except ValueError as e:
             msg = f"Exception while reconstructing the filepath for dataset {name}. The name doesn't include a valid phase. Unable to reconstruct the dataset filepath.\n{e}"
             if ignore_errors:

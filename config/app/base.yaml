@@ -3,20 +3,22 @@
 # ================================================================================================ #
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
-# Python     : 3.10.12                                                                             #
-# Filename   : /config/test.yaml                                                                   #
+# Python     : 3.10.14                                                                             #
+# Filename   : /config/app/base.yaml                                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
-# Email      : john.james.ai.studio@gmail.com                                                      #
+# Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Thursday October 10th 2024 06:42:37 pm                                              #
+# Created    : Monday September 9th 2024 11:24:51 am                                               #
+# Modified   : Saturday October 12th 2024 11:49:00 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
-# Copyright  : (c) 2023 John James                                                                 #
+# Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-env: test
+# ------------------------------------------------------------------------------------------------ #
+#                                      LOGGING                                                     #
+# ------------------------------------------------------------------------------------------------ #
 logging:
   disable_existing_loggers: false
   formatters:
@@ -31,15 +33,15 @@ logging:
     console:
       class: logging.StreamHandler
       formatter: console
-      level: DEBUG
+      level: DEBUG # Default, possibly overridden in environment config
       stream: ext://sys.stderr
     file:
       backupCount: 0
       class: logging.handlers.TimedRotatingFileHandler
-      filename: logs/test/log
+      filename: TBD # Override in environment specific configurations
       formatter: file
       interval: 1
-      level: DEBUG
+      level: DEBUG # Default, possibly overridden in environment config
       when: midnight
   loggers:
     py4j:  # Add this block to suppress py4j logging
@@ -52,37 +54,42 @@ logging:
     handlers:
     - console
     - file
-    level: DEBUG
+    level: DEBUG # Default, possibly overridden in environment config
   version: 1
 
 # ------------------------------------------------------------------------------------------------ #
-database:
-  sqlite:
-    url: sqlite:///ops/test/db/sqlite.db
-    filepath: ops/test/db/sqlite.db
-    pool_size: 5 # Default for non-concurrent applications
-    max_overflow: 10 # Allow temporary connections beyond pool_size if needed
+#                                     REPOSITORY                                                   #
+# ------------------------------------------------------------------------------------------------ #
+repository:
+  dataset:
+    objects:
+      location: datasets/odb
+    files:
+      location: datasets
+      partitioned: True
+      centralized:
+        read_kwargs:
+          engine: pyarrow
+        write_kwargs:
+          engine: pyarrow
+          compression: snappy
+          index: True
+          existing_data_behavior: delete_matching
+          row_group_size: 1073741824
+          partition_cols:
+          - category
+      distributed:
+        write_kwargs:
+          mode: error
+          partitionBy:
+          - category
+    models:
+      location: models
 
 # ------------------------------------------------------------------------------------------------ #
-file:
-  parquet:
-    block_size: 536870912 # 512 MB
-
+#                                      SPARK                                                       #
 # ------------------------------------------------------------------------------------------------ #
-ops:
-  basedir: ops/test  # Base directory for operations data.
-  idgen: ops/test/idgen # Shelve key value store for id generation.
-  dataset: ops/test/dataset # Shelve key value store for dataset metadata.
-  cache:
-    registry: ops/test/cache/registry
-    data: ops/test/cache/data
-    archive: ops/test/cache/archive
-    ttl: 0 # In days
-    refresh_on_access: True  # Access resets the expiration clock.
-# ------------------------------------------------------------------------------------------------ #
-aws:
-  bucket: appvoc
-  s3_key: test/reviews.tar.gz
-
-# ------------------------------------------------------------------------------------------------ #
-workspace: workspace/test  # Base directory for environment workspace
+spark:
+  memory: "32g"
+  retries: 3
+  parquet_block_size: 1073741824 # 1 GB Default

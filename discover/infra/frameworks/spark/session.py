@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Thursday October 10th 2024 09:18:28 pm                                              #
+# Modified   : Saturday October 12th 2024 01:27:10 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,10 +22,11 @@ import atexit
 import logging
 import os
 import time
+from typing import Dict
 
 from pyspark.sql import SparkSession
 
-from discover.infra.config.reader import ConfigReader
+from discover.core.namespace import NestedNamespace
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -69,7 +70,7 @@ class SparkSessionPool:
             creation fails.
     """
 
-    def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
+    def __init__(self, spark_config: Dict) -> None:
         """
         Initializes a SparkSessionPool with the given configuration reader class.
 
@@ -78,16 +79,7 @@ class SparkSessionPool:
                 Defaults to ConfigReader, allowing for custom configuration reader
                 classes if needed.
         """
-        self._config_reader = config_reader_cls()
-
-        # Obtain file config containing parquet block size.
-        self._parquet_block_size = self._config_reader.get_config(
-            section="file"
-        ).parquet.block_size
-
-        # Obtain spark session config
-        self._spark_config = self._config_reader.get_config(section="spark")
-
+        self._spark_config = NestedNamespace(spark_config)
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def get_or_create(self, nlp: bool = False) -> SparkSession:
@@ -110,13 +102,13 @@ class SparkSessionPool:
         if not nlp:
             spark_session = self._create_session(
                 memory=self._spark_config.memory,
-                parquet_block_size=self._parquet_block_size,
+                parquet_block_size=self._spark_config.parquet_block_size,
                 retries=self._spark_config.retries,
             )
         else:
             spark_session = self._create_nlp_session(
                 memory=self._spark_config.memory,
-                parquet_block_size=self._parquet_block_size,
+                parquet_block_size=self._spark_config.parquet_block_size,
                 retries=self._spark_config.retries,
             )
         atexit.register(shutdown, spark_session)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Friday October 11th 2024 12:56:15 am                                                #
+# Modified   : Saturday October 12th 2024 10:46:57 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 import pytest
 
 from discover.infra.dal.dao.dataset import DatasetDAO
-from discover.infra.dal.fao.centralized import CentralizedFileSystemDAO
+from discover.infra.dal.fao.centralized import CentralizedFileSystemFAO
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -40,17 +40,17 @@ single_line = f"\n{100 * '-'}"
 @pytest.mark.dao
 class TestCentralizedFileDAO:  # pragma: no cover
     # ============================================================================================ #
-    def test_pandas_dataset(self, pandas_ds, caplog) -> None:
+    def test_pandas_dataset(self, centralized_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = centralized_ds
 
         # Persist in KVS
-        dao = CentralizedFileSystemDAO()
+        dao = CentralizedFileSystemFAO()
         dao.create(dataset=dataset)
         ds2 = dao.read(name=dataset.name)
 
@@ -78,14 +78,14 @@ class TestCentralizedFileDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_pandas_partitioned_dataset(self, pandas_ds, caplog) -> None:
+    def test_pandas_partitioned_dataset(self, centralized_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = centralized_ds
 
         # Persist in KVS
         dao = DatasetDAO()
@@ -115,14 +115,14 @@ class TestCentralizedFileDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_spark_dataset(self, spark_ds, caplog) -> None:
+    def test_spark_dataset(self, distributed_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = spark_ds
+        dataset = distributed_ds
 
         # Persist in KVS
         dao = DatasetDAO()
@@ -191,16 +191,14 @@ class TestCentralizedFileDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_spark_partitioned_dataset_nlp(
-        self, spark_partitioned_nlp_ds, caplog
-    ) -> None:
+    def test_spark_partitioned_dataset_nlp(self, distributed_ds_nlp, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = spark_partitioned_nlp_ds
+        dataset = distributed_ds_nlp
 
         # Persist in KVS
         dao = DatasetDAO()

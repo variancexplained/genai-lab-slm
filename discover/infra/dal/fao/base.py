@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 06:05:13 pm                                              #
-# Modified   : Friday October 11th 2024 11:11:51 pm                                                #
+# Modified   : Saturday October 12th 2024 09:09:06 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from discover.infra.dal.fao.exception import FileIOException
 
 
 # ------------------------------------------------------------------------------------------------ #
-class FileSystemDAO(DAO):
+class FileSystemFAO(DAO):
     """
     A Data Access Object (DAO) class for interacting with the filesystem, providing methods
     to create, read, delete, and check the existence of files or directories. This class
@@ -42,7 +42,7 @@ class FileSystemDAO(DAO):
 
     def __init__(self) -> None:
         """
-        Initializes the FileSystemDAO instance, setting up a logger.
+        Initializes the FileSystemFAO instance, setting up a logger.
         """
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 

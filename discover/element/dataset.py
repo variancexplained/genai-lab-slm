@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Friday October 11th 2024 09:43:45 pm                                                #
+# Modified   : Saturday October 12th 2024 12:11:25 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,6 @@ import pandas as pd
 from pydantic.dataclasses import dataclass
 
 from discover.element.base import Element
-from discover.element.config import StorageConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -40,7 +39,8 @@ class Dataset(Element):
         configuration information.
 
     Attributes:
-        storage_config (StorageConfig): Configuration for storing the dataset content payload.
+        nlp (bool): Whether the dataset is part of an NLP pipeline
+        distributed (bool): Whether the dataset contents are persisted in a distributed dataframe structure.
         storage_location (Any): Object specifying the storage location for the dataset content payload.
         nrows (int): The number of rows in the dataset. Defaults to 0.
         ncols (int): The number of columns in the dataset. Defaults to 0.
@@ -59,7 +59,8 @@ class Dataset(Element):
             and size.
     """
 
-    storage_config: Optional[StorageConfig] = None
+    nlp: bool = False
+    distributed: bool = False
     storage_location: Optional[Any] = None
     nrows: int = 0
     ncols: int = 0
