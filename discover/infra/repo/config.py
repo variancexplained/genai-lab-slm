@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 10th 2024 04:58:59 pm                                              #
-# Modified   : Saturday October 12th 2024 01:27:41 am                                              #
+# Modified   : Saturday October 12th 2024 03:46:25 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -40,7 +40,7 @@ class CentralizedDatasetStorageConfig(StorageConfig):
         partitioned (bool): Determines if the dataset should be partitioned by columns.
             Defaults to True.
         partition_cols (list): List of column names to use for partitioning the dataset.
-            Defaults to an empty list, but is set to ["content"] if partitioned is True.
+            Defaults to an empty list, but is set to ["category"] if partitioned is True.
         engine (str): The engine to use for reading and writing Parquet files.
             Defaults to "pyarrow".
         compression (str): The compression algorithm for Parquet files.
@@ -90,7 +90,7 @@ class CentralizedDatasetStorageConfig(StorageConfig):
             "row_group_size": self.row_group_size,
         }
         if self.partitioned:
-            self.partition_cols = ["content"]
+            self.partition_cols = ["category"]
             self.write_kwargs["partition_cols"] = self.partition_cols
             self.write_kwargs["existing_data_behavior"] = self.existing_data_behavior
 
@@ -107,7 +107,7 @@ class DistributedDatasetStorageConfig(StorageConfig):
         partitioned (bool): Indicates whether the dataset should be partitioned.
             Defaults to True.
         partition_cols (list): List of column names to use for partitioning the dataset.
-            Defaults to an empty list, but is set to ["content"] if partitioned is True.
+            Defaults to an empty list, but is set to ["category"] if partitioned is True.
         mode (str): Defines the write mode for handling existing data. Common modes
             might include "overwrite", "append", "ignore", or "error".
             Defaults to "error".
@@ -133,13 +133,14 @@ class DistributedDatasetStorageConfig(StorageConfig):
         the columns to partition by during write operations.
 
         Example:
-            If `partitioned` is True, sets `partition_cols` to ["content"] and
+            If `partitioned` is True, sets `partition_cols` to ["category"] and
             `write_kwargs` to:
-                {"mode": self.mode, "partitionBy": ["content"]}
+                {"mode": self.mode, "partitionBy": ["category"]}
 
         Raises:
             ValueError: If an unsupported mode is provided (optional, based on validation needs).
         """
+        self.write_kwargs = {"mode": self.mode}
         if self.partitioned:
-            self.partition_cols = ["content"]
-            self.write_kwargs = {"mode": self.mode, "partitionBy": self.partition_cols}
+            self.partition_cols = ["category"]
+            self.write_kwargs["partitionBy"] = self.partition_cols

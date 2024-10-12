@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:42 pm                                              #
-# Modified   : Saturday October 12th 2024 01:09:50 am                                              #
+# Modified   : Saturday October 12th 2024 03:36:20 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -135,6 +135,8 @@ class DistributedFileSystemDAO(FileSystemDAO):
                 data.write.mode(mode).parquet(filepath)
             elif partition_cols:
                 data.write.partitionBy(partition_cols).parquet(filepath)
+            else:
+                data.write.parquet(filepath)
         except Exception as e:
             msg = f"Exception occurred while writing a Parquet file to {filepath}.\nKeyword Arguments: {kwargs}"
             self._logger.exception(msg)

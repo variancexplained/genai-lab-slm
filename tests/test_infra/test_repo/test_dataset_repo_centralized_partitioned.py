@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_infra/test_repo/test_dataset_repo_centralized.py                        #
+# Filename   : /tests/test_infra/test_repo/test_dataset_repo_centralized_partitioned.py            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Saturday October 12th 2024 03:41:55 am                                              #
+# Modified   : Saturday October 12th 2024 03:43:25 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -66,17 +66,17 @@ def remove_dataset_file(dataset):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.repo
-@pytest.mark.repo_cent
-class TestDatasetRepoCentralizedAdd:  # pragma: no cover
+@pytest.mark.repo_cent_part
+class TestDatasetRepoCentralizedPartitionedAdd:  # pragma: no cover
     # ============================================================================================ #
-    def test_add_dataset(self, pandas_ds, caplog) -> None:
+    def test_add_dataset(self, pandas_partitioned_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = pandas_partitioned_ds
         repo = DatasetRepo()
         ds = repo.add(dataset=dataset)
         assert repo.exists(dataset.name)
@@ -91,14 +91,14 @@ class TestDatasetRepoCentralizedAdd:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_add_dataset_exists_error(self, pandas_ds, caplog) -> None:
+    def test_add_dataset_exists_error(self, pandas_partitioned_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = pandas_partitioned_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
         with pytest.raises(DatasetExistsError):
@@ -116,17 +116,17 @@ class TestDatasetRepoCentralizedAdd:  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.repo
-@pytest.mark.repo_cent
-class TestDatasetRepoCentralizedGet:  # pragma: no cover
+@pytest.mark.repo_cent_part
+class TestDatasetRepoCentralizedPartitionedGet:  # pragma: no cover
     # ============================================================================================ #
-    def test_get_dataset(self, pandas_ds, caplog) -> None:
+    def test_get_dataset(self, pandas_partitioned_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = pandas_partitioned_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
         ds2 = repo.get(name=dataset.name)
@@ -169,14 +169,16 @@ class TestDatasetRepoCentralizedGet:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_get_dataset_data_integrity_error(self, pandas_ds, caplog) -> None:
+    def test_get_dataset_data_integrity_error(
+        self, pandas_partitioned_ds, caplog
+    ) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = pandas_partitioned_ds
         repo = DatasetRepo()
         ds = repo.add(dataset=dataset)
         remove_dataset_file(ds)
@@ -196,17 +198,17 @@ class TestDatasetRepoCentralizedGet:  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.repo
-@pytest.mark.repo_cent
-class TestDatasetRepoCentralizedRemove:  # pragma: no cover
+@pytest.mark.repo_cent_part
+class TestDatasetRepoCentralizedPartitionedRemove:  # pragma: no cover
     # ============================================================================================ #
-    def test_remove_dataset(self, pandas_ds, caplog) -> None:
+    def test_remove_dataset(self, pandas_partitioned_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = pandas_partitioned_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
         repo.remove(name=dataset.name)

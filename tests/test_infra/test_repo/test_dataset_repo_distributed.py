@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_infra/test_repo/test_dataset_repo_centralized.py                        #
+# Filename   : /tests/test_infra/test_repo/test_dataset_repo_distributed.py                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Saturday October 12th 2024 03:41:55 am                                              #
+# Modified   : Saturday October 12th 2024 03:51:43 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,9 @@ import os
 import shutil
 from datetime import datetime
 
-import pandas as pd
+import pyspark
 import pytest
+from pyspark.testing import assertDataFrameEqual
 
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.repo.dataset import DatasetRepo
@@ -49,7 +50,7 @@ single_line = f"\n{100 * '-'}"
 def validate_dataset(dataset):
     assert isinstance(dataset.phase, PhaseDef)
     assert isinstance(dataset.stage, StageDef)
-    assert isinstance(dataset.content, (pd.DataFrame, pd.core.frame.DataFrame))
+    assert isinstance(dataset.content, pyspark.sql.DataFrame)
     assert isinstance(dataset.created, datetime)
     assert os.path.exists(dataset.storage_location)
 
@@ -66,17 +67,17 @@ def remove_dataset_file(dataset):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.repo
-@pytest.mark.repo_cent
-class TestDatasetRepoCentralizedAdd:  # pragma: no cover
+@pytest.mark.repo_dist
+class TestDatasetRepoDistributedAdd:  # pragma: no cover
     # ============================================================================================ #
-    def test_add_dataset(self, pandas_ds, caplog) -> None:
+    def test_add_dataset(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = spark_ds
         repo = DatasetRepo()
         ds = repo.add(dataset=dataset)
         assert repo.exists(dataset.name)
@@ -91,14 +92,14 @@ class TestDatasetRepoCentralizedAdd:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_add_dataset_exists_error(self, pandas_ds, caplog) -> None:
+    def test_add_dataset_exists_error(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = spark_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
         with pytest.raises(DatasetExistsError):
@@ -116,17 +117,17 @@ class TestDatasetRepoCentralizedAdd:  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.repo
-@pytest.mark.repo_cent
-class TestDatasetRepoCentralizedGet:  # pragma: no cover
+@pytest.mark.repo_dist
+class TestDatasetRepoDistributedGet:  # pragma: no cover
     # ============================================================================================ #
-    def test_get_dataset(self, pandas_ds, caplog) -> None:
+    def test_get_dataset(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = spark_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
         ds2 = repo.get(name=dataset.name)
@@ -134,7 +135,7 @@ class TestDatasetRepoCentralizedGet:  # pragma: no cover
         assert dataset == ds2
         assert ds2.phase == dataset.phase
         assert ds2.stage == dataset.stage
-        assert ds2.content.equals(dataset.content)
+        assertDataFrameEqual(ds2.content, dataset.content)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -169,14 +170,14 @@ class TestDatasetRepoCentralizedGet:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_get_dataset_data_integrity_error(self, pandas_ds, caplog) -> None:
+    def test_get_dataset_data_integrity_error(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = spark_ds
         repo = DatasetRepo()
         ds = repo.add(dataset=dataset)
         remove_dataset_file(ds)
@@ -196,17 +197,17 @@ class TestDatasetRepoCentralizedGet:  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.repo
-@pytest.mark.repo_cent
-class TestDatasetRepoCentralizedRemove:  # pragma: no cover
+@pytest.mark.repo_dist
+class TestDatasetRepoDistributedRemove:  # pragma: no cover
     # ============================================================================================ #
-    def test_remove_dataset(self, pandas_ds, caplog) -> None:
+    def test_remove_dataset(self, spark_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dataset = pandas_ds
+        dataset = spark_ds
         repo = DatasetRepo()
         repo.add(dataset=dataset)
         repo.remove(name=dataset.name)

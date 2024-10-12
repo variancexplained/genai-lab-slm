@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Saturday October 12th 2024 01:56:43 am                                              #
+# Modified   : Saturday October 12th 2024 04:02:28 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -265,9 +265,14 @@ class DatasetRepo(Repo):
             self._logger.exception(msg)
             raise DatasetIntegrityError(msg)
         except Exception as e:
-            msg = f"Exception occurred while reading dataset {dataset.name} contents from file."
-            self._logger.exception(msg)
-            raise DatasetIOError(msg, e) from e
+            if "[PATH_NOT_FOUND]" in str(e):
+                msg = f"Exception occurred while reading dataset {dataset.name}. File containing dataset contents was not found at {dataset.storage_location}.\n{e}"
+                self._logger.exception(msg)
+                raise DatasetIntegrityError(msg)
+            else:
+                msg = f"Exception occurred while reading dataset {dataset.name} contents from file."
+                self._logger.exception(msg)
+                raise DatasetIOError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
     def _read_file(
@@ -369,48 +374,24 @@ class DatasetRepo(Repo):
             DatasetRemovalError: If any error occurs while removing the dataset object or file, and `ignore_errors` is False.
         """
         # Obtain the dataset object and storage information from the repository
-        try:
+        if self._dataset_dao.exists(name=name):
             dataset = self._dataset_dao.read(name=name)
             # Delete the dataset file from the repository
-            self._remove_dataset_file_by_filepath(
-                filepath=dataset.storage_location, ignore_errors=ignore_errors
-            )
-        except ObjectNotFoundError:
-            msg = f"Exception occurred while removing dataset {name}.\nDataset object does not exist."
-            if ignore_errors:
-                msg += "\nSearching for and removing any related dataset files."
-                self._logger.warning(msg)
-                self._remove_dataset_file_by_name(
-                    name=name, ignore_errors=ignore_errors
-                )
-            else:
-                self._logger.exception(msg)
-                raise DatasetRemovalError(msg)
-        except Exception as e:
-            msg = f"Exception occurred while removing dataset {name}. Unable to read dataset object."
-            if ignore_errors:
-                msg += "Searching for and removing any related dataset files."
-                self._logger.warning(msg)
-                self._remove_dataset_file_by_name(
-                    name=name, ignore_errors=ignore_errors
-                )
-            else:
-                self._logger.exception(msg)
-                raise DatasetRemovalError(msg, e) from e
-
-        # Delete the dataset object from the repository.
-        try:
+            self._remove_dataset_file_by_filepath(filepath=dataset.storage_location)
+            # Delete the dataset object.
             self._dataset_dao.delete(name=name)
-        except Exception as e:
-            msg = f"Exception occurred while removing dataset object {name} from the repository.\n{e}"
-            if ignore_errors:
-                self._logger.warning(msg)
-            else:
-                self._logger.exception(msg)
-                raise DatasetRemovalError(msg, e)
-
-        msg = f"Removed dataset {name} from the repository."
-        self._logger.info(msg)
+            msg = f"Removed dataset {name} from the repository."
+            self._logger.info(msg)
+        # If ignoring errors, issue a warning and search for file remnants by name.
+        elif ignore_errors:
+            msg = f"Warning: Dataset {name} does not exist. Searching and removing files by name."
+            self._logger.warning(msg)
+            self._remove_dataset_file_by_name(name=name, ignore_errors=ignore_errors)
+        # Otherwise throw a DatasetRemovalError
+        else:
+            msg = f"Exception: Dataset {name} does not exist"
+            self._logger.exception(msg)
+            raise DatasetRemovalError(msg)
 
     # -------------------------------------------------------------------------------------------- #
     def _remove_dataset_file_by_name(
@@ -435,48 +416,23 @@ class DatasetRepo(Repo):
 
         if filepath:
             # Remove it if it exists.
-            if self._cfs_dao.exists(filepath=filepath):
-                self._remove_dataset_file_by_filepath(
-                    filepath=filepath, ignore_errors=ignore_errors
-                )
-            else:
-                # Search and remove a non-partitioned parquet version file.
-                filepath = filepath + ".parquet"
-                if self._cfs_dao.exists(filepath=filepath):
-                    self._remove_dataset_file_by_filepath(
-                        filepath=filepath, ignore_errors=ignore_errors
-                    )
+            self._remove_dataset_file_by_filepath(filepath=filepath)
+            # Search and remove a non-partitioned parquet version file if it exists.
+            filepath = filepath + ".parquet"
+            self._remove_dataset_file_by_filepath(filepath=filepath)
 
     # -------------------------------------------------------------------------------------------- #
-    def _remove_dataset_file_by_filepath(
-        self, filepath: str, ignore_errors: bool = False
-    ) -> None:
+    def _remove_dataset_file_by_filepath(self, filepath: str) -> None:
         """
-        Removes the dataset file located at the specified filepath.
-
-        This method attempts to delete the file located at the given filepath. If an error occurs during deletion
-        and `ignore_errors` is False, it will raise an exception. If `ignore_errors` is True, it will log a warning
-        instead of raising an exception.
+        Removes the dataset file located at the specified filepath if it exists.
 
         Args:
             filepath (str): The path of the dataset file to be removed.
-            ignore_errors (bool): If True, suppresses any exceptions during the file removal process
-                and logs warnings instead of raising errors. Default is False.
-
-        Raises:
-            DatasetRemovalError: If an error occurs during file removal and `ignore_errors` is False.
         """
-        try:
+        if self._cfs_dao.exists(filepath=filepath):
             self._cfs_dao.delete(filepath)
             msg = f"Removed dataset file at {filepath} from repository."
             self._logger.info(msg)
-        except Exception as e:
-            msg = f"Exception occurred while deleting {filepath}.\n{e}"
-            if ignore_errors:
-                self._logger.warning(msg)
-            else:
-                self._logger.exception(msg)
-                raise DatasetRemovalError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET EXISTENCE METHOD                                         #
