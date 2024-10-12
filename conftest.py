@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday October 8th 2024 10:18:24 pm                                                #
+# Modified   : Friday October 11th 2024 12:33:52 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,11 +24,15 @@ from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
-from discover.core.data_structure import DataStructure
 from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.element.dataset.build import DatasetBuilder
+from discover.element.dataset import Dataset
 from discover.infra.config.reader import ConfigReader
 from discover.infra.database.schema import schema
+from discover.infra.repo.config import (
+    CentralizedDatasetStorageConfig,
+    DistributedDatasetStorageConfig,
+)
+from discover.infra.repo.dataset import DatasetRepo
 from discover.infra.storage.cloud.aws import S3Handler
 from discover.infra.storage.local.io import IOService
 
@@ -51,7 +55,6 @@ def container() -> DiscoverContainer:
     container.wire(
         modules=[
             "discover.infra.storage.local.io",
-            "discover.element.base.build",
             "discover.infra.dal.file.distributed",
         ],
     )
@@ -144,7 +147,7 @@ def pandas_df():
     Pytest fixture that reads a CSV file into a pandas DataFrame.
     Modify this to point to the correct CSV file.
     """
-    FILEPATH = "workspace/test/00_dataprep/01_ingest/reviews"
+    FILEPATH = "workspace/test/00_raw/reviews"
     return IOService.read(filepath=FILEPATH)
 
 
@@ -162,110 +165,85 @@ def spark_df(spark, pandas_df):
 # ------------------------------------------------------------------------------------------------ #
 #                                  DATASETS                                                        #
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def pandas_ds(pandas_df):
-    builder = DatasetBuilder()
-    dataset = (
-        builder.name("pandas")
-        .phase(PhaseDef.DATAPREP)
-        .data_structure(DataStructure.PANDAS)
-        .not_partitioned()
-        .stage(DataPrepStageDef.DQA)
-        .content(pandas_df)
-        .build()
+    storage_config = CentralizedDatasetStorageConfig(partitioned=False)
+    dataset = Dataset(
+        phase=PhaseDef.DATAPREP,
+        stage=DataPrepStageDef.DQA,
+        content=pandas_df,
+        storage_config=storage_config,
     )
-    dataset.storage_config.filepath = (
-        "workspace/test/00_dataprep/01_ingest/reviews.parquet"
-    )
-    return dataset
+    repo = DatasetRepo()
+    if repo.exists(name=dataset.name):
+        repo.remove(name=dataset.name)
+    yield dataset
+    repo.remove(name=dataset.name)
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def pandas_partitioned_ds(pandas_df):
-    builder = DatasetBuilder()
-    dataset = (
-        builder.name("pandas_partitioned")
-        .phase(PhaseDef.DATAPREP)
-        .data_structure(DataStructure.PANDAS)
-        .partitioned()
-        .partition_cols("category")
-        .stage(DataPrepStageDef.RAW)
-        .content(pandas_df)
-        .build()
+    storage_config = CentralizedDatasetStorageConfig()
+    dataset = Dataset(
+        phase=PhaseDef.DATAPREP,
+        stage=DataPrepStageDef.NORM,
+        content=pandas_df,
+        storage_config=storage_config,
     )
-    dataset.storage_config.filepath = "workspace/test/00_dataprep/01_ingest/reviews"
-    return dataset
+    repo = DatasetRepo()
+    if repo.exists(name=dataset.name):
+        repo.remove(name=dataset.name)
+    yield dataset
+    repo.remove(name=dataset.name)
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def spark_ds(spark_df):
-    builder = DatasetBuilder()
-    dataset = (
-        builder.name("spark")
-        .phase(PhaseDef.TRANSFORMATION)
-        .data_structure(DataStructure.SPARK)
-        .not_partitioned()
-        .stage(DataPrepStageDef.DQA)
-        .content(spark_df)
-        .build()
+    storage_config = DistributedDatasetStorageConfig(partitioned=False)
+    dataset = Dataset(
+        phase=PhaseDef.FEATURE,
+        stage=DataPrepStageDef.CLEAN,
+        content=spark_df,
+        storage_config=storage_config,
     )
-    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_storage_dataset_20240924-003.parquet"
-    return dataset
+    repo = DatasetRepo()
+    if repo.exists(name=dataset.name):
+        repo.remove(name=dataset.name)
+    yield dataset
+    repo.remove(name=dataset.name)
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def spark_partitioned_ds(spark_df):
-    builder = DatasetBuilder()
-    dataset = (
-        builder.name("spark_partitioned")
-        .phase(PhaseDef.TRANSFORMATION)
-        .data_structure(DataStructure.SPARK)
-        .partitioned()
-        .partition_cols("category")
-        .stage(DataPrepStageDef.RAW)
-        .content(spark_df)
-        .build()
+    storage_config = DistributedDatasetStorageConfig()
+    dataset = Dataset(
+        phase=PhaseDef.FEATURE,
+        stage=DataPrepStageDef.DQA,
+        content=spark_df,
+        storage_config=storage_config,
     )
-    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_partitioned_storage_dataset_20240924-004"
-    return dataset
+    repo = DatasetRepo()
+    if repo.exists(name=dataset.name):
+        repo.remove(name=dataset.name)
+    yield dataset
+    repo.remove(name=dataset.name)
 
 
 # ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def spark_nlp_ds(spark_df):
-    builder = DatasetBuilder()
-    dataset = (
-        builder.name("spark_nlp")
-        .phase(PhaseDef.DATAPREP)
-        .data_structure(DataStructure.SPARK)
-        .not_partitioned()
-        .nlp()
-        .stage(DataPrepStageDef.RAW)
-        .content(spark_df)
-        .build()
-    )
-    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_nlp_storage_dataset_20240924-005.parquet"
-    return dataset
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def spark_partitioned_nlp_ds(spark_df):
-    builder = DatasetBuilder()
-    dataset = (
-        builder.name("spark_partitioned_nlp")
-        .phase(PhaseDef.DATAPREP)
-        .data_structure(DataStructure.SPARK)
-        .partitioned()
-        .nlp()
-        .partition_cols("category")
-        .stage(DataPrepStageDef.RAW)
-        .content(spark_df)
-        .build()
+    storage_config = DistributedDatasetStorageConfig(nlp=True)
+    dataset = Dataset(
+        phase=PhaseDef.FEATURE,
+        stage=DataPrepStageDef.CLEAN,
+        content=spark_df,
+        storage_config=storage_config,
     )
-
-    dataset.storage_config.filepath = "workspace/test/00_dataprep/99_test/dataprep_test_test_spark_nlp_partitioned_storage_dataset_20240924-006"
-    return dataset
+    repo = DatasetRepo()
+    if repo.exists(name=dataset.name):
+        repo.remove(name=dataset.name)
+    yield dataset
+    repo.remove(name=dataset.name)

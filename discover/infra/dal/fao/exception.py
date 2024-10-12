@@ -4,18 +4,21 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/base.yaml                                                                   #
+# Filename   : /discover/infra/dal/fao/exception.py                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Thursday October 10th 2024 06:30:33 pm                                              #
+# Created    : Friday October 11th 2024 02:50:33 am                                                #
+# Modified   : Friday October 11th 2024 02:52:37 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-spark:
-  memory: "32g"
-  retries: 3
+class FileIOException(Exception):
+    """Exception raised for errors during file I/O operations."""
+
+    def __init__(self, msg: str, exc: Exception):
+        super().__init__(f"{msg}\nOriginal exception: {exc}")
+        self.exc = exc

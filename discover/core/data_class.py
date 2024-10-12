@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Tuesday September 24th 2024 02:00:29 pm                                             #
+# Modified   : Thursday October 10th 2024 04:42:23 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -107,7 +107,7 @@ class DataClass(ABC):  # noqa
     def _export_config(
         cls,
         v: Any,
-    ) -> Any:  # pragma: no cover
+    ) -> Any:
         """Returns v with Configs converted to dicts, recursively."""
         if isinstance(v, IMMUTABLE_TYPES):
             return v

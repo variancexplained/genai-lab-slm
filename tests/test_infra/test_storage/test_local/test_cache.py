@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 08:52:38 pm                                             #
-# Modified   : Thursday September 26th 2024 04:47:19 pm                                            #
+# Modified   : Thursday October 10th 2024 02:03:46 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import pandas as pd
 import pytest
 
 from discover.core.flow import DataPrepStageDef
-from discover.dynamics.optimization.cache import CacheState
+from discover.infra.optimization.cache import CacheState
 from discover.infra.storage.local.cache import CacheRegistration, DiscoverCache
 
 # ------------------------------------------------------------------------------------------------ #

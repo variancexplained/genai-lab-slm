@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Wednesday September 25th 2024 10:32:18 pm                                           #
+# Modified   : Friday October 11th 2024 12:56:15 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,10 +22,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.element.dataset.build import DatasetBuilder
-from discover.element.dataset.define import Dataset
-from discover.infra.dal.db.dataset import DatasetDAO
+from discover.infra.dal.dao.dataset import DatasetDAO
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -42,27 +39,19 @@ single_line = f"\n{100 * '-'}"
 @pytest.mark.dao
 class TestDatasetDAO:  # pragma: no cover
     # ============================================================================================ #
-    def test_pandas_dataset(self, pandas_df, caplog) -> None:
+    def test_pandas_dataset(self, pandas_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DatasetBuilder()
-        dataset = (
-            builder.content(pandas_df)
-            .name("test_dataset")
-            .phase(PhaseDef.DATAPREP)
-            .stage(DataPrepStageDef.DQA)
-            .build()
-        )
-        assert isinstance(dataset, Dataset)
+        dataset = pandas_ds
 
         # Persist in KVS
         dao = DatasetDAO()
         dao.create(dataset=dataset)
-        ds2 = dao.read(id=dataset.id)
+        ds2 = dao.read(name=dataset.name)
 
         logging.info(dataset)
         logging.info(ds2)
@@ -71,9 +60,12 @@ class TestDatasetDAO:  # pragma: no cover
         logging.info(ds2.content.head())
         assert ds2 == dataset
 
+        with pytest.raises(FileExistsError):
+            dao.create(dataset=dataset)
+
         # Now delete
-        dao.delete(dataset.id)
-        assert not dao.exists(dataset.id)
+        dao.delete(dataset.name)
+        assert not dao.exists(dataset.name)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -85,27 +77,19 @@ class TestDatasetDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_pandas_partitioned_dataset(self, pandas_df, caplog) -> None:
+    def test_pandas_partitioned_dataset(self, pandas_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DatasetBuilder()
-        dataset = (
-            builder.content(pandas_df)
-            .name("test_dataset")
-            .phase(PhaseDef.DATAPREP)
-            .stage(DataPrepStageDef.DQA)
-            .build()
-        )
-        assert isinstance(dataset, Dataset)
+        dataset = pandas_ds
 
         # Persist in KVS
         dao = DatasetDAO()
         dao.create(dataset=dataset)
-        ds2 = dao.read(id=dataset.id)
+        ds2 = dao.read(name=dataset.name)
 
         logging.info(dataset)
         logging.info(ds2)
@@ -114,9 +98,49 @@ class TestDatasetDAO:  # pragma: no cover
         logging.info(ds2.content.head())
         assert ds2 == dataset
 
+        with pytest.raises(FileExistsError):
+            dao.create(dataset=dataset)
+
         # Now delete
-        dao.delete(dataset.id)
-        assert not dao.exists(dataset.id)
+        dao.delete(dataset.name)
+        assert not dao.exists(dataset.name)
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_spark_dataset(self, spark_ds, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        dataset = spark_ds
+
+        # Persist in KVS
+        dao = DatasetDAO()
+        dao.create(dataset=dataset)
+        ds2 = dao.read(name=dataset.name)
+
+        logging.info(dataset)
+        logging.info(ds2)
+
+        logging.info(dataset.content.head())
+        logging.info(ds2.content.head())
+        assert ds2 == dataset
+
+        with pytest.raises(FileExistsError):
+            dao.create(dataset=dataset)
+
+        # Now delete
+        dao.delete(dataset.name)
+        assert not dao.exists(dataset.name)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -128,27 +152,19 @@ class TestDatasetDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_spark_dataset(self, spark_df, caplog) -> None:
+    def test_spark_partitioned_dataset(self, spark_partitioned_ds, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DatasetBuilder()
-        dataset = (
-            builder.content(spark_df)
-            .name("test_dataset")
-            .phase(PhaseDef.DATAPREP)
-            .stage(DataPrepStageDef.DQA)
-            .build()
-        )
-        assert isinstance(dataset, Dataset)
+        dataset = spark_partitioned_ds
 
         # Persist in KVS
         dao = DatasetDAO()
         dao.create(dataset=dataset)
-        ds2 = dao.read(id=dataset.id)
+        ds2 = dao.read(name=dataset.name)
 
         logging.info(dataset)
         logging.info(ds2)
@@ -157,9 +173,12 @@ class TestDatasetDAO:  # pragma: no cover
         logging.info(ds2.content.head())
         assert ds2 == dataset
 
+        with pytest.raises(FileExistsError):
+            dao.create(dataset=dataset)
+
         # Now delete
-        dao.delete(dataset.id)
-        assert not dao.exists(dataset.id)
+        dao.delete(dataset.name)
+        assert not dao.exists(dataset.name)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -171,27 +190,21 @@ class TestDatasetDAO:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_spark_partitioned_dataset(self, spark_df, caplog) -> None:
+    def test_spark_partitioned_dataset_nlp(
+        self, spark_partitioned_nlp_ds, caplog
+    ) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DatasetBuilder()
-        dataset = (
-            builder.content(spark_df)
-            .name("test_dataset")
-            .phase(PhaseDef.DATAPREP)
-            .stage(DataPrepStageDef.DQA)
-            .build()
-        )
-        assert isinstance(dataset, Dataset)
+        dataset = spark_partitioned_nlp_ds
 
         # Persist in KVS
         dao = DatasetDAO()
         dao.create(dataset=dataset)
-        ds2 = dao.read(id=dataset.id)
+        ds2 = dao.read(name=dataset.name)
 
         logging.info(dataset)
         logging.info(ds2)
@@ -200,9 +213,12 @@ class TestDatasetDAO:  # pragma: no cover
         logging.info(ds2.content.head())
         assert ds2 == dataset
 
+        with pytest.raises(FileExistsError):
+            dao.create(dataset=dataset)
+
         # Now delete
-        dao.delete(dataset.id)
-        assert not dao.exists(dataset.id)
+        dao.delete(dataset.name)
+        assert not dao.exists(dataset.name)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Monday September 23rd 2024 10:54:37 pm                                              #
+# Modified   : Thursday October 10th 2024 10:33:39 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,14 +24,19 @@ from enum import Enum
 # ------------------------------------------------------------------------------------------------ #
 class PhaseDef(Enum):
     # Defining phases with name, directory, and description
-    DATAPREP = ("dataprep", "00_dataprep", "Data Preparation Phase")
-    TRANSFORMATION = (
-        "transformation",
-        "01_transformation",
-        "Data Transformation Phase",
+    DATAPREP = ("dataprep", "01_dataprep", "Data Preparation Phase")
+    FEATURE = (
+        "feature",
+        "02_feature",
+        "Feature Engineering Phase",
     )
-    MODELING = ("modeling", "02_modeling", "Modeling Phase")
-    ANALYSIS = ("analysis", "03_analysis", "Data Analysis Phase")
+    SENTIMENT = ("sentiment", "03_sentiment", "Sentiment Analysis Phase")
+    ABSEIA = (
+        "abseia",
+        "04_abseia",
+        "Aspect-Based Sentiment Emotion and Intensity Analysis Phase",
+    )
+    GENAI = ("genai", "05_genai", "Generative AI Phase")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)
@@ -50,11 +55,9 @@ class StageDef(Enum):
 class DataPrepStageDef(StageDef):
     """"""
 
-    RAW = ("raw", "00_raw", "Raw Stage")
-    INGEST = ("ingest", "01_ingest", "Ingestion Stage")
+    NORM = ("normalize", "01_normalize", "Data Normalization Stage")
     DQA = ("dqa", "02_dqa", "Data Quality Assessment Stage")
     CLEAN = ("clean", "03_clean", "Data Cleaning Stage")
-    FEATURE = ("features", "04_features", "Feature Engineering Stage")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)

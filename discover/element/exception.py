@@ -4,18 +4,21 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/base.yaml                                                                   #
+# Filename   : /discover/element/exception.py                                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Thursday October 10th 2024 06:30:33 pm                                              #
+# Created    : Friday October 11th 2024 06:59:39 pm                                                #
+# Modified   : Friday October 11th 2024 07:02:49 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-spark:
-  memory: "32g"
-  retries: 3
+class ValidationError(Exception):
+    """Exception raised for element validation errors."""
+
+    def __init__(self, msg: str = None):
+        self.msg = msg
+        super().__init__(msg)
