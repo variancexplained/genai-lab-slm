@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Friday October 11th 2024 07:09:06 pm                                                #
+# Modified   : Saturday October 12th 2024 12:19:04 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,12 +29,18 @@ from discover.element.dataset import Dataset
 from discover.element.repo import Repo
 from discover.infra.config.reader import ConfigReader
 from discover.infra.dal.dao.dataset import DatasetDAO
+from discover.infra.dal.dao.exception import ObjectNotFoundError
 from discover.infra.dal.fao.centralized import CentralizedFileSystemDAO as CFSDAO
 from discover.infra.dal.fao.distributed import DistributedFileSystemDAO as DFSDAO
-from discover.infra.dal.fao.exception import FileIOException
 from discover.infra.dal.fao.filepath import FilePathService
 from discover.infra.repo.config import CentralizedDatasetStorageConfig
-from discover.infra.repo.exception import DatasetExistsError
+from discover.infra.repo.exception import (
+    DatasetCreationError,
+    DatasetExistsError,
+    DatasetIOError,
+    DatasetNotFoundError,
+    DatasetRemovalError,
+)
 
 # ------------------------------------------------------------------------------------------------ #
 filepath_service = FilePathService()
@@ -120,6 +126,9 @@ class DatasetRepo(Repo):
         self._dfs_dao = dfs_dao_cls()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
+    # -------------------------------------------------------------------------------------------- #
+    #                             DATASET CREATION METHODS                                         #
+    # -------------------------------------------------------------------------------------------- #
     def add(self, dataset: Dataset) -> None:
         """
         Adds a new dataset to the repository. Raises an error if the dataset ID already exists.
@@ -133,13 +142,90 @@ class DatasetRepo(Repo):
         # Ensure dataset doesn't already exist
         self._validate_add(dataset=dataset)
 
-        try:
-            # Write contents to file
-            self._write_file(dataset=dataset)
-        except FileIOException as e:
-        # Save dataset metadata and storage config
-        self._dataset_dao.create(dataset=dataset)
+        # Set the storage location on the dataset object
+        dataset.storage_location = self._format_filepath(
+            phase=dataset.phase,
+            stage=dataset.stage,
+            partitioned=dataset.storage_config.partitioned,
+        )
 
+        # Save dataset contents to file.
+        try:
+            self._write_file(dataset=dataset)
+        except Exception as e:
+            msg = f"Exception occurred adding dataset {dataset.name} to the repository."
+            self._logger.exception(msg)
+            raise DatasetIOError(msg, e) from e
+
+        # Save dataset object (metadata and config) to object storage
+        try:
+            self._dataset_dao.create(dataset=dataset)
+        except Exception as e:
+            msg = f"Exception occurred while saving dataset {dataset.name} to object storage. Rolling back file persistence."
+
+            # Rollback the file write to maintain consistency.
+            try:
+                self._cfs_dao.delete(filepath=dataset.storage_location)
+            except Exception as e:
+                fileio_msg = f"Exception occurred while rolling back dataset {dataset.name} persistence."
+                self._logger.exception(fileio_msg)
+                raise DatasetIOError(fileio_msg, e) from e
+
+            # Raise the original exception
+            raise DatasetCreationError(msg, e) from e
+
+    # -------------------------------------------------------------------------------------------- #
+    def _validate_add(self, dataset: Dataset) -> None:
+        """Ensures dataset object and file doesn't already exist"""
+        if self.exists(name=dataset.name):
+            msg = f"Unable to add dataset {dataset.name} as it already exists."
+            self._logger.error(msg)
+            raise DatasetExistsError(msg)
+
+    # -------------------------------------------------------------------------------------------- #
+    def _write_file(self, dataset: Dataset) -> None:
+        """
+        Writes a dataset's content based on its storage configuration.
+
+        Args:
+            dataset (Dataset): The dataset to write.
+        """
+        if isinstance(dataset.storage_config, CentralizedDatasetStorageConfig):
+            self._write_centralized_file(dataset=dataset)
+        else:
+            self._write_distributed_file(dataset=dataset)
+
+    # -------------------------------------------------------------------------------------------- #
+    def _write_centralized_file(self, dataset: Dataset) -> None:
+        """
+        Writes a dataset's content to a centralized file system.
+
+        Args:
+            dataset (Dataset): The dataset to write.
+        """
+        self._cfs_dao._write(
+            filepath=dataset.storage_location,
+            data=dataset.content,
+            **dataset.storage_config.write_kwargs,
+        )
+
+    # -------------------------------------------------------------------------------------------- #
+    def _write_distributed_file(self, dataset: Dataset) -> None:
+        """
+        Writes a dataset's content to a distributed file system.
+
+        Args:
+            dataset (Dataset): The dataset to write.
+        """
+        self._dfs_dao._write(
+            filepath=dataset.storage_location,
+            data=dataset.content,
+            **dataset.storage_config.write_kwargs,
+        )
+
+    # -------------------------------------------------------------------------------------------- #
+    #                             DATASET RETRIEVAL METHODS                                        #
+    # -------------------------------------------------------------------------------------------- #
     def get(self, name: str) -> Optional[Dataset]:
         """
         Retrieves a dataset by its ID.
@@ -153,69 +239,28 @@ class DatasetRepo(Repo):
         Raises:
             FileNotFoundError: If an error occurs while reading the dataset.
         """
+        # Step 1: Obtain the dataset object containing metadata and config.
         try:
             dataset = self._dataset_dao.read(name=name)
-                dataset.content = self._read_file(dataset=dataset)
-                return dataset
-            except Exception as e:
-                msg = f"Unknown exception occurred while retrieving dataset id: {id}.\n{e}"
-                self._logger.error(msg)
-                raise FileNotFoundError(msg)
-        else:
-            msg = f"No dataset exists with id: {id}"
-            self._logger.warning(msg)
+        except ObjectNotFoundError:
+            msg = f"Dataset {name} does not exist."
+            self._logger.exception(msg)
+            raise DatasetNotFoundError(msg)
+        except Exception as e:
+            msg = f"Exception occurred while reading the dataset {name} object."
+            self._logger.exception(msg)
+            raise DatasetIOError(msg, e) from e
 
-    def list_all(self) -> pd.DataFrame:
-        """
-        Lists all datasets' metadata.
+        # Step 2: Get the dataset contents from file, add to dataset object and return
+        try:
+            dataset.content = self._read_file(dataset=dataset)
+            return dataset
+        except Exception as e:
+            msg = f"Exception occurred while reading dataset {dataset.name} contents from file."
+            self._logger.exception(msg)
+            raise DatasetIOError(msg, e) from e
 
-        Returns:
-            pd.DataFrame: A DataFrame containing metadata for all datasets.
-        """
-        return self._dataset_dao.read_all()
-
-    def list_by_phase(self, phase: PhaseDef) -> pd.DataFrame:
-        """
-        Lists datasets filtered by the specified phase.
-
-        Args:
-            phase (PhaseDef): The phase to filter datasets by.
-
-        Returns:
-            pd.DataFrame: A DataFrame containing metadata for the filtered datasets.
-        """
-        return self._dataset_dao.read_by_phase(phase=phase)
-
-    def remove(self, name: str, ignore_errors: bool = True) -> None:
-        """
-        Removes a dataset and its associated content by its ID.
-
-        Args:
-            name (str): The name of the dataset to be removed.
-            ignore_errors (bool): If True, errors encountered will be ignored.
-                 Otherwise, errors will be propagated to the caller.
-        """
-        dataset = self._dataset_dao.read(name=name)
-        filepath = self._format_filepath(
-            phase=dataset.phase,
-            stage=dataset.stage,
-            partitioned=dataset.storage_config.partitioned,
-        )
-        self._cfs_dao.delete(filepath=filepath)
-        self._dataset_dao.delete(name=name)
-
-    def exists(self, name: str) -> bool:
-        """
-        Checks if a dataset exists by its ID.
-
-        Args:
-            name (str): The name to check for existence.
-
-        Returns:
-            bool: True if the dataset exists, False otherwise.
-        """
-        return self._dataset_dao.exists(name=name)
-
+    # -------------------------------------------------------------------------------------------- #
     def _read_file(
         self, dataset: Dataset
     ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
@@ -238,6 +283,7 @@ class DatasetRepo(Repo):
         else:
             return self._read_distributed_file(dataset=dataset, filepath=filepath)
 
+    # -------------------------------------------------------------------------------------------- #
     def _read_centralized_file(self, dataset: Dataset, filepath: str) -> pd.DataFrame:
         """
         Reads a dataset's content from a centralized file system.
@@ -252,6 +298,7 @@ class DatasetRepo(Repo):
             filepath=filepath, **dataset.storage_config.read_kwargs
         )
 
+    # -------------------------------------------------------------------------------------------- #
     def _read_distributed_file(
         self, dataset: Dataset, filepath: str
     ) -> pyspark.sql.DataFrame:
@@ -267,62 +314,222 @@ class DatasetRepo(Repo):
 
         return self._dfs_dao.read(filepath=filepath, nlp=dataset.storage_config.nlp)
 
-    def _write_file(self, dataset: Dataset) -> None:
+    # -------------------------------------------------------------------------------------------- #
+    #                               DATASET LIST METHODS                                           #
+    # -------------------------------------------------------------------------------------------- #
+    def list_all(self) -> pd.DataFrame:
         """
-        Writes a dataset's content based on its storage configuration.
+        Lists all datasets' metadata.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing metadata for all datasets.
+        """
+        return self._dataset_dao.read_all()
+
+    # -------------------------------------------------------------------------------------------- #
+    def list_by_phase(self, phase: PhaseDef) -> pd.DataFrame:
+        """
+        Lists datasets filtered by the specified phase.
 
         Args:
-            dataset (Dataset): The dataset to write.
+            phase (PhaseDef): The phase to filter datasets by.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing metadata for the filtered datasets.
         """
-        filepath = self._format_filepath(
-            phase=dataset.phase,
-            stage=dataset.stage,
-            partitioned=dataset.storage_config.partitioned,
+        return self._dataset_dao.read_by_phase(phase=phase)
+
+    # -------------------------------------------------------------------------------------------- #
+    #                             DATASET REMOVAL METHODS                                          #
+    # -------------------------------------------------------------------------------------------- #
+    def remove(self, name: str, ignore_errors: bool = False) -> None:
+        """
+        Removes a dataset and its associated file(s) from the repository.
+
+        This method attempts to remove both the dataset object and its related file(s).
+        If the dataset object does not exist, and `ignore_errors` is set to True, the method will still
+        search for and remove any related dataset files. If `ignore_errors` is False, it will raise an exception
+        if the dataset object or file cannot be found or deleted.
+
+        Args:
+            name (str): The name of the dataset to be removed.
+            ignore_errors (bool): If True, suppresses any exceptions during the removal process
+                and logs warnings instead of raising errors. Default is False.
+
+        Raises:
+            DatasetRemovalError: If any error occurs while removing the dataset object or file, and `ignore_errors` is False.
+        """
+        # Obtain the dataset object and storage information from the repository
+        try:
+            dataset = self._dataset_dao.read(name=name)
+        except ObjectNotFoundError:
+            msg = f"Exception occurred while removing dataset {name}.\nDataset object does not exist."
+            if ignore_errors:
+                msg += "\nSearching for and removing any related dataset files."
+                self._logger.warning(msg)
+                self._remove_dataset_file_by_name(
+                    name=name, ignore_errors=ignore_errors
+                )
+            else:
+                self._logger.exception(msg)
+                raise DatasetRemovalError(msg)
+        except Exception as e:
+            msg = f"Exception occurred while removing dataset {name}. Unable to read dataset object."
+            if ignore_errors:
+                msg += "Searching for and removing any related dataset files."
+                self._logger.warning(msg)
+                self._remove_dataset_file_by_name(
+                    name=name, ignore_errors=ignore_errors
+                )
+            else:
+                self._logger.exception(msg)
+                raise DatasetRemovalError(msg, e) from e
+
+        # Delete the dataset file from the repository
+        self._remove_dataset_file_by_filepath(
+            filepath=dataset.storage_location, ignore_errors=ignore_errors
         )
 
-        if isinstance(dataset.storage_config, CentralizedDatasetStorageConfig):
-            self._write_centralized_file(dataset=dataset, filepath=filepath)
+        # Delete the dataset object from the repository.
+        try:
+            self._dataset_dao.delete(name=name)
+        except Exception as e:
+            msg = f"Exception occurred while removing dataset object {name} from the repository.\n{e}"
+            if ignore_errors:
+                self._logger.warning(msg)
+            else:
+                self._logger.exception(msg)
+                raise DatasetRemovalError(msg, e)
+
+        msg = f"Removed dataset {name} from the repository."
+        self._logger.info(msg)
+
+    # -------------------------------------------------------------------------------------------- #
+    def _remove_dataset_file_by_name(
+        self, name: str, ignore_errors: bool = False
+    ) -> None:
+        """
+        Removes the dataset file associated with the dataset name.
+
+        This method reconstructs the filepath from the dataset name and attempts to remove the dataset file.
+        If the file does not exist, it will check for a non-partitioned Parquet version and attempt to remove that file.
+
+        Args:
+            name (str): The name of the dataset whose file is to be removed.
+            ignore_errors (bool): If True, suppresses any exceptions during the file removal process
+                and logs warnings instead of raising errors. Default is False.
+
+        Raises:
+            DatasetRemovalError: If any error occurs during the file removal process and `ignore_errors` is False.
+        """
+        # Reconstruct a filepath based on name
+        filepath = self._reconstruct_filepath(name=name)
+
+        # Remove it if it exists.
+        if self._cfs_dao.exists(filepath=filepath):
+            self._remove_dataset_file_by_filepath(
+                filepath=filepath, ignore_errors=ignore_errors
+            )
         else:
-            self._write_distributed_file(dataset=dataset, filepath=filepath)
+            # Search and remove a non-partitioned parquet version file.
+            filepath = filepath + ".parquet"
+            if self._cfs_dao.exists(filepath=filepath):
+                self._remove_dataset_file_by_filepath(
+                    filepath=filepath, ignore_errors=ignore_errors
+                )
 
-    def _write_centralized_file(self, dataset: Dataset, filepath: str) -> None:
+    # -------------------------------------------------------------------------------------------- #
+    def _remove_dataset_file_by_filepath(
+        self, filepath: str, ignore_errors: bool = False
+    ) -> None:
         """
-        Writes a dataset's content to a centralized file system.
+        Removes the dataset file located at the specified filepath.
+
+        This method attempts to delete the file located at the given filepath. If an error occurs during deletion
+        and `ignore_errors` is False, it will raise an exception. If `ignore_errors` is True, it will log a warning
+        instead of raising an exception.
 
         Args:
-            dataset (Dataset): The dataset to write.
-        """
-        self._cfs_dao._write(
-            filepath=filepath,
-            data=dataset.content,
-            **dataset.storage_config.write_kwargs,
-        )
+            filepath (str): The path of the dataset file to be removed.
+            ignore_errors (bool): If True, suppresses any exceptions during the file removal process
+                and logs warnings instead of raising errors. Default is False.
 
-    def _write_distributed_file(self, dataset: Dataset, filepath: str) -> None:
+        Raises:
+            DatasetRemovalError: If an error occurs during file removal and `ignore_errors` is False.
         """
-        Writes a dataset's content to a distributed file system.
+        try:
+            self._cfs_dao.delete(filepath)
+            msg = f"Removed dataset file at {filepath} from repository."
+            self._logger.info(msg)
+        except Exception as e:
+            msg = f"Exception occurred while deleting {filepath}.\n{e}"
+            if ignore_errors:
+                self._logger.warning(msg)
+            else:
+                self._logger.exception(msg)
+                raise DatasetRemovalError(msg, e) from e
+
+    # -------------------------------------------------------------------------------------------- #
+    #                             DATASET EXISTENCE METHOD                                         #
+    # -------------------------------------------------------------------------------------------- #
+    def exists(self, name: str) -> bool:
+        """
+        Checks if a dataset exists by its ID.
 
         Args:
-            dataset (Dataset): The dataset to write.
-        """
-        self._dfs_dao._write(
-            filepath=filepath,
-            data=dataset.content,
-            **dataset.storage_config.write_kwargs,
-        )
+            name (str): The name to check for existence.
 
-    def _validate_add(self, dataset: Dataset) -> None:
-        """Ensures dataset object and file doesn't already exist"""
-        if self.exists(name=dataset.name):
-            msg = f"Unable to add dataset {dataset.name} as it already exists."
-            self._logger.error(msg)
-            raise DatasetExistsError(msg)
+        Returns:
+            bool: True if the dataset exists, False otherwise.
+        """
+        return self._dataset_dao.exists(name=name)
+
+    # -------------------------------------------------------------------------------------------- #
+    #                             DATASET FILEPATH METHODS                                         #
+    # -------------------------------------------------------------------------------------------- #
 
     def _format_filepath(
         self, phase: PhaseDef, stage: StageDef, partitioned: bool = True
     ) -> str:
-        """Dynamic generates the dataset filepath"""
+        """
+        Dynamically generates the dataset filepath based on the given phase, stage, and partitioning status.
+
+        This method constructs a filename using the values of the provided `phase` and `stage`.
+        It appends ".parquet" to the filename if the dataset is not partitioned. The full filepath is
+        generated by combining the phase's directory with the filename, and it is further processed
+        by the `filepath_service` to prepend home and environment folders.
+
+        Args:
+            phase (PhaseDef): The phase definition containing the directory and phase value.
+            stage (StageDef): The stage definition containing the stage value.
+            partitioned (bool): If True, the filename does not include a ".parquet" extension,
+                indicating it is partitioned. If False, the ".parquet" extension is added.
+
+        Returns:
+            str: The fully formatted dataset filepath.
+        """
         filename = f"{phase.value}_{stage.value}"
         filename = filename + ".parquet" if not partitioned else filename
         filepath = os.path.join(phase.directory, filename)
-        return filepath_service.get_filepath(filepath)
+        return filepath_service.get_filepath(filepath=filepath)
+
+    # -------------------------------------------------------------------------------------------- #
+
+    def _reconstruct_filepath(self, name: str) -> str:
+        """
+        Reconstructs the filepath for a dataset based on its name.
+
+        This method extracts the phase from the dataset's name, reconstructs the filepath
+        by combining the phase's directory and the dataset name, and processes it through
+        the `filepath_service` to prepend the home and environment folders.
+
+        Args:
+            name (str): The name of the dataset, typically in the format "{phase}_{stage}".
+
+        Returns:
+            str: The fully reconstructed dataset filepath.
+        """
+        phase_value = name.split("_")[0]
+        phase = PhaseDef.from_value(value=phase_value)
+        filepath = os.path.join(phase.directory, name)
+        return filepath_service.get_filepath(filepath=filepath)

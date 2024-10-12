@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Thursday October 10th 2024 10:33:39 pm                                              #
+# Modified   : Friday October 11th 2024 10:55:54 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,10 +45,26 @@ class PhaseDef(Enum):
         obj.description = description
         return obj
 
+    @classmethod
+    def from_value(cls, value) -> PhaseDef:
+        """Finds the enum member based on a given value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No matching {cls.__name__} for value: {value}")
+
 
 # ------------------------------------------------------------------------------------------------ #
 class StageDef(Enum):
     """Base class for all Stage Enums."""
+
+    @classmethod
+    def from_value(cls, value) -> StageDef:
+        """Finds the enum member based on a given value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No matching {cls.__name__} for value: {value}")
 
 
 # ------------------------------------------------------------------------------------------------ #

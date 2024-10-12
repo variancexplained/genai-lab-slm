@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Friday October 11th 2024 07:11:58 pm                                                #
+# Modified   : Friday October 11th 2024 09:43:45 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,15 +19,13 @@
 """Dataset Module"""
 from __future__ import annotations
 
-import logging
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import pandas as pd
+from pydantic.dataclasses import dataclass
 
-from discover.core.data_class import DataClass
 from discover.element.base import Element
-from discover.element.exception import ValidationError
+from discover.element.config import StorageConfig
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -116,30 +114,3 @@ class Dataset(Element):
             and self.ncols == other.ncols
             and self.size == other.size
         )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class StorageConfig(DataClass):
-    read_kwargs: Dict[str, Any] = field(
-        default_factory=dict
-    )  # Additional read arguments
-    write_kwargs: Dict[str, Any] = field(
-        default_factory=dict
-    )  # Additional write arguments
-
-    def _log_and_raise(self, errors: List[str]) -> None:
-        """
-        Logs the provided list of errors and raises an `ValidationError` if errors are present.
-
-        Parameters:
-        -----------
-        errors : List[str]
-            A list of validation error messages.
-        """
-        if errors:
-            msg = f"Validation error(s) occurred in {self.__class__.__name__}."
-            error_msg = "\n".join(errors)
-            msg = "\n" + error_msg
-            logging.error(msg)
-            raise ValidationError(msg)

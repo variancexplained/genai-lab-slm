@@ -11,14 +11,16 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 10th 2024 04:58:59 pm                                              #
-# Modified   : Friday October 11th 2024 07:08:15 pm                                                #
+# Modified   : Friday October 11th 2024 09:53:00 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Repository Config Module"""
-from dataclasses import dataclass, field
+from dataclasses import field
 from typing import Optional
+
+from pydantic.dataclasses import dataclass
 
 from discover.element.dataset import StorageConfig
 from discover.infra.config.reader import ConfigReader
@@ -76,10 +78,10 @@ class CentralizedDatasetStorageConfig(StorageConfig):
         Raises:
             KeyError: If the "file" section or required settings are missing in the configuration file.
         """
+        super().__post_init__()
         file_config = config_reader.get_config(section="file")
 
         self.row_group_size = self.row_group_size or file_config.parquet.block_size
-        self._validate()
 
         self.read_kwargs = {"engine": self.engine}
         self.write_kwargs = {
@@ -92,41 +94,6 @@ class CentralizedDatasetStorageConfig(StorageConfig):
             self.partition_cols = ["content"]
             self.write_kwargs["partition_cols"] = self.partition_cols
             self.write_kwargs["existing_data_behavior"] = self.existing_data_behavior
-
-    def _validate(self) -> None:
-        errors = []
-        if not isinstance(self.partitioned, bool):
-            msg = "Invalid value for partitioned. Must be a boolean value."
-            errors.append(msg)
-
-        if self.engine:
-            if self.engine not in ["pyarrow", "auto", "fastparquet"]:
-                msg = (
-                    "Invalid engine. Must be 'pyarrow', 'auto', 'fastparquet', or None."
-                )
-                errors.append(msg)
-        if self.compression:
-            if self.compression not in ["snappy", "gzip", "brotli", "lz4", "zstd"]:
-                msg = "Invalid compression. Supported options: 'snappy' 'gzip', 'brotli', 'lz4', 'zstd'. Use None for no compression."
-                errors.append(msg)
-        if not isinstance(self.index, bool):
-            msg = f"Expected boolean value for index. Encountered {type(self.index).__name__}."
-            errors.append(msg)
-
-        if self.existing_data_behavior:
-            if self.existing_data_behavior not in [
-                "overwrite_or_ignore",
-                "error",
-                "delete_matching",
-            ]:
-                msg = "Invalid value for existing data behavior. Must be 'overwrite_or_ignore', 'error', 'delete_matching', or None"
-                errors.append(msg)
-        if self.row_group_size:
-            if not isinstance(self.row_group_size, int):
-                msg = "Invalid row_group_size. Must be an integer or None."
-                errors.append(msg)
-
-        self._log_and_raise(errors=errors)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -174,26 +141,6 @@ class DistributedDatasetStorageConfig(StorageConfig):
         Raises:
             ValueError: If an unsupported mode is provided (optional, based on validation needs).
         """
-        self._validate()
         if self.partitioned:
             self.partition_cols = ["content"]
             self.write_kwargs = {"mode": self.mode, "partitionBy": self.partition_cols}
-
-    def _validate(self) -> None:
-        errors = []
-        if not isinstance(self.partitioned, bool):
-            msg = "Invalid value for partitioned. Must be a boolean value."
-            errors.append(msg)
-
-        if self.mode:
-            if self.mode not in [
-                "append",
-                "overwrite",
-                "ignore",
-                "error",
-                "errorifexists",
-            ]:
-                msg = "Invalid mode. Must be 'append', 'overwrite', 'ignore', 'error', 'errorifexists', or None"
-                errors.append(msg)
-
-        self._log_and_raise(errors=errors)

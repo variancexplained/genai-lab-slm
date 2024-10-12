@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Friday October 11th 2024 08:01:11 pm                                                #
+# Modified   : Friday October 11th 2024 09:36:46 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,9 +19,11 @@
 """Base Module for the Element Dimension"""
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import fields
 from datetime import datetime
 from typing import Any, Optional
+
+from pydantic.dataclasses import dataclass
 
 from discover.core.data_class import DataClass
 from discover.core.flow import PhaseDef, StageDef
@@ -69,16 +71,15 @@ class Element(DataClass):
 
     phase: PhaseDef
     stage: StageDef
-    content: Any  # The element payload
-    created: Optional[datetime] = None  # DT instantiated
+    content: Any
+    created: Optional[datetime] = None
 
     def __post_init__(self) -> None:
         """
         Initializes the `created` attribute with the current datetime.
         This ensures that the element's creation time is recorded upon instantiation.
         """
-        self.created = datetime.now()
-        self._validate()
+        self.created = self.created or datetime.now()
 
     def __getstate__(self):
         """
