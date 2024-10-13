@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_core/test_storage/test_cloud/test_aws.py                                #
+# Filename   : /tests/test_infra/test_storage/test_cloud/test_aws.py                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:15:38 pm                                               #
-# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
+# Modified   : Sunday October 13th 2024 02:09:42 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from datetime import datetime
 import pytest
 
 from discover.infra.config.reader import ConfigReader
-from discover.infra.storage.cloud.aws import S3Handler
+from discover.infra.persistence.cloud.aws import S3Handler
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

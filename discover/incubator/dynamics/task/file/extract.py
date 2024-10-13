@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 05:40:36 pm                                                  #
-# Modified   : Sunday September 22nd 2024 04:27:27 pm                                              #
+# Modified   : Sunday October 13th 2024 01:57:36 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 import os
 
 from discover.dynamics.base.task import Task
-from discover.infra.tools.file.compress import TarGzHandler
+from discover.infra.utils.file.compress import TarGzHandler
 
 
 # ------------------------------------------------------------------------------------------------ #

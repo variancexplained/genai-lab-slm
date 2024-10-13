@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday July 4th 2024 05:40:36 pm                                                  #
-# Modified   : Sunday September 22nd 2024 04:27:27 pm                                              #
+# Modified   : Sunday October 13th 2024 02:09:42 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import os
 from typing import Optional
 
 from discover.dynamics.base.task import Task
-from discover.infra.storage.cloud.aws import S3Handler
+from discover.infra.persistence.cloud.aws import S3Handler
 
 
 # ------------------------------------------------------------------------------------------------ #

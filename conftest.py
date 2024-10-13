@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday October 12th 2024 01:09:27 pm                                              #
+# Modified   : Sunday October 13th 2024 02:14:57 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,12 +23,12 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
+from discover.assets.dataset import Dataset
 from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.element.dataset import Dataset
 from discover.infra.config.reader import ConfigReader
-from discover.infra.storage.cloud.aws import S3Handler
-from discover.infra.storage.local.io import IOService
+from discover.infra.persistence.cloud.aws import S3Handler
+from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -48,8 +48,8 @@ def container() -> DiscoverContainer:
     container.init_resources()
     container.wire(
         modules=[
-            "discover.infra.storage.local.io",
-            "discover.infra.dal.fao.distributed",
+            "discover.infra.utils.file.io",
+            "discover.infra.persistence.fao.distributed",
         ],
     )
 

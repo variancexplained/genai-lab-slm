@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 08:29:47 pm                                                #
-# Modified   : Saturday October 12th 2024 10:45:41 am                                              #
+# Modified   : Sunday October 13th 2024 02:07:15 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 import pytest
 
 from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.infra.dal.dao.dataset import DatasetDAO
+from discover.infra.persistence.dao.dataset import DatasetDAO
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Saturday October 12th 2024 01:32:14 pm                                              #
+# Modified   : Sunday October 13th 2024 02:08:03 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,7 @@ import pytest
 from pyspark.testing import assertDataFrameEqual
 
 from discover.core.flow import PhaseDef, StageDef
-from discover.infra.repo.exception import (
+from discover.infra.persistence.repo.exception import (
     DatasetExistsError,
     DatasetIntegrityError,
     DatasetNotFoundError,
