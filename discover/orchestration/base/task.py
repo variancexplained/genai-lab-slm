@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Thursday October 17th 2024 09:25:03 am                                              #
+# Modified   : Thursday October 17th 2024 01:11:30 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,25 +23,16 @@ import importlib
 from abc import ABC, abstractmethod
 from typing import Any
 
-from discover.core.flow import DataPrepStageDef, PhaseDef, StageDef
-from discover.core.namespace import NestedNamespace
-
 # ------------------------------------------------------------------------------------------------ #
 
 
-def instantiate_class(
-    phase: str, stage: str, module_name: str, class_name: str, params: dict
-):
+def instantiate_class(module: str, class_name: str, params: dict):
     """
     Dynamically imports a module and instantiates a class with the given parameters.
 
     Parameters
     ----------
-    phase : str
-        The phase associated with the class instance (e.g., 'preprocessing', 'analysis').
-    stage : str
-        The stage associated with the class instance (e.g., 'normalization', 'feature_engineering').
-    module_name : str
+    module : str
         The name of the module from which to import the class (e.g., 'mypackage.mymodule').
     class_name : str
         The name of the class to instantiate from the module.
@@ -65,16 +56,14 @@ def instantiate_class(
     Examples
     --------
     >>> obj = instantiate_class(
-    ...     phase='preprocessing',
-    ...     stage='normalization',
-    ...     module_name='mypackage.mymodule',
+    ...     module='mypackage.mymodule',
     ...     class_name='Normalizer',
     ...     params={'param1': value1, 'param2': value2}
     ... )
     """
-    module = importlib.import_module(module_name)
+    module = importlib.import_module(module)
     cls = getattr(module, class_name)
-    return cls(phase=phase, stage=stage, **params)
+    return cls(**params)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -82,18 +71,6 @@ def instantiate_class(
 # ------------------------------------------------------------------------------------------------ #
 class Task(ABC):
     """"""
-
-    def __init__(self, phase: str, stage: str, **kwargs):
-        self._phase = PhaseDef.from_value(phase)
-        self._stage = DataPrepStageDef.from_value(stage)
-
-    @property
-    def phase(self) -> PhaseDef:
-        self._phase
-
-    @property
-    def stage(self) -> StageDef:
-        self._stage
 
     @property
     def name(self) -> str:
@@ -124,8 +101,6 @@ class TaskBuilder:
     Examples
     --------
     >>> task_config = {
-    ...     'phase': 'preprocessing',
-    ...     'stage': 'normalization',
     ...     'module_name': 'mypackage.mymodule',
     ...     'class_name': 'NormalizationTask',
     ...     'params': {'param1': value1, 'param2': value2}
@@ -165,24 +140,17 @@ class TaskBuilder:
         Examples
         --------
         >>> task_config = {
-        ...     'phase': 'preprocessing',
-        ...     'stage': 'normalization',
         ...     'module_name': 'mypackage.mymodule',
         ...     'class_name': 'NormalizationTask',
         ...     'params': {'param1': value1, 'param2': value2}
         ... }
         >>> task_instance = TaskBuilder.build(task_config)
         """
-        task_config = NestedNamespace(task_config)
-        phase = task_config.phase
-        stage = task_config.stage
-        module_name = task_config.module_name
-        class_name = task_config.class_name
-        params = task_config.params
+        module = task_config["module"]
+        class_name = task_config["class_name"]
+        params = task_config["params"]
         return instantiate_class(
-            phase=phase,
-            stage=stage,
-            module_name=module_name,
+            module=module,
             class_name=class_name,
             params=params,
         )

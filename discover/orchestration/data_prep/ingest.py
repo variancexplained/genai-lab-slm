@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Thursday October 17th 2024 09:26:37 am                                              #
+# Modified   : Thursday October 17th 2024 01:13:51 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,10 +23,8 @@ from discover.orchestration.base.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 class IngestTask(Task):
-    def __init__(
-        self, phase: str, stage: str, frac: float, random_state: int = None
-    ) -> None:
-        super().__init__(phase=phase, stage=stage)
+    def __init__(self, frac: float, random_state: int = None) -> None:
+        super().__init__()
         self._frac = frac
         self._random_state = random_state
 

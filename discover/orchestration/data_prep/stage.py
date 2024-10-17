@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday October 17th 2024 09:11:50 am                                              #
+# Modified   : Thursday October 17th 2024 01:25:44 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,6 +31,7 @@ from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.infra.persistence.repo.dataset import DatasetRepo
+from discover.infra.utils.file.io import IOService
 from discover.orchestration.base.stage import Stage
 from discover.orchestration.base.task import Task
 
@@ -123,12 +124,6 @@ class DataPrepStage(Stage):
         )
         self._repo = repo
 
-        self._source_asset_id = AssetIDGen.get_asset_id(
-            asset_type=self._source_config.asset_type,
-            phase=PhaseDef.from_value(value=self._source_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._source_config.stage),
-            name=self._source_config.name,
-        )
         self._destination_asset_id = AssetIDGen.get_asset_id(
             asset_type=self._destination_config.asset_type,
             phase=PhaseDef.from_value(value=self._destination_config.phase),
@@ -138,20 +133,51 @@ class DataPrepStage(Stage):
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def run(self) -> None:
-        """Executes the stage by loading the source dataset, applying tasks, and saving the result."""
+    def run(self) -> str:
+        """Executes the stage by loading the source dataset, applying tasks, and saving the result.
+
+        Returns:
+            asset_id (str): Returns the asset_id for the asset created.
+        """
         if (
             self._endpoint_exists(asset_id=self._destination_asset_id)
             and not self._force
         ):
-            return self._repo.get(asset_id=self._destination_asset_id)
+            return self._destination_asset_id
         else:
-            source = self._load_source_dataset()
-            data = source.content
+            data = self._load_source_data()
             for task in self._tasks:
                 data = task.run(data=data)
             dataset = self._create_destination_dataset(data=data)
             self._save_destination_dataset(dataset=dataset)
+            return self._destination_asset_id
+
+    def _endpoint_exists(self, asset_id: str) -> bool:
+        """Checks if the dataset endpoint already exists in the repository."""
+        return self._repo.exists(asset_id=asset_id)
+
+    def _load_source_data(self) -> pd.DataFrame:
+        try:
+            return self._load_source_data_from_file()
+        except AttributeError:
+            return self._load_source_data_from_repo()
+        except Exception as e:
+            msg = f"Exception occurred while loading source data.\n{e}"
+            self._logger.exception(msg)
+            raise
+
+    def _load_source_data_from_repo(self) -> pd.DataFrame:
+        """Loads the source dataset from the repository using the source asset ID."""
+        source_asset_id = AssetIDGen.get_asset_id(
+            asset_type=self._source_config.asset_type,
+            phase=PhaseDef.from_value(value=self._source_config.phase),
+            stage=DataPrepStageDef.from_value(value=self._source_config.stage),
+            name=self._source_config.name,
+        )
+        return self._repo.get(asset_id=source_asset_id).content
+
+    def _load_source_data_from_file(self) -> pd.DataFrame:
+        return IOService.read(filepath=self._source_config.filepath)
 
     def _create_destination_dataset(
         self, data: Union[pd.DataFrame, pyspark.sql.DataFrame]
@@ -166,14 +192,6 @@ class DataPrepStage(Stage):
             distributed=self._destination_config.distributed,
         )
 
-    def _load_source_dataset(self) -> Dataset:
-        """Loads the source dataset from the repository using the source asset ID."""
-        return self._repo.get(asset_id=self._source_asset_id)
-
     def _save_destination_dataset(self, dataset: Dataset) -> None:
         """Saves the processed dataset to the repository using the destination asset ID."""
         self._repo.add(dataset=dataset)
-
-    def _endpoint_exists(self, asset_id: str) -> bool:
-        """Checks if the dataset endpoint already exists in the repository."""
-        return self._repo.exists(asset_id=asset_id)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday October 17th 2024 08:49:09 am                                              #
+# Modified   : Thursday October 17th 2024 12:50:15 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ class Stage(ABC):
         self._force = force
 
     @abstractmethod
-    def run(self) -> None:
+    def run(self) -> str:
         """Stage execution"""
 
     @classmethod

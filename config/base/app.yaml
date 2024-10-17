@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/app/base.yaml                                                               #
+# Filename   : /config/base/app.yaml                                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Thursday October 17th 2024 12:44:22 am                                              #
+# Modified   : Thursday October 17th 2024 01:31:33 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -69,9 +69,9 @@ data:
 repository:
   dataset:
     objects:
-      location: datasets/odb
+      location: dataset/odb
     files:
-      location: datasets
+      location: dataset
       partitioned: True
       centralized:
         read_kwargs:
