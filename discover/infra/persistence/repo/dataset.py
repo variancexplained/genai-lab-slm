@@ -11,14 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Sunday October 13th 2024 01:59:50 am                                                #
+# Modified   : Thursday October 17th 2024 12:19:04 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repository Module"""
 import logging
-import os
 from typing import Optional, Union
 
 import pandas as pd
@@ -26,16 +25,16 @@ import pyspark
 
 from discover.assets.dataset import Dataset
 from discover.assets.repo import Repo
-from discover.core.flow import PhaseDef, StageDef
-from discover.infra.persistence.dao.dataset import DatasetDAO
-from discover.infra.persistence.dao.exception import ObjectNotFoundError
-from discover.infra.persistence.fao.centralized import (
+from discover.core.flow import PhaseDef
+from discover.infra.persistence.dal.dao.dataset import DatasetDAO
+from discover.infra.persistence.dal.dao.exception import ObjectNotFoundError
+from discover.infra.persistence.dal.fao.centralized import (
     CentralizedFileSystemFAO as FAOCFS,
 )
-from discover.infra.persistence.fao.distributed import (
+from discover.infra.persistence.dal.fao.distributed import (
     DistributedFileSystemFAO as FAODFS,
 )
-from discover.infra.persistence.fao.location import LocationService
+from discover.infra.persistence.dal.fao.location import FileLocationService
 from discover.infra.persistence.repo.exception import (
     DatasetCreationError,
     DatasetExistsError,
@@ -110,7 +109,7 @@ class DatasetRepo(Repo):
         dataset_dao: DatasetDAO,
         fao_cfs: FAOCFS,
         fao_dfs: FAODFS,
-        location_service: LocationService,
+        location_service: FileLocationService,
         partitioned: bool = True,
     ) -> None:
 
@@ -140,16 +139,19 @@ class DatasetRepo(Repo):
         self._validate_add(dataset=dataset)
 
         # Set the storage location on the dataset object
-        dataset.storage_location = self._format_filepath(
+        dataset.storage_location = self._location_service.get_filepath(
+            entity=dataset.__class__.__name__.lower(),
             phase=dataset.phase,
             stage=dataset.stage,
+            name=dataset.name,
+            partition=self._partitioned,
         )
 
         # Save dataset contents to file.
         try:
             self._write_file(dataset=dataset)
         except Exception as e:
-            msg = f"Exception occurred adding dataset {dataset.name} to the repository."
+            msg = f"Exception occurred adding dataset {dataset.asset_id} to the repository."
             self._logger.exception(msg)
             raise DatasetIOError(msg, e) from e
 
@@ -157,13 +159,13 @@ class DatasetRepo(Repo):
         try:
             self._dataset_dao.create(dataset=dataset)
         except Exception as e:
-            msg = f"Exception occurred while saving dataset {dataset.name} to object storage. Rolling back file persistence."
+            msg = f"Exception occurred while saving dataset {dataset.asset_id} to object storage. Rolling back file persistence."
 
             # Rollback the file write to maintain consistency.
             try:
                 self._remove_dataset_file_by_filepath(filepath=dataset.storage_location)
             except Exception as e:
-                fileio_msg = f"Exception occurred while rolling back dataset {dataset.name} persistence."
+                fileio_msg = f"Exception occurred while rolling back dataset {dataset.asset_id} persistence."
                 self._logger.exception(fileio_msg)
                 raise DatasetIOError(fileio_msg, e) from e
 
@@ -175,8 +177,8 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     def _validate_add(self, dataset: Dataset) -> None:
         """Ensures dataset object and file doesn't already exist"""
-        if self.exists(name=dataset.name):
-            msg = f"Unable to add dataset {dataset.name} as it already exists."
+        if self.exists(asset_id=dataset.asset_id):
+            msg = f"Unable to add dataset {dataset.asset_id} as it already exists."
             self._logger.error(msg)
             raise DatasetExistsError(msg)
 
@@ -222,12 +224,12 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET RETRIEVAL METHODS                                        #
     # -------------------------------------------------------------------------------------------- #
-    def get(self, name: str) -> Optional[Dataset]:
+    def get(self, asset_id: str) -> Optional[Dataset]:
         """
         Retrieves a dataset by its ID.
 
         Args:
-            name (str): The name of the dataset to retrieve.
+            asset_id (str): The id of the dataset to retrieve.
 
         Returns:
             Optional[Dataset]: The dataset object if found; otherwise, None.
@@ -237,13 +239,13 @@ class DatasetRepo(Repo):
         """
         # Step 1: Obtain the dataset object containing metadata and config.
         try:
-            dataset = self._dataset_dao.read(name=name)
+            dataset = self._dataset_dao.read(asset_id=asset_id)
         except ObjectNotFoundError:
-            msg = f"Dataset {name} does not exist."
+            msg = f"Dataset {asset_id} does not exist."
             self._logger.exception(msg)
             raise DatasetNotFoundError(msg)
         except Exception as e:
-            msg = f"Exception occurred while reading the dataset {name} object."
+            msg = f"Exception occurred while reading the dataset {asset_id} object."
             self._logger.exception(msg)
             raise DatasetIOError(msg, e) from e
 
@@ -252,16 +254,16 @@ class DatasetRepo(Repo):
             dataset.content = self._read_file(dataset=dataset)
             return dataset
         except FileNotFoundError as e:
-            msg = f"Exception occurred while reading dataset {dataset.name}. File containing dataset contents was not found at {dataset.storage_location}.\n{e}"
+            msg = f"Exception occurred while reading dataset {dataset.asset_id}. File containing dataset contents was not found at {dataset.storage_location}.\n{e}"
             self._logger.exception(msg)
             raise DatasetIntegrityError(msg)
         except Exception as e:
             if "[PATH_NOT_FOUND]" in str(e):
-                msg = f"Exception occurred while reading dataset {dataset.name}. File containing dataset contents was not found at {dataset.storage_location}.\n{e}"
+                msg = f"Exception occurred while reading dataset {dataset.asset_id}. File containing dataset contents was not found at {dataset.storage_location}.\n{e}"
                 self._logger.exception(msg)
                 raise DatasetIntegrityError(msg)
             else:
-                msg = f"Exception occurred while reading dataset {dataset.name} contents from file."
+                msg = f"Exception occurred while reading dataset {dataset.asset_id} contents from file."
                 self._logger.exception(msg)
                 raise DatasetIOError(msg, e) from e
 
@@ -338,7 +340,7 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET REMOVAL METHODS                                          #
     # -------------------------------------------------------------------------------------------- #
-    def remove(self, name: str, ignore_errors: bool = False) -> None:
+    def remove(self, asset_id: str, ignore_errors: bool = False) -> None:
         """
         Removes a dataset and its associated file(s) from the repository.
 
@@ -348,7 +350,7 @@ class DatasetRepo(Repo):
         if the dataset object or file cannot be found or deleted.
 
         Args:
-            name (str): The name of the dataset to be removed.
+            asset_id (str): The id of the dataset to be removed.
             ignore_errors (bool): If True, suppresses any exceptions during the removal process
                 and logs warnings instead of raising errors. Default is False.
 
@@ -356,57 +358,23 @@ class DatasetRepo(Repo):
             DatasetRemovalError: If any error occurs while removing the dataset object or file, and `ignore_errors` is False.
         """
         # Obtain the dataset object and storage information from the repository
-        if self._dataset_dao.exists(name=name):
-            dataset = self._dataset_dao.read(name=name)
+        if self._dataset_dao.exists(asset_id=asset_id):
+            dataset = self._dataset_dao.read(asset_id=asset_id)
             # Delete the dataset file from the repository
             self._remove_dataset_file_by_filepath(filepath=dataset.storage_location)
             # Delete the dataset object.
-            self._dataset_dao.delete(name=name)
-            msg = f"Removed dataset {name} from the repository."
+            self._dataset_dao.delete(asset_id=asset_id)
+            msg = f"Removed dataset {asset_id} from the repository."
             self._logger.info(msg)
         # If ignoring errors, issue a warning and search for file remnants by name.
         elif ignore_errors:
-            msg = f"Warning: Dataset {name} does not exist. Searching and removing files by name."
+            msg = f"Warning: Dataset {asset_id} does not exist."
             self._logger.warning(msg)
-            self._remove_dataset_file_by_name(name=name, ignore_errors=ignore_errors)
         # Otherwise throw a DatasetRemovalError
         else:
-            msg = f"Exception: Dataset {name} does not exist"
+            msg = f"Exception: Dataset {asset_id} does not exist"
             self._logger.exception(msg)
             raise DatasetRemovalError(msg)
-
-    # -------------------------------------------------------------------------------------------- #
-    def _remove_dataset_file_by_name(
-        self, name: str, ignore_errors: bool = False
-    ) -> None:
-        """
-        Removes the dataset file associated with the dataset name.
-
-        This method is called when the dataset object and the storage location are not available.
-        Whether the dataset was stored as a partitioned dataset is not know. To ensure that
-        any file remnants associated with the name are removed, this method will remove any
-        file with the given name.
-
-        Args:
-            name (str): The name of the dataset whose file is to be removed.
-            ignore_errors (bool): If True, suppresses any exceptions during the file removal process
-                and logs warnings instead of raising errors. Default is False.
-
-        Raises:
-            DatasetRemovalError: If any error occurs during the file removal process and `ignore_errors` is False.
-        """
-        # Reconstruct a non-partitioned filepath based on name
-        filepath = self._reconstruct_filepath(
-            name=name, partitioned=False, ignore_errors=ignore_errors
-        )
-        filepath_partitioned = self._reconstruct_filepath(
-            name=name, partitioned=True, ignore_errors=ignore_errors
-        )
-        if filepath:
-            # Remove it if it exists.
-            self._remove_dataset_file_by_filepath(filepath=filepath)
-        if filepath_partitioned:
-            self._remove_dataset_file_by_filepath(filepath=filepath_partitioned)
 
     # -------------------------------------------------------------------------------------------- #
     def _remove_dataset_file_by_filepath(self, filepath: str) -> None:
@@ -424,78 +392,14 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET EXISTENCE METHOD                                         #
     # -------------------------------------------------------------------------------------------- #
-    def exists(self, name: str) -> bool:
+    def exists(self, asset_id: str) -> bool:
         """
         Checks if a dataset exists by its ID.
 
         Args:
-            name (str): The name to check for existence.
+            asset_id (str): The id to check for existence.
 
         Returns:
             bool: True if the dataset exists, False otherwise.
         """
-        return self._dataset_dao.exists(name=name)
-
-    # -------------------------------------------------------------------------------------------- #
-    #                             DATASET FILEPATH METHODS                                         #
-    # -------------------------------------------------------------------------------------------- #
-
-    def _format_filepath(self, phase: PhaseDef, stage: StageDef) -> str:
-        """
-        Dynamically generates the dataset filepath based on the given phase, stage, and partitioning status.
-
-        This method constructs a filename using the values of the provided `phase` and `stage`.
-        It appends ".parquet" to the filename if the dataset is not partitioned. The full filepath is
-        generated by combining the phase's directory with the filename, and it is further processed
-        by the `location_service` to prepend home and environment folders.
-
-        Args:
-            phase (PhaseDef): The phase definition containing the directory and phase value.
-            stage (StageDef): The stage definition containing the stage value.
-
-        Returns:
-            str: The fully formatted dataset filepath.
-        """
-        filename = f"{phase.value}_{stage.value}"
-        filepath = os.path.join(phase.directory, filename)
-        filepath = filepath + ".parquet" if not self._partitioned else filepath
-        return os.path.join(self._location_service.dataset_location, filepath)
-
-    # -------------------------------------------------------------------------------------------- #
-
-    def _reconstruct_filepath(
-        self, name: str, partitioned: bool, ignore_errors: bool = False
-    ) -> Optional[str]:
-        """
-        Reconstructs the filepath for a dataset based on its name.
-
-        This method extracts the phase from the dataset's name, reconstructs the filepath
-        by combining the phase's directory and the dataset name, and processes it through
-        the `location_service` to prepend the home and environment folders.
-
-        Note: This method returns a filepath for a partitioned File.  extensions for non-partitioned files are not appended to the filepath. Calling
-        methods
-
-        Args:
-            name (str): The name of the dataset, typically in the format "{phase}_{stage}".
-            ignore_errors (bool): Ignore exceptions if True.
-
-        Returns:
-            str: The fully reconstructed dataset filepath.
-
-        Raises:
-            ValueError if the name provided is not valid
-        """
-        phase_value = name.split("_")[0]
-        try:
-            phase = PhaseDef.from_value(value=phase_value)
-            filepath = os.path.join(phase.directory, name)
-            filepath = filepath + ".parquet" if not partitioned else filepath
-            return os.path.join(self._location_service.dataset_location, filepath)
-        except ValueError as e:
-            msg = f"Exception while reconstructing the filepath for dataset {name}. The name doesn't include a valid phase. Unable to reconstruct the dataset filepath.\n{e}"
-            if ignore_errors:
-                self._logger.warning(msg)
-            else:
-                self._logger.exception(msg)
-                raise
+        return self._dataset_dao.exists(asset_id=asset_id)

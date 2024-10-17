@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Friday October 11th 2024 10:55:54 pm                                                #
+# Modified   : Wednesday October 16th 2024 11:49:19 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,39 +19,6 @@
 from __future__ import annotations
 
 from enum import Enum
-
-
-# ------------------------------------------------------------------------------------------------ #
-class PhaseDef(Enum):
-    # Defining phases with name, directory, and description
-    DATAPREP = ("dataprep", "01_dataprep", "Data Preparation Phase")
-    FEATURE = (
-        "feature",
-        "02_feature",
-        "Feature Engineering Phase",
-    )
-    SENTIMENT = ("sentiment", "03_sentiment", "Sentiment Analysis Phase")
-    ABSEIA = (
-        "abseia",
-        "04_abseia",
-        "Aspect-Based Sentiment Emotion and Intensity Analysis Phase",
-    )
-    GENAI = ("genai", "05_genai", "Generative AI Phase")
-
-    def __new__(cls, name: str, directory: str, description: str):
-        obj = object.__new__(cls)
-        obj._value_ = name
-        obj.directory = directory
-        obj.description = description
-        return obj
-
-    @classmethod
-    def from_value(cls, value) -> PhaseDef:
-        """Finds the enum member based on a given value"""
-        for member in cls:
-            if member.value == value:
-                return member
-        raise ValueError(f"No matching {cls.__name__} for value: {value}")
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -71,6 +38,7 @@ class StageDef(Enum):
 class DataPrepStageDef(StageDef):
     """"""
 
+    INGEST = ("ingest", "00_ingest", "Data Ingestion Stage")
     NORM = ("normalize", "01_normalize", "Data Normalization Stage")
     DQA = ("dqa", "02_dqa", "Data Quality Assessment Stage")
     CLEAN = ("clean", "03_clean", "Data Cleaning Stage")
@@ -84,62 +52,60 @@ class DataPrepStageDef(StageDef):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class EDAStageDef(StageDef):
-    """
-    EDAStageDef is an enumeration that defines different stages of Exploratory Data Analysis (EDA).
+class FeatureEngineeringStageDef(StageDef):
+    """"""
 
-    Attributes:
-    -----------
-    UNIVARIATE : tuple
-        Represents the univariate analysis stage in EDA.
-        - value: "00_univariate"
-        - description: "EDA - Univariate Analysis"
+    REVIEW = ("review", "00_review", "Review Feature Engineering Stage")
+    APP = ("app", "01_app", "App Feature Engineering Stage")
+    USER = ("user", "02_user", "User Feature Engineering Stage")
+    CATEGORY = ("category", "03_category", "Category Feature Engineering Stage")
 
-    BIVARIATE : tuple
-        Represents the bivariate analysis stage in EDA.
-        - value: "01_bivariate"
-        - description: "EDA - Bivariate Analysis"
-
-    MULTIVARIATE : tuple
-        Represents the multivariate analysis stage in EDA.
-        - value: "02_multivariate"
-        - description: "EDA - Multivariate Analysis"
-
-    Methods:
-    --------
-    __new__(cls, value: str, description: str) -> EDAStageDef:
-        Creates a new instance of EDAStageDef with the specified value and description.
-
-    Parameters:
-    -----------
-    value : str
-        The internal value representing the EDA stage.
-
-    description : str
-        A human-readable description of the EDA stage.
-    """
-
-    UNIVARIATE = ("00_univariate", "EDA - Univariate Analysis")
-    BIVARIATE = ("01_bivariate", "EDA - Bivariate Analysis")
-    MULTIVARIATE = ("02_multivariate", "EDA - Multivariate Analysis")
-
-    def __new__(cls, value: str, description: str) -> EDAStageDef:
+    def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)
-        obj._value_ = value
+        obj._value_ = name
+        obj.directory = directory
         obj.description = description
         return obj
 
 
 # ------------------------------------------------------------------------------------------------ #
-class ModelingStageDef(StageDef):
-    """Modeling stage definition"""
+class AnalysisStageDef(StageDef):
+    """"""
+
+    SENTIMENT = ("sentiment", "00_sentiment", "Sentiment Analysis Stage")
+    ASPECT = ("aspect", "01_aspect", "Aspect-Based Sentiment Analysis Stage")
+    EMOTION = ("emotion", "02_emotion", "Emotion-Intensity Analysis Stage")
+
+    def __new__(cls, name: str, directory: str, description: str):
+        obj = object.__new__(cls)
+        obj._value_ = name
+        obj.directory = directory
+        obj.description = description
+        return obj
 
 
 # ------------------------------------------------------------------------------------------------ #
-class SentimentStageDef(StageDef):
-    """Sentiment Analysis stage definition"""
+class PhaseDef(Enum):
+    # Defining phases with name, directory, and description
+    DATAPREP = ("dataprep", "01_dataprep", "Data Preparation Phase")
+    FEATURE = (
+        "feature",
+        "02_feature",
+        "Feature Engineering Phase",
+    )
+    ANALYSIS = ("analysis", "03_analysis", "Analysis Phase")
 
+    def __new__(cls, name: str, directory: str, description: str):
+        obj = object.__new__(cls)
+        obj._value_ = name
+        obj.directory = directory
+        obj.description = description
+        return obj
 
-# ------------------------------------------------------------------------------------------------ #
-class OpportunityStageDef(StageDef):
-    """Sentiment Analysis stage definition"""
+    @classmethod
+    def from_value(cls, value) -> PhaseDef:
+        """Finds the enum member based on a given value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No matching {cls.__name__} for value: {value}")

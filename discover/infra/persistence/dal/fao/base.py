@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/fao/base.py                                             #
+# Filename   : /discover/infra/persistence/dal/fao/base.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 06:05:13 pm                                              #
-# Modified   : Sunday October 13th 2024 02:08:49 am                                                #
+# Modified   : Wednesday October 16th 2024 10:43:16 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,8 @@ from typing import Union
 import pandas as pd
 import pyspark.sql
 
-from discover.infra.persistence.dao.base import DAO
-from discover.infra.persistence.fao.exception import FileIOException
+from discover.infra.persistence.dal.dao.base import DAO
+from discover.infra.persistence.dal.fao.exception import FileIOException
 
 
 # ------------------------------------------------------------------------------------------------ #

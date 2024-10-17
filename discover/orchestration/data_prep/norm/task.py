@@ -4,25 +4,27 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/dynamics/task/dataprep_ingest_tasks.py                                    #
+# Filename   : /discover/orchestration/data_prep/norm/task.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 18th 2024 08:39:32 pm                                           #
-# Modified   : Saturday September 21st 2024 07:08:44 pm                                            #
+# Modified   : Sunday October 13th 2024 03:11:25 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Ingest Task Module"""
 
+from typing import Dict, Optional
+
 import pandas as pd
 from dotenv import load_dotenv
 from pandarallel import pandarallel
 
-from discover.dynamics.base.task import Task, TaskConfig
+from discover.orchestration.base.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -54,10 +56,12 @@ class RemoveNewlinesTask(Task):
                 The updated DataFrame with newline characters replaced by spaces in the specified text column.
     """
 
-    def __init__(self, config: TaskConfig) -> None:
-        super().__init__(config=config)
+    def __init__(
+        self, phase: str, stage: str, task_config: Optional[Dict] = None
+    ) -> None:
+        super().__init__(phase=phase, stage=stage, task_config=task_config)
 
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+    def run(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         Removes newline characters from the specified text column in the DataFrame by replacing them with spaces.
 
@@ -71,9 +75,9 @@ class RemoveNewlinesTask(Task):
         pd.DataFrame:
             The updated DataFrame with newlines replaced by spaces in the specified text column.
         """
-        data[self._config.text_column] = data[self._config.text_column].str.replace(
-            "\n", " "
-        )
+        data[self._task_config.text_column] = data[
+            self._task_config.text_column
+        ].str.replace("\n", " ")
         return data
 
 

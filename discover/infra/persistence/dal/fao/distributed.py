@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/fao/distributed.py                                      #
+# Filename   : /discover/infra/persistence/dal/fao/distributed.py                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:42 pm                                              #
-# Modified   : Sunday October 13th 2024 02:07:14 am                                                #
+# Modified   : Wednesday October 16th 2024 10:43:15 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,8 @@ from typing import Dict
 
 import pyspark
 
-from discover.infra.persistence.fao.base import FileSystemFAO
-from discover.infra.persistence.fao.exception import FileIOException
+from discover.infra.persistence.dal.fao.base import FileSystemFAO
+from discover.infra.persistence.dal.fao.exception import FileIOException
 from discover.infra.service.spark.session import SparkSessionPool
 
 

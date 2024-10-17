@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Sunday October 13th 2024 02:14:57 am                                                #
+# Modified   : Thursday October 17th 2024 12:22:08 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -49,7 +49,7 @@ def container() -> DiscoverContainer:
     container.wire(
         modules=[
             "discover.infra.utils.file.io",
-            "discover.infra.persistence.fao.distributed",
+            "discover.infra.persistence.dal.fao.distributed",
         ],
     )
 
@@ -144,6 +144,7 @@ def spark_df(spark, pandas_df):
 @pytest.fixture(scope="function")
 def centralized_ds(pandas_df, container):
     dataset = Dataset(
+        name="test_centralized_ds",
         nlp=False,
         distributed=False,
         phase=PhaseDef.DATAPREP,
@@ -151,15 +152,16 @@ def centralized_ds(pandas_df, container):
         content=pandas_df,
     )
     repo = container.repo.dataset_repo()
-    repo.remove(name=dataset.name, ignore_errors=True)
+    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name, ignore_errors=True)
+    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
 
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def distributed_ds(spark_df, container):
     dataset = Dataset(
+        name="test_distributed_ds",
         nlp=False,
         distributed=True,
         phase=PhaseDef.DATAPREP,
@@ -167,15 +169,16 @@ def distributed_ds(spark_df, container):
         content=spark_df,
     )
     repo = container.repo.dataset_repo()
-    repo.remove(name=dataset.name, ignore_errors=True)
+    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name, ignore_errors=True)
+    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
 
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="function")
 def distributed_ds_nlp(spark_df, container):
     dataset = Dataset(
+        name="test_distributed_nlp_ds",
         nlp=True,
         distributed=True,
         phase=PhaseDef.DATAPREP,
@@ -183,6 +186,6 @@ def distributed_ds_nlp(spark_df, container):
         content=spark_df,
     )
     repo = container.repo.dataset_repo()
-    repo.remove(name=dataset.name, ignore_errors=True)
+    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
     yield dataset
-    repo.remove(name=dataset.name, ignore_errors=True)
+    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)

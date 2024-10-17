@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/dao/dataset.py                                          #
+# Fileid   : /discover/infra/persistence/dao/dataset.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Sunday October 13th 2024 01:47:32 am                                                #
+# Modified   : Thursday October 17th 2024 12:07:05 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,13 +27,13 @@ import pandas as pd
 
 from discover.assets.dataset import Dataset
 from discover.core.flow import PhaseDef
-from discover.infra.persistence.dao.base import DAO
-from discover.infra.persistence.dao.exception import (
+from discover.infra.persistence.dal.dao.base import DAO
+from discover.infra.persistence.dal.dao.exception import (
     ObjectDatabaseNotFoundError,
     ObjectIOException,
     ObjectNotFoundError,
 )
-from discover.infra.persistence.fao.location import LocationService
+from discover.infra.persistence.dal.dao.location import DatasetLocationService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -50,8 +50,8 @@ class DatasetDAO(DAO):
         location_service (LocationService): Service encapsulating persistence locations.
     """
 
-    def __init__(self, location_service: LocationService):
-        self._db_path = location_service.dataset_location
+    def __init__(self, location_service: DatasetLocationService):
+        self._db_path = location_service.get_filepath()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(self, dataset: Dataset) -> None:
@@ -77,22 +77,22 @@ class DatasetDAO(DAO):
         # Store the serializable version in the key value store.
         try:
             with shelve.open(self._db_path, writeback=True) as db:
-                db[dataset.name] = serialized_dataset
+                db[dataset.asset_id] = serialized_dataset
         except FileNotFoundError as e:
             msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg)
         except Exception as e:
-            msg = f"Unknown exception occurred while creating dataset {dataset.name}.\n{e}"
+            msg = f"Unknown exception occurred while creating dataset {dataset.asset_id}.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def read(self, name: str) -> Optional[Dataset]:
+    def read(self, asset_id: str) -> Optional[Dataset]:
         """
-        Reads a dataset by its name from the object database.
+        Reads a dataset by its id from the object database.
 
         Args:
-            name (str): The name of the dataset to retrieve.
+            asset_id (str): The id of the dataset to retrieve.
 
         Returns:
             Optional[Dataset]: The retrieved dataset object or None if not found.
@@ -104,9 +104,9 @@ class DatasetDAO(DAO):
         """
         try:
             with shelve.open(self._db_path) as db:
-                return db[name]
+                return db[asset_id]
         except KeyError:
-            msg = f"Dataset object {name} was not found."
+            msg = f"Dataset object {asset_id} was not found."
             self._logger.error(msg)
             raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
@@ -114,7 +114,7 @@ class DatasetDAO(DAO):
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while reading dataset {name} from the dataset object database.\n{e}"
+            msg = f"Unknown exception occurred while reading dataset {asset_id} from the dataset object database.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
@@ -162,12 +162,12 @@ class DatasetDAO(DAO):
         """
         return self._read_by_attribute("phase", phase)
 
-    def exists(self, name: str) -> bool:
+    def exists(self, asset_id: str) -> bool:
         """
-        Checks if a dataset with the given name exists in the object database.
+        Checks if a dataset with the given id exists in the object database.
 
         Args:
-            name (str): The name of the dataset to check.
+            asset_id (str): The id of the dataset to check.
 
         Returns:
             bool: True if the dataset exists, False otherwise.
@@ -178,22 +178,22 @@ class DatasetDAO(DAO):
         """
         try:
             with shelve.open(self._db_path) as db:
-                return name in db
+                return asset_id in db
         except FileNotFoundError as e:
             msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while checking existence of the {name} dataset."
+            msg = f"Unknown exception occurred while checking existence of the {asset_id} dataset."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def delete(self, name: str) -> None:
+    def delete(self, asset_id: str) -> None:
         """
-        Deletes a dataset by its name from the object database.
+        Deletes a dataset by its id from the object database.
 
         Args:
-            name (str): The name of the dataset to delete.
+            asset_id (str): The id of the dataset to delete.
 
         Raises:
             ObjectNotFoundError: If the dataset does not exist.
@@ -202,9 +202,9 @@ class DatasetDAO(DAO):
         """
         try:
             with shelve.open(self._db_path, writeback=True) as db:
-                del db[name]
+                del db[asset_id]
         except KeyError:
-            msg = f"Dataset object {name} was not found."
+            msg = f"Dataset object {asset_id} was not found."
             self._logger.error(msg)
             raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
@@ -212,7 +212,7 @@ class DatasetDAO(DAO):
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while deleting dataset {name}."
+            msg = f"Unknown exception occurred while deleting dataset {asset_id}."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 

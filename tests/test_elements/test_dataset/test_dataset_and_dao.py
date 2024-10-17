@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Sunday October 13th 2024 02:07:14 am                                                #
+# Modified   : Wednesday October 16th 2024 10:42:24 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.infra.persistence.dao.dataset import DatasetDAO
+from discover.infra.persistence.dal.dao.dataset import DatasetDAO
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

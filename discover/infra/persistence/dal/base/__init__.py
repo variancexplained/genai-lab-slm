@@ -4,25 +4,15 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/orchestration/dataprep.yaml                                                 #
+# Filename   : /discover/infra/persistence/dal/base/__init__.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Sunday October 13th 2024 06:57:05 am                                                #
+# Created    : Wednesday October 16th 2024 10:22:21 pm                                             #
+# Modified   : Wednesday October 16th 2024 10:22:27 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-phase:
-  name: dataprep
-
-  stages:
-    - stage_name: datanorm
-      source:
-        phase: ingest
-        stage: raw
-
-

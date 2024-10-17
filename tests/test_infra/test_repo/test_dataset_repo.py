@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Sunday October 13th 2024 02:08:03 am                                                #
+# Modified   : Thursday October 17th 2024 12:17:18 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -89,7 +89,7 @@ class TestDatasetRepoAdd:  # pragma: no cover
 
         repo = container.repo.dataset_repo()
         ds = repo.add(dataset=dataset)
-        assert repo.exists(dataset.name)
+        assert repo.exists(dataset.asset_id)
         validate_dataset(ds)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -154,7 +154,7 @@ class TestDatasetRepoGet:  # pragma: no cover
 
         repo = container.repo.dataset_repo()
         repo.add(dataset=dataset)
-        ds2 = repo.get(name=dataset.name)
+        ds2 = repo.get(asset_id=dataset.asset_id)
         validate_dataset(ds2)
         assert dataset == ds2
         assert ds2.phase == dataset.phase
@@ -183,9 +183,9 @@ class TestDatasetRepoGet:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         repo = container.repo.dataset_repo()
         with pytest.raises(DatasetNotFoundError):
-            repo.get(name="bogus_dataset_name")
+            repo.get(asset_id="bogus_dataset_name")
         with pytest.raises(DatasetNotFoundError):
-            repo.get(name="dataprep_bogus")
+            repo.get(asset_id="dataprep_bogus")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -217,7 +217,7 @@ class TestDatasetRepoGet:  # pragma: no cover
         ds = repo.add(dataset=dataset)
         remove_dataset_file(ds)
         with pytest.raises(DatasetIntegrityError):
-            repo.get(name=ds.name)
+            repo.get(asset_id=ds.asset_id)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -252,8 +252,8 @@ class TestDatasetRepoRemove:  # pragma: no cover
 
         repo = container.repo.dataset_repo()
         repo.add(dataset=dataset)
-        repo.remove(name=dataset.name)
-        assert not repo.exists(name=dataset.name)
+        repo.remove(asset_id=dataset.asset_id)
+        assert not repo.exists(asset_id=dataset.asset_id)
         assert not os.path.exists(dataset.storage_location)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -274,10 +274,10 @@ class TestDatasetRepoRemove:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         repo = container.repo.dataset_repo()
         with pytest.raises(DatasetRemovalError):
-            repo.remove(name="bogus")
+            repo.remove(asset_id="bogus")
 
         # Should not raise exception
-        repo.remove(name="bogus", ignore_errors=True)
+        repo.remove(asset_id="bogus", ignore_errors=True)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
