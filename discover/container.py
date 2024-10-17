@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Wednesday October 16th 2024 10:51:20 pm                                             #
+# Modified   : Thursday October 17th 2024 09:54:40 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import logging.config
 
 from dependency_injector import containers, providers
 
-from discover.infra.config.reader import ConfigReader
+from discover.infra.config.app import AppConfigReader
 from discover.infra.persistence.dal.dao.dataset import DatasetDAO
 from discover.infra.persistence.dal.dao.location import DatasetLocationService
 from discover.infra.persistence.dal.fao.centralized import CentralizedFileSystemFAO
@@ -111,7 +111,7 @@ class RepoContainer(containers.DeclarativeContainer):
 class DiscoverContainer(containers.DeclarativeContainer):
 
     # Provide the Config class instance dynamically
-    config_reader = providers.Singleton(ConfigReader)
+    config_reader = providers.Singleton(AppConfigReader)
 
     # Provide the actual config dictionary by calling get_config()
     config = providers.Factory(

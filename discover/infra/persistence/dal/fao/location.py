@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 01:04:56 pm                                             #
-# Modified   : Wednesday October 16th 2024 11:56:28 pm                                             #
+# Modified   : Thursday October 17th 2024 01:39:42 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -46,19 +46,19 @@ class FileLocationService(LocationService):
 
     def get_filepath(
         self,
-        entity: str,
+        asset_type: str,
         phase: PhaseDef,
         stage: StageDef,
         name: str,
         partition: bool = True,
     ) -> str:
         """
-        Constructs the file path for a given entity, phase, stage, and name. If the partition parameter
+        Constructs the file path for a given asset_type, phase, stage, and name. If the partition parameter
         is True, it appends a `.parquet` extension to the filename. Ensures that the necessary directories
         are created.
 
         Args:
-            entity (str): The type of entity (e.g., 'dataset' or 'model') to be stored.
+            asset_type (str): The type of asset_type (e.g., 'dataset' or 'model') to be stored.
             phase (PhaseDef): The phase definition object representing the phase of the task.
             stage (StageDef): The stage definition object representing the stage of the task.
             name (str): The specific name or identifier for the file.
@@ -66,13 +66,13 @@ class FileLocationService(LocationService):
                                         Defaults to True.
 
         Returns:
-            str: The complete file path for the specified entity, phase, stage, and name.
+            str: The complete file path for the specified asset_type, phase, stage, and name.
         """
         filename = (
-            f"appvocai_discover-{phase.directory}-{stage.directory}-{name}-{entity}"
+            f"appvocai_discover-{phase.directory}-{stage.directory}-{name}-{asset_type}"
         )
         filename = filename if not partition else f"{filename}.parquet"
-        filepath = os.path.join(self._workspace, entity, phase.directory, filename)
+        filepath = os.path.join(self._workspace, asset_type, phase.directory, filename)
         directory = filepath if not partition else os.path.dirname(filepath)
         os.makedirs(directory, exist_ok=True)
         return filepath

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/dynamics/optimization/cache.py                                            #
+# Filename   : /discover/infra/service/cache/base.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Sunday September 22nd 2024 08:18:42 pm                                              #
+# Modified   : Thursday October 17th 2024 09:54:39 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from enum import Enum
 from typing import Any, Optional
 
 from discover.core.data_class import DataClass
-from discover.infra.config.reader import ConfigReader
+from discover.infra.config.app import ConfigReader
 
 
 # ------------------------------------------------------------------------------------------------ #

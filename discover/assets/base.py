@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Thursday October 17th 2024 12:04:45 am                                              #
+# Modified   : Thursday October 17th 2024 01:45:51 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,6 +25,7 @@ from typing import Any, Optional
 
 from pydantic.dataclasses import dataclass
 
+from discover.assets.idgen import AssetIDGen
 from discover.core.data_class import DataClass
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.utils.date_time.format import ThirdDateFormatter
@@ -98,7 +99,7 @@ class Asset(DataClass):
     @property
     def asset_id(self) -> str:
         """
-        Generates a unique identifier for the asset based on its entity type, phase, stage, and name.
+        Generates a unique identifier for the asset based on its asset_type type, phase, stage, and name.
 
         The identifier combines the values of the phase, stage, and name attributes,
         forming a string that serves as a unique reference for the asset.
@@ -106,7 +107,12 @@ class Asset(DataClass):
         Returns:
             str: A string combining the phase, stage, and name values, acting as a unique ID.
         """
-        return f"{self.__class__.__name__.lower()}-{self.phase.value}-{self.stage.value}-{self.name}"
+        return AssetIDGen.get_asset_id(
+            asset_type=self.__class__.__name__.lower(),
+            phase=self.phase,
+            stage=self.stage,
+            name=self.name,
+        )
 
     @property
     def description(self) -> str:

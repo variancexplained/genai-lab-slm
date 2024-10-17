@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_core/test_operations/test_download.py                                   #
+# Filename   : /tests/test_infra/test_operations/test_download.py                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 02:27:48 pm                                           #
-# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
+# Modified   : Thursday October 17th 2024 09:54:39 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.infra.config.reader import ConfigReader
+from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -69,7 +69,7 @@ class TestDownload:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        config = ConfigReader().get_config(section="aws")
+        config = AppConfigReader().get_config(section="aws")
         aws.download_file(
             bucket_name=config.bucket, s3_key=config.s3_key, local_path=LOCAL_PATH
         )

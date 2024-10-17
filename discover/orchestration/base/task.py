@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Saturday October 12th 2024 08:46:30 pm                                              #
+# Modified   : Thursday October 17th 2024 09:25:03 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,47 +19,170 @@
 """Abstract Base Classes for Task classes """
 from __future__ import annotations
 
-import logging
+import importlib
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any
 
-from discover.core.flow import PhaseDef, StageDef
+from discover.core.flow import DataPrepStageDef, PhaseDef, StageDef
 from discover.core.namespace import NestedNamespace
+
+# ------------------------------------------------------------------------------------------------ #
+
+
+def instantiate_class(
+    phase: str, stage: str, module_name: str, class_name: str, params: dict
+):
+    """
+    Dynamically imports a module and instantiates a class with the given parameters.
+
+    Parameters
+    ----------
+    phase : str
+        The phase associated with the class instance (e.g., 'preprocessing', 'analysis').
+    stage : str
+        The stage associated with the class instance (e.g., 'normalization', 'feature_engineering').
+    module_name : str
+        The name of the module from which to import the class (e.g., 'mypackage.mymodule').
+    class_name : str
+        The name of the class to instantiate from the module.
+    params : dict
+        A dictionary of additional parameters to pass to the class constructor.
+
+    Returns
+    -------
+    object
+        An instance of the specified class with the provided parameters.
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If the specified module cannot be found.
+    AttributeError
+        If the specified class does not exist in the module.
+    TypeError
+        If the class constructor does not accept the provided parameters.
+
+    Examples
+    --------
+    >>> obj = instantiate_class(
+    ...     phase='preprocessing',
+    ...     stage='normalization',
+    ...     module_name='mypackage.mymodule',
+    ...     class_name='Normalizer',
+    ...     params={'param1': value1, 'param2': value2}
+    ... )
+    """
+    module = importlib.import_module(module_name)
+    cls = getattr(module, class_name)
+    return cls(phase=phase, stage=stage, **params)
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                           TASK                                                   #
 # ------------------------------------------------------------------------------------------------ #
 class Task(ABC):
+    """"""
 
-    def __init__(
-        self, phase: str, stage: str, task_config: Optional[Dict] = None
-    ) -> None:
+    def __init__(self, phase: str, stage: str, **kwargs):
         self._phase = PhaseDef.from_value(phase)
-        self._stage = StageDef.from_value(stage)
-        self._task_config = NestedNamespace(task_config)
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._stage = DataPrepStageDef.from_value(stage)
 
     @property
     def phase(self) -> PhaseDef:
-        return self._phase
+        self._phase
 
     @property
     def stage(self) -> StageDef:
-        return self._stage
+        self._stage
 
     @property
     def name(self) -> str:
         return self.__class__.__name__
 
-    @property
-    def logger(self) -> logging.Logger:
-        return self._logger
-
-    @property
-    def config(self) -> NestedNamespace:
-        return self._task_config
-
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
-        """"""
+        """ """
+        pass
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                      TASK BUILDER                                                #
+# ------------------------------------------------------------------------------------------------ #
+class TaskBuilder:
+    """
+    A builder class for constructing task instances from configuration data.
+
+    The `TaskBuilder` class provides a static method, `build`, which reads task configuration
+    data and dynamically creates an instance of the specified task class using the provided
+    parameters. This allows for flexible and dynamic task instantiation based on configuration.
+
+    Methods
+    -------
+    build(task_config: dict) -> object
+        Constructs and returns an instance of a task class using the specified configuration.
+
+    Examples
+    --------
+    >>> task_config = {
+    ...     'phase': 'preprocessing',
+    ...     'stage': 'normalization',
+    ...     'module_name': 'mypackage.mymodule',
+    ...     'class_name': 'NormalizationTask',
+    ...     'params': {'param1': value1, 'param2': value2}
+    ... }
+    >>> task_instance = TaskBuilder.build(task_config)
+    """
+
+    @staticmethod
+    def build(task_config):
+        """
+        Builds and returns an instance of a task class based on the provided configuration.
+
+        Parameters
+        ----------
+        task_config : dict
+            A dictionary containing task configuration with the following keys:
+                - 'phase' (str): The phase associated with the task (e.g., 'preprocessing').
+                - 'stage' (str): The stage within the phase (e.g., 'normalization').
+                - 'module_name' (str): The name of the module containing the task class.
+                - 'class_name' (str): The name of the task class to instantiate.
+                - 'params' (dict): Additional parameters to pass to the task's constructor.
+
+        Returns
+        -------
+        object
+            An instance of the specified task class initialized with the provided parameters.
+
+        Raises
+        ------
+        ModuleNotFoundError
+            If the specified module cannot be found.
+        AttributeError
+            If the specified class does not exist in the module.
+        TypeError
+            If the class constructor does not accept the provided parameters.
+
+        Examples
+        --------
+        >>> task_config = {
+        ...     'phase': 'preprocessing',
+        ...     'stage': 'normalization',
+        ...     'module_name': 'mypackage.mymodule',
+        ...     'class_name': 'NormalizationTask',
+        ...     'params': {'param1': value1, 'param2': value2}
+        ... }
+        >>> task_instance = TaskBuilder.build(task_config)
+        """
+        task_config = NestedNamespace(task_config)
+        phase = task_config.phase
+        stage = task_config.stage
+        module_name = task_config.module_name
+        class_name = task_config.class_name
+        params = task_config.params
+        return instantiate_class(
+            phase=phase,
+            stage=stage,
+            module_name=module_name,
+            class_name=class_name,
+            params=params,
+        )

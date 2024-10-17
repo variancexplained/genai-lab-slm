@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Saturday September 21st 2024 08:37:11 pm                                            #
+# Modified   : Thursday October 17th 2024 09:54:39 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ import logging
 from dependency_injector.wiring import Provide, inject
 
 from discover.container import DiscoverContainer
-from discover.infra.config.reader import ConfigReader
+from discover.infra.config.app import AppConfigReader
 from discover.infra.database.schema import schema
 from discover.infra.database.sqlite import SQLiteDBA
 
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 @inject
 def setup_database(
     dba: SQLiteDBA = Provide[DiscoverContainer.db.admin],
-    config_reader_cls: type[ConfigReader] = ConfigReader,
+    config_reader_cls: type[AppConfigReader] = AppConfigReader,
     force: bool = False,
 ) -> None:
     config_reader = config_reader_cls()

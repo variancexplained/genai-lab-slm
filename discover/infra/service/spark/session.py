@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/frameworks/spark/session.py                                         #
+# Filename   : /discover/infra/service/spark/session.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Saturday October 12th 2024 01:27:10 pm                                              #
+# Modified   : Thursday October 17th 2024 09:54:04 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -47,7 +47,7 @@ class SparkSessionPool:
     both standard Spark sessions and sessions pre-configured for NLP tasks.
 
     Attributes:
-        _config_reader (ConfigReader): Instance of the configuration reader used
+        _config_reader (AppConfigReader): Instance of the configuration reader used
             to retrieve file and Spark-specific settings.
         _parquet_block_size (int): Block size configuration for writing Parquet files.
         _spark_config (dict): Configuration details for setting up the Spark session,
@@ -75,8 +75,8 @@ class SparkSessionPool:
         Initializes a SparkSessionPool with the given configuration reader class.
 
         Args:
-            config_reader_cls (type[ConfigReader]): A class for reading configurations.
-                Defaults to ConfigReader, allowing for custom configuration reader
+            config_reader_cls (type[AppConfigReader]): A class for reading configurations.
+                Defaults to AppConfigReader, allowing for custom configuration reader
                 classes if needed.
         """
         self._spark_config = NestedNamespace(spark_config)

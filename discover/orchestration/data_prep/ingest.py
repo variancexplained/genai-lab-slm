@@ -4,25 +4,31 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/orchestration/dataprep.yaml                                                 #
+# Filename   : /discover/orchestration/data_prep/ingest.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Sunday October 13th 2024 06:57:05 am                                                #
+# Created    : Thursday October 17th 2024 09:19:05 am                                              #
+# Modified   : Thursday October 17th 2024 09:26:37 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-phase:
-  name: dataprep
+import pandas as pd
 
-  stages:
-    - stage_name: datanorm
-      source:
-        phase: ingest
-        stage: raw
+from discover.orchestration.base.task import Task
 
 
+# ------------------------------------------------------------------------------------------------ #
+class IngestTask(Task):
+    def __init__(
+        self, phase: str, stage: str, frac: float, random_state: int = None
+    ) -> None:
+        super().__init__(phase=phase, stage=stage)
+        self._frac = frac
+        self._random_state = random_state
+
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        return data.sample(frac=self._frac, random_state=self._random_state)

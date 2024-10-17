@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/config/reader.py                                                    #
+# Filename   : /discover/infra/config/base.py                                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Saturday October 12th 2024 08:21:41 am                                              #
+# Modified   : Thursday October 17th 2024 09:58:11 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,7 @@
 """Configuration Classes."""
 import logging
 import os
+from abc import ABC, abstractmethod
 
 # %%
 from collections.abc import Mapping
@@ -33,11 +34,11 @@ from discover.core.namespace import NestedNamespace
 load_dotenv()
 
 # ------------------------------------------------------------------------------------------------ #
-#                                       CONFIG                                                     #
+#                                       CONFIG READER                                              #
 # ------------------------------------------------------------------------------------------------ #
 
 
-class ConfigReader:
+class ConfigReader(ABC):
     """
     A class for managing configuration and environment variables.
 
@@ -135,26 +136,6 @@ class ConfigReader:
         return self.to_namespace(config) if namespace else config
 
     @property
-    def aws(self) -> NestedNamespace:
-        """
-        Returns AWS credentials and region configuration as a `NestedNamespace`.
-
-        The AWS configuration includes the `aws_access_key_id`, `aws_secret_access_key`,
-        and `region_name` retrieved from the environment variables.
-
-        Returns:
-        --------
-        NestedNamespace:
-            The AWS configuration in dot-notation accessible form.
-        """
-        config = {
-            "aws_access_key_id": os.getenv("AWS_ACCESS_KEY_ID"),
-            "aws_secret_access_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
-            "region_name": os.getenv("AWS_REGION_NAME"),
-        }
-        return self.to_namespace(config)
-
-    @property
     def current_environment(self) -> str:
         """
         Returns the current environment value loaded from the `.env` file.
@@ -239,6 +220,7 @@ class ConfigReader:
         final_config = self._merge_configs(base=base_config, override=env_config)
         return final_config
 
+    @abstractmethod
     def _load_base_config(self) -> Dict[str, Any]:
         """
         Loads the base configuration from the `base.yaml` file.
@@ -253,10 +235,8 @@ class ConfigReader:
         FileNotFoundError:
             Raised if the `base.yaml` file is not found.
         """
-        directory = os.getenv("CONFIG_DIRECTORY", "config")
-        filepath = os.path.join(directory, "base.yaml")
-        return self.read_yaml(filepath=filepath, content="base configuration")
 
+    @abstractmethod
     def _load_env_config(self) -> Dict[str, Any]:
         """
         Loads the environment-specific configuration from a YAML file based on the current environment.
@@ -271,12 +251,6 @@ class ConfigReader:
         FileNotFoundError:
             Raised if the environment-specific YAML file is not found.
         """
-        directory = os.getenv("CONFIG_DIRECTORY", "config")
-        filepath = os.path.join(directory, f"{self.current_environment}.yaml")
-        return self.read_yaml(
-            filepath=filepath,
-            content=f"{self.current_environment} environment configuration",
-        )
 
     def _merge_configs(self, base, override):
         """Recursively merge two configurations, with 'override' taking precedence."""

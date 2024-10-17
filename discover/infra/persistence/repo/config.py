@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 10th 2024 04:58:59 pm                                              #
-# Modified   : Sunday October 13th 2024 01:57:37 am                                                #
+# Modified   : Thursday October 17th 2024 09:54:39 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,10 +23,10 @@ from typing import Optional
 from pydantic.dataclasses import dataclass
 
 from discover.assets.dataset import StorageConfig
-from discover.infra.config.reader import ConfigReader
+from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
-config_reader = ConfigReader()
+config_reader = AppConfigReader()
 # ------------------------------------------------------------------------------------------------ #
 
 

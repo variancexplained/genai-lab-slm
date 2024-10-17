@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday October 17th 2024 12:22:08 am                                              #
+# Modified   : Thursday October 17th 2024 09:54:40 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from pyspark.sql import SparkSession
 from discover.assets.dataset import Dataset
 from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.infra.config.reader import ConfigReader
+from discover.infra.config.app import AppConfigReader
 from discover.infra.persistence.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
 
@@ -80,7 +80,7 @@ def check_environment() -> None:
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
 def aws():
-    return S3Handler(config_reader_cls=ConfigReader)
+    return S3Handler(config_reader_cls=AppConfigReader)
 
 
 # ------------------------------------------------------------------------------------------------ #

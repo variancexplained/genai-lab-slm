@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:30:37 pm                                            #
-# Modified   : Sunday October 13th 2024 02:13:06 am                                                #
+# Modified   : Thursday October 17th 2024 09:54:39 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from typing import Any, Optional, Union
 import pandas as pd
 import pyspark
 
-from discover.infra.config.reader import ConfigReader
+from discover.infra.config.app import ConfigReader
 from discover.infra.service.cache.base import Cache, CacheRegistration, CacheState
 from discover.infra.utils.date_time.format import ThirdDateFormatter
 from discover.infra.utils.file.compress import TarGzHandler

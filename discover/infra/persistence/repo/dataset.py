@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Thursday October 17th 2024 12:19:04 am                                              #
+# Modified   : Thursday October 17th 2024 01:39:42 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -140,7 +140,7 @@ class DatasetRepo(Repo):
 
         # Set the storage location on the dataset object
         dataset.storage_location = self._location_service.get_filepath(
-            entity=dataset.__class__.__name__.lower(),
+            asset_type=dataset.__class__.__name__.lower(),
             phase=dataset.phase,
             stage=dataset.stage,
             name=dataset.name,
