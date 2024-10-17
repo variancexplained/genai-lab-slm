@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Thursday October 17th 2024 09:58:11 am                                              #
+# Modified   : Thursday October 17th 2024 12:17:17 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,61 +39,7 @@ load_dotenv()
 
 
 class ConfigReader(ABC):
-    """
-    A class for managing configuration and environment variables.
-
-    This class provides methods to load and manage configuration files in YAML format
-    and environment variables from `.env` files. It also supports retrieving specific
-    configuration sections, converting configuration dictionaries into dot-accessible
-    namespaces, and managing AWS-related configuration settings.
-
-    Attributes:
-    -----------
-    _env_file_path : str
-        The file path to the `.env` file that holds environment variables.
-    _current_environment : str
-        The current environment (e.g., "dev", "prod"), which is loaded from the `.env` file.
-    _config : dict
-        The combined configuration loaded from both the base and environment-specific YAML files.
-
-    Methods:
-    --------
-    get_config(section: Optional[str] = None, namespace: bool = True) -> Union[Dict[str, Any], NestedNamespace, str]:
-        Retrieves the entire configuration or a specific section as a dictionary or `NestedNamespace` object.
-
-    aws() -> NestedNamespace:
-        Returns AWS credentials and region as a `NestedNamespace` object.
-
-    current_environment() -> str:
-        Returns the current environment value loaded from the `.env` file.
-
-    change_environment(new_value: str) -> None:
-        Updates the current environment variable in both the `.env` file and the current process environment.
-
-    get_environment() -> str:
-        Retrieves the current environment from the environment variables or defaults to "dev" if not set.
-
-    load_environment() -> None:
-        Loads environment variables from the `.env` file, overriding any existing environment variables.
-
-    get_env_var(key: str) -> Optional[str]:
-        Retrieves the value of a specific environment variable.
-
-    load_config() -> Dict[str, Any]:
-        Loads and merges the base configuration and environment-specific configuration files.
-
-    _load_base_config() -> Dict[str, Any]:
-        Loads the base configuration from a YAML file.
-
-    _load_env_config() -> Dict[str, Any]:
-        Loads the environment-specific configuration from a YAML file based on the current environment.
-
-    read_yaml(filepath: str, content: str) -> Dict[str, Any]:
-        Reads a YAML file and returns its contents as a dictionary, logging errors if the file is not found or invalid.
-
-    to_namespace(config: Dict[str, Any]) -> NestedNamespace:
-        Converts a configuration dictionary to a `NestedNamespace` object, allowing dot-access notation for settings.
-    """
+    """Base configuration reader."""
 
     def __init__(self, env_file_path: str = ".env"):
         """
@@ -253,13 +199,47 @@ class ConfigReader(ABC):
         """
 
     def _merge_configs(self, base, override):
-        """Recursively merge two configurations, with 'override' taking precedence."""
+        """Recursively merge two configurations, with 'override' taking precedence.
+        For lists, it will replace specific key-value pairs in list elements."""
+
         for key, value in override.items():
             if isinstance(value, Mapping) and key in base:
-                base[key] = self._merge_configs(base[key], value)
+                # If both are dictionaries, recursively merge
+                base[key] = self._merge_configs(base.get(key, {}), value)
+            elif isinstance(value, list) and key in base:
+                # If both are lists, iterate through and merge list items
+                base[key] = self._merge_list(base[key], value)
             else:
+                # Otherwise, override the value
                 base[key] = value
         return base
+
+    def _merge_list(self, base_list, override_list):
+        """Merge two lists by updating specific key-value pairs in dictionaries within the list."""
+
+        # Assume that lists contain dictionaries and you want to merge them based on matching keys
+        for override_item in override_list:
+            # Find the corresponding item in the base list by matching a unique key (e.g., 'class_name' or other identifier)
+            if isinstance(override_item, Mapping):
+                matching_item = next(
+                    (
+                        item
+                        for item in base_list
+                        if item.get("class_name") == override_item.get("class_name")
+                    ),
+                    None,
+                )
+                if matching_item:
+                    # Merge the dictionaries within the list based on the matching key
+                    self._merge_configs(matching_item, override_item)
+                else:
+                    # If no match, append the override item to the list
+                    base_list.append(override_item)
+            else:
+                # If the item is not a dictionary, simply replace the base list with the override list
+                base_list.append(override_item)
+
+        return base_list
 
     def read_yaml(self, filepath: str, content: str) -> Dict[str, Any]:
         """

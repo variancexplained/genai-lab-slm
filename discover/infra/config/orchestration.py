@@ -11,15 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Thursday October 17th 2024 10:00:38 am                                              #
+# Modified   : Thursday October 17th 2024 12:02:56 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Configuration Classes."""
-import os
-
 # %%
+import os
 from typing import Any, Dict
 
 from dotenv import load_dotenv
@@ -30,7 +29,7 @@ from discover.infra.config.base import ConfigReader
 load_dotenv()
 
 # ------------------------------------------------------------------------------------------------ #
-#                                       APP CONFIG READER                                          #
+#                              ORCHESTRATION CONFIG READER                                         #
 # ------------------------------------------------------------------------------------------------ #
 
 
@@ -142,3 +141,6 @@ class OrchestrationConfigReader(ConfigReader):
             filepath=filepath,
             content=f"{self.current_environment} environment configuration",
         )
+
+
+# ------------------------------------------------------------------------------------------------ #
