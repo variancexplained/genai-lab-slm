@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday October 17th 2024 01:25:44 pm                                              #
+# Modified   : Thursday October 17th 2024 08:28:58 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,6 +31,7 @@ from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.infra.persistence.repo.dataset import DatasetRepo
+from discover.infra.service.logging.stage import stage_logger
 from discover.infra.utils.file.io import IOService
 from discover.orchestration.base.stage import Stage
 from discover.orchestration.base.task import Task
@@ -133,6 +134,15 @@ class DataPrepStage(Stage):
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
+    @property
+    def phase(self) -> PhaseDef:
+        return PhaseDef.from_value(value=self._destination_config.phase)
+
+    @property
+    def stage(self) -> PhaseDef:
+        return DataPrepStageDef.from_value(value=self._destination_config.stage)
+
+    @stage_logger
     def run(self) -> str:
         """Executes the stage by loading the source dataset, applying tasks, and saving the result.
 
@@ -145,11 +155,17 @@ class DataPrepStage(Stage):
         ):
             return self._destination_asset_id
         else:
+            if self._repo.exists(asset_id=self._destination_asset_id):
+                self._repo.remove(asset_id=self._destination_asset_id)
+
             data = self._load_source_data()
+
             for task in self._tasks:
                 data = task.run(data=data)
             dataset = self._create_destination_dataset(data=data)
+
             self._save_destination_dataset(dataset=dataset)
+
             return self._destination_asset_id
 
     def _endpoint_exists(self, asset_id: str) -> bool:
@@ -191,6 +207,9 @@ class DataPrepStage(Stage):
             nlp=self._destination_config.nlp,
             distributed=self._destination_config.distributed,
         )
+
+    def _remove_destination_dataset(self) -> None:
+        self._repo.remove(asset_id=self._destination_asset_id)
 
     def _save_destination_dataset(self, dataset: Dataset) -> None:
         """Saves the processed dataset to the repository using the destination asset ID."""

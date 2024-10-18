@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday October 17th 2024 12:50:15 pm                                              #
+# Modified   : Thursday October 17th 2024 08:44:06 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,6 +22,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import List
 
+from discover.core.flow import PhaseDef, StageDef
 from discover.core.namespace import NestedNamespace
 from discover.orchestration.base.task import Task, TaskBuilder
 
@@ -44,12 +45,22 @@ class Stage(ABC):
         self._tasks = tasks
         self._force = force
 
+    @property
+    @abstractmethod
+    def phase(self) -> PhaseDef:
+        """Phase"""
+
+    @property
+    @abstractmethod
+    def stage(self) -> StageDef:
+        """Stage"""
+
     @abstractmethod
     def run(self) -> str:
         """Stage execution"""
 
     @classmethod
-    def build(cls, stage_config: dict) -> Stage:
+    def build(cls, stage_config: dict, force: bool = False) -> Stage:
         tasks = [
             TaskBuilder.build(task_config) for task_config in stage_config["tasks"]
         ]
@@ -57,5 +68,5 @@ class Stage(ABC):
             source_config=stage_config["source_config"],
             destination_config=stage_config["destination_config"],
             tasks=tasks,
-            force=stage_config["force"],
+            force=force,
         )

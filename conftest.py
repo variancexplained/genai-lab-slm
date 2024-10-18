@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday October 17th 2024 01:24:58 pm                                              #
+# Modified   : Thursday October 17th 2024 07:56:18 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -49,7 +49,6 @@ def container() -> DiscoverContainer:
     container.wire(
         modules=[
             "discover.orchestration.data_prep.stage",
-            "discover.orchestration.ingest.stage",
         ],
     )
 

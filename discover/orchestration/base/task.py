@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Thursday October 17th 2024 01:11:30 pm                                              #
+# Modified   : Thursday October 17th 2024 08:08:20 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import importlib
+import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
@@ -70,15 +71,57 @@ def instantiate_class(module: str, class_name: str, params: dict):
 #                                           TASK                                                   #
 # ------------------------------------------------------------------------------------------------ #
 class Task(ABC):
-    """"""
+    """
+    An abstract base class for defining tasks in a pipeline.
+    All tasks must implement the `run` method and provide a
+    `name` property based on the class name.
+
+    Methods:
+    --------
+    name -> str
+        Returns the name of the task, which is the class name of the task instance.
+
+    run(*args, data: Any, **kwargs) -> Any
+        Abstract method that must be implemented by any subclass. It represents
+        the main logic of the task. Subclasses should specify the expected inputs
+        and outputs.
+    """
+
+    def __init__(self):
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
     def name(self) -> str:
+        """
+        Returns the name of the task, which is the class name of the task instance.
+
+        Returns:
+        --------
+        str
+            The name of the task.
+        """
         return self.__class__.__name__
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
-        """ """
+        """
+        The core logic of the task. Must be implemented by any subclass.
+
+        Parameters:
+        -----------
+        *args : tuple
+            Positional arguments that the task may require.
+        data : Any
+            The input data for the task. The specific type of data will depend
+            on the implementation of the subclass.
+        **kwargs : dict
+            Additional keyword arguments that the task may require.
+
+        Returns:
+        --------
+        Any
+            The output of the task, as defined by the subclass implementation.
+        """
         pass
 
 

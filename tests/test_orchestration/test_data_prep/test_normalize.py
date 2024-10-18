@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_orchestration/test_data_prep/test_ingest.py                             #
+# Filename   : /tests/test_orchestration/test_data_prep/test_normalize.py                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Thursday October 17th 2024 12:41:52 pm                                              #
-# Modified   : Thursday October 17th 2024 08:51:16 pm                                              #
+# Created    : Thursday October 17th 2024 07:06:20 pm                                              #
+# Modified   : Thursday October 17th 2024 08:49:14 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,8 +39,8 @@ single_line = f"\n{100 * '-'}"
 
 
 @pytest.mark.dataprep
-@pytest.mark.ingest
-class TestIngest:  # pragma: no cover
+@pytest.mark.norm
+class TestNormalize:  # pragma: no cover
     # ============================================================================================ #
     def test_setup(self, container, caplog) -> None:
         start = datetime.now()
@@ -54,7 +54,7 @@ class TestIngest:  # pragma: no cover
             name="review",
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
-            stage=DataPrepStageDef.INGEST,
+            stage=DataPrepStageDef.NORM,
         )
 
         repo = container.repo.dataset_repo()
@@ -70,7 +70,7 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_ingest(self, container, caplog) -> None:
+    def test_normalize(self, container, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -79,9 +79,7 @@ class TestIngest:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         reader = OrchestrationConfigReader()
         config = reader.get_config("phases", namespace=False)
-        stage_config = config["dataprep"]["stages"][0]
-        assert stage_config["source_config"]["filepath"] == "data/raw/reviews"
-        assert "destination_config" in stage_config.keys()
+        stage_config = config["dataprep"]["stages"][1]
 
         # Build Stage
         stage = DataPrepStage.build(stage_config=stage_config)
@@ -89,7 +87,55 @@ class TestIngest:  # pragma: no cover
         # Confirm existence
         repo = container.repo.dataset_repo()
         assert repo.exists(asset_id=asset_id)
-        # Stage run and endpoint exists
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_normalize_endpoint_exists(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        reader = OrchestrationConfigReader()
+        config = reader.get_config("phases", namespace=False)
+        stage_config = config["dataprep"]["stages"][1]
+
+        # Build Stage
+        stage = DataPrepStage.build(stage_config=stage_config)
+        _ = stage.run()
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_normalize_endpoint_exists_override(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        reader = OrchestrationConfigReader()
+        config = reader.get_config("phases", namespace=False)
+        stage_config = config["dataprep"]["stages"][1]
+
+        # Build Stage
+        stage = DataPrepStage.build(stage_config=stage_config, force=True)
         _ = stage.run()
 
         # ---------------------------------------------------------------------------------------- #
