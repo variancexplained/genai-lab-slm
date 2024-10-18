@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Thursday October 17th 2024 08:33:42 pm                                              #
+# Modified   : Friday October 18th 2024 01:15:23 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,9 +30,11 @@ phases:
           nlp: False
           distributed: False
         tasks:
-          - class_name: SampleTask
+          - class_name: FilterTask
             module: discover.orchestration.data_prep.ingest
             params:
+              date_column: date
+              date: 2023
               frac: 1.0
               random_state: 55
       - stage_name: normalize
@@ -74,8 +76,82 @@ phases:
                 vote_count: int64
                 vote_sum: int64
                 date: datetime64[ms]
-
-
-
-
-
+      - stage_name: dqa
+        source_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: normalize
+          name: review
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: dqa
+          name: review
+          nlp: False
+          distributed: False
+        tasks:
+          - class_name: EntropyTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: s_entropy
+          - class_name: DetectDuplicateTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              column_names:
+              - content
+              dqa_column: b_duplicate_review
+          - class_name: DetectNullValuesTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              dqa_column: b_has_null
+          - class_name: DetectInvalidRatingsTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              rating_column: rating
+              dqa_column: b_invalid_rating
+          - class_name: DetectNonEnglishTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: b_non_english
+              n_jobs: 12
+          - class_name: DetectEmojiTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: b_has_emoji
+          - class_name: DetectSpecialCharacterTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: b_excessive_special_chars
+              threshold: 0.2
+          - class_name: DetectInvalidDatesTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              date_column: date
+              dqa_column: b_excessive_special_chars
+              start_date: 2007
+              end_date: 2024
+          - class_name: DetectProfanityTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: b_has_profanity
+              n_jobs: 12
+          - class_name: DetectEmailTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: b_contains_email
+          - class_name: DetectURLTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: b_contains_url
+          - class_name: DetectPhoneNumberTask
+            module: discover.orchestration.data_prep.dqa
+            params:
+              text_column: content
+              dqa_column: b_contains_phone_number

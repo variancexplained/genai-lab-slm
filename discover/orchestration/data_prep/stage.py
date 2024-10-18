@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday October 17th 2024 08:28:58 pm                                              #
+# Modified   : Friday October 18th 2024 01:20:49 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -174,9 +174,9 @@ class DataPrepStage(Stage):
 
     def _load_source_data(self) -> pd.DataFrame:
         try:
-            return self._load_source_data_from_file()
-        except AttributeError:
             return self._load_source_data_from_repo()
+        except AttributeError:
+            return self._load_source_data_from_file()
         except Exception as e:
             msg = f"Exception occurred while loading source data.\n{e}"
             self._logger.exception(msg)
