@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Saturday October 19th 2024 06:20:32 am                                              #
+# Modified   : Saturday October 19th 2024 06:24:16 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,13 +39,9 @@ from discover.infra.service.logging.task import task_logger
 from discover.infra.utils.data.dataframe import split_dataframe
 from discover.orchestration.base.task import Task
 
+# ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
-# warnings.simplefilter("ignore")
-# warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
-# warnings.filterwarnings("ignore", message="load_model does not return WordVectorModel")
-# warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 os.environ["PYTHONWARNINGS"] = "ignore"
-
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(nb_workers=12, verbose=False)
 # ------------------------------------------------------------------------------------------------ #
@@ -209,23 +205,12 @@ class DetectInvalidRatingsTask(Task):
 # Standalone function for processing a chunk
 @ignore_warnings(category=InconsistentVersionWarning)
 def process_chunk(chunk, text_column, new_column, model_filepath):
-    # Use catch_warnings and filterwarnings inside the context manager
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        warnings.filterwarnings("ignore")
-        warnings.filterwarnings(
-            "ignore", category=InconsistentVersionWarning, module="sklearn"
-        )
-        warnings.simplefilter("ignore", InconsistentVersionWarning)
-        warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+    # Your model loading or FastText code that triggers the warnings
+    import fasttext
 
-        # Your model loading or FastText code that triggers the warnings
-        import fasttext
-
-        fasttext.FastText.eprint = lambda x: None
-
-        model = fasttext.load_model(model_filepath)
-        return chunk[text_column].apply(lambda text: is_non_english(text, model))
+    fasttext.FastText.eprint = lambda x: None
+    model = fasttext.load_model(model_filepath)
+    return chunk[text_column].apply(lambda text: is_non_english(text, model))
 
 
 # Standalone function to determine if text is non-English
