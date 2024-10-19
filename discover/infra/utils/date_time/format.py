@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/core/date_time.py                                                         #
+# Filename   : /discover/infra/utils/date_time/format.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 12:55:53 pm                                              #
-# Modified   : Tuesday September 17th 2024 10:35:04 pm                                             #
+# Modified   : Friday October 18th 2024 07:38:19 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -146,12 +146,14 @@ class ThirdDateFormatter:
             str: A string representation of the duration.
         """
         if seconds < 60:
-            return f"{seconds} seconds"
+            return f"{round(seconds,2)} seconds"
         elif seconds < 3600:
             minutes = seconds // 60
             remaining_seconds = seconds % 60
             return f"{minutes} minutes" + (
-                f" and {remaining_seconds} seconds" if remaining_seconds > 0 else ""
+                f" and {round(remaining_seconds,2)} seconds"
+                if remaining_seconds > 0
+                else ""
             )
         else:
             hours = seconds // 3600

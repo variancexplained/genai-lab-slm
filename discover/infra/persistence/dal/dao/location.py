@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday October 16th 2024 10:24:35 pm                                             #
-# Modified   : Wednesday October 16th 2024 10:35:47 pm                                             #
+# Modified   : Friday October 18th 2024 07:18:36 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -56,4 +56,6 @@ class DatasetLocationService(LocationService):
         Returns:
             str: The file path for the dataset as a string.
         """
-        return os.path.join(self._workspace, self._location)
+        filepath = os.path.join(self._workspace, self._location)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        return filepath

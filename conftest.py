@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday October 18th 2024 01:44:01 am                                                #
+# Modified   : Friday October 18th 2024 04:48:42 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,8 +27,10 @@ from discover.assets.dataset import Dataset
 from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.infra.config.app import AppConfigReader
+from discover.infra.config.orchestration import OrchestrationConfigReader
 from discover.infra.persistence.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
+from discover.orchestration.data_prep.stage import DataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -189,3 +191,18 @@ def distributed_ds_nlp(spark_df, container):
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
     yield dataset
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                  DATA PREP                                                       #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def norm_asset_id(container):
+    reader = OrchestrationConfigReader()
+    config = reader.get_config("phases", namespace=False)
+    stage_config = config["dataprep"]["stages"][1]
+
+    # Build Stage
+    stage = DataPrepStage.build(stage_config=stage_config)
+    asset_id = stage.run()
+    return asset_id

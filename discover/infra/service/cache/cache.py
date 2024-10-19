@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:30:37 pm                                            #
-# Modified   : Thursday October 17th 2024 09:54:39 am                                              #
+# Modified   : Friday October 18th 2024 02:32:27 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from typing import Any, Optional, Union
 import pandas as pd
 import pyspark
 
-from discover.infra.config.app import ConfigReader
+from discover.infra.config.app import AppConfigReader
 from discover.infra.service.cache.base import Cache, CacheRegistration, CacheState
 from discover.infra.utils.date_time.format import ThirdDateFormatter
 from discover.infra.utils.file.compress import TarGzHandler
@@ -57,7 +57,7 @@ class DiscoverCache(Cache):
 
     def __init__(
         self,
-        config_reader_cls: type[ConfigReader] = ConfigReader,
+        config_reader_cls: type[AppConfigReader] = AppConfigReader,
         io_cls: type[IOService] = IOService,
     ) -> None:
         super().__init__(config_reader_cls=config_reader_cls)
@@ -398,7 +398,7 @@ class DiscoverCache(Cache):
 
     def _get_data_filepath(self, key: str) -> str:
         """Constructs and returns the filepath where a cache item’s data is stored."""
-        return os.path.join(self._data_directory, key) + ".parquet"
+        return os.path.join(self._data_directory, key) + ".csv"
 
     def _get_archive_filepath(self, key: str) -> str:
         """Constructs and returns the filepath where a cache item’s archived data will be stored."""

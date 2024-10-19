@@ -11,20 +11,22 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Sunday October 13th 2024 01:57:37 am                                                #
+# Modified   : Friday October 18th 2024 02:42:43 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import hashlib
 import logging
 from functools import wraps
+from typing import Union
 
-from discover.application.ops.utils import (
-    find_dataframe,
-    find_task,
-    get_dataset_cache_id,
-)
+import pandas as pd
+import pyspark
+
 from discover.infra.service.cache.cache import DiscoverCache
+from discover.infra.utils.data.dataframe import find_dataframe
+from discover.orchestration.base.task import Task
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -72,10 +74,8 @@ def cachenow(func):
 
         # Find the dataframe among the args and kwargs
         df = find_dataframe(args, kwargs)
-        # Search arguments for a Task object
-        task = find_task(args, kwargs)
         # Create a dataset identifier as the hash for the dataframe.
-        dataset_id = get_dataset_cache_id(task=task, df=df)
+        dataset_id = get_dataset_cache_id(task=self, df=df)
         # Obtain a cache object
         cache = DiscoverCache()
         # Check the cache
@@ -108,3 +108,77 @@ def cachenow(func):
         return result
 
     return wrapper
+
+
+# ------------------------------------------------------------------------------------------------ #
+def get_dataset_cache_id(
+    task: Task, df: Union[pd.DataFrame, pyspark.sql.DataFrame], hash_length: int = 8
+) -> str:
+    """
+    Generates a fixed-length hash based on the dimensions, schema, and optionally sampled data of a pandas or Spark DataFrame.
+
+    This function creates a hash from the number of rows, number of columns, and schema of the DataFrame. Optionally,
+    it includes sampled data from the DataFrame for increased uniqueness when content changes.
+
+    Parameters:
+    -----------
+    df : Union[pd.DataFrame, pyspark.sql.DataFrame]
+        The DataFrame for which to generate a hash. Can be either a pandas DataFrame or a Spark DataFrame.
+    hash_length : int, optional
+        The length of the hash to be generated (default is 8 characters).
+
+    Returns:
+    --------
+    str
+        The generated hash as a string of the specified length.
+
+    Raises
+    ------
+    ValueError: On empty Dataframe
+
+    Example:
+    --------
+    >>> import pandas as pd
+    >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+    >>> hash_dataframe(df)
+    '9a83f5ac'
+
+    >>> from pyspark.sql import SparkSession
+    >>> spark = SparkSession.builder.appName("example").getOrCreate()
+    >>> sdf = spark.createDataFrame([(1, 2), (3, 4)], ["col1", "col2"])
+    >>> hash_dataframe(sdf)
+    'e3b0c442'
+    """
+
+    # Handle empty DataFrame case
+    if isinstance(df, (pd.DataFrame, pd.core.frame.DataFrame)) and df.empty:
+        raise ValueError("Encountered an empty dataframe")
+    elif isinstance(df, pyspark.sql.DataFrame) and df.count() == 0:
+        raise ValueError("Encountered an empty dataframe")
+
+    # Check if it's a pandas DataFrame
+    if isinstance(df, (pd.DataFrame, pd.core.frame.DataFrame)):
+        num_rows = len(df)
+        num_columns = len(df.columns)
+        schema_str = str(df.dtypes.values)
+    else:
+        num_rows = df.count()
+        num_columns = len(df.columns)
+        schema_str = df.schema.simpleString()
+
+    # Get a name for the task based on its type.
+    if isinstance(task, Task):
+        taskname = task.__class__.__name__
+    elif isinstance(task, type[Task]):
+        taskname = task.__name__
+    else:
+        taskname = type(task).__name__
+
+    # Combine the taskname, schema, and data for hashing
+    dimensions_str = f"{taskname}-{num_rows}-{num_columns}-{schema_str}"
+
+    # Generate a hash from the dimensions, schema, and sample data
+    hasher = hashlib.blake2s(digest_size=hash_length)
+    hasher.update(dimensions_str.encode("utf-8"))
+
+    return hasher.hexdigest()

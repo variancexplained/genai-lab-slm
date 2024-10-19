@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/service/logging/task_logger.py                                      #
+# Filename   : /discover/infra/service/logging/task.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Sunday October 13th 2024 01:57:08 am                                                #
+# Modified   : Friday October 18th 2024 07:56:25 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,15 +42,19 @@ def task_logger(func):
 
             # Formatting the current time using the date formatter in HTTP format.
             # This is logged with the message indicating the start of the method.
-            now = dt4mtr.to_HTTP_format(datetime.now())
-            logger.info(f"Starting {task_name} at {now}")
+            start = datetime.now()
+            start_fmt = dt4mtr.to_HTTP_format(start)
+            print(f"Starting {task_name} {start_fmt}")
 
             # Execute the original function being decorated, passing all args and kwargs.
             result = func(self, *args, **kwargs)
 
             # After the function completes, log the completion time.
-            now = dt4mtr.to_HTTP_format(datetime.now())
-            logger.info(f"Completed {task_name} at {now}")
+            end = datetime.now()
+            end_fmt = dt4mtr.to_HTTP_format(end)
+            duration = (end - start).total_seconds()
+            duration_fmt = dt4mtr.format_duration(seconds=duration)
+            print(f"Completed {task_name} {end_fmt}. Runtime: {duration_fmt}")
 
         except Exception as e:
             # If an exception occurs, prepare the function signature for more informative logging.

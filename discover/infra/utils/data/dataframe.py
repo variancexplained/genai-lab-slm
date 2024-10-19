@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 04:35:45 pm                                              #
-# Modified   : Sunday October 13th 2024 01:36:35 am                                                #
+# Modified   : Friday October 18th 2024 02:44:28 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ def find_dataframe(args, kwargs) -> Union[pd.DataFrame, SparkDataFrame]:
     df = None
     # Search through args first for pandas or Spark DataFrame
     for arg in args:
-        if isinstance(arg, pd.DataFrame):
+        if isinstance(arg, (pd.DataFrame, pd.core.frame.DataFrame)):
             df = arg
             break
         elif isinstance(arg, SparkDataFrame):
@@ -55,7 +55,7 @@ def find_dataframe(args, kwargs) -> Union[pd.DataFrame, SparkDataFrame]:
     # If no DataFrame found in args, search through kwargs
     if df is None:
         for key, value in kwargs.items():
-            if isinstance(value, pd.DataFrame):
+            if isinstance(value, (pd.DataFrame, pd.core.frame.DataFrame)):
                 df = value
                 break
             elif isinstance(value, SparkDataFrame):

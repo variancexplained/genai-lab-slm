@@ -11,15 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Thursday October 17th 2024 09:59:36 am                                              #
+# Modified   : Friday October 18th 2024 02:04:15 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Configuration Classes."""
 import os
-
-# %%
 from typing import Any, Dict
 
 from dotenv import load_dotenv

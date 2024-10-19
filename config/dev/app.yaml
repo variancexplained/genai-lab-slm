@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.12                                                                             #
-# Filename   : /config/app/dev.yaml                                                                #
+# Filename   : /config/dev/app.yaml                                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Thursday October 17th 2024 12:46:35 am                                              #
+# Modified   : Friday October 18th 2024 03:22:22 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -20,11 +20,37 @@ env: dev
 # ------------------------------------------------------------------------------------------------ #
 #                                      LOGGING                                                     #
 # ------------------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------------------ #
+#                                      LOGGING                                                     #
+# ------------------------------------------------------------------------------------------------ #
 logging:
   handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: console
+      level: INFO # Default, possibly overridden in environment config
+      stream: ext://sys.stderr
     file:
-      filename: logs/dev/log
-
+      backupCount: 0
+      class: logging.handlers.TimedRotatingFileHandler
+      filename: logs/dev/log # Override in environment specific configurations
+      formatter: file
+      interval: 1
+      level: INFO # Default, possibly overridden in environment config
+      when: midnight
+  loggers:
+    py4j:  # Add this block to suppress py4j logging
+      level: ERROR
+      handlers:
+        - console
+        - file
+      propagate: false  # Prevent py4j logs from being propagated to the root logger
+  root:
+    handlers:
+    - console
+    - file
+    level: INFO # Default, possibly overridden in environment config
+  version: 1
 # ------------------------------------------------------------------------------------------------ #
 #                                         DATA                                                     #
 # ------------------------------------------------------------------------------------------------ #
@@ -52,3 +78,13 @@ spark:
 #                                   WORKSPACE                                                      #
 # ------------------------------------------------------------------------------------------------ #
 workspace: workspace/dev
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    OPERATIONS                                                    #
+# ------------------------------------------------------------------------------------------------ #
+ops:
+  basedir: ops/dev  # Base directory for operations data.
+  cache:
+    registry: ops/dev/cache/registry
+    data: ops/dev/cache/data
+    archive: ops/dev/cache/archive

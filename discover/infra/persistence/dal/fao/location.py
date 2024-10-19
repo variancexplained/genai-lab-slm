@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 01:04:56 pm                                             #
-# Modified   : Thursday October 17th 2024 01:39:42 am                                              #
+# Modified   : Friday October 18th 2024 05:04:53 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -53,9 +53,8 @@ class FileLocationService(LocationService):
         partition: bool = True,
     ) -> str:
         """
-        Constructs the file path for a given asset_type, phase, stage, and name. If the partition parameter
-        is True, it appends a `.parquet` extension to the filename. Ensures that the necessary directories
-        are created.
+        Constructs the file path for a given asset_type, phase, stage, and name.  Ensures that
+        the necessary directories are created.
 
         Args:
             asset_type (str): The type of asset_type (e.g., 'dataset' or 'model') to be stored.
@@ -68,10 +67,7 @@ class FileLocationService(LocationService):
         Returns:
             str: The complete file path for the specified asset_type, phase, stage, and name.
         """
-        filename = (
-            f"appvocai_discover-{phase.directory}-{stage.directory}-{name}-{asset_type}"
-        )
-        filename = filename if not partition else f"{filename}.parquet"
+        filename = f"appvocai_discover-{phase.directory}-{stage.directory}-{name}-{asset_type}.parquet"
         filepath = os.path.join(self._workspace, asset_type, phase.directory, filename)
         directory = filepath if not partition else os.path.dirname(filepath)
         os.makedirs(directory, exist_ok=True)

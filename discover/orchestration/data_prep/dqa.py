@@ -11,207 +11,46 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday October 18th 2024 01:42:42 am                                                #
+# Modified   : Saturday October 19th 2024 06:20:32 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
-import logging
 import os
 import re
+import warnings
 from collections import Counter
 from typing import AnyStr, List, Optional, Union
 
 import emoji
-import fasttext
 import numpy as np
 import pandas as pd
-from dependency_injector.wiring import Provide, inject
 from joblib import Parallel, delayed
+from lingua import Language, LanguageDetectorBuilder
+from pandarallel import pandarallel
 from profanity_check import predict
+from sklearn.exceptions import InconsistentVersionWarning
+from sklearn.utils._testing import ignore_warnings
 from tqdm import tqdm
 
-from discover.assets.dataset import Dataset
-from discover.assets.idgen import AssetIDGen
-from discover.container import DiscoverContainer
-from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.infra.persistence.repo.dataset import DatasetRepo
-from discover.infra.service.logging.stage import stage_logger
+from discover.infra.service.cache.cachenow import cachenow
 from discover.infra.service.logging.task import task_logger
 from discover.infra.utils.data.dataframe import split_dataframe
-from discover.orchestration.base.stage import Stage
 from discover.orchestration.base.task import Task
 
+warnings.filterwarnings("ignore")
+# warnings.simplefilter("ignore")
+# warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+# warnings.filterwarnings("ignore", message="load_model does not return WordVectorModel")
+# warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+os.environ["PYTHONWARNINGS"] = "ignore"
 
 # ------------------------------------------------------------------------------------------------ #
-#                                     DQA STAGE                                                    #
+pandarallel.initialize(nb_workers=12, verbose=False)
 # ------------------------------------------------------------------------------------------------ #
-class DQAStage(Stage):
-    """
-    A stage class for preparing datasets, handling loading, processing, and saving of data.
-
-    The `DataPrepStage` class orchestrates the execution of data preparation tasks,
-    including loading source datasets, applying a series of tasks, and saving the processed
-    data to a destination. It uses a repository for dataset persistence and can be configured
-    to force execution even if the destination dataset already exists.
-
-    Parameters
-    ----------
-    source_config : dict
-        Configuration for the source dataset, including details like phase, stage, and name.
-    destination_config : dict
-        Configuration for the destination dataset, including details like phase, stage, and name.
-    tasks : List[Task]
-        A list of tasks to execute as part of the data preparation stage.
-    force : bool, optional
-        Whether to force execution if the destination dataset endpoint already exists (default is False).
-    repo : DatasetRepo, optional
-        A repository for dataset persistence, injected via dependency injection (default is `DiscoverContainer.repo.dataset_repo`).
-    **kwargs : dict
-        Additional keyword arguments for stage configuration.
-
-    Attributes
-    ----------
-    _repo : DatasetRepo
-        The repository instance used for dataset persistence.
-    _source_asset_id : str
-        The generated asset ID for the source dataset based on the configuration.
-    _destination_asset_id : str
-        The generated asset ID for the destination dataset based on the configuration.
-    _logger : logging.Logger
-        Logger instance for logging events related to the data preparation stage.
-
-    Methods
-    -------
-    run() -> None
-        Executes the stage by loading the source dataset, applying tasks, and saving the result.
-    _create_destination_dataset(data: Union[pd.DataFrame, pyspark.sql.DataFrame]) -> Dataset
-        Creates the destination dataset with the processed data and configuration details.
-    _load_source_dataset() -> Dataset
-        Loads the source dataset from the repository using the source asset ID.
-    _save_destination_dataset(dataset: Dataset) -> None
-        Saves the processed dataset to the repository using the destination asset ID.
-    _endpoint_exists(asset_id: str) -> bool
-        Checks if the dataset endpoint already exists in the repository.
-
-    Examples
-    --------
-    >>> source_config = {'phase': 'preprocessing', 'stage': 'normalization', 'name': 'raw_data'}
-    >>> destination_config = {'phase': 'preprocessing', 'stage': 'normalized', 'name': 'cleaned_data'}
-    >>> tasks = [Task1(), Task2()]
-    >>> data_prep_stage = DataPrepStage(
-    ...     source_config=source_config,
-    ...     destination_config=destination_config,
-    ...     tasks=tasks,
-    ...     force=True
-    ... )
-    >>> data_prep_stage.run()
-
-    Notes
-    -----
-    The `DataPrepStage` class leverages dependency injection to retrieve a dataset repository instance.
-    It ensures that datasets are properly loaded and saved based on the specified configurations.
-    """
-
-    @inject
-    def __init__(
-        self,
-        source_config: dict,
-        destination_config: dict,
-        tasks: List[Task],
-        force: bool = False,
-        repo: DatasetRepo = Provide[DiscoverContainer.repo.dataset_repo],
-        **kwargs,
-    ) -> None:
-        super().__init__(
-            source_config=source_config,
-            destination_config=destination_config,
-            tasks=tasks,
-            force=force,
-        )
-        self._repo = repo
-
-        self._destination_asset_id = AssetIDGen.get_asset_id(
-            asset_type=self._destination_config.asset_type,
-            phase=PhaseDef.from_value(value=self._destination_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._destination_config.stage),
-            name=self._destination_config.name,
-        )
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    @property
-    def phase(self) -> PhaseDef:
-        return PhaseDef.from_value(value=self._destination_config.phase)
-
-    @property
-    def stage(self) -> PhaseDef:
-        return DataPrepStageDef.from_value(value=self._destination_config.stage)
-
-    @stage_logger
-    def run(self) -> str:
-        """Executes the stage by loading the source dataset, applying tasks, and saving the result.
-
-        Returns:
-            asset_id (str): Returns the asset_id for the asset created.
-        """
-        if (
-            self._endpoint_exists(asset_id=self._destination_asset_id)
-            and not self._force
-        ):
-            return self._destination_asset_id
-        else:
-            if self._repo.exists(asset_id=self._destination_asset_id):
-                self._repo.remove(asset_id=self._destination_asset_id)
-
-            data = self._load_source_data()
-            data.sort_index(inplace=True)
-            results = []
-
-            for task in self._tasks:
-                result = task.run(data=data)
-                results.append(result)
-
-            results = pd.concat(results, axis=1)
-            results = pd.concat((data["id"], results), axis=1)
-            dataset = self._create_destination_dataset(data=results)
-
-            self._save_destination_dataset(dataset=dataset)
-
-            return self._destination_asset_id
-
-    def _endpoint_exists(self, asset_id: str) -> bool:
-        """Checks if the dataset endpoint already exists in the repository."""
-        return self._repo.exists(asset_id=asset_id)
-
-    def _load_source_data(self) -> pd.DataFrame:
-        """Loads source data."""
-        source_asset_id = AssetIDGen.get_asset_id(
-            asset_type=self._source_config.asset_type,
-            phase=PhaseDef.from_value(value=self._source_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._source_config.stage),
-            name=self._source_config.name,
-        )
-        return self._repo.get(asset_id=source_asset_id).content
-
-    def _create_destination_dataset(self, data: pd.DataFrame) -> Dataset:
-        """Creates the destination dataset with the processed data and configuration details."""
-        return Dataset(
-            phase=PhaseDef.from_value(self._destination_config.phase),
-            stage=DataPrepStageDef.from_value(self._destination_config.stage),
-            name=self._destination_config.name,
-            content=data,
-            nlp=self._destination_config.nlp,
-            distributed=self._destination_config.distributed,
-        )
-
-    def _remove_destination_dataset(self) -> None:
-        self._repo.remove(asset_id=self._destination_asset_id)
-
-    def _save_destination_dataset(self, dataset: Dataset) -> None:
-        """Saves the processed dataset to the repository using the destination asset ID."""
-        self._repo.add(dataset=dataset)
+languages = [Language.ENGLISH, Language.SPANISH]
+detector = LanguageDetectorBuilder.from_languages(*languages).build()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -221,22 +60,24 @@ class EntropyTask(Task):
     """ """
 
     def __init__(
-        self, text_column: str = "content", dqa_column: str = "entropy"
+        self,
+        text_column: str = "content",
+        dqa_column: str = "entropy",
+        threshold: float = 4.75,
     ) -> None:
         """"""
         super().__init__()
         self._text_column = text_column
         self._dqa_column = dqa_column
+        self._threshold = threshold
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """"""
-        result = (
-            data[self._text_column].parallel_apply(self._calculate_entropy).to_frame()
-        )
-        result = result.rename(columns={self._text_column: self._dqa_column})
-        result.sort_index(inplace=True)
-        return result
+        result = data[self._text_column].parallel_apply(self._calculate_entropy)
+
+        data[self._dqa_column] = result.gt(self._threshold)
+        return data
 
     @staticmethod
     def _calculate_entropy(text: str) -> float:
@@ -296,16 +137,10 @@ class DetectDuplicateTask(Task):
         Returns:
             pd.DataFrame: A DataFrame with a new column indicating whether each row is a duplicate, based on the specified columns.
         """
-        result = (
-            data[self._text_column].parallel_apply(self._calculate_entropy).to_frame()
+        data[self._dqa_column] = data.duplicated(
+            subset=self._column_names, keep="first"
         )
-        result = (
-            data.duplicated(subset=self._column_names, keep="first")
-            .to_frame()
-            .rename(columns={0: self._dqa_column})
-        )
-        result.sort_index(inplace=True)
-        return result
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -336,10 +171,8 @@ class DetectNullValuesTask(Task):
         Returns:
             pd.DataFrame: The DataFrame with an additional column indicating whether each row is incomplete.
         """
-        result = data.isnull().any(axis=1)
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = data.isnull().any(axis=1)
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -366,23 +199,33 @@ class DetectInvalidRatingsTask(Task):
         Returns:
             pd.DataFrame: The DataFrame with an additional column indicating whether each row is incomplete.
         """
-        result = data[self._rating_column].parallel_apply(self._rating_invalid)
-        result = result.rename(columns={self._rating_column: self._dqa_column})
-        result.sort_index(inplace=True)
-        return result
-
-    def _rating_invalid(self, rating: int) -> bool:
-        """Indicates whether the rating is on the five point scale."""
-        return rating < 0 or rating > 5
+        data[self._dqa_column] = ~data[self._rating_column].between(0, 5)
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                            DETECT NON-ENGLISH TASK                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Standalone function for processing a chunk
-def process_chunk(chunk, text_column, new_column, model_path):
-    model = fasttext.load_model(model_path)  # Load the model in each worker
-    return chunk[text_column].apply(lambda text: is_non_english(text, model))
+@ignore_warnings(category=InconsistentVersionWarning)
+def process_chunk(chunk, text_column, new_column, model_filepath):
+    # Use catch_warnings and filterwarnings inside the context manager
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        warnings.filterwarnings("ignore")
+        warnings.filterwarnings(
+            "ignore", category=InconsistentVersionWarning, module="sklearn"
+        )
+        warnings.simplefilter("ignore", InconsistentVersionWarning)
+        warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+
+        # Your model loading or FastText code that triggers the warnings
+        import fasttext
+
+        fasttext.FastText.eprint = lambda x: None
+
+        model = fasttext.load_model(model_filepath)
+        return chunk[text_column].apply(lambda text: is_non_english(text, model))
 
 
 # Standalone function to determine if text is non-English
@@ -393,6 +236,15 @@ def is_non_english(text, model):
     except Exception as e:
         # Use a simple print statement for error logging in parallel function
         print(f"Error in language detection: {e}")
+        return False
+
+
+# Function to re-evaluate potentially non-English texts
+def re_evaluate(text):
+    try:
+        return detector.detect_language_of(text) == Language.ENGLISH
+    except Exception as e:
+        print(f"Error in re-evaluation: {e}")
         return False
 
 
@@ -430,7 +282,6 @@ class DetectNonEnglishTask(Task):
 
         # Split data into chunks
         chunks = split_dataframe(data=data, n=self._n_jobs)
-        self._logger.debug(f"Data split into {len(chunks)} chunks")
 
         # Process chunks in parallel using joblib
         results = Parallel(n_jobs=self._n_jobs)(
@@ -440,11 +291,14 @@ class DetectNonEnglishTask(Task):
             for chunk in tqdm(chunks)
         )
 
-        # Concatenate the processed chunks
-        result = pd.concat(results, axis=0)
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = pd.concat(results, axis=0)
+
+        # Apply re-evaluation only to rows where 'is_non_english' is True
+        data.loc[data[self._dqa_column], self._dqa_column] = data.loc[
+            data[self._dqa_column], self._text_column
+        ].parallel_apply(lambda text: not re_evaluate(text))
+
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -480,10 +334,10 @@ class DetectEmojiTask(Task):
 
         """
 
-        result = data[self._text_column].parallel_apply(self._contains_emoji)
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = data[self._text_column].parallel_apply(
+            self._contains_emoji
+        )
+        return data
 
     @staticmethod
     def _contains_emoji(text):
@@ -536,13 +390,10 @@ class DetectSpecialCharacterTask(Task):
 
         """
 
-        result = data[self._text_column].parallel_apply(
+        data[self._dqa_column] = data[self._text_column].parallel_apply(
             self._contains_excessive_special_chars
         )
-
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        return data
 
     def _contains_excessive_special_chars(self, text):
         """Detects if the given text contains an excessive number of special characters.
@@ -591,11 +442,10 @@ class DetectInvalidDatesTask(Task):
 
         """
 
-        result = data[self._date_column].parallel_apply(self._date_invalid)
-
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = data[self._date_column].parallel_apply(
+            self._date_invalid
+        )
+        return data
 
     def _date_invalid(self, date: np.datetime64) -> bool:
         """Indicates whether the rating is on the five point scale."""
@@ -657,6 +507,7 @@ class DetectProfanityTask(Task):
         self._n_jobs = n_jobs
 
     @task_logger
+    @cachenow
     def run(self, data: pd.DataFrame):
         """
         Executes the task to detect profanity in the specified column and add a new column with the results.
@@ -676,10 +527,8 @@ class DetectProfanityTask(Task):
             for chunk in tqdm(chunks)
         ]
         # Concatenate the processed chunks
-        result = pd.concat(results, axis=0)
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = pd.concat(results, axis=0)
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -714,10 +563,10 @@ class DetectEmailTask(Task):
 
         """
 
-        result = data[self._text_column].parallel_apply(self._contains_email)
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = data[self._text_column].parallel_apply(
+            self._contains_email
+        )
+        return data
 
     @staticmethod
     def _contains_email(text):
@@ -767,10 +616,10 @@ class DetectURLTask(Task):
 
         """
 
-        result = data[self._text_column].parallel_apply(self._contains_url)
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = data[self._text_column].parallel_apply(
+            self._contains_url
+        )
+        return data
 
     @staticmethod
     def _contains_url(text):
@@ -820,10 +669,10 @@ class DetectPhoneNumberTask(Task):
 
         """
 
-        result = data[self._text_column].parallel_apply(self._contains_phone_number)
-        result = pd.DataFrame(result, columns=[self._dqa_column])
-        result.sort_index(inplace=True)
-        return result
+        data[self._dqa_column] = data[self._text_column].parallel_apply(
+            self._contains_phone_number
+        )
+        return data
 
     @staticmethod
     def _contains_phone_number(text):

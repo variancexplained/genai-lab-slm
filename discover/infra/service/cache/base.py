@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Thursday October 17th 2024 09:54:39 am                                              #
+# Modified   : Friday October 18th 2024 02:20:11 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from enum import Enum
 from typing import Any, Optional
 
 from discover.core.data_class import DataClass
-from discover.infra.config.app import ConfigReader
+from discover.infra.config.app import AppConfigReader
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -64,7 +64,10 @@ class Cache(ABC):
         implemented eviction policy.
     """
 
-    def __init__(self, config_reader_cls: type[ConfigReader] = ConfigReader) -> None:
+    def __init__(
+        self, config_reader_cls: type[AppConfigReader] = AppConfigReader
+    ) -> None:
+
         self._config = config_reader_cls().get_config(section="ops").cache
         self._ttl = self._config.ttl
         self._refresh_on_access = self._config.refresh_on_access

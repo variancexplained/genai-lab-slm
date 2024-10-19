@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Thursday October 17th 2024 12:17:17 pm                                              #
+# Modified   : Friday October 18th 2024 02:14:24 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,6 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-
-# %%
 from collections.abc import Mapping
 from typing import Any, Dict, Optional, Union
 
@@ -53,7 +51,7 @@ class ConfigReader(ABC):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._env_file_path = env_file_path
         self._current_environment = self.get_environment()
-        self._config = self.load_config()
+        self._config = None
 
     def get_config(
         self, section: Optional[str] = None, namespace: bool = True
@@ -78,6 +76,7 @@ class ConfigReader(ABC):
         KeyError:
             If the requested section is not found in the configuration.
         """
+        self._config = self.load_config()
         config = self._config[section] if section else self._config
         return self.to_namespace(config) if namespace else config
 
@@ -163,7 +162,10 @@ class ConfigReader(ABC):
         """
         base_config = self._load_base_config()
         env_config = self._load_env_config()
-        final_config = self._merge_configs(base=base_config, override=env_config)
+        if env_config is not None:
+            final_config = self._merge_configs(base=base_config, override=env_config)
+        else:
+            final_config = base_config
         return final_config
 
     @abstractmethod

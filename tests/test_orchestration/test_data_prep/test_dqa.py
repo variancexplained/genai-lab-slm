@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 01:27:37 am                                                #
-# Modified   : Friday October 18th 2024 01:44:47 am                                                #
+# Modified   : Friday October 18th 2024 05:41:08 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import pytest
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.infra.config.orchestration import OrchestrationConfigReader
-from discover.orchestration.data_prep.dqa import DQAStage
+from discover.orchestration.data_prep.stage import DataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -42,7 +42,7 @@ single_line = f"\n{100 * '-'}"
 @pytest.mark.dqa
 class TestDQA:  # pragma: no cover
     # ============================================================================================ #
-    def test_setup(self, container, caplog) -> None:
+    def test_setup(self, norm_asset_id, container, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -50,7 +50,7 @@ class TestDQA:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        asset_id = AssetIDGen.get_asset_id(
+        dqa_asset_id = AssetIDGen.get_asset_id(
             name="review",
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
@@ -58,7 +58,9 @@ class TestDQA:  # pragma: no cover
         )
 
         repo = container.repo.dataset_repo()
-        repo.remove(asset_id=asset_id, ignore_errors=True)
+        assert repo.exists(asset_id=norm_asset_id)
+        repo.remove(asset_id=dqa_asset_id, ignore_errors=True)
+        assert not repo.exists(asset_id=dqa_asset_id)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -82,7 +84,7 @@ class TestDQA:  # pragma: no cover
         stage_config = config["dataprep"]["stages"][2]
 
         # Build Stage
-        stage = DQAStage.build(stage_config=stage_config)
+        stage = DataPrepStage.build(stage_config=stage_config)
         asset_id = stage.run()
         # Confirm existence
         repo = container.repo.dataset_repo()
@@ -110,7 +112,7 @@ class TestDQA:  # pragma: no cover
         stage_config = config["dataprep"]["stages"][2]
 
         # Build Stage
-        stage = DQAStage.build(stage_config=stage_config)
+        stage = DataPrepStage.build(stage_config=stage_config)
         _ = stage.run()
 
         # ---------------------------------------------------------------------------------------- #
@@ -132,10 +134,10 @@ class TestDQA:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         reader = OrchestrationConfigReader()
         config = reader.get_config("phases", namespace=False)
-        stage_config = config["dataprep"]["stages"][1]
+        stage_config = config["dataprep"]["stages"][2]
 
         # Build Stage
-        stage = DQAStage.build(stage_config=stage_config, force=True)
+        stage = DataPrepStage.build(stage_config=stage_config, force=True)
         _ = stage.run()
 
         # ---------------------------------------------------------------------------------------- #
