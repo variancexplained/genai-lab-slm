@@ -11,12 +11,16 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 01:36:41 am                                              #
-# Modified   : Thursday October 17th 2024 01:43:56 am                                              #
+# Modified   : Monday October 21st 2024 07:18:59 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from discover.core.flow import PhaseDef, StageDef
+from discover.infra.config.app import AppConfigReader
+
+# ------------------------------------------------------------------------------------------------ #
+config_reader = AppConfigReader()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -28,7 +32,10 @@ class AssetIDGen:
 
     @staticmethod
     def get_asset_id(
-        asset_type: str, phase: PhaseDef, stage: StageDef, name: str
+        asset_type: str,
+        phase: PhaseDef,
+        stage: StageDef,
+        name: str,
     ) -> str:
         """
         Generates an asset ID string based on the provided asset type, phase, stage, and name.
@@ -43,4 +50,5 @@ class AssetIDGen:
             str: A standardized asset ID string in the format:
                  "{asset_type}-{phase.value}-{stage.value}-{name}"
         """
-        return f"{asset_type}-{phase.value}-{stage.value}-{name}"
+        env = config_reader.get_environment()
+        return f"{asset_type}-{env}-{phase.value}-{stage.value}-{name}"

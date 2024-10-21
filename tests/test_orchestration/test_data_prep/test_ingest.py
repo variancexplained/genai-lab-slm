@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 12:41:52 pm                                              #
-# Modified   : Friday October 18th 2024 01:39:39 am                                                #
+# Modified   : Monday October 21st 2024 12:06:22 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,8 @@ import pytest
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.infra.config.orchestration import OrchestrationConfigReader
-from discover.orchestration.data_prep.stage import DataPrepStage
+from discover.flow.data_prep.stage import DataPrepStage
+from discover.infra.config.flow import FlowConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -80,7 +80,7 @@ class TestIngest:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        reader = OrchestrationConfigReader()
+        reader = FlowConfigReader()
         config = reader.get_config("phases", namespace=False)
         stage_config = config["dataprep"]["stages"][0]
         assert stage_config["source_config"]["filepath"] == "data/raw/reviews"

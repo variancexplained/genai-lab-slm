@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/app/dqa.py                                                                #
+# Filename   : /discover/analysis/dqa.py                                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Friday October 18th 2024 06:57:26 pm                                                #
+# Modified   : Sunday October 20th 2024 11:55:10 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 
 import pandas as pd
 
-from discover.app.base import Analysis
+from discover.analysis.base import Analysis
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
 
@@ -52,44 +52,43 @@ class DataQualityAnalysis(Analysis):
         return df.sort_values(by="n", ascending=False)
 
     def get_random_text(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_entropy"] is True]["content"]
+        return self._data.loc[self._data["dqa_entropy"], "content"]
 
     def get_duplicate_reviews(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_duplicate_review"] is True]["content"]
+
+        return self._data.loc[self._data["dqa_duplicate_review"], "content"]
 
     def get_non_english_reviews(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data.loc[self._data["dqa_non_english_review"]]["content"]
+
+        return self._data.loc[self._data["dqa_non_english_review"], "content"]
 
     def get_non_english_apps(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data.loc[self._data["dqa_non_english_app_name"]]["app_name"]
+
+        return self._data.loc[self._data["dqa_non_english_app_name"], "app_name"]
 
     def get_emoji(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_has_emoji"] is True]["content"]
+
+        return self._data.loc[self._data["dqa_has_emoji"], "content"]
 
     def get_special_chars(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_excessive_special_chars"] is True]["content"]
+
+        return self._data.loc[self._data["dqa_excessive_special_chars"], "content"]
 
     def get_profanity(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_has_profanity"] is True]["content"]
+
+        return self._data.loc[self._data["dqa_has_profanity"], "content"]
 
     def get_email(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_contains_email"] is True]["content"]
+
+        return self._data.loc[self._data["dqa_contains_email"], "content"]
 
     def get_url(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_contains_url"] is True]["content"]
+
+        return self._data.loc[self._data["dqa_contains_url"], "content"]
 
     def get_phone(self) -> pd.DataFrame:
-        """Returns high entropy review text."""
-        return self._data[self._data["dqa_contains_phone_number"] is True]["content"]
+
+        return self._data.loc[self._data["dqa_contains_phone_number"], "content"]
 
     def _load_data(self, asset_id: str) -> pd.DataFrame:
         return super()._load_data(asset_id=asset_id)

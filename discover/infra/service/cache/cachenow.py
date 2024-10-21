@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Friday October 18th 2024 02:42:43 pm                                                #
+# Modified   : Sunday October 20th 2024 12:34:54 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,9 +24,13 @@ from typing import Union
 import pandas as pd
 import pyspark
 
+from discover.infra.config.app import AppConfigReader
 from discover.infra.service.cache.cache import DiscoverCache
 from discover.infra.utils.data.dataframe import find_dataframe
 from discover.orchestration.base.task import Task
+
+# ------------------------------------------------------------------------------------------------ #
+reader = AppConfigReader()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -149,7 +153,8 @@ def get_dataset_cache_id(
     >>> hash_dataframe(sdf)
     'e3b0c442'
     """
-
+    # Ensure cache is environment context-aware.
+    env = reader.get_environment()
     # Handle empty DataFrame case
     if isinstance(df, (pd.DataFrame, pd.core.frame.DataFrame)) and df.empty:
         raise ValueError("Encountered an empty dataframe")
@@ -175,7 +180,7 @@ def get_dataset_cache_id(
         taskname = type(task).__name__
 
     # Combine the taskname, schema, and data for hashing
-    dimensions_str = f"{taskname}-{num_rows}-{num_columns}-{schema_str}"
+    dimensions_str = f"{env}-{taskname}-{num_rows}-{num_columns}-{schema_str}"
 
     # Generate a hash from the dimensions, schema, and sample data
     hasher = hashlib.blake2s(digest_size=hash_length)

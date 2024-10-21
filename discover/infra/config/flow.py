@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/config/orchestration.py                                             #
+# Filename   : /discover/infra/config/flow.py                                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Friday October 18th 2024 02:04:24 pm                                                #
+# Modified   : Sunday October 20th 2024 11:56:22 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,7 +33,7 @@ load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
 
 
-class OrchestrationConfigReader(ConfigReader):
+class FlowConfigReader(ConfigReader):
     """
     A class for managing configuration and environment variables.
 
@@ -116,7 +116,7 @@ class OrchestrationConfigReader(ConfigReader):
             Raised if the `base.yaml` file is not found.
         """
         directory = os.getenv("CONFIG_DIRECTORY", "config")
-        filepath = os.path.join(directory, "base", "orchestration.yaml")
+        filepath = os.path.join(directory, "base", "flow.yaml")
         return self.read_yaml(filepath=filepath, content="base configuration")
 
     def _load_env_config(self) -> Dict[str, Any]:
@@ -134,9 +134,7 @@ class OrchestrationConfigReader(ConfigReader):
             Raised if the environment-specific YAML file is not found.
         """
         directory = os.getenv("CONFIG_DIRECTORY", "config")
-        filepath = os.path.join(
-            directory, self.current_environment, "orchestration.yaml"
-        )
+        filepath = os.path.join(directory, self.current_environment, "flow.yaml")
         return self.read_yaml(
             filepath=filepath,
             content=f"{self.current_environment} environment configuration",

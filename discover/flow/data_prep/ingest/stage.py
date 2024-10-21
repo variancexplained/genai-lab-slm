@@ -4,34 +4,34 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/orchestration/base/stage.py                                               #
+# Filename   : /discover/flow/data_prep/ingest/stage.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday October 17th 2024 08:44:06 pm                                              #
+# Created    : Saturday October 19th 2024 12:57:59 pm                                              #
+# Modified   : Monday October 21st 2024 12:06:20 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Stage Base Class  Module"""
-from __future__ import annotations
+"""Ingest Stage Module"""
 
-from abc import ABC, abstractmethod
+import logging
 from typing import List
 
-from discover.core.flow import PhaseDef, StageDef
-from discover.core.namespace import NestedNamespace
-from discover.orchestration.base.task import Task, TaskBuilder
+import pandas as pd
+
+from discover.assets.idgen import AssetIDGen
+from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.flow.base.task import Task
+from discover.flow.data_prep.stage import DataPrepStage
+from discover.infra.utils.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                        STAGE                                                     #
-# ------------------------------------------------------------------------------------------------ #
-class Stage(ABC):
-    """Abstract base class for Stage pipelines."""
+class IngestStage(DataPrepStage):
 
     def __init__(
         self,
@@ -39,34 +39,24 @@ class Stage(ABC):
         destination_config: dict,
         tasks: List[Task],
         force: bool = False,
+        **kwargs,
     ) -> None:
-        self._source_config = NestedNamespace(source_config)
-        self._destination_config = NestedNamespace(destination_config)
-        self._tasks = tasks
-        self._force = force
-
-    @property
-    @abstractmethod
-    def phase(self) -> PhaseDef:
-        """Phase"""
-
-    @property
-    @abstractmethod
-    def stage(self) -> StageDef:
-        """Stage"""
-
-    @abstractmethod
-    def run(self) -> str:
-        """Stage execution"""
-
-    @classmethod
-    def build(cls, stage_config: dict, force: bool = False) -> Stage:
-        tasks = [
-            TaskBuilder.build(task_config) for task_config in stage_config["tasks"]
-        ]
-        return cls(
-            source_config=stage_config["source_config"],
-            destination_config=stage_config["destination_config"],
+        super().__init__(
+            source_config=source_config,
+            destination_config=destination_config,
             tasks=tasks,
             force=force,
         )
+
+        self._destination_asset_id = AssetIDGen.get_asset_id(
+            asset_type=self._destination_config.asset_type,
+            phase=PhaseDef.from_value(value=self._destination_config.phase),
+            stage=DataPrepStageDef.from_value(value=self._destination_config.stage),
+            name=self._destination_config.name,
+        )
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def _load_source_data(self) -> pd.DataFrame:
+        """Obtains source data from file."""
+        return IOService.read(filepath=self._source_config.filepath)

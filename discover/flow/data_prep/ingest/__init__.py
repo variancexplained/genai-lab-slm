@@ -4,24 +4,15 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/dev/orchestration.yaml                                                      #
+# Filename   : /discover/orchestration/data_prep/ingest/__init__.py                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Friday October 18th 2024 06:07:44 am                                                #
+# Created    : Saturday October 19th 2024 12:52:37 pm                                              #
+# Modified   : Saturday October 19th 2024 12:52:40 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-phases:
-  dataprep:
-    stages:
-      - stage_name: ingest
-        tasks:
-          - class_name: FilterTask
-            params:
-              frac: 0.01
-

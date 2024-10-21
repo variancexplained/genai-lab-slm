@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/dynamics/observability/profiler.py                                        #
+# Filename   : /discover/infra/service/performance/profiler.py                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Sunday September 22nd 2024 04:25:19 pm                                              #
+# Modified   : Sunday October 20th 2024 06:23:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from typing import Callable
 
 import psutil  # For gathering system resource usage
 
-from discover.application.ops.utils import find_task
+from discover.analysislication.ops.utils import find_task
 from discover.container import DiscoverContainer
 from discover.dynamics.observability.profile import Profile
 

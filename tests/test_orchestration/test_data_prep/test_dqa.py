@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 01:27:37 am                                                #
-# Modified   : Friday October 18th 2024 05:41:08 am                                                #
+# Modified   : Monday October 21st 2024 12:06:22 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,8 @@ import pytest
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.infra.config.orchestration import OrchestrationConfigReader
-from discover.orchestration.data_prep.stage import DataPrepStage
+from discover.flow.data_prep.stage import DataPrepStage
+from discover.infra.config.flow import FlowConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -79,7 +79,7 @@ class TestDQA:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        reader = OrchestrationConfigReader()
+        reader = FlowConfigReader()
         config = reader.get_config("phases", namespace=False)
         stage_config = config["dataprep"]["stages"][2]
 
@@ -107,7 +107,7 @@ class TestDQA:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        reader = OrchestrationConfigReader()
+        reader = FlowConfigReader()
         config = reader.get_config("phases", namespace=False)
         stage_config = config["dataprep"]["stages"][2]
 
@@ -132,7 +132,7 @@ class TestDQA:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        reader = OrchestrationConfigReader()
+        reader = FlowConfigReader()
         config = reader.get_config("phases", namespace=False)
         stage_config = config["dataprep"]["stages"][2]
 

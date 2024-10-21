@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 11:58:28 am                                              #
-# Modified   : Thursday October 17th 2024 12:17:54 pm                                              #
+# Modified   : Sunday October 20th 2024 11:55:56 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 import pytest
 
 from discover.infra.config.app import AppConfigReader
-from discover.infra.config.orchestration import OrchestrationConfigReader
+from discover.infra.config.flow import FlowConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -69,7 +69,7 @@ class TestConfig:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        reader = OrchestrationConfigReader()
+        reader = FlowConfigReader()
         config = reader.get_config("phases", namespace=False)
         assert isinstance(config, dict)
         assert "dataprep" in config.keys()

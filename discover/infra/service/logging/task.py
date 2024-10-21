@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Friday October 18th 2024 07:56:25 am                                                #
+# Modified   : Saturday October 19th 2024 09:59:30 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,7 +44,7 @@ def task_logger(func):
             # This is logged with the message indicating the start of the method.
             start = datetime.now()
             start_fmt = dt4mtr.to_HTTP_format(start)
-            print(f"Starting {task_name} {start_fmt}")
+            print(f"\n\tStarting {task_name} {start_fmt}")
 
             # Execute the original function being decorated, passing all args and kwargs.
             result = func(self, *args, **kwargs)
@@ -54,7 +54,7 @@ def task_logger(func):
             end_fmt = dt4mtr.to_HTTP_format(end)
             duration = (end - start).total_seconds()
             duration_fmt = dt4mtr.format_duration(seconds=duration)
-            print(f"Completed {task_name} {end_fmt}. Runtime: {duration_fmt}")
+            print(f"\tCompleted {task_name} {end_fmt}. Runtime: {duration_fmt}")
 
         except Exception as e:
             # If an exception occurs, prepare the function signature for more informative logging.

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday October 18th 2024 04:48:42 am                                                #
+# Modified   : Monday October 21st 2024 12:06:19 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,11 +26,11 @@ from pyspark.sql import SparkSession
 from discover.assets.dataset import Dataset
 from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.flow.data_prep.stage import DataPrepStage
 from discover.infra.config.app import AppConfigReader
-from discover.infra.config.orchestration import OrchestrationConfigReader
+from discover.infra.config.flow import FlowConfigReader
 from discover.infra.persistence.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
-from discover.orchestration.data_prep.stage import DataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -50,8 +50,8 @@ def container() -> DiscoverContainer:
     container.init_resources()
     container.wire(
         modules=[
-            "discover.orchestration.data_prep.stage",
-            "discover.orchestration.data_prep.dqa",
+            "discover.flow.data_prep.stage",
+            "discover.flow.data_prep.dqa",
         ],
     )
 
@@ -198,7 +198,7 @@ def distributed_ds_nlp(spark_df, container):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
 def norm_asset_id(container):
-    reader = OrchestrationConfigReader()
+    reader = FlowConfigReader()
     config = reader.get_config("phases", namespace=False)
     stage_config = config["dataprep"]["stages"][1]
 
