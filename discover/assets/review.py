@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday October 20th 2024 05:43:16 pm                                                #
-# Modified   : Monday October 21st 2024 01:05:36 pm                                                #
+# Modified   : Wednesday October 23rd 2024 01:18:04 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,6 +22,7 @@ from typing import Callable, Union
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from explorify.eda.overview import Overview
 
 from discover.assets.dataset import Dataset
 from discover.infra.utils.visual.print import Printer
@@ -52,6 +53,9 @@ class Review:
                 "content",
             ]
         ]
+        self._overview = Overview(
+            data=self._df,
+        )
 
     def overview(self) -> None:
         n = self._df.shape[0]
@@ -78,7 +82,7 @@ class Review:
         printer.print_dict(title=title, data=d)
 
     def info(self) -> None:
-        self._df.info(verbose=True, memory_usage=True, show_counts=True)
+        return self._overview.info()
 
     def describe(self) -> pd.DataFrame:
         return (
