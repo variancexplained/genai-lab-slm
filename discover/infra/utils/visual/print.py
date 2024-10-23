@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 6th 2024 11:07:56 pm                                                     #
-# Modified   : Monday October 21st 2024 01:04:31 am                                                #
+# Modified   : Wednesday October 23rd 2024 04:39:08 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -126,6 +126,6 @@ class Printer:
         text = None
         d = df.to_dict("records")[list_index]
         if text_col:
-            text = df[text_col].values[0]
+            text = df[text_col].values[list_index]
             del d[text_col]
         self.print_dict(title=title, data=d, text=text)

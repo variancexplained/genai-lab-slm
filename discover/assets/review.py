@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday October 20th 2024 05:43:16 pm                                                #
-# Modified   : Wednesday October 23rd 2024 01:18:04 pm                                             #
+# Modified   : Wednesday October 23rd 2024 04:06:02 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -91,7 +91,13 @@ class Review:
 
     def get(self, condition: Callable = None) -> pd.DataFrame:
         if condition:
-            return self._df.loc[condition]
+            df = self._df.loc[condition]
+            if df.shape[0] == 1:
+                printer.print_dataframe_as_dict(
+                    title="AppVoCAI Review Sample", df=df, text_col="content"
+                )
+            else:
+                return df
         return self._df
 
     def frequency_distribution(
