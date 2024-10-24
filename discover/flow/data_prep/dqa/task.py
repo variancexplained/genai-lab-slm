@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday October 21st 2024 12:06:20 am                                                #
+# Modified   : Thursday October 24th 2024 03:40:56 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,28 +21,27 @@ import os
 import re
 import warnings
 from abc import abstractmethod
-from collections import Counter
 from typing import Any, Optional
 
 import emoji
 import fasttext
-import numpy as np
 import pandas as pd
 from lingua import Language, LanguageDetectorBuilder
 from pandarallel import pandarallel
-from profanity_check import predict
-from symspellpy import SymSpell, Verbosity
+from symspellpy import SymSpell
 
 from discover.flow.base.task import Task
 from discover.infra.service.cache.cachenow import cachenow
 from discover.infra.service.logging.task import task_logger
+from discover.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
 os.environ["PYTHONWARNINGS"] = "ignore"
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(nb_workers=12, verbose=False)
-
+# ------------------------------------------------------------------------------------------------ #
+printer = Printer()
 # ------------------------------------------------------------------------------------------------ #
 #                     LANGUAGE MODELS FOR LANGUAGE DETECTION                                       #
 # ------------------------------------------------------------------------------------------------ #
@@ -82,11 +81,11 @@ class DQATask(Task):
     --------
     run(*args, data: Any, **kwargs) -> Any
         Abstract method that must be implemented by subclasses to define the core logic of the task.
-    summarize(data: pd.DataFrame) -> None
-        Summarizes the number of anomalies detected by the task and prints a report.
     """
 
-    def __init__(self, dqa_column: str = None, column: Optional[str] = None):
+    def __init__(
+        self, dqa_column: str = None, column: Optional[str] = None, force: bool = False
+    ):
         """
         Initializes the DQATask with the column to inspect and the column to store the results.
 
@@ -100,6 +99,7 @@ class DQATask(Task):
         super().__init__()
         self._dqa_column = dqa_column
         self._column = column
+        self._force = force
 
     @property
     def column(self) -> str:
@@ -110,6 +110,11 @@ class DQATask(Task):
     def dqa_column(self) -> str:
         """Returns the name of the column where anomalies are flagged."""
         return self._dqa_column
+
+    @property
+    def force(self) -> bool:
+        """Whether to ignore the cache and force the task to execute."""
+        return self._force
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
@@ -133,148 +138,21 @@ class DQATask(Task):
         """
         pass
 
-    def summarize(self, data: pd.DataFrame) -> None:
-        """
-        Summarizes the anomalies detected by the DQA task and prints the results.
-
-        This method calculates the total number of anomalies detected in the `dqa_column`
-        and provides a percentage of how many records contain anomalies.
-
-        Parameters:
-        -----------
-        data : pd.DataFrame
-            The DataFrame containing the data and the corresponding DQA results.
-
-        Returns:
-        --------
-        None
-        """
-        anomalies = data.sum()
-        n = data.shape[0]
-        p = round(anomalies / n * 100, 2)
-        print(
-            f"\t{self.__class__.__name__} detected {anomalies} anomalies in the {self.dqa_column} column, {p}% of {n} records."
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                       ENTROPY                                                    #
-# ------------------------------------------------------------------------------------------------ #
-class EntropyTask(DQATask):
-    """
-    A data quality assurance (DQA) task that checks for high entropy in a specified text column.
-
-    This task calculates the Shannon entropy of text data in a specified column and flags entries
-    where the entropy exceeds a predefined threshold. High entropy often indicates more complex
-    or less predictable text, which might be used as a signal for certain quality checks.
-
-    Attributes:
-    -----------
-    _column : str
-        The name of the column containing the text data to inspect.
-    _dqa_column : str
-        The name of the column where the DQA results (entropy flags) will be stored.
-    _threshold : float
-        The threshold above which text entries are flagged for high entropy.
-
-    Methods:
-    --------
-    run(data: pd.DataFrame) -> pd.DataFrame
-        Executes the entropy check and flags entries where the entropy is greater than the threshold.
-    _calculate_entropy(text: str) -> float
-        A static method that calculates the Shannon entropy of a given text string.
-    """
-
-    def __init__(
-        self,
-        column: str = "content",
-        dqa_column: str = "entropy",
-        threshold: float = 4.75,
-    ) -> None:
-        """
-        Initializes the EntropyTask with a target column, a DQA column for flags, and a threshold for entropy.
-
-        Args:
-        -----
-        column : str, optional
-            The name of the column containing the text data to inspect. Default is "content".
-        dqa_column : str, optional
-            The name of the column where the DQA results (entropy flags) will be stored. Default is "entropy".
-        threshold : float, optional
-            The entropy threshold above which text entries will be flagged. Default is 4.75.
-        """
-        super().__init__(column=column, dqa_column=dqa_column)
-        self._threshold = threshold
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Executes the entropy check on the specified column and flags entries with high entropy.
-
-        This method calculates the Shannon entropy for each text entry in the specified column
-        and flags those that exceed the defined threshold by setting the value in the DQA column.
-
-        Args:
-        -----
-        data : pd.DataFrame
-            The input DataFrame containing the data to be analyzed.
-
-        Returns:
-        --------
-        pd.DataFrame
-            The input DataFrame with an additional column that flags high entropy entries.
-        """
-        result = data[self._column].parallel_apply(self._calculate_entropy)
-
-        result = result.gt(self._threshold)
-
-        result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
-
-        return result
-
-    @staticmethod
-    def _calculate_entropy(text: str) -> float:
-        """
-        Calculates the Shannon entropy of a given text string.
-
-        The entropy is a measure of unpredictability or information content in the text.
-        Higher entropy indicates more randomness or complexity in the text.
-
-        Args:
-        -----
-        text : str
-            The input text string to calculate entropy for.
-
-        Returns:
-        --------
-        float
-            The Shannon entropy of the input text.
-        """
-        # Count frequency of each character in the text
-        freq = Counter(text)
-
-        # Calculate the probabilities of each character
-        total_chars = len(text)
-        probabilities = [count / total_chars for count in freq.values()]
-
-        # Calculate Shannon entropy
-        entropy = -sum(p * np.log2(p) for p in probabilities if p > 0)
-
-        return entropy
-
 
 # ------------------------------------------------------------------------------------------------ #
 #                                       DUPLICATE                                                  #
 # ------------------------------------------------------------------------------------------------ #
 class DetectDuplicateTask(DQATask):
     """
-    A task that detects duplicate rows in a pandas DataFrame based on specified column(s) and adds a column flagging duplicates.
+    A task that detects duplicate data by row or cell.
+
+    Rows are identified as identical either by row or a cell value. All identical rows are flagged
+    in the result so that downstream cleaning tasks can select data to keep.
 
     Args:
         dqa_column (str): The name of the column to store the duplicate flag results. The new column will contain boolean values indicating whether the row is a duplicate.
         column (Optional[str]): The column used to detect duplicates. If None, all columns are considered. Defaults to None.
+        force (bool): Whether to force execution despite existence of the result in cache.
 
     Attributes:
         column (Optional[str]):  The column(s) to check for duplicates.
@@ -285,6 +163,7 @@ class DetectDuplicateTask(DQATask):
         self,
         dqa_column: str,
         column: Optional[str] = None,
+        force: bool = False,
     ) -> None:
         """
         Initializes the DetectDuplicateTask with the specified column(s) to check for duplicates and the name of the column to store the results.
@@ -293,9 +172,10 @@ class DetectDuplicateTask(DQATask):
             dqa_column (str): The column name where the duplicate flag will be stored.
             column_names (Optional[Union[List[AnyStr], AnyStr]], optional): The column(s) to use for detecting duplicates. If None, the entire row will be checked for duplicates. Defaults to None.
         """
-        super().__init__(column=column, dqa_column=dqa_column)
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
 
     @task_logger
+    @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Detects duplicate rows based on the specified columns and creates a new column to flag duplicates.
@@ -306,117 +186,18 @@ class DetectDuplicateTask(DQATask):
         Returns:
             pd.DataFrame: A DataFrame with a new column indicating whether each row is a duplicate, based on the specified columns.
         """
-        result = data.duplicated(subset=self._column, keep="first")
+        if self._column:
+            result = data.duplicated(subset=self._column, keep=False)
+        else:
+            result = data.duplicated(keep=False)
 
         result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
-
-        return result
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 DETECT NULL VALUES TASK                                          #
-# ------------------------------------------------------------------------------------------------ #
-class DetectNullValuesTask(DQATask):
-    """A task to mark incomplete rows in a DataFrame.
-
-    Attributes:
-        new_column_name (str): The name of the column to add, indicating an incomplete row.
-    """
-
-    def __init__(
-        self,
-        dqa_column: str = "has_null",
-    ):
-        super().__init__(dqa_column=dqa_column)
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Mark incomplete rows in the DataFrame.
-
-        Parameters:
-            data (pd.DataFrame): The input DataFrame.
-
-        Returns:
-            pd.DataFrame: The DataFrame with an additional column indicating whether each row is incomplete.
-        """
-        result = data.isnull().any(axis=1)
-
-        result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
-
-        return result
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 DETECT INVALID RATINGS                                           #
-# ------------------------------------------------------------------------------------------------ #
-class DetectInvalidRatingsTask(DQATask):
-    """
-    A data quality assurance (DQA) task that detects invalid ratings in a specified column.
-
-    This task checks whether the ratings in the specified column fall outside the valid range (0 to 5).
-    Entries with invalid ratings are flagged in a corresponding DQA column.
-
-    Attributes:
-    -----------
-    _column : str
-        The name of the column containing the ratings to be inspected.
-    _dqa_column : str
-        The name of the column where the DQA results (invalid rating flags) will be stored.
-
-    Methods:
-    --------
-    run(data: pd.DataFrame) -> pd.DataFrame
-        Executes the invalid rating detection task and flags entries where ratings fall outside the valid range.
-    """
-
-    def __init__(self, dqa_column: str = "invalid_rating", column: str = "rating"):
-        """
-        Initializes the DetectInvalidRatingsTask with the target column for ratings and a DQA column for flags.
-
-        Args:
-        -----
-        dqa_column : str, optional
-            The name of the column where the DQA results (invalid rating flags) will be stored. Default is "invalid_rating".
-        column : str, optional
-            The name of the column containing the ratings to be inspected. Default is "rating".
-        """
-        super().__init__(column=column, dqa_column=dqa_column)
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Marks rows in the DataFrame where the rating is invalid (not between 0 and 5).
-
-        This method adds a new column to the DataFrame that flags invalid ratings.
-        Ratings that fall outside the valid range (0 to 5) are flagged as True.
-
-        Args:
-        -----
-        data : pd.DataFrame
-            The input DataFrame containing the data to be analyzed.
-
-        Returns:
-        --------
-        pd.DataFrame
-            The input DataFrame with an additional column indicating invalid ratings.
-        """
-        result = ~data[self._column].between(0, 5)
-
-        result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
 
         return result
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                            DETECT NON-ENGLISH TASK                                               #
-# ------------------------------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------------------------------ #
 def lm_fasttext(text):
     """
@@ -484,13 +265,15 @@ class DetectNonEnglishTask(DQATask):
         column: str = "content",
         dqa_column: str = "b_non_english",
         n_jobs: int = 12,
+        force: bool = False,
     ):
-        super().__init__(column=column, dqa_column=dqa_column)
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
         self._n_jobs = n_jobs
         # Load pre-trained FastText language identification model
         self._model_filepath = os.getenv("FASTTEXT_MODEL")
 
     @task_logger
+    @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         return self._run_both(data=data)
 
@@ -508,8 +291,6 @@ class DetectNonEnglishTask(DQATask):
 
         result = result.rename(self._dqa_column)
 
-        self.summarize(data=result)
-
         return result
 
     def _run_fasttext(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -525,8 +306,6 @@ class DetectNonEnglishTask(DQATask):
         result = data[self._column].parallel_apply(lm_fasttext)
 
         result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
 
         return result
 
@@ -554,8 +333,6 @@ class DetectNonEnglishTask(DQATask):
         result = df[self._dqa_column]
 
         result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
 
         return result
 
@@ -589,6 +366,7 @@ class DetectEmojiTask(DQATask):
         self,
         column: str = "content",
         dqa_column: str = "b_has_emoji",
+        force: bool = False,
     ):
         """
         Initializes the DetectEmojiTask with the specified text column and DQA column.
@@ -600,9 +378,10 @@ class DetectEmojiTask(DQATask):
         dqa_column : str, optional
             The name of the column where the results (emoji flags) will be stored. Default is "b_has_emoji".
         """
-        super().__init__(column=column, dqa_column=dqa_column)
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
 
     @task_logger
+    @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Executes the emoji detection task and flags rows where the text contains emojis.
@@ -624,8 +403,6 @@ class DetectEmojiTask(DQATask):
 
         result = result.rename(self._dqa_column)
 
-        self.summarize(data=result)
-
         return result
 
     @staticmethod
@@ -646,278 +423,6 @@ class DetectEmojiTask(DQATask):
             True if the text contains emojis, False otherwise.
         """
         return any(char in emoji.EMOJI_DATA for char in text)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                            DETECT SPECIAL CHARACTERS TASK                                        #
-# ------------------------------------------------------------------------------------------------ #
-class DetectSpecialCharacterTask(DQATask):
-    """
-    A data quality assurance (DQA) task that flags rows with excessive special characters in the text.
-
-    This task inspects a specified column in a DataFrame and flags entries that contain a high proportion
-    of special characters (e.g., punctuation, symbols). Excessive special characters are defined as
-    a proportion of the overall text length, with the threshold customizable.
-
-    Attributes:
-    -----------
-    _column : str
-        The name of the column containing the text to be inspected.
-    _dqa_column : str
-        The name of the column where the results (special character flags) will be stored.
-    _threshold : float
-        The proportion of special characters relative to the total text length, above which the text
-        is considered to contain excessive special characters.
-
-    Methods:
-    --------
-    run(data: pd.DataFrame) -> pd.DataFrame
-        Executes the task to detect texts with excessive special characters and flags them in the DQA column.
-    _contains_excessive_special_chars(text: str) -> bool
-        A helper method that calculates whether the proportion of special characters in the text
-        exceeds the defined threshold.
-    """
-
-    def __init__(
-        self,
-        column: str = "content",
-        dqa_column: str = "b_excessive_special_chars",
-        threshold: float = 0.2,
-    ):
-        """
-        Initializes the DetectSpecialCharacterTask with the specified column, DQA column, and threshold.
-
-        Args:
-        -----
-        column : str, optional
-            The name of the column containing the text to be analyzed. Default is "content".
-        dqa_column : str, optional
-            The name of the column where the results (special character flags) will be stored.
-            Default is "b_excessive_special_chars".
-        threshold : float, optional
-            The proportion of the text that can be made up of special characters before it is flagged as
-            excessive. Default is 0.2 (20% of the text).
-        """
-        super().__init__(column=column, dqa_column=dqa_column)
-        self._threshold = threshold
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Executes the task to detect texts with excessive special characters.
-
-        This method applies the special character detection logic to each row in the DataFrame
-        and flags rows where the proportion of special characters exceeds the specified threshold.
-
-        Args:
-        -----
-        data : pd.DataFrame
-            The input DataFrame containing the text data to be analyzed.
-
-        Returns:
-        --------
-        pd.DataFrame
-            The input DataFrame with an additional column indicating whether the text contains
-            an excessive proportion of special characters.
-        """
-        result = data[self._column].parallel_apply(
-            self._contains_excessive_special_chars
-        )
-
-        result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
-
-        return result
-
-    def _contains_excessive_special_chars(self, text: str) -> bool:
-        """
-        Detects if the given text contains an excessive number of special characters.
-
-        This method calculates the proportion of special characters in the text relative to
-        its length. If the proportion exceeds the threshold, the text is flagged.
-
-        Args:
-        -----
-        text : str
-            The input text to be analyzed.
-
-        Returns:
-        --------
-        bool
-            True if the text contains excessive special characters, False otherwise.
-        """
-        special_chars = re.findall(r"[^\w\s]", text)
-        return (
-            len(special_chars) / len(text) > self._threshold if len(text) > 0 else False
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                               DETECT INVALID DATES TASK                                          #
-# ------------------------------------------------------------------------------------------------ #
-class DetectInvalidDatesTask(DQATask):
-    """
-    A data quality assurance (DQA) task that detects invalid dates in a specified column.
-
-    This task checks whether dates in the specified column fall outside the valid range (e.g., 2008-2023).
-    Entries with invalid dates are flagged in a corresponding DQA column.
-
-    Attributes:
-    -----------
-    _column : str
-        The name of the column containing the dates to be inspected.
-    _dqa_column : str
-        The name of the column where the DQA results (invalid date flags) will be stored.
-    _start_date : int
-        The starting year of the valid date range (e.g., 2008).
-    _end_date : int
-        The ending year of the valid date range (e.g., 2023).
-
-    Methods:
-    --------
-    run(data: pd.DataFrame) -> pd.DataFrame
-        Executes the task to detect invalid dates and flags entries where the date is outside the valid range.
-    _date_invalid(date: np.datetime64) -> bool
-        A helper method that checks if a given date falls outside the valid date range.
-    """
-
-    def __init__(self, column: str, dqa_column: str, start_date: int, end_date: int):
-        """
-        Initializes the DetectInvalidDatesTask with the specified column, DQA column, and date range.
-
-        Args:
-        -----
-        column : str
-            The name of the column containing the dates to be analyzed.
-        dqa_column : str
-            The name of the column where the results (invalid date flags) will be stored.
-        start_date : int
-            The starting year of the valid date range (e.g., 2008).
-        end_date : int
-            The ending year of the valid date range (e.g., 2023).
-        """
-        super().__init__(column=column, dqa_column=dqa_column)
-        self._start_date = start_date
-        self._end_date = end_date
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Executes the task to detect invalid dates and flags entries outside the valid date range.
-
-        This method adds a new column to the DataFrame that flags rows where the date falls
-        outside the range of `start_date` and `end_date`.
-
-        Args:
-        -----
-        data : pd.DataFrame
-            The input DataFrame containing the date data to be analyzed.
-
-        Returns:
-        --------
-        pd.DataFrame
-            The input DataFrame with an additional column indicating whether the dates are invalid.
-        """
-        result = data[self._column].parallel_apply(self._date_invalid)
-
-        result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
-
-        return result
-
-    def _date_invalid(self, date: np.datetime64) -> bool:
-        """
-        Checks whether the date is outside the valid date range.
-
-        This method compares the date against the specified `start_date` and `end_date`
-        and flags it as invalid if it falls outside this range.
-
-        Args:
-        -----
-        date : np.datetime64
-            The input date to be analyzed.
-
-        Returns:
-        --------
-        bool
-            True if the date is outside the valid range, False otherwise.
-        """
-        date = np.datetime64(date)
-        return date < np.datetime64(str(self._start_date)) or date > np.datetime64(
-            str(self._end_date)
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 DETECT PROFANITY                                                 #
-# ------------------------------------------------------------------------------------------------ #
-def detect_profanity(text):
-    """
-    Detects if the given text contains any profanity.
-
-    Args:
-        text (str): The text to be analyzed.
-
-    Returns:
-        bool: True if the text contains profanity, False otherwise.
-    """
-    try:
-        return predict([text])[0] == 1
-    except Exception as e:
-        print(f"Error in profanity detection: {e}")
-        return False
-
-
-# ------------------------------------------------------------------------------------------------ #
-class DetectProfanityTask(DQATask):
-    """Detects profanity in the designated column of a dataframe.
-
-    Note: This class leverages the multiprocessing module. To avoid unintended behavior and
-    recursively spawning processes, this should be executed with the __main__ shield. This
-    is not strictly required in a WSL2 virtual machine, but should be refactored behind
-    a __main__  shield for cross-platform portability.
-    """
-
-    def __init__(
-        self,
-        column: str = "content",
-        dqa_column: str = "b_has_profanity",
-        n_jobs: int = 12,
-    ):
-        """
-        Initializes the DetectProfanityTask with the column names.
-
-        Args:
-            column (str): Name of the column containing text to be analyzed.
-            new_column_name (str): Name of the new column to be created indicating
-                whether the text contains profanity or not.
-            n_jobs (int): Number of cpus corresponding to 'jobs' in a concurrent context.
-        """
-        super().__init__(column=column, dqa_column=dqa_column)
-        self._n_jobs = n_jobs
-
-    @task_logger
-    @cachenow
-    def run(self, data: pd.DataFrame):
-        """
-        Executes the task to detect profanity in the specified column and add a new column with the results.
-
-        Args:
-            data (pd.DataFrame): A pandas DataFrame containing the data to be processed.
-
-        Returns:
-            pd.DataFrame: A pandas DataFrame with an additional column indicating whether the text contains profanity.
-
-        """
-        result = data[self._column].parallel_apply(detect_profanity)
-
-        result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
-
-        return result
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -949,6 +454,7 @@ class DetectEmailTask(DQATask):
         self,
         column: str = "content",
         dqa_column: str = "contains_email",
+        force: bool = False,
     ):
         """
         Initializes the DetectEmailTask with the specified text column and DQA column.
@@ -961,9 +467,10 @@ class DetectEmailTask(DQATask):
             The name of the column where the results (email detection flags) will be stored.
             Default is "contains_email".
         """
-        super().__init__(column=column, dqa_column=dqa_column)
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
 
     @task_logger
+    @cachenow
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Executes the task to detect email addresses in the specified text column.
@@ -984,8 +491,6 @@ class DetectEmailTask(DQATask):
         result = data[self._column].parallel_apply(self._contains_email)
 
         result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
 
         return result
 
@@ -1019,12 +524,12 @@ class DetectURLTask(DQATask):
         self,
         column: str = "content",
         dqa_column: str = "b_contains_url",
+        force: bool = False,
     ):
-        super().__init__()
-        self._column = column
-        self._dqa_column = dqa_column
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
 
     @task_logger
+    @cachenow
     def run(self, data: pd.DataFrame):
         """Detects URLs in the specified text column
         and adds new columns indicating the presence of the pattern.
@@ -1040,8 +545,6 @@ class DetectURLTask(DQATask):
         result = data[self._column].parallel_apply(self._contains_url)
 
         result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
 
         return result
 
@@ -1075,14 +578,14 @@ class DetectPhoneNumberTask(DQATask):
         self,
         column: str = "content",
         dqa_column: str = "b_contains_phone_number",
+        force: bool = False,
     ):
-        super().__init__()
-        self._column = column
-        self._dqa_column = dqa_column
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
 
     @task_logger
+    @cachenow
     def run(self, data: pd.DataFrame):
-        """Detects URLs in the specified text column
+        """Detects phone numbers in the specified text column
         and adds new columns indicating the presence of the pattern.
 
         Args:
@@ -1095,8 +598,6 @@ class DetectPhoneNumberTask(DQATask):
 
         result = data[self._column].parallel_apply(self._contains_phone_number)
         result = result.rename(self._dqa_column)
-
-        self.summarize(data=result)
 
         return result
 
@@ -1116,67 +617,414 @@ class DetectPhoneNumberTask(DQATask):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                               DETECT SPELLING ERRORS                                             #
+#                                   DETECT MISSING REVIEWS                                         #
 # ------------------------------------------------------------------------------------------------ #
-def is_misspelled(word):
+class DetectMissingReviewsTask(DQATask):
     """
-    Checks the spelling of the word and returns True if it is misspelled
+    A task that detects zero-length (missing) reviews within a specified column of a DataFrame.
 
-    Args:
-        word (str): The word to be analyzed.
+    This task checks the specified column (representing review lengths) for zero-length entries, which indicate
+    reviews that contain no content. It creates a new column indicating whether a review is missing (zero-length)
+    for each row.
 
-    Returns:
-        bool: True if the word is misspelled. False otherwise.
+    Attributes:
+        _column (str): The name of the column in the DataFrame where the task will check for zero-length reviews.
+        _dqa_column (str): The name of the output column where the boolean result (True/False) will be stored,
+                           indicating whether the review is missing.
     """
-    suggestions = sym_spell.lookup(word, Verbosity.CLOSEST, max_edit_distance=2)
 
-    if suggestions:
-        try:
-            print(suggestions[0].distance)
-            print(suggestions[0].distance == 0)
-            return suggestions[0].distance > 0
-        except Exception:
-            return False
-    else:
-        return False
+    def __init__(
+        self,
+        column: str = "review_length",
+        dqa_column: str = "b_missing_review",
+        force: bool = False,
+    ):
+        """
+        Initializes the DetectMissingReviewsTask.
+
+        Args:
+            column (str): The name of the DataFrame column that contains the review lengths. Defaults to "review_length".
+            dqa_column (str): The name of the output column to store the results. Defaults to "b_missing_review".
+        """
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
+
+    @task_logger
+    @cachenow
+    def run(self, data: pd.DataFrame):
+        """
+        Runs the task to detect zero-length (missing) reviews in the specified column and stores the result.
+
+        The method checks the specified column for reviews that have a length of 0, indicating missing content.
+        The result is a boolean Series where True indicates the presence of a zero-length (missing) review in a row.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the column to be processed.
+
+        Returns:
+            pd.Series: A boolean Series with True for rows where the review is zero-length and False otherwise.
+        """
+
+        result = data[self._column] == 0
+        result = result.rename(self._dqa_column)
+
+        return result
 
 
-class DetectSpellingErrorsTask(DQATask):
-    """Detects the spelling errors in text column.
+# ------------------------------------------------------------------------------------------------ #
+#                                   DETECT NON-ASCII CHARS                                         #
+# ------------------------------------------------------------------------------------------------ #
+class DetectNonAsciiCharsTask(DQATask):
+    """
+    A task that detects non-ASCII characters within a specified column of a DataFrame.
 
-    Args:
-        column (str): Name of column containing text to search.
-        dqa_column (str): Name of indicator column created in dataset.
+    This task searches for any characters outside the standard ASCII range (0x00 to 0x7F) in a specified column.
+    It creates a new column indicating whether non-ASCII characters were found in each row. The task is run
+    in parallel for performance optimization.
+
+    Attributes:
+        _column (str): The name of the column in the DataFrame where the task will search for non-ASCII characters.
+        _dqa_column (str): The name of the output column where the boolean result (True/False) will be stored,
+                           indicating whether non-ASCII characters were found.
     """
 
     def __init__(
         self,
         column: str = "content",
-        dqa_column: str = "dqa_spelling_errors",
+        dqa_column: str = "b_contains_non_ascii_chars",
+        force: bool = False,
     ):
-        super().__init__(column=column, dqa_column=dqa_column)
-
-    # @cachenow
-    @task_logger
-    def run(self, data: pd.DataFrame):
-        """Detects URLs in the specified text column
-        and adds new columns indicating the presence of the pattern.
+        """
+        Initializes the DetectNonAsciiCharsTask.
 
         Args:
-            data (pd.DataFrame): A pandas DataFrame containing the data to be processed.
+            column (str): The name of the DataFrame column to check for non-ASCII characters. Defaults to "content".
+            dqa_column (str): The name of the output column to store the results. Defaults to "b_contains_non_ascii_chars".
+        """
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
+
+    @task_logger
+    @cachenow
+    def run(self, data: pd.DataFrame):
+        """
+        Runs the task to detect non-ASCII characters in the specified column and stores the result.
+
+        The method searches for any non-ASCII characters (those outside the 0x00 to 0x7F range) in the specified
+        column of the DataFrame using parallel processing. The result is a boolean Series where True indicates
+        the presence of non-ASCII characters in a row.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the column to be processed.
 
         Returns:
-            pd.DataFrame: A pandas DataFrame with additional columns indicating special pattern detection.
-
+            pd.Series: A boolean Series with True for rows that contain non-ASCII characters and False otherwise.
         """
 
-        lol = data[self._column].parallel_apply(
-            lambda x: [is_misspelled(word) for word in x.split()]
+        result = data[self._column].parallel_apply(
+            lambda x: bool(re.search(r"[^\x00-\x7F]", str(x)))
         )
-        result = lol.parallel_apply(lambda x: any(x))
 
         result = result.rename(self._dqa_column)
 
-        self.summarize(data=result)
+        return result
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                 DETECT EXCESSIVE NUMBERS                                         #
+# ------------------------------------------------------------------------------------------------ #
+class DetectExcessiveNumbersTask(DQATask):
+    """
+    A task that detects excessive numbers (long sequences of digits) within a specified column of a DataFrame.
+
+    This task searches for sequences of digits that exceed a certain threshold (e.g., 7 or more digits in a row)
+    in a specified column and creates a new column indicating whether excessive numbers were found in each row.
+    The task is run in parallel for performance optimization.
+
+    Attributes:
+        _column (str): The name of the column in the DataFrame where the task will search for excessive numbers.
+        _threshold (int): The minimum number of consecutive digits to be considered excessive. Defaults to 7.
+        _dqa_column (str): The name of the output column where the boolean result (True/False) will be stored,
+                           indicating whether excessive numbers were found.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        threshold: int = 7,
+        dqa_column: str = "b_contains_excessive_numbers",
+        force: bool = False,
+    ):
+        """
+        Initializes the DetectExcessiveNumbersTask.
+
+        Args:
+            column (str): The name of the DataFrame column to check for excessive numbers. Defaults to "content".
+            threshold (int): The minimum number of consecutive digits that is considered excessive. Defaults to 7.
+            dqa_column (str): The name of the output column to store the results. Defaults to "b_contains_excessive_numbers".
+        """
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
+        self._threshold = threshold
+
+    @task_logger
+    @cachenow
+    def run(self, data: pd.DataFrame):
+        """
+        Runs the task to detect excessive numbers in the specified column and stores the result.
+
+        The method searches for sequences of digits that exceed the given threshold (e.g., 7 or more consecutive digits)
+        in the specified column of the DataFrame using parallel processing. The result is a boolean Series where True
+        indicates the presence of excessive numbers in a row.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the column to be processed.
+
+        Returns:
+            pd.Series: A boolean Series with True for rows that contain excessive numbers and False otherwise.
+        """
+
+        result = data[self._column].parallel_apply(
+            lambda x: bool(re.search(r"\d{" + str(self._threshold) + ",}", str(x)))
+        )
+
+        result = result.rename(self._dqa_column)
+
+        return result
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   DETECT CONTROL CHARS                                           #
+# ------------------------------------------------------------------------------------------------ #
+class DetectControlCharsTask(DQATask):
+    """
+    A task that detects control characters within a specified column of a DataFrame.
+
+    This task searches for control characters (non-printable ASCII characters) such as null (`\x00`),
+    backspace (`\x08`), and delete (`\x7F`) in a specified column. It creates a new column that flags
+    rows where control characters are found. The task is run in parallel for performance optimization.
+
+    Attributes:
+        _column (str): The name of the column in the DataFrame where the task will search for control characters.
+        _dqa_column (str): The name of the output column where the boolean result (True/False) will be stored,
+                           indicating whether control characters were found.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        dqa_column: str = "b_contains_control_chars",
+        force: bool = False,
+    ):
+        """
+        Initializes the DetectControlCharsTask.
+
+        Args:
+            column (str): The name of the DataFrame column to check for control characters. Defaults to "content".
+            dqa_column (str): The name of the output column to store the results. Defaults to "b_contains_control_chars".
+        """
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
+
+    @task_logger
+    @cachenow
+    def run(self, data: pd.DataFrame):
+        """
+        Runs the task to detect control characters in the specified column and stores the result.
+
+        The method searches for control characters (`\x00-\x1F`, `\x7F`) in the specified column of the DataFrame
+        using parallel processing. The result is a boolean Series where True indicates the presence of control characters
+        in a row.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the column to be processed.
+
+        Returns:
+            pd.Series: A boolean Series with True for rows that contain control characters and False otherwise.
+        """
+
+        result = data[self._column].parallel_apply(
+            lambda x: bool(re.search(r"[\x00-\x1F\x7F]", str(x)))
+        )
+
+        result = result.rename(self._dqa_column)
+
+        return result
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                DETECT EXCESSIVE WHITESPACE                                       #
+# ------------------------------------------------------------------------------------------------ #
+class DetectExcessiveWhitespaceTask(DQATask):
+    """
+    A task that detects excessive whitespace within a specified column of a DataFrame.
+
+    This task checks for the presence of two or more consecutive whitespace characters in a specified column
+    and creates a new column indicating whether excessive whitespace was found in each row. The task is run
+    in parallel for performance optimization.
+
+    Attributes:
+        _column (str): The name of the column in the DataFrame where the task will search for excessive whitespace.
+        _dqa_column (str): The name of the output column where the boolean result (True/False) will be stored
+                           indicating whether excessive whitespace was found.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        dqa_column: str = "b_contains_excessive_whitespace",
+        force: bool = False,
+    ):
+        """
+        Initializes the DetectExcessiveWhitespaceTask.
+
+        Args:
+            column (str): The name of the DataFrame column to check for excessive whitespace. Defaults to "content".
+            dqa_column (str): The name of the output column to store the results. Defaults to "b_contains_excessive_whitespace".
+        """
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
+
+    @task_logger
+    @cachenow
+    def run(self, data: pd.DataFrame):
+        """
+        Runs the task to detect excessive whitespace in the specified column and stores the result.
+
+        The method searches for two or more consecutive whitespace characters within the specified column
+        of the DataFrame using parallel processing. The result is a boolean Series where True indicates
+        the presence of excessive whitespace in a row.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the column to be processed.
+
+        Returns:
+            pd.Series: A boolean Series with True for rows that contain excessive whitespace and False otherwise.
+        """
+
+        result = data[self._column].parallel_apply(
+            lambda x: bool(re.search(r"\s{2,}", str(x)))
+        )
+
+        result = result.rename(self._dqa_column)
+
+        return result
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    DETECT HTML CHARS                                             #
+# ------------------------------------------------------------------------------------------------ #
+class DetectHTMLCharsTask(DQATask):
+    """
+    A task that detects the presence of HTML tags or HTML entities within a specified column of a DataFrame.
+
+    This task checks for HTML characters (e.g., `<div>`, `&amp;`) in a specified column and creates
+    a new column indicating whether HTML characters were found in each row. The task is run in parallel
+    for performance optimization.
+
+    Attributes:
+        _column (str): The name of the column in the DataFrame where the task will search for HTML characters.
+        _dqa_column (str): The name of the output column where the boolean result (True/False) will be stored
+                           indicating whether HTML characters were found.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        dqa_column: str = "b_contains_HTML_chars",
+        force: bool = False,
+    ):
+        """
+        Initializes the DetectHTMLCharsTask.
+
+        Args:
+            column (str): The name of the DataFrame column to check for HTML characters. Defaults to "content".
+            dqa_column (str): The name of the output column to store the results. Defaults to "b_contains_HTML_chars".
+        """
+        super().__init__(column=column, dqa_column=dqa_column, force=force)
+
+    @task_logger
+    @cachenow
+    def run(self, data: pd.DataFrame):
+        """
+        Runs the task to detect HTML characters in the specified column and stores the result.
+
+        The method searches for HTML tags (e.g., `<div>`) and HTML entities (e.g., `&amp;`) within the specified
+        column of the DataFrame using parallel processing. The result is a boolean Series where True indicates
+        the presence of HTML characters in a row.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the column to be processed.
+
+        Returns:
+            pd.Series: A boolean Series with True for rows that contain HTML characters and False otherwise.
+        """
+
+        result = data[self._column].parallel_apply(
+            lambda x: bool(
+                re.search(r"<[^>]+>", str(x)) or re.search(r"&[a-zA-Z]+;", str(x))
+            )
+        )
+
+        result = result.rename(self._dqa_column)
+
+        return result
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                             DETECT INCONSISTENT APP ID/NAME                                      #
+# ------------------------------------------------------------------------------------------------ #
+class DetectInconsistentIdNamesTask(DQATask):
+    """
+    A task that detects inconsistencies between ID and name pairs in a DataFrame.
+
+    This task checks for inconsistent relationships between an ID column and a name column. It flags instances
+    where the same ID is associated with multiple names or where the same name is associated with multiple IDs.
+    The result is a new column that indicates whether inconsistencies were found for each row.
+
+    Attributes:
+        _id_column (str): The name of the column in the DataFrame that contains the IDs.
+        _name_column (str): The name of the column in the DataFrame that contains the names.
+        _dqa_column (str): The name of the output column where the boolean result (True/False) will be stored,
+                           indicating whether inconsistencies were found between IDs and names.
+    """
+
+    def __init__(
+        self,
+        id_column: str,
+        name_column: str,
+        dqa_column: str = "b_contains_inconsistent_id_name",
+        force: bool = False,
+    ):
+        """
+        Initializes the DetectInconsistentIdNamesTask.
+
+        Args:
+            id_column (str): The name of the DataFrame column that contains the IDs.
+            name_column (str): The name of the DataFrame column that contains the names.
+            dqa_column (str): The name of the output column to store the results. Defaults to "b_contains_inconsistent_id_name".
+        """
+        super().__init__(dqa_column=dqa_column, force=force)
+        self._id_column = id_column
+        self._name_column = name_column
+
+    @task_logger
+    @cachenow
+    def run(self, data: pd.DataFrame):
+        """
+        Runs the task to detect inconsistent ID-name pairs in the specified columns and stores the result.
+
+        The method checks for duplicate IDs associated with different names or duplicate names associated with
+        different IDs. The result is a boolean Series where True indicates the presence of inconsistencies between
+        IDs and names in a row.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the ID and name columns to be processed.
+
+        Returns:
+            pd.Series: A boolean Series with True for rows where ID-name inconsistencies are found and False otherwise.
+        """
+        pairs = data[[self._id_column, self._name_column]].drop_duplicates()
+
+        result = pairs.duplicated(
+            subset=[self._id_column], keep=False
+        ) | pairs.duplicated(subset=[self._name_column], keep=False)
+
+        result = result.rename(self._dqa_column)
 
         return result

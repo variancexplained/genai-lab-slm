@@ -11,12 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 6th 2024 11:07:56 pm                                                     #
-# Modified   : Wednesday October 23rd 2024 04:39:08 pm                                             #
+# Modified   : Wednesday October 23rd 2024 11:05:31 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from datetime import date, datetime
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -68,11 +69,33 @@ class Printer:
         Args:
             title (str): The title to be printed in the header.
         """
-        breadth = self._width - 4
+        breadth = self._width - 2
         header = f"\n\n# {breadth * '='} #\n"
-        header += f"#{title.center(self._width - 2, ' ')}#\n"
+        header += f"#{title.center(self._width, ' ')}#\n"
         header += f"# {breadth * '='} #\n"
         print(header)
+
+    def print_subheader(self, subtitle: str, linestyle: str = "-") -> None:
+        """
+        Prints a centered sub header with an underline
+
+        Args:
+            subtitle (str): The subtitle for the subheader.
+        """
+        s = f"\n\n{subtitle.center(self._width, ' ')}"
+        s += f"\n{(linestyle*len(subtitle)).center(self._width, ' ')}"
+        print(s)
+
+    def print_kv(self, k: str, v: Union[str, int, float]) -> None:
+        """
+        Prints a key/value pair justified around a center bar
+        """
+        breadth = int(self._width / 2)
+        if isinstance(v, IMMUTABLE_TYPES):
+            if isinstance(v, float) or isinstance(v, int):
+                v = f"{v:,}"
+            s = f"{k.rjust(breadth, ' ')} | {v}"
+        print(s)
 
     def print_trailer(self) -> None:
         """

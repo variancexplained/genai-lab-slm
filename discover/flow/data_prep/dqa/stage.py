@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:59:20 pm                                              #
-# Modified   : Monday October 21st 2024 12:06:20 am                                                #
+# Modified   : Thursday October 24th 2024 01:01:17 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@ import logging
 from typing import List
 
 import pandas as pd
+from dependency_injector.wiring import inject
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
@@ -99,6 +100,7 @@ class DQAStage(DataPrepStage):
     It ensures that datasets are properly loaded and saved based on the specified configurations.
     """
 
+    @inject
     def __init__(
         self,
         source_config: dict,

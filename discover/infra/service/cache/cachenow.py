@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Sunday October 20th 2024 12:34:54 am                                                #
+# Modified   : Thursday October 24th 2024 03:10:56 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,15 +19,15 @@
 import hashlib
 import logging
 from functools import wraps
-from typing import Union
+from typing import Optional, Union
 
 import pandas as pd
 import pyspark
 
+from discover.flow.base.task import Task
 from discover.infra.config.app import AppConfigReader
 from discover.infra.service.cache.cache import DiscoverCache
 from discover.infra.utils.data.dataframe import find_dataframe
-from discover.orchestration.base.task import Task
 
 # ------------------------------------------------------------------------------------------------ #
 reader = AppConfigReader()
@@ -79,22 +79,22 @@ def cachenow(func):
         # Find the dataframe among the args and kwargs
         df = find_dataframe(args, kwargs)
         # Create a dataset identifier as the hash for the dataframe.
-        dataset_id = get_dataset_cache_id(task=self, df=df)
+        cache_id = get_dataset_cache_id(task=self, df=df)
         # Obtain a cache object
         cache = DiscoverCache()
         # Check the cache
-        run_task = not cache.exists(key=dataset_id)
+        run_task = not cache.exists(key=cache_id) or self.force
 
         # If not running the task, confirm results can be obtained from cache.
         if not run_task:
             try:
                 logging.debug(
-                    f"Attempting to obtain the dataset {dataset_id} from cache."
+                    f"Attempting to obtain the dataset {cache_id} from cache."
                 )
-                result = cache.get_item(key=dataset_id)
-                logging.debug(f"Successfully obtained dataset {dataset_id} from cache.")
+                result = cache.get_item(key=cache_id)
+                logging.debug(f"Successfully obtained dataset {cache_id} from cache.")
             except Exception as e:
-                msg = f"Unable to obtain results for {dataset_id} from the cache.\n{e}."
+                msg = f"Unable to obtain results for {cache_id} from the cache.\n{e}."
                 logging.exception(msg)
                 raise
 
@@ -102,10 +102,10 @@ def cachenow(func):
         if result is None:
             result = func(self, *args, **kwargs)
             try:
-                cache.add_item(key=dataset_id, data=result)
-                logging.debug(f"Added dataset {dataset_id} to cache.")
+                cache.add_item(key=cache_id, data=result)
+                logging.debug(f"Added dataset {cache_id} to cache.")
             except Exception as e:
-                msg = f"Unable to add result to cache {dataset_id}.\n{e}"
+                msg = f"Unable to add result to cache {cache_id}.\n{e}"
                 logging.exception(msg)
                 raise
 
@@ -124,37 +124,20 @@ def get_dataset_cache_id(
     This function creates a hash from the number of rows, number of columns, and schema of the DataFrame. Optionally,
     it includes sampled data from the DataFrame for increased uniqueness when content changes.
 
-    Parameters:
-    -----------
-    df : Union[pd.DataFrame, pyspark.sql.DataFrame]
-        The DataFrame for which to generate a hash. Can be either a pandas DataFrame or a Spark DataFrame.
-    hash_length : int, optional
-        The length of the hash to be generated (default is 8 characters).
+    Args:
+        task: An instance of the Task class.
+        df : Union[pd.DataFrame, pyspark.sql.DataFrame]
+            The DataFrame for which to generate a hash. Can be either a pandas DataFrame or a Spark DataFrame.
+        hash_length : int, optional
+            The length of the hash to be generated (default is 8 characters).
 
     Returns:
-    --------
-    str
-        The generated hash as a string of the specified length.
+        str: The generated hash as a string of the specified length.
 
-    Raises
-    ------
-    ValueError: On empty Dataframe
-
-    Example:
-    --------
-    >>> import pandas as pd
-    >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-    >>> hash_dataframe(df)
-    '9a83f5ac'
-
-    >>> from pyspark.sql import SparkSession
-    >>> spark = SparkSession.builder.appName("example").getOrCreate()
-    >>> sdf = spark.createDataFrame([(1, 2), (3, 4)], ["col1", "col2"])
-    >>> hash_dataframe(sdf)
-    'e3b0c442'
     """
     # Ensure cache is environment context-aware.
     env = reader.get_environment()
+
     # Handle empty DataFrame case
     if isinstance(df, (pd.DataFrame, pd.core.frame.DataFrame)) and df.empty:
         raise ValueError("Encountered an empty dataframe")
@@ -179,11 +162,37 @@ def get_dataset_cache_id(
     else:
         taskname = type(task).__name__
 
-    # Combine the taskname, schema, and data for hashing
-    dimensions_str = f"{env}-{taskname}-{num_rows}-{num_columns}-{schema_str}"
+    # Get task specific key if available
+    key = get_task_specific_key(task=task)
+
+    # Combine the environment, taskname, dimensions, and schema
+    cache_key = f"{env}-{taskname}-{num_rows}-{num_columns}-{schema_str}"
+    if key:
+        cache_key += f"-{key}"
 
     # Generate a hash from the dimensions, schema, and sample data
     hasher = hashlib.blake2s(digest_size=hash_length)
-    hasher.update(dimensions_str.encode("utf-8"))
+    hasher.update(cache_key.encode("utf-8"))
 
     return hasher.hexdigest()
+
+
+def get_task_specific_key(task: Task) -> Optional[str]:
+    """Returns any task specific key information that distinguishes this task execution.
+
+    Any task specific keys should be defined here.
+
+    Args:
+        task: An instance of the Task class.
+
+    Returns: str or None
+
+    """
+    try:
+        return task.dqa_column
+    except AttributeError:
+        return None
+    except Exception as e:
+        msg = f"An unknown exception occurred in cachenow while obtaininng the task specific key.\n{e}"
+        logging.exception(msg)
+        raise

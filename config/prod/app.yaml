@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Friday October 18th 2024 02:28:40 pm                                                #
+# Modified   : Thursday October 24th 2024 02:30:42 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -59,7 +59,4 @@ workspace: workspace/prod
 # ------------------------------------------------------------------------------------------------ #
 ops:
   basedir: ops/prod  # Base directory for operations data.
-  cache:
-    registry: ops/prod/cache/registry
-    data: ops/prod/cache/data
-    archive: ops/prod/cache/archive
+  cache: ops/prod/cache

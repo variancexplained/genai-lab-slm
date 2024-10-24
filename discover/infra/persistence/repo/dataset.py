@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Thursday October 17th 2024 01:39:42 am                                              #
+# Modified   : Thursday October 24th 2024 12:59:22 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -266,6 +266,32 @@ class DatasetRepo(Repo):
                 msg = f"Exception occurred while reading dataset {dataset.asset_id} contents from file."
                 self._logger.exception(msg)
                 raise DatasetIOError(msg, e) from e
+
+    # -------------------------------------------------------------------------------------------- #
+    def get_metadata(self, asset_id: str) -> Optional[Dataset]:
+        """
+        Retrieves a dataset metadata by its ID.
+
+        Args:
+            asset_id (str): The id of the dataset to retrieve.
+
+        Returns:
+            Optional[Dataset]: The dataset object containing just metadata if found; otherwise, None.
+
+        Raises:
+            FileNotFoundError: If an error occurs while reading the dataset.
+        """
+        # Step 1: Obtain the dataset object containing metadata and config.
+        try:
+            return self._dataset_dao.read(asset_id=asset_id)
+        except ObjectNotFoundError:
+            msg = f"Dataset {asset_id} does not exist."
+            self._logger.exception(msg)
+            raise DatasetNotFoundError(msg)
+        except Exception as e:
+            msg = f"Exception occurred while reading the dataset {asset_id} object."
+            self._logger.exception(msg)
+            raise DatasetIOError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
     def _read_file(

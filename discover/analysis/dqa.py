@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Sunday October 20th 2024 11:55:10 pm                                                #
+# Modified   : Thursday October 24th 2024 04:39:21 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -51,44 +51,85 @@ class DataQualityAnalysis(Analysis):
         df["%"] = round(dqa.sum(axis=0) / self._data.shape[0] * 100, 2)
         return df.sort_values(by="n", ascending=False)
 
-    def get_random_text(self) -> pd.DataFrame:
-        return self._data.loc[self._data["dqa_entropy"], "content"]
+    def get_duplicate_review_ids(self, n=20, random_state: int = None) -> pd.DataFrame:
+        grouped = self._data.loc[self._data["dqa_identical_review_id"]].groupby(by="id")
+        return [group for name, group in grouped][:n]
 
-    def get_duplicate_reviews(self) -> pd.DataFrame:
+    def get_duplicate_review_content(self) -> pd.DataFrame:
+        # Obtain the data
+        cols = [col for col in self._data.columns if not col.startswith("dqa")]
 
-        return self._data.loc[self._data["dqa_duplicate_review"], "content"]
+        grouped = self._data.loc[
+            self._data["dqa_identical_review_content"], cols
+        ].groupby(by="content")
 
-    def get_non_english_reviews(self) -> pd.DataFrame:
+        # Summarize the data
+        summary = (
+            grouped.size()
+            .reset_index(name="count")
+            .sort_values(by="count", ascending=False)
+        )
+        return summary, grouped
 
-        return self._data.loc[self._data["dqa_non_english_review"], "content"]
+    def get_missing_reviews(
+        self, n: int = 20, random_state: int = None
+    ) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_review_missing"]]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-    def get_non_english_apps(self) -> pd.DataFrame:
+    def get_non_english_reviews(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_non_english_review"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-        return self._data.loc[self._data["dqa_non_english_app_name"], "app_name"]
+    def get_non_english_apps(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_non_english_app_name"], "app_name"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-    def get_emoji(self) -> pd.DataFrame:
+    def get_emoji(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_has_emoji"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-        return self._data.loc[self._data["dqa_has_emoji"], "content"]
+    def get_email(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_email"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-    def get_special_chars(self) -> pd.DataFrame:
+    def get_url(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_url"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-        return self._data.loc[self._data["dqa_excessive_special_chars"], "content"]
+    def get_phone(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_phone_number"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-    def get_profanity(self) -> pd.DataFrame:
+    def get_non_ascii_chars(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_non_ascii_chars"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-        return self._data.loc[self._data["dqa_has_profanity"], "content"]
+    def get_excessive_numbers(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_excessive_numbers"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-    def get_email(self) -> pd.DataFrame:
+    def get_control_chars(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_control_chars"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-        return self._data.loc[self._data["dqa_contains_email"], "content"]
+    def get_excessive_whitespace(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_excessive_whitespace"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-    def get_url(self) -> pd.DataFrame:
+    def get_html_chars(self, n=20, random_state: int = None) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_HTML_chars"], "content"]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
-        return self._data.loc[self._data["dqa_contains_url"], "content"]
-
-    def get_phone(self) -> pd.DataFrame:
-
-        return self._data.loc[self._data["dqa_contains_phone_number"], "content"]
+    def get_inconsistent_app_id_name(
+        self, n=20, random_state: int = None
+    ) -> pd.DataFrame:
+        df = self._data.loc[self._data["dqa_contains_inconsistent_app_id_name"]]
+        return self._subset_data(df=df, n=n, random_state=random_state)
 
     def _load_data(self, asset_id: str) -> pd.DataFrame:
         return super()._load_data(asset_id=asset_id)
+
+    def _subset_data(self, df: pd.DataFrame, n: int, random_state: int) -> pd.DataFrame:
+        n = min(n, len(df))
+        return df.sample(n=n, random_state=random_state)

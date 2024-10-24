@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Friday October 18th 2024 07:56:11 am                                                #
+# Modified   : Thursday October 24th 2024 03:29:02 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,14 +39,11 @@ def stage_logger(func):
         logger = logging.getLogger(f"{func.__qualname__}")
 
         try:
-            # Print the stage header
             printer.print_header(title=self.stage.description)
-
             # Formatting the current time using the date formatter in HTTP format.
             # This is logged with the message indicating the start of the method.
             start = datetime.now()
             start_fmt = dt4mtr.to_HTTP_format(start)
-            print(f"Starting {self.stage.description} {start_fmt}")
 
             # Execute the original function being decorated, passing all args and kwargs.
             result = func(self, *args, **kwargs)
@@ -56,13 +53,24 @@ def stage_logger(func):
             end_fmt = dt4mtr.to_HTTP_format(end)
             duration = (end - start).total_seconds()
             duration_fmt = dt4mtr.format_duration(seconds=duration)
-            stats = {
-                "Stage Start": start_fmt,
-                "Stage Complete": end_fmt,
-                "Runtime": duration_fmt,
-            }
-            printer.print_dict(title=self.stage.description, data=stats)
+
+            # Print stage
+            printer.print_subheader(subtitle=self.stage.description, linestyle="=")
+            printer.print_kv(k="Stage Started", v=start_fmt)
+            printer.print_kv(k="Stage Completed", v=end_fmt)
+            printer.print_kv(k="Stage Runtime", v=duration_fmt)
+            # Check duration to see if cached result was used.
+            if duration < 2:
+                printer.print_kv(k="Cached Result", v="True")
             printer.print_trailer()
+
+            # Log stage
+            logger.debug(f"Stage: {self.stage.description}")
+            logger.debug(f"Stage Started: {start_fmt}")
+            logger.debug(f"Stage Completed: {end_fmt}")
+            logger.debug(f"Stage Runtime: {duration_fmt}")
+            if duration < 2:
+                logger.debug("Cached Result: True")
 
         except Exception as e:
             # If an exception occurs, prepare the function signature for more informative logging.
