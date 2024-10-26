@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday October 25th 2024 10:40:32 am                                                #
+# Modified   : Friday October 25th 2024 07:26:42 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ printer = Printer()
 # ------------------------------------------------------------------------------------------------ #
 #                     LANGUAGE MODELS FOR LANGUAGE DETECTION                                       #
 # ------------------------------------------------------------------------------------------------ #
-languages = [Language.ENGLISH]
+languages = [Language.ENGLISH, Language.SPANISH]
 detector = LanguageDetectorBuilder.from_languages(*languages).build()
 # ------------------------------------------------------------------------------------------------ #
 fasttext.FastText.eprint = lambda x: None  # Suppress FastText warnings

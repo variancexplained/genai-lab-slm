@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Wednesday October 23rd 2024 11:37:37 pm                                             #
+# Modified   : Friday October 25th 2024 06:02:26 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,13 +21,10 @@
 import logging
 from typing import List
 
-import pandas as pd
-
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.base.task import Task
 from discover.flow.data_prep.stage import DataPrepStage
-from discover.infra.utils.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -56,7 +53,3 @@ class DataCleaningStage(DataPrepStage):
         )
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    def _load_source_data(self) -> pd.DataFrame:
-        """Obtains source data from file."""
-        return IOService.read(filepath=self._source_config.filepath)

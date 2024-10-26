@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Thursday October 24th 2024 03:23:09 am                                              #
+# Modified   : Friday October 25th 2024 07:28:10 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -65,10 +65,8 @@ phases:
             module: discover.flow.data_prep.ingest.task
             params:
               column: content
-      dqa:
-        defaults: &dqa_defaults
-          force: False
-        stage_name: dqa
+      clean:
+        stage_name: clean
         source_config:
           asset_type: dataset
           phase: dataprep
@@ -77,107 +75,69 @@ phases:
         destination_config:
           asset_type: dataset
           phase: dataprep
-          stage: dqa
+          stage: clean
           name: review
           nlp: False
           distributed: False
         tasks:
-          - class_name: DetectDuplicateTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column:
-              dqa_column: dqa_identical_rows
-              <<: *dqa_defaults
-          - class_name: DetectDuplicateTask
-            module: discover.flow.data_prep.dqa.task
+          - class_name: RemoveDuplicateReviewIdTask
+            module: discover.flow.data_prep.clean.task
             params:
               column: id
-              dqa_column: dqa_identical_review_id
-              <<: *dqa_defaults
-          - class_name: DetectDuplicateTask
-            module: discover.flow.data_prep.dqa.task
+              sort_by: date
+          - class_name: URLMaskTask
+            module: discover.flow.data_prep.clean.task
             params:
               column: content
-              dqa_column: dqa_identical_review_content
-              <<: *dqa_defaults
-          - class_name: DetectMissingReviewsTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: review_length
-              dqa_column: dqa_review_missing
-              <<: *dqa_defaults
-          - class_name: DetectNonEnglishTask
-            module: discover.flow.data_prep.dqa.task
+              replacement: '[URL]'
+          - class_name: EmailAddressMaskTask
+            module: discover.flow.data_prep.clean.task
             params:
               column: content
-              dqa_column: dqa_non_english_review
-              n_jobs: 12
-              <<: *dqa_defaults
+              replacement: '[EMAIL]'
+          - class_name: PhoneNumberMaskTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
+              replacement: '[PHONE]'
+          - class_name: RemoveSpecialCharsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              replacement: ""
+              column: content
+          - class_name: RemoveControlCharsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              replacement: ""
+              column: content
+          - class_name: RemoveHTMLCharsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              replacement: ""
+              column: content
+          - class_name: RemoveExcessiveWhitespaceTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              replacement: " "
+              column: content
+          - class_name: RemoveNonASCIICharsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              replacement: ""
+              column: content
+          - class_name: RemoveAccentsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
           - class_name: DetectNonEnglishTask
-            module: discover.flow.data_prep.dqa.task
+            module: discover.flow.data_prep.clean.task
             params:
               column: app_name
-              dqa_column: dqa_non_english_app_name
-              n_jobs: 12
-              <<: *dqa_defaults
-          - class_name: DetectEmojiTask
-            module: discover.flow.data_prep.dqa.task
+              dc_column: dc_non_english_app_name
+              n_jobs: 18
+          - class_name: DetectNonEnglishTask
+            module: discover.flow.data_prep.clean.task
             params:
               column: content
-              dqa_column: dqa_has_emoji
-              <<: *dqa_defaults
-          - class_name: DetectEmailTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              dqa_column: dqa_contains_email
-              <<: *dqa_defaults
-          - class_name: DetectURLTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              dqa_column: dqa_contains_url
-              <<: *dqa_defaults
-          - class_name: DetectPhoneNumberTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              dqa_column: dqa_contains_phone_number
-          - class_name: DetectNonAsciiCharsTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              dqa_column: dqa_contains_non_ascii_chars
-              <<: *dqa_defaults
-          - class_name: DetectExcessiveNumbersTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              threshold: 7
-              dqa_column: dqa_contains_excessive_numbers
-              <<: *dqa_defaults
-          - class_name: DetectControlCharsTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              dqa_column: dqa_contains_control_chars
-              <<: *dqa_defaults
-          - class_name: DetectExcessiveWhitespaceTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              dqa_column: dqa_contains_excessive_whitespace
-              <<: *dqa_defaults
-          - class_name: DetectHTMLCharsTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              column: content
-              dqa_column: dqa_contains_HTML_chars
-              <<: *dqa_defaults
-          - class_name: DetectInconsistentIdNamesTask
-            module: discover.flow.data_prep.dqa.task
-            params:
-              id_column: app_id
-              name_column: app_name
-              dqa_column: dqa_contains_inconsistent_app_id_name
-              <<: *dqa_defaults
+              dc_column: dc_non_english_review
+              n_jobs: 18
