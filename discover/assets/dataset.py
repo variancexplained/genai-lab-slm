@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Saturday October 12th 2024 10:46:14 pm                                              #
+# Modified   : Saturday October 26th 2024 12:05:21 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -91,7 +91,7 @@ class Dataset(Asset):
         else:
             self.nrows = self.content.count()
             self.ncols = len(self.content.columns)
-            self.size = self.content.rdd.map(lambda row: len(str(row))).sum()
+            self.size = self.content.count()
 
     def __eq__(self, other: object) -> bool:
         """

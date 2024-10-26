@@ -11,13 +11,11 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Thursday October 17th 2024 09:54:04 am                                              #
+# Modified   : Saturday October 26th 2024 10:48:03 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-
-
 import atexit
 import logging
 import os
@@ -27,6 +25,14 @@ from typing import Dict
 from pyspark.sql import SparkSession
 
 from discover.core.namespace import NestedNamespace
+
+# ------------------------------------------------------------------------------------------------ #
+# Set up root logger to only log errors
+logging.getLogger("py4j").setLevel(logging.ERROR)
+logging.getLogger("pyspark").setLevel(logging.ERROR)
+logging.getLogger("com.johnsnowlabs").setLevel(logging.ERROR)
+logging.getLogger("org.apache.spark").setLevel(logging.ERROR)
+logging.getLogger("org.apache.hadoop").setLevel(logging.ERROR)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -143,7 +149,10 @@ class SparkSessionPool:
         while attempts < retries:
             try:
                 log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
-                return (
+                self._logger.debug(
+                    f"Creating an SparkNLP session. log4j Configuration: {log4j_conf_path}"
+                )
+                spark = (
                     SparkSession.builder.appName("appvocai-discover")
                     .master("local[*]")
                     .config("spark.driver.memory", memory)
@@ -156,14 +165,16 @@ class SparkSessionPool:
                     )
                     .config(
                         "spark.driver.extraJavaOptions",
-                        f"-Dlog4j.configuration={log4j_conf_path}",
+                        f"-Dlog4j.configurationFile={log4j_conf_path}",
                     )
                     .config(
                         "spark.executor.extraJavaOptions",
-                        f"-Dlog4j.configuration={log4j_conf_path}",
+                        f"-Dlog4j.configurationFile={log4j_conf_path}",
                     )
                     .getOrCreate()
                 )
+                spark.sparkContext.setLogLevel("ERROR")
+                return spark
             except Exception as e:
                 attempts += 1
                 error = e
@@ -205,7 +216,10 @@ class SparkSessionPool:
         while attempts < retries:
             try:
                 log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
-                return (
+                self._logger.debug(
+                    f"Creating an SparkNLP session. log4j Configuration: {log4j_conf_path}"
+                )
+                spark = (
                     SparkSession.builder.appName("appvocai-discover-nlp")
                     .master("local[*]")
                     .config("spark.driver.memory", memory)
@@ -226,14 +240,16 @@ class SparkSessionPool:
                     )
                     .config(
                         "spark.driver.extraJavaOptions",
-                        f"-Dlog4j.configuration={log4j_conf_path}",
+                        f"-Dlog4j.configurationFile={log4j_conf_path}",
                     )
                     .config(
                         "spark.executor.extraJavaOptions",
-                        f"-Dlog4j.configuration={log4j_conf_path}",
+                        f"-Dlog4j.configurationFile={log4j_conf_path}",
                     )
                     .getOrCreate()
                 )
+                spark.sparkContext.setLogLevel("ERROR")
+                return spark
             except Exception as e:
                 attempts += 1
                 error = e

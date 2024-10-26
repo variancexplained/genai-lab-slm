@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Thursday October 24th 2024 02:30:33 am                                              #
+# Modified   : Saturday October 26th 2024 11:57:43 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -57,7 +57,7 @@ repository:
     fao:
       centralized:
         write_kwargs:
-          row_group_size: 536870912 # 512 MB
+          row_group_size: 1073741824 # 1 GB
 
 
 

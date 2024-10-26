@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Thursday October 24th 2024 02:46:14 am                                              #
+# Modified   : Saturday October 26th 2024 09:30:57 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -79,7 +79,7 @@ repository:
         write_kwargs:
           engine: pyarrow
           compression: snappy
-          index: True
+          index: False
           existing_data_behavior: delete_matching
           row_group_size: 1073741824
           partition_cols:

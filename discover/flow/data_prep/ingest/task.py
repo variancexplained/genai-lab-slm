@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Friday October 25th 2024 08:31:37 pm                                                #
+# Modified   : Saturday October 26th 2024 09:35:33 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -167,41 +167,6 @@ class ReviewLengthTask(Task):
         """
         data["review_length"] = data[self._column].parallel_apply(
             lambda x: len(str(x).split())
-        )
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-class ReviewAgeTask(Task):
-    """"""
-
-    def __init__(self, column: str) -> None:
-        """
-        Initializes the ReviewLengthTask with the name of the column to compute review length.
-
-        Args:
-            column (str): The name of the column containing the text data to be analyzed.
-        """
-        super().__init__()
-        self._column = column
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Executes the task to compute the word count of text in the specified column.
-
-        This method adds a new column `review_length` to the input DataFrame, containing
-        the number of words in each review.
-
-        Args:
-            data (pd.DataFrame): The input DataFrame containing the column with text data.
-
-        Returns:
-            pd.DataFrame: The DataFrame with an additional column `review_length`.
-        """
-        last_date = data[self._column].max()
-        data["review_age"] = data[self._column].parallel_apply(
-            lambda x: (last_date - x).days
         )
         return data
 

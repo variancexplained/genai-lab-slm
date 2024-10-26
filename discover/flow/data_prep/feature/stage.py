@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/nlp/stage.py                                               #
+# Filename   : /discover/flow/data_prep/feature/stage.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Saturday October 26th 2024 08:51:45 am                                              #
+# Modified   : Saturday October 26th 2024 02:59:16 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,7 +30,7 @@ from discover.flow.data_prep.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class NLPStage(DataPrepStage):
+class FeatureEngineeringStage(DataPrepStage):
 
     def __init__(
         self,
@@ -64,6 +64,10 @@ class NLPStage(DataPrepStage):
             stage=DataPrepStageDef.from_value(value=self._source_config.stage),
             name=self._source_config.name,
         )
-        return self._repo.get(
-            asset_id=source_asset_id, distributed=True, nlp=True
-        ).content
+        dataset = self._repo.get(asset_id=source_asset_id, distributed=True, nlp=True)
+        # Spark adds a column for the pandas index if it exists, which is renamed here.
+        if "__index_level_0__" in dataset.content.columns:
+            dataset.content = dataset.content.withColumnRenamed(
+                "__index_level_0__", "pandas_index"
+            )
+        return dataset.content
