@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Saturday October 26th 2024 02:47:35 am                                              #
+# Modified   : Saturday October 26th 2024 08:51:45 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -64,4 +64,6 @@ class NLPStage(DataPrepStage):
             stage=DataPrepStageDef.from_value(value=self._source_config.stage),
             name=self._source_config.name,
         )
-        return self._repo.get(asset_id=source_asset_id, distributed=True).content
+        return self._repo.get(
+            asset_id=source_asset_id, distributed=True, nlp=True
+        ).content

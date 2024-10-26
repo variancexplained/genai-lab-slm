@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Saturday October 26th 2024 02:45:27 am                                              #
+# Modified   : Saturday October 26th 2024 08:51:08 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -224,13 +224,16 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET RETRIEVAL METHODS                                        #
     # -------------------------------------------------------------------------------------------- #
-    def get(self, asset_id: str, distributed: bool = False) -> Optional[Dataset]:
+    def get(
+        self, asset_id: str, distributed: bool = False, nlp: bool = False
+    ) -> Optional[Dataset]:
         """
         Retrieves a dataset by its ID.
 
         Args:
             asset_id (str): The id of the dataset to retrieve.
             distributed (bool): If True, a distributed (Spark) DataFrame is returned.
+            nlp (bool): If True, a Spark session for NLP will be used.
 
         Returns:
             Optional[Dataset]: The dataset object if found; otherwise, None.
@@ -252,8 +255,9 @@ class DatasetRepo(Repo):
 
         # Step 2: Get the dataset contents from file, add to dataset object and return
         try:
-            dataset.distributed = dataset.distributed or distributed
-            dataset.content = self._read_file(dataset=dataset)
+            dataset.content = self._read_file(
+                dataset=dataset, distributed=distributed, nlp=nlp
+            )
             return dataset
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading dataset {dataset.asset_id}. File containing dataset contents was not found at {dataset.storage_location}.\n{e}"
@@ -297,7 +301,7 @@ class DatasetRepo(Repo):
 
     # -------------------------------------------------------------------------------------------- #
     def _read_file(
-        self, dataset: Dataset
+        self, dataset: Dataset, distributed: bool, nlp: bool
     ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
         """
         Reads a dataset's content based on its storage configuration.
@@ -308,8 +312,8 @@ class DatasetRepo(Repo):
         Returns:
             Union[pd.DataFrame, pyspark.sql.DataFrame]: The dataset's content.
         """
-        if dataset.distributed:
-            return self._read_distributed_file(dataset=dataset)
+        if dataset.distributed or distributed:
+            return self._read_distributed_file(dataset=dataset, nlp=nlp)
         else:
             return self._read_centralized_file(dataset=dataset)
 
@@ -327,7 +331,9 @@ class DatasetRepo(Repo):
         return self._fao_cfs.read(filepath=dataset.storage_location)
 
     # -------------------------------------------------------------------------------------------- #
-    def _read_distributed_file(self, dataset: Dataset) -> pyspark.sql.DataFrame:
+    def _read_distributed_file(
+        self, dataset: Dataset, nlp: bool = False
+    ) -> pyspark.sql.DataFrame:
         """
         Reads a dataset's content from a distributed file system.
 
@@ -337,8 +343,8 @@ class DatasetRepo(Repo):
         Returns:
             pyspark.sql.DataFrame: The content of the dataset.
         """
-
-        return self._fao_dfs.read(filepath=dataset.storage_location, nlp=dataset.nlp)
+        nlp = dataset.nlp or nlp
+        return self._fao_dfs.read(filepath=dataset.storage_location, nlp=nlp)
 
     # -------------------------------------------------------------------------------------------- #
     #                               DATASET LIST METHODS                                           #
