@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Wednesday October 16th 2024 11:49:19 pm                                             #
+# Modified   : Saturday October 26th 2024 02:57:27 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,9 +39,8 @@ class DataPrepStageDef(StageDef):
     """"""
 
     INGEST = ("ingest", "00_ingest", "Data Ingestion Stage")
-    NORM = ("normalize", "01_normalize", "Data Normalization Stage")
-    DQA = ("dqa", "02_dqa", "Data Quality Assessment Stage")
-    CLEAN = ("clean", "03_clean", "Data Cleaning Stage")
+    CLEAN = ("clean", "01_clean", "Data Cleaning Stage")
+    NLP = ("nlp", "02_nlp", "Text Preprocessing Stage")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)

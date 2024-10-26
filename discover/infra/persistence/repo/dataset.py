@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Thursday October 24th 2024 12:59:22 am                                              #
+# Modified   : Saturday October 26th 2024 02:45:27 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -224,12 +224,13 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET RETRIEVAL METHODS                                        #
     # -------------------------------------------------------------------------------------------- #
-    def get(self, asset_id: str) -> Optional[Dataset]:
+    def get(self, asset_id: str, distributed: bool = False) -> Optional[Dataset]:
         """
         Retrieves a dataset by its ID.
 
         Args:
             asset_id (str): The id of the dataset to retrieve.
+            distributed (bool): If True, a distributed (Spark) DataFrame is returned.
 
         Returns:
             Optional[Dataset]: The dataset object if found; otherwise, None.
@@ -251,6 +252,7 @@ class DatasetRepo(Repo):
 
         # Step 2: Get the dataset contents from file, add to dataset object and return
         try:
+            dataset.distributed = dataset.distributed or distributed
             dataset.content = self._read_file(dataset=dataset)
             return dataset
         except FileNotFoundError as e:

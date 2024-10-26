@@ -152,7 +152,8 @@
 			"https://json.schemastore.org/yamllint.json": [
 				"file:///home/john/projects/appvocai-discover/config/base/flow.yaml",
 				"file:///home/john/projects/appvocai-discover/config/dev/flow.yaml",
-				"file:///home/john/projects/appvocai-discover/config/test/flow.yaml"
+				"file:///home/john/projects/appvocai-discover/config/test/flow.yaml",
+				"file:///home/john/projects/appvocai-discover/config/flow.yaml"
 			]
 		}
 	}
