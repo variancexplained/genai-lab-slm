@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Saturday October 26th 2024 03:17:08 pm                                              #
+# Modified   : Saturday October 26th 2024 03:40:23 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from pyspark.ml import Pipeline
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
-from sparknlp.annotator import PerceptronModel, SentenceDetectorDLModel, Tokenizer
+from sparknlp.annotator import PerceptronModel, Tokenizer
 from sparknlp.base import DocumentAssembler, Finisher
 
 from discover.flow.base.task import Task
@@ -109,13 +109,6 @@ class NLPTask(Task):
         # Tokenizer splits words for NLP processing
         tokenizer = Tokenizer().setInputCols(["document"]).setOutputCol("tokens")
 
-        # Sentence Detector
-        sentence = (
-            SentenceDetectorDLModel.pretrained()
-            .setInputCols(["document"])
-            .setOutputCol("sentences")
-        )
-
         # POS Tagging with a pretrained model
         pos = (
             PerceptronModel.pretrained("pos_ud_ewt", "en")
@@ -126,126 +119,13 @@ class NLPTask(Task):
         # Finisher converts annotations to plain lists for DataFrame output
         finisher = (
             Finisher()
-            .setInputCols(["tokens", "pos_tags", "sentences"])
-            .setOutputCols(["tp_tokens", "tp_pos", "tp_sentences"])
+            .setInputCols(["tokens", "pos_tags"])
+            .setOutputCols(["tp_tokens", "tp_pos"])
         )
 
         # Create and return Pipeline with the defined stages
-        pipeline = Pipeline(
-            stages=[document_assembler, tokenizer, pos, sentence, finisher]
-        )
+        pipeline = Pipeline(stages=[document_assembler, tokenizer, pos, finisher])
         return pipeline
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                              COMPUTE SENTENCE STATS                                              #
-# ------------------------------------------------------------------------------------------------ #
-class ComputeSentenceStatsTask(Task):
-    """
-    A task to compute sentence-level statistics for a specified text column in a PySpark DataFrame.
-
-    This task calculates various statistics related to sentences within each entry, including the total sentence count,
-    minimum, maximum, mean, and standard deviation of sentence lengths. These statistics are useful for analyzing the
-    complexity and structure of sentences in the text.
-
-    Attributes:
-        column (str): The name of the column containing the text data to analyze. Defaults to "content".
-
-    Methods:
-        run(data: DataFrame) -> DataFrame:
-            Executes the sentence statistics calculations on the specified column of the input DataFrame and
-            returns the DataFrame with new sentence statistics columns.
-
-    Sentence Statistics Columns:
-        sentence_count (int): The total number of sentences in the text.
-        min_sentence_length (int): The minimum length of sentences in the text (set to `null` if only one sentence).
-        max_sentence_length (int): The maximum length of sentences in the text (set to `null` if only one sentence).
-        mean_sentence_length (float): The mean sentence length in the text.
-        sentence_length_stddev (float): The standard deviation of sentence lengths in the text (set to 0 or `null` if only one sentence).
-    """
-
-    def __init__(self, column: str = "content") -> None:
-        """
-        Initializes the ComputeSentenceStatsTask with the specified text column.
-
-        Args:
-            column (str): The name of the column containing the text data to analyze. Defaults to "content".
-        """
-        super().__init__()
-        self._column = column
-
-    def run(self, data: DataFrame) -> DataFrame:
-        """
-        Executes the sentence statistics calculations on the specified column.
-
-        The function computes various sentence-level statistics including sentence count, minimum, maximum, mean,
-        and standard deviation of sentence lengths. The resulting statistics are added as new columns in the DataFrame.
-
-        Args:
-            data (DataFrame): The input PySpark DataFrame containing a "sentence" column with a list of sentence
-                              structs, each with a "result" field representing the sentence text.
-
-        Returns:
-            DataFrame: The input DataFrame with additional sentence statistics columns.
-        """
-        # Assuming `sentence` column contains a list of sentence structs with a `result` field
-
-        # Step 1: Calculate sentence count
-        data = data.withColumn("sentence_count", F.size("tp_sentences"))
-
-        # Step 2: Compute sentence lengths
-        data = data.withColumn(
-            "sentence_lengths", F.expr("transform(tp_sentences, x -> length(x))")
-        )
-
-        # Step 3: Calculate min, max, mean, and std with conditional handling
-
-        # Minimum sentence length (set to `null` if there's only one sentence)
-        data = data.withColumn(
-            "min_sentence_length",
-            F.when(
-                F.col("sentence_count") > 1, F.array_min("sentence_lengths")
-            ).otherwise(F.lit(None)),
-        )
-
-        # Maximum sentence length (set to `null` if there's only one sentence)
-        data = data.withColumn(
-            "max_sentence_length",
-            F.when(
-                F.col("sentence_count") > 1, F.array_max("sentence_lengths")
-            ).otherwise(F.lit(None)),
-        )
-
-        # Mean sentence length
-        data = data.withColumn(
-            "mean_sentence_length",
-            F.when(
-                F.col("sentence_count") > 1,
-                F.expr(
-                    "aggregate(transform(sentence_lengths, x -> double(x)), 0.0, (acc, x) -> acc + x) / size(sentence_lengths)"
-                ),
-            ).otherwise(F.expr("double(sentence_lengths[0])")),
-        )
-
-        # Standard deviation (set to 0 or `null` if there's only one sentence)
-        data = data.withColumn(
-            "sentence_length_stddev",
-            F.when(
-                F.col("sentence_count") > 1,
-                F.sqrt(
-                    F.expr(
-                        "aggregate(transform(sentence_lengths, x -> double(x)), 0.0, (acc, x) -> acc + pow(x - mean_sentence_length, 2)) / size(sentence_lengths)"
-                    )
-                ),
-            ).otherwise(
-                F.lit(0)
-            ),  # Use .otherwise(F.lit(None)) if you prefer `null` for single-sentence entries.
-        )
-
-        # Drop intermediate column if not needed
-        data = data.drop("sentence_lengths")
-
-        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -290,6 +170,7 @@ class ComputePOSStatsTask(Task):
         super().__init__()
         self._column = column
 
+    @task_logger
     def run(self, data: DataFrame) -> DataFrame:
         """
         Executes the POS statistics calculations on the specified column.
@@ -408,6 +289,7 @@ class ComputeBasicStatsTask(Task):
         super().__init__()
         self._column = column
 
+    @task_logger
     def run(self, data: DataFrame) -> DataFrame:
         # 1. Character count
         data = data.withColumn("stats_char_count", F.length(self._column))
@@ -475,7 +357,7 @@ class ComputeBasicStatsTask(Task):
         data = data.withColumn(
             "stats_word_length_mean",
             F.expr(
-                "aggregate(word_lengths, 0, (acc, x) -> acc + x) / size(word_lengths)"
+                "aggregate(transform(word_lengths, x -> CAST(x AS DOUBLE)), CAST(0.0 AS DOUBLE), (acc, x) -> acc + x) / size(word_lengths)"
             ),
         )
 
@@ -486,10 +368,12 @@ class ComputeBasicStatsTask(Task):
                 F.size("word_lengths") > 1,
                 F.sqrt(
                     F.expr(
-                        "aggregate(word_lengths, 0, (acc, x) -> acc + pow(x - stats_word_length_mean, 2)) / size(word_lengths)"
+                        "aggregate(transform(word_lengths, x -> CAST(x AS DOUBLE)), CAST(0.0 AS DOUBLE), (acc, x) -> acc + pow(x - stats_word_length_mean, 2)) / size(word_lengths)"
                     )
                 ),
-            ).otherwise(F.lit(None)),
+            ).otherwise(
+                F.lit(None)
+            ),  # Use None if you prefer NULL for single-word entries.
         )
 
         # Drop intermediate column if not needed
@@ -526,6 +410,7 @@ class ComputeReviewAgeTask(Task):
         self._column = column
         self._stats_column = stats_column
 
+    @task_logger
     def run(self, data: DataFrame) -> DataFrame:
         """
         Executes the review age calculation on the specified date column.
@@ -590,6 +475,7 @@ class ComputeAggDeviationStats(Task):
         self._column = column
         self._stats_column = stats_column
 
+    @task_logger
     def run(self, data: DataFrame) -> DataFrame:
         # Step 1: Calculate average for the aggregation
         app_avg_df = data.groupBy(self._agg_by).agg(
@@ -639,6 +525,7 @@ class ComputeEntropyTask(Task):
         self._column = column
         self._stats_column = stats_column
 
+    @task_logger
     def run(self, data: DataFrame) -> DataFrame:
 
         # Step 1: Split content into words
@@ -711,6 +598,7 @@ class ComputeTQAStatsTask(Task):
     def __init__(self) -> None:
         super().__init__()
 
+    @task_logger
     def run(self, data: DataFrame) -> DataFrame:
 
         # 1. Whether review has at least one adjective
@@ -782,6 +670,7 @@ class ComputeReadabilityTask(Task):
         self._column = column
         self._stats_column = stats_column
 
+    @task_logger
     def run(self, data: DataFrame) -> DataFrame:
         def calculate_flesch_reading_ease(text):
             if text:
