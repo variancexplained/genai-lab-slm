@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Saturday October 26th 2024 03:40:23 pm                                              #
+# Modified   : Saturday October 26th 2024 10:54:06 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,12 @@ from pyspark.ml import Pipeline
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
-from sparknlp.annotator import PerceptronModel, Tokenizer
+from sparknlp.annotator import (
+    DependencyParserModel,
+    PerceptronModel,
+    Tokenizer,
+    TypedDependencyParserModel,
+)
 from sparknlp.base import DocumentAssembler, Finisher
 
 from discover.flow.base.task import Task
@@ -116,16 +121,161 @@ class NLPTask(Task):
             .setOutputCol("pos_tags")
         )
 
+        # New stage 1: Dependency Parsing (unlabeled)
+        dependency = (
+            DependencyParserModel.pretrained("dependency_conllu")
+            .setInputCols(["document", "pos_tags", "tokens"])
+            .setOutputCol("dependency")
+        )
+
+        # New stage 2: Dependency Parsing (labeled)
+        dependency_label = (
+            TypedDependencyParserModel.pretrained("dependency_typed_conllu")
+            .setInputCols(["tokens", "pos_tags", "dependency"])
+            .setOutputCol("dependency_type")
+        )
+
         # Finisher converts annotations to plain lists for DataFrame output
         finisher = (
             Finisher()
-            .setInputCols(["tokens", "pos_tags"])
-            .setOutputCols(["tp_tokens", "tp_pos"])
+            .setInputCols(["tokens", "pos_tags", "dependency", "dependency_type"])
+            .setOutputCols(
+                ["tp_tokens", "tp_pos", "tp_dependency", "tp_dependency_type"]
+            )
+            .setIncludeMetadata(True)
         )
 
         # Create and return Pipeline with the defined stages
-        pipeline = Pipeline(stages=[document_assembler, tokenizer, pos, finisher])
+        pipeline = Pipeline(
+            stages=[
+                document_assembler,
+                tokenizer,
+                pos,
+                dependency,
+                dependency_label,
+                finisher,
+            ]
+        )
         return pipeline
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                 COMPUTE COMPLEXITY STATS                                         #
+# ------------------------------------------------------------------------------------------------ #
+class ComputeComplexityTask(Task):
+    def __init__(
+        self, column: str = "content", stats_column: str = "stats_complexity"
+    ) -> None:
+        super().__init__()
+        self._column = column
+        self._stats_column = stats_column
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+
+        def compute_review_complexity(parsed_df):
+            """
+            Compute complexity for each review based on parsed dependencies.
+
+            Complexity is defined as the maximum number of relations (attributes and actions)
+            associated with any object (noun) in the review.
+
+            Parameters:
+            - parsed_df: DataFrame containing parsed dependencies with columns 'content',
+                        'tp_token', 'tp_pos', 'dependency', 'dependency_type'
+
+            Returns:
+            - DataFrame with columns 'content' and 'complexity'
+            """
+
+            # Step 1: Flatten the DataFrame for easier manipulation
+            exploded_df = parsed_df.select(
+                F.col(self._column),
+                F.explode(
+                    F.arrays_zip(
+                        F.col("tp_tokens").alias("token"),
+                        F.col("tp_pos").alias("pos"),
+                        F.col("tp_dependency").alias("dependency"),
+                        F.col("tp_dependency_type").alias("dependency_type"),
+                    )
+                ).alias("cols"),
+            ).select(
+                self._column,
+                F.col("cols.token").alias("token"),
+                F.col("cols.pos").alias("pos"),
+                F.col("cols.dependency").alias("dependency"),
+                F.col("cols.dependency_type").alias("dependency_type"),
+            )
+
+            # Step 2: Identify Objects, Attributes, and Actions by POS Tag
+            objects_df = exploded_df.filter(
+                F.col("pos").isin(["NN", "NNS"])
+            )  # Nouns (objects)
+            attributes_df = exploded_df.filter(
+                F.col("pos").isin(["JJ", "JJR", "JJS"])
+            )  # Adjectives (attributes)
+            actions_df = exploded_df.filter(
+                F.col("pos").isin(["VB", "VBD", "VBG", "VBN", "VBP", "VBZ"])
+            )  # Verbs (actions)
+
+            # Step 3: Join on 'dependency' and 'dependency_type' to match relations
+
+            # 1. Relations between objects and attributes
+            object_attribute_relations = (
+                attributes_df.alias("attributes")
+                .join(
+                    objects_df.alias("objects"),
+                    (F.col("attributes.dependency") == F.col("objects.token"))
+                    & (F.col("attributes.dependency_type") == "amod"),
+                    "inner",
+                )
+                .select(
+                    F.col("objects.content").alias("content"),
+                    F.col("objects.token").alias("object"),
+                    F.col("attributes.token").alias("attribute"),
+                )
+            )
+
+            # 2. Relations between objects and actions
+            object_action_relations = (
+                actions_df.alias("actions")
+                .join(
+                    objects_df.alias("objects"),
+                    (F.col("actions.dependency") == F.col("objects.token"))
+                    & (F.col("actions.dependency_type").isin(["nsubj", "dobj"])),
+                    "inner",
+                )
+                .select(
+                    F.col("objects.content").alias("content"),
+                    F.col("objects.token").alias("object"),
+                    F.col("actions.token").alias("action"),
+                )
+            )
+
+            # 3. Count Relations for Each Object
+            # Combine attribute and action relations, then count relations by object
+            object_relations = (
+                object_attribute_relations.union(object_action_relations)
+                .groupBy(self._column, "object")
+                .agg(F.count("*").alias("relation_count"))
+            )
+
+            # Step 5: Compute Complexity as the Maximum Number of Relations for Any Object
+            complexity_df = object_relations.groupBy(self._column).agg(
+                F.max("relation_count").alias(self._stats_column)
+            )
+
+            # Drop dependency columns
+            complexity_df = complexity_df.drop(
+                "dependency", "dependency_type", "object", "relation_count"
+            )
+
+            # Merge complexity data into original data frame
+            data = parsed_df.join(complexity_df, on=self._column, how="left")
+
+            return data
+
+        return compute_review_complexity(parsed_df=data)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -636,6 +786,12 @@ class ComputeTQAStatsTask(Task):
             "tqa_word_count_range",
             (F.col("stats_word_count") > 3) & (F.col("stats_word_count") < 256),
         )
+
+        # 10. Whether complexity is at least 1.
+        data = data.withColumn("tqa_complexity_c1", (F.col("stats_complexity") > 0))
+
+        # 11. Whether complexity is at least 2.
+        data = data.withColumn("tqa_complexity_c1", (F.col("stats_complexity") > 1))
 
         return data
 
