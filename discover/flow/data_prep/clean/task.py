@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday October 25th 2024 07:29:13 pm                                                #
+# Modified   : Sunday October 27th 2024 01:20:53 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -690,11 +690,13 @@ class DetectNonEnglishTask(DataCleaningTask):
         dc_column: str,
         column: str = "content",
         n_jobs: int = 12,
+        drop: bool = False,
     ):
         super().__init__()
         self._dc_column = dc_column
         self._column = column
         self._n_jobs = n_jobs
+        self._drop = drop
         # Load pre-trained FastText language identification model
         self._model_filepath = os.getenv("FASTTEXT_MODEL")
 
@@ -754,5 +756,10 @@ class DetectNonEnglishTask(DataCleaningTask):
         df.loc[df[self._dc_column], self._dc_column] = df.loc[
             df[self._dc_column], self._column
         ].parallel_apply(lambda text: lm_lingua(text))
+
+        # Drop non-english rows and indicator column if requested.
+        if self._drop:
+            df = df.loc[~df[self._dc_column]]
+            df = df.drop(columns=[self._dc_column], axis=1)
 
         return df

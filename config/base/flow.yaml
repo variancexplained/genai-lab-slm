@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Saturday October 26th 2024 09:22:58 pm                                              #
+# Modified   : Sunday October 27th 2024 01:21:34 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -135,12 +135,14 @@ phases:
               column: app_name
               dc_column: dc_non_english_app_name
               n_jobs: 18
+              drop: True
           - class_name: DetectNonEnglishTask
             module: discover.flow.data_prep.clean.task
             params:
               column: content
               dc_column: dc_non_english_review
               n_jobs: 18
+              drop: True
       feature:
         stage_name: feature
         source_config:
@@ -160,11 +162,6 @@ phases:
             module: discover.flow.data_prep.feature.task
             params:
               column: content
-          - class_name: ComputeComplexityTask
-            module: discover.flow.data_prep.feature.task
-            params:
-              column: content
-              stats_column: stats_complexity
           - class_name: ComputePOSStatsTask
             module: discover.flow.data_prep.feature.task
             params:
@@ -195,11 +192,11 @@ phases:
             params:
               column: content
               stats_column: info_entropy
-          - class_name: ComputeTQAStatsTask
-            module: discover.flow.data_prep.feature.task
-            params: {}
           - class_name: ComputeReadabilityTask
             module: discover.flow.data_prep.feature.task
             params:
               column: content
               stats_column: readability_flesch_reading_ease
+          - class_name: ComputeTQAStatsTask
+            module: discover.flow.data_prep.feature.task
+            params: {}

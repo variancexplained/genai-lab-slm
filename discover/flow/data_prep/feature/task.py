@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Saturday October 26th 2024 10:54:06 pm                                              #
+# Modified   : Sunday October 27th 2024 01:51:48 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,12 +26,7 @@ from pyspark.ml import Pipeline
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
-from sparknlp.annotator import (
-    DependencyParserModel,
-    PerceptronModel,
-    Tokenizer,
-    TypedDependencyParserModel,
-)
+from sparknlp.annotator import PerceptronModel, Tokenizer
 from sparknlp.base import DocumentAssembler, Finisher
 
 from discover.flow.base.task import Task
@@ -121,28 +116,11 @@ class NLPTask(Task):
             .setOutputCol("pos_tags")
         )
 
-        # New stage 1: Dependency Parsing (unlabeled)
-        dependency = (
-            DependencyParserModel.pretrained("dependency_conllu")
-            .setInputCols(["document", "pos_tags", "tokens"])
-            .setOutputCol("dependency")
-        )
-
-        # New stage 2: Dependency Parsing (labeled)
-        dependency_label = (
-            TypedDependencyParserModel.pretrained("dependency_typed_conllu")
-            .setInputCols(["tokens", "pos_tags", "dependency"])
-            .setOutputCol("dependency_type")
-        )
-
         # Finisher converts annotations to plain lists for DataFrame output
         finisher = (
             Finisher()
-            .setInputCols(["tokens", "pos_tags", "dependency", "dependency_type"])
-            .setOutputCols(
-                ["tp_tokens", "tp_pos", "tp_dependency", "tp_dependency_type"]
-            )
-            .setIncludeMetadata(True)
+            .setInputCols(["tokens", "pos_tags"])
+            .setOutputCols(["tp_tokens", "tp_pos"])
         )
 
         # Create and return Pipeline with the defined stages
@@ -151,131 +129,10 @@ class NLPTask(Task):
                 document_assembler,
                 tokenizer,
                 pos,
-                dependency,
-                dependency_label,
                 finisher,
             ]
         )
         return pipeline
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 COMPUTE COMPLEXITY STATS                                         #
-# ------------------------------------------------------------------------------------------------ #
-class ComputeComplexityTask(Task):
-    def __init__(
-        self, column: str = "content", stats_column: str = "stats_complexity"
-    ) -> None:
-        super().__init__()
-        self._column = column
-        self._stats_column = stats_column
-
-    @task_logger
-    def run(self, data: DataFrame) -> DataFrame:
-
-        def compute_review_complexity(parsed_df):
-            """
-            Compute complexity for each review based on parsed dependencies.
-
-            Complexity is defined as the maximum number of relations (attributes and actions)
-            associated with any object (noun) in the review.
-
-            Parameters:
-            - parsed_df: DataFrame containing parsed dependencies with columns 'content',
-                        'tp_token', 'tp_pos', 'dependency', 'dependency_type'
-
-            Returns:
-            - DataFrame with columns 'content' and 'complexity'
-            """
-
-            # Step 1: Flatten the DataFrame for easier manipulation
-            exploded_df = parsed_df.select(
-                F.col(self._column),
-                F.explode(
-                    F.arrays_zip(
-                        F.col("tp_tokens").alias("token"),
-                        F.col("tp_pos").alias("pos"),
-                        F.col("tp_dependency").alias("dependency"),
-                        F.col("tp_dependency_type").alias("dependency_type"),
-                    )
-                ).alias("cols"),
-            ).select(
-                self._column,
-                F.col("cols.token").alias("token"),
-                F.col("cols.pos").alias("pos"),
-                F.col("cols.dependency").alias("dependency"),
-                F.col("cols.dependency_type").alias("dependency_type"),
-            )
-
-            # Step 2: Identify Objects, Attributes, and Actions by POS Tag
-            objects_df = exploded_df.filter(
-                F.col("pos").isin(["NN", "NNS"])
-            )  # Nouns (objects)
-            attributes_df = exploded_df.filter(
-                F.col("pos").isin(["JJ", "JJR", "JJS"])
-            )  # Adjectives (attributes)
-            actions_df = exploded_df.filter(
-                F.col("pos").isin(["VB", "VBD", "VBG", "VBN", "VBP", "VBZ"])
-            )  # Verbs (actions)
-
-            # Step 3: Join on 'dependency' and 'dependency_type' to match relations
-
-            # 1. Relations between objects and attributes
-            object_attribute_relations = (
-                attributes_df.alias("attributes")
-                .join(
-                    objects_df.alias("objects"),
-                    (F.col("attributes.dependency") == F.col("objects.token"))
-                    & (F.col("attributes.dependency_type") == "amod"),
-                    "inner",
-                )
-                .select(
-                    F.col("objects.content").alias("content"),
-                    F.col("objects.token").alias("object"),
-                    F.col("attributes.token").alias("attribute"),
-                )
-            )
-
-            # 2. Relations between objects and actions
-            object_action_relations = (
-                actions_df.alias("actions")
-                .join(
-                    objects_df.alias("objects"),
-                    (F.col("actions.dependency") == F.col("objects.token"))
-                    & (F.col("actions.dependency_type").isin(["nsubj", "dobj"])),
-                    "inner",
-                )
-                .select(
-                    F.col("objects.content").alias("content"),
-                    F.col("objects.token").alias("object"),
-                    F.col("actions.token").alias("action"),
-                )
-            )
-
-            # 3. Count Relations for Each Object
-            # Combine attribute and action relations, then count relations by object
-            object_relations = (
-                object_attribute_relations.union(object_action_relations)
-                .groupBy(self._column, "object")
-                .agg(F.count("*").alias("relation_count"))
-            )
-
-            # Step 5: Compute Complexity as the Maximum Number of Relations for Any Object
-            complexity_df = object_relations.groupBy(self._column).agg(
-                F.max("relation_count").alias(self._stats_column)
-            )
-
-            # Drop dependency columns
-            complexity_df = complexity_df.drop(
-                "dependency", "dependency_type", "object", "relation_count"
-            )
-
-            # Merge complexity data into original data frame
-            data = parsed_df.join(complexity_df, on=self._column, how="left")
-
-            return data
-
-        return compute_review_complexity(parsed_df=data)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -453,7 +310,10 @@ class ComputeBasicStatsTask(Task):
         # 3. Digits proportion
         data = data.withColumn(
             "stats_digits_proportion",
-            F.col("stats_digits_count") / F.col("stats_char_count"),
+            F.when(
+                F.col("stats_char_count") > 0,
+                F.col("stats_digits_count") / F.col("stats_char_count"),
+            ).otherwise(0),
         )
 
         # 4. Punctuation count
@@ -465,7 +325,10 @@ class ComputeBasicStatsTask(Task):
         # 5. Punctuation proportion
         data = data.withColumn(
             "stats_punctuation_proportion",
-            F.col("stats_punctuation_count") / F.col("stats_char_count"),
+            F.when(
+                F.col("stats_char_count") > 0,
+                F.col("stats_punctuation_count") / F.col("stats_char_count"),
+            ).otherwise(0),
         )
 
         # 6. Split content into words
@@ -485,6 +348,11 @@ class ComputeBasicStatsTask(Task):
                 F.col("stats_word_count") > 0,
                 F.col("stats_unique_word_count") / F.col("stats_word_count"),
             ).otherwise(0),
+        )
+
+        # 10 Word Repetition Ratio
+        data = data.withColumn(
+            "stats_word_repetition_ratio", 1 - F.col("stats_unique_word_proportion")
         )
 
         # Drop intermediate columns
@@ -521,9 +389,7 @@ class ComputeBasicStatsTask(Task):
                         "aggregate(transform(word_lengths, x -> CAST(x AS DOUBLE)), CAST(0.0 AS DOUBLE), (acc, x) -> acc + pow(x - stats_word_length_mean, 2)) / size(word_lengths)"
                     )
                 ),
-            ).otherwise(
-                F.lit(None)
-            ),  # Use None if you prefer NULL for single-word entries.
+            ).otherwise(0),
         )
 
         # Drop intermediate column if not needed
@@ -718,6 +584,56 @@ class ComputeEntropyTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                                 COMPUTE READABILITY TASK                                         #
+# ------------------------------------------------------------------------------------------------ #
+class ComputeReadabilityTask(Task):
+    """
+    A task to compute the Flesch Reading Ease score for a specified column in a PySpark DataFrame.
+
+    This task applies the Flesch Reading Ease formula to evaluate the readability of text in each row of the specified
+    column. The result is stored in a new column within the DataFrame.
+
+    Attributes:
+        column (str): The name of the column containing the text to analyze. Defaults to "content".
+        stats_column (str): The name of the column where the readability score will be stored. Defaults to
+            "readability_flesch_reading_ease".
+
+    Methods:
+        run(data: DataFrame) -> DataFrame:
+            Executes the readability calculation on the specified column of the input DataFrame and returns the
+            DataFrame with the new readability score column.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        stats_column: str = "readability_flesch_reading_ease",
+    ) -> None:
+        super().__init__()
+        self._column = column
+        self._stats_column = stats_column
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        def calculate_flesch_reading_ease(text):
+            if text:
+                return textstat.flesch_reading_ease(text)
+            return None  # Return None if text is empty or null
+
+        # Register the function as a PySpark UDF
+        flesch_reading_ease_udf = F.udf(calculate_flesch_reading_ease, T.DoubleType())
+
+        # Apply the UDF to the specified column to create the readability score column
+        data = data.withColumn(
+            self._stats_column, flesch_reading_ease_udf(F.col(self._column))
+        )
+
+        data = data.fillna({self._stats_column: 60})
+
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA STATS TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
 class ComputeTQAStatsTask(Task):
@@ -787,57 +703,58 @@ class ComputeTQAStatsTask(Task):
             (F.col("stats_word_count") > 3) & (F.col("stats_word_count") < 256),
         )
 
-        # 10. Whether complexity is at least 1.
-        data = data.withColumn("tqa_complexity_c1", (F.col("stats_complexity") > 0))
-
-        # 11. Whether complexity is at least 2.
-        data = data.withColumn("tqa_complexity_c1", (F.col("stats_complexity") > 1))
-
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 COMPUTE READABILITY TASK                                         #
-# ------------------------------------------------------------------------------------------------ #
-class ComputeReadabilityTask(Task):
-    """
-    A task to compute the Flesch Reading Ease score for a specified column in a PySpark DataFrame.
-
-    This task applies the Flesch Reading Ease formula to evaluate the readability of text in each row of the specified
-    column. The result is stored in a new column within the DataFrame.
-
-    Attributes:
-        column (str): The name of the column containing the text to analyze. Defaults to "content".
-        stats_column (str): The name of the column where the readability score will be stored. Defaults to
-            "readability_flesch_reading_ease".
-
-    Methods:
-        run(data: DataFrame) -> DataFrame:
-            Executes the readability calculation on the specified column of the input DataFrame and returns the
-            DataFrame with the new readability score column.
-    """
-
-    def __init__(
-        self,
-        column: str = "content",
-        stats_column: str = "readability_flesch_reading_ease",
-    ) -> None:
-        super().__init__()
-        self._column = column
-        self._stats_column = stats_column
-
-    @task_logger
-    def run(self, data: DataFrame) -> DataFrame:
-        def calculate_flesch_reading_ease(text):
-            if text:
-                return textstat.flesch_reading_ease(text)
-            return None  # Return None if text is empty or null
-
-        # Register the function as a PySpark UDF
-        flesch_reading_ease_udf = F.udf(calculate_flesch_reading_ease, T.DoubleType())
-
-        # Apply the UDF to the specified column to create the readability score column
+        # 10. Whether readability is easy
         data = data.withColumn(
-            self._stats_column, flesch_reading_ease_udf(F.col(self._column))
+            "tqa_readability_easy", (F.col("readability_flesch_reading_ease") > 70)
         )
+
+        # 11. Whether readability is standard to fairly difficult
+        data = data.withColumn(
+            "tqa_readability_std",
+            (F.col("readability_flesch_reading_ease") > 50)
+            & (F.col("readability_flesch_reading_ease") <= 70),
+        )
+
+        # 12. Whether readability is difficult
+        data = data.withColumn(
+            "tqa_readability_difficult",
+            (F.col("readability_flesch_reading_ease") <= 50),
+        )
+
+        # 13. Stop wprd match
+        # List of stop words to search for
+        stop_words = ["the", "be", "to", "of", "and", "that", "have", "with"]
+
+        # Create conditions for each stop word
+        conditions = [
+            F.expr(f"array_contains(split(content, ' '), '{word}')").cast("int")
+            for word in stop_words
+        ]
+
+        # Sum the conditions and check if at least 2 stop words are present
+        data = data.withColumn(
+            "tqa_stop_word_match", F.when(sum(conditions) >= 2, True).otherwise(False)
+        )
+
+        # Create a new column "tqa_first_letter_cap" based on the first letter being uppercase
+        data = data.withColumn(
+            "tqa_first_letter_cap", F.expr("substring(content, 1, 1) rlike '^[A-Z]'")
+        )
+
+        # Create a new column "tqa_no_all_caps" based on whether the content is all caps
+        data = data.withColumn("tqa_no_all_caps", ~F.col("content").rlike("^[^a-z]*$"))
+
+        # Create a new column "tqa_high_word_repetition" if 'stats_word_repetition_ratio' >= 0.2
+        data = data.withColumn(
+            "tqa_high_word_repetition", F.col("stats_word_repetition_ratio") >= 0.2
+        )
+
+        # Define the regex pattern for special characters (non-alphanumeric, non-punctuation)
+        special_chars_pattern = r"[^a-zA-Z0-9\s.,!?;:'\"()\-]"
+
+        # Set tqa_no_special_chars to True if content has no special characters
+        data = data.withColumn(
+            "tqa_no_special_chars", ~F.col("content").rlike(special_chars_pattern)
+        )
+
         return data
