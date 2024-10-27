@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Sunday October 27th 2024 03:03:42 pm                                                #
+# Modified   : Sunday October 27th 2024 03:52:58 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -225,7 +225,7 @@ class DatasetRepo(Repo):
     #                             DATASET RETRIEVAL METHODS                                        #
     # -------------------------------------------------------------------------------------------- #
     def get(
-        self, asset_id: str, distributed: bool = False, nlp: bool = False
+        self, asset_id: str, distributed: Optional[bool] = None, nlp: bool = False
     ) -> Optional[Dataset]:
         """
         Retrieves a dataset by its ID.
@@ -233,6 +233,7 @@ class DatasetRepo(Repo):
         Args:
             asset_id (str): The id of the dataset to retrieve.
             distributed (bool): If True, a distributed (Spark) DataFrame is returned.
+                If None, distributed value is obtained from dataset metadata
             nlp (bool): If True, a Spark session for NLP will be used.
 
         Returns:
@@ -301,18 +302,24 @@ class DatasetRepo(Repo):
 
     # -------------------------------------------------------------------------------------------- #
     def _read_file(
-        self, dataset: Dataset, distributed: bool, nlp: bool
+        self, dataset: Dataset, distributed: Optional[bool] = None, nlp: bool = False
     ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
         """
         Reads a dataset's content based on its storage configuration.
 
         Args:
             dataset (Dataset): The dataset to read.
+            distributed (Optional[bool]): Indicates whether the dataset should be read
+                as a distributed dataset (Spark) or centralized (Pandas)
+            nlp (bool): Whether to obtain data using a NLP spark session.
 
         Returns:
             Union[pd.DataFrame, pyspark.sql.DataFrame]: The dataset's content.
         """
-        if dataset.distributed or distributed:
+        if distributed is None:
+            distributed = dataset.distributed
+
+        if distributed:
             return self._read_distributed_file(dataset=dataset, nlp=nlp)
         else:
             return self._read_centralized_file(dataset=dataset)
