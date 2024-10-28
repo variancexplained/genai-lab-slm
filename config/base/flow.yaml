@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Sunday October 27th 2024 01:21:34 pm                                                #
+# Modified   : Monday October 28th 2024 05:11:50 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -100,11 +100,6 @@ phases:
             params:
               column: content
               replacement: '[PHONE]'
-          - class_name: RemoveSpecialCharsTask
-            module: discover.flow.data_prep.clean.task
-            params:
-              replacement: ""
-              column: content
           - class_name: RemoveControlCharsTask
             module: discover.flow.data_prep.clean.task
             params:
@@ -119,11 +114,6 @@ phases:
             module: discover.flow.data_prep.clean.task
             params:
               replacement: " "
-              column: content
-          - class_name: RemoveNonASCIICharsTask
-            module: discover.flow.data_prep.clean.task
-            params:
-              replacement: ""
               column: content
           - class_name: RemoveAccentsTask
             module: discover.flow.data_prep.clean.task
@@ -174,29 +164,52 @@ phases:
             module: discover.flow.data_prep.feature.task
             params:
               column: date
-              stats_column: stats_review_age
+              feature_column: stats_review_age
           - class_name: ComputeAggDeviationStats
             module: discover.flow.data_prep.feature.task
             params:
               agg_by: app_id
               column: rating
-              stats_column: stats_rating_deviation
+              feature_column: stats_rating_deviation
           - class_name: ComputeAggDeviationStats
             module: discover.flow.data_prep.feature.task
             params:
               agg_by: app_id
               column: review_length
-              stats_column: stats_review_length_deviation
-          - class_name: ComputeEntropyTask
-            module: discover.flow.data_prep.feature.task
-            params:
-              column: content
-              stats_column: info_entropy
+              feature_column: stats_review_length_deviation
           - class_name: ComputeReadabilityTask
             module: discover.flow.data_prep.feature.task
             params:
               column: content
-              stats_column: readability_flesch_reading_ease
-          - class_name: ComputeTQAStatsTask
+              feature_column: readability_flesch_reading_ease
+          - class_name: ComputeTQAFiltersTask
             module: discover.flow.data_prep.feature.task
             params: {}
+      tqa:
+        stage_name: tqa
+        source_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: feature
+          name: review
+          nlp: False
+          distributed: True
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: tqa
+          name: review
+          nlp: False
+          distributed: True
+        tasks:
+          - class_name: TQATask
+            module: discover.flow.data_prep.tqa.task
+            params:
+              tqa_column: tqa_score
+              pos_count: 0.4
+              pos_diversity: 0.2
+              pos_intensity: 0.07
+              structural_complexity: 0.18
+              readability: 0.05
+              tqa_check: 0.1
+

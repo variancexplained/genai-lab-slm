@@ -10,27 +10,28 @@
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Monday October 28th 2024 02:30:50 pm                                                #
+# Created    : Saturday October 19th 2024 12:59:20 pm                                              #
+# Modified   : Wednesday October 23rd 2024 06:53:03 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Ingest Stage Module"""
-
 import logging
 from typing import List
 
-from pyspark.sql import DataFrame
+import pandas as pd
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.base.task import Task
 from discover.flow.data_prep.stage import DataPrepStage
-
+from discover.infra.service.logging.stage import stage_logger
 
 # ------------------------------------------------------------------------------------------------ #
+
+
 class TQAStage(DataPrepStage):
+    """"""
 
     def __init__(
         self,
@@ -56,18 +57,39 @@ class TQAStage(DataPrepStage):
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def _load_source_data(self) -> DataFrame:
-        """Loads the source dataset from the repository using the source asset ID."""
-        source_asset_id = AssetIDGen.get_asset_id(
-            asset_type=self._source_config.asset_type,
-            phase=PhaseDef.from_value(value=self._source_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._source_config.stage),
-            name=self._source_config.name,
-        )
-        dataset = self._repo.get(
-            asset_id=source_asset_id,
-            distributed=self._source_config.distributed,
-            nlp=self._source_config.nlp,
-        )
+    @stage_logger
+    def run(self) -> str:
+        """Executes the stage by loading the source dataset, applying tasks, and saving the result.
 
-        return dataset.content
+        Returns:
+            asset_id (str): Returns the asset_id for the asset created.
+        """
+        if (
+            self._endpoint_exists(asset_id=self._destination_asset_id)
+            and not self._force
+        ):
+            return self._destination_asset_id
+        else:
+            if self._repo.exists(asset_id=self._destination_asset_id):
+                self._repo.remove(asset_id=self._destination_asset_id)
+
+            data = self._load_source_data()
+            results = []
+
+            for task in self._tasks:
+                result = task.run(data=data)
+                results.append(result)
+
+            data = self._merge_data_results(data=data, results=results)
+
+            dataset = self._create_destination_dataset(data=data)
+
+            self._save_destination_dataset(dataset=dataset)
+
+            return self._destination_asset_id
+
+    def _merge_data_results(self, data: pd.DataFrame, results: list) -> pd.DataFrame:
+        """Merges the data with the results of the data quality assessment."""
+        results = pd.concat(results, axis=1)
+        data = pd.concat((data, results), axis=1)
+        return data

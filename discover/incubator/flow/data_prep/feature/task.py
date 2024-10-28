@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday October 28th 2024 02:23:54 pm                                                #
+# Modified   : Monday October 28th 2024 01:24:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,12 +21,17 @@ import os
 import warnings
 
 import textstat
+import torch
+from pyspark import SparkContext
 from pyspark.ml import Pipeline
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
+from pyspark.sql.functions import udf
+from pyspark.sql.types import FloatType
 from sparknlp.annotator import PerceptronModel, Tokenizer
 from sparknlp.base import DocumentAssembler, Finisher
+from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
 from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
@@ -683,3 +688,209 @@ class ComputeTQAFiltersTask(Task):
         )
 
         return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                               COMPUTE PERPLEXITY TASK                                            #
+# ------------------------------------------------------------------------------------------------ #
+class ComputePerplexityTask(Task):
+    """
+    A Spark-based task that calculates the perplexity of text data using a pre-trained GPT-2 model.
+    This task is designed to run in parallel on Spark, leveraging Hugging Face's GPT-2 model for
+    perplexity calculations. The model and tokenizer are broadcasted across Spark executors to
+    minimize memory usage and improve performance.
+
+    Attributes:
+        column (str): The name of the DataFrame column containing text data for perplexity calculation.
+        device (str): The device to run the model on, either 'cuda' or 'cpu'. Automatically set to 'cpu'
+            if 'cuda' is unavailable.
+        stride (int): The number of tokens to shift at each step when sliding over the text for perplexity
+            calculations, based on Hugging Face's implementation.
+        model_id (str): The identifier of the pre-trained model on Hugging Face's model hub.
+        feature_column (str): The name of the new DataFrame column where computed perplexity values
+            are stored.
+        _model_broadcast (Broadcast): Broadcasted instance of the pre-trained model.
+        _tokenizer_broadcast (Broadcast): Broadcasted instance of the tokenizer associated with the model.
+
+    Methods:
+        run(data: DataFrame) -> DataFrame:
+            Executes the perplexity calculation for each row in the DataFrame, adding a new column with
+            perplexity scores. Calls helper methods to broadcast the model and tokenizer.
+
+        _get_spark_context() -> SparkContext:
+            Retrieves the active Spark context; raises an error if no Spark session is active.
+
+        _broadcast_model(sc: SparkContext) -> None:
+            Loads the model from Hugging Face and broadcasts it across Spark executors to ensure efficient
+            distribution without duplicating memory usage.
+
+        _broadcast_tokenizer(sc: SparkContext) -> None:
+            Loads the tokenizer from Hugging Face and broadcasts it across Spark executors.
+
+        _validate() -> None:
+            Validates and sets the device to 'cpu' if 'cuda' is unavailable.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        device: str = "cuda",
+        stride: int = 512,
+        model_id: str = "openai-community/gpt2-large",
+        feature_column: str = "tqa_perplexity",
+    ) -> None:
+        super().__init__()
+        self._column = column
+        self._device = device
+        self._model_id = model_id
+        self._stride = stride
+        self._feature_column = feature_column
+        self._model_broadcast = None
+        self._tokenizer_broadcast = None
+        self._validate()
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        """
+        Runs the perplexity calculation on the provided DataFrame.
+
+        This method retrieves the Spark context, broadcasts the model and tokenizer,
+        and defines a Spark UDF to calculate perplexity for each row in the specified column.
+
+        Args:
+            data (DataFrame): The Spark DataFrame containing the text data to calculate perplexity on.
+
+        Returns:
+            DataFrame: The original DataFrame with an additional column containing perplexity scores.
+        """
+        sc = self._get_spark_context()
+        self._broadcast_model(sc=sc)
+        self._broadcast_tokenizer(sc=sc)
+
+        @udf(FloatType())
+        def compute_perplexity(text):
+            # This method is derived from the HuggingFace tutorial on
+            # Perplexity of fixed-length models.
+            # https://huggingface.co/docs/transformers/en/perplexity
+
+            # Obtain the model and tokenizer from spark context broadcast.
+            model = self._model_broadcast.value
+            tokenizer = self._tokenizer_broadcast.value
+
+            # Tokenize text
+            encodings = tokenizer(text, return_tensors="pt")
+
+            # Obtain max length and sequence length
+            max_length = model.config.n_positions
+            seq_len = encodings.input_ids.size(1)
+
+            # Hardcoding stride and device as a test dataframe writing exception
+            stride = 512
+            device = "cuda"
+
+            nlls = []
+            prev_end_loc = 0
+            for begin_loc in range(0, seq_len, stride):
+                end_loc = min(begin_loc + max_length, seq_len)
+                trg_len = (
+                    end_loc - prev_end_loc
+                )  # may be different from stride on last loop
+                input_ids = encodings.input_ids[:, begin_loc:end_loc].to(device)
+                target_ids = input_ids.clone()
+                target_ids[:, :-trg_len] = -100
+
+                with torch.no_grad():
+                    outputs = model(input_ids, labels=target_ids)
+
+                    # Loss is calculated using CrossEntropyLoss, which averages over valid labels.
+                    # N.B. The model only calculates loss over trg_len - 1 labels,
+                    # because it internally shifts the labels to the left by 1.
+                    neg_log_likelihood = outputs.loss
+
+                nlls.append(neg_log_likelihood)
+
+                prev_end_loc = end_loc
+                if end_loc == seq_len:
+                    break
+
+            perplexity = torch.exp(torch.stack(nlls).mean())
+
+            if torch.isnan(perplexity):
+                return 0.0
+            elif torch.isinf(perplexity):
+                return 0.0
+            else:
+                return perplexity.item()
+
+        data = data.withColumn(
+            self._feature_column,
+            F.when(
+                F.length(data[self._column]) > 2, compute_perplexity(data[self._column])
+            ).otherwise(0.0),
+        )
+
+        # Replace non-float values in the perplexity column with 0.0
+        data = data.withColumn(
+            self._feature_column,
+            F.when(
+                (F.col(self._feature_column).cast("float").isNotNull())
+                & (~F.col(self._feature_column).isin(float("inf"), float("-inf"))),
+                F.col(self._feature_column),
+            ).otherwise(
+                0.0
+            ),  # Replace with 0.0 if not a valid float
+        )
+        return data
+
+    def _get_spark_context(self) -> SparkContext:
+        """
+        Retrieves the active Spark context. If no active Spark session is found,
+        raises a RuntimeError to signal the issue.
+
+        Returns:
+            SparkContext: The active Spark context.
+
+        Raises:
+            RuntimeError: If no Spark session is active.
+        """
+        spark = SparkSession.getActiveSession()
+        if spark:
+            return spark.sparkContext
+        else:
+            raise RuntimeError("No active Spark session found")
+
+    def _broadcast_model(self, sc: SparkContext) -> None:
+        """
+        Broadcasts the pre-trained GPT-2 model to all Spark executors.
+
+        Broadcasting minimizes memory usage by sending a single copy of the model to each executor,
+        avoiding repeated instantiation and ensuring that all tasks access the same model instance.
+
+        Args:
+            sc (SparkContext): The active Spark context to perform the broadcast.
+        """
+        model = GPT2LMHeadModel.from_pretrained(self._model_id).to(self._device)
+        self._model_broadcast = sc.broadcast(model)
+
+    def _broadcast_tokenizer(self, sc: SparkContext) -> None:
+        """
+        Broadcasts the tokenizer associated with the pre-trained GPT-2 model to all Spark executors.
+
+        Broadcasting ensures that only one instance of the tokenizer is shared across tasks,
+        improving efficiency by avoiding redundant instantiation.
+
+        Args:
+            sc (SparkContext): The active Spark context to perform the broadcast.
+        """
+        tokenizer = GPT2TokenizerFast.from_pretrained(self._model_id)
+        self._tokenizer_broadcast = sc.broadcast(tokenizer)
+
+    def _validate(self) -> None:
+        """
+        Validates the device setting for model inference.
+
+        If 'cuda' is specified as the device but is unavailable, this method sets the device to 'cpu'
+        to ensure compatibility. Raises an error if the device specification is invalid.
+        """
+        if self._device == "cuda":
+            self._device = self._device if torch.cuda.is_available() else "cpu"
