@@ -11,11 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 6th 2024 11:07:56 pm                                                     #
-# Modified   : Wednesday October 23rd 2024 11:05:31 pm                                             #
+# Modified   : Tuesday October 29th 2024 02:19:48 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import textwrap
 from datetime import date, datetime
 from typing import Union
 
@@ -105,27 +106,28 @@ class Printer:
         trailer = f"\n\n# {breadth * '='} #\n"
         print(trailer)
 
-    def print_dict(self, title: str, data: dict, text: str = None) -> None:
+    def print_dict(self, title: str, data: dict, text_col: str = None) -> None:
         """
         Prints a dictionary in a formatted manner.
 
         Args:
             title (str): The title to be printed above the dictionary.
             data (dict): The dictionary to be printed.
-            text (str): Text to print below the dictionary.
+            text_col (str): The column containing text to print below the dictionary.
         """
         breadth = int(self._width / 2)
         s = f"\n\n{title.center(self._width, ' ')}"
         for k, v in data.items():
-            if isinstance(v, IMMUTABLE_TYPES):
-                if isinstance(v, float) or isinstance(v, int):
-                    v = f"{v:,}"
-                s += f"\n{k.rjust(breadth, ' ')} | {v}"
-        if text:
-            s += f"\n{text}"
-        s += "\n\n"
-
+            if text_col == k:
+                text = v
+            else:
+                if isinstance(v, IMMUTABLE_TYPES):
+                    if isinstance(v, float) or isinstance(v, int):
+                        v = f"{v:,}"
+                    s += f"\n{k.rjust(breadth, ' ')} | {v}"
         print(s)
+        if text:
+            print(textwrap.fill(text, 80))
 
     def print_dataframe_as_dict(
         self,
@@ -146,9 +148,5 @@ class Printer:
             text_col (str): A column of text to print.
             list_index (int): The index within the list of dictionaries (rows) to print. Default is 0.
         """
-        text = None
         d = df.to_dict("records")[list_index]
-        if text_col:
-            text = df[text_col].values[list_index]
-            del d[text_col]
-        self.print_dict(title=title, data=d, text=text)
+        self.print_dict(title=title, data=d, text_col=text_col)

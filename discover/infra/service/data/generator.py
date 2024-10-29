@@ -4,33 +4,54 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/test/flow.yaml                                                              #
+# Filename   : /discover/infra/service/data/generator.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Monday October 28th 2024 09:56:47 pm                                                #
+# Created    : Monday October 28th 2024 11:40:33 pm                                                #
+# Modified   : Tuesday October 29th 2024 12:43:59 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+
+import math
+
+import pandas as pd
+
 # ------------------------------------------------------------------------------------------------ #
-#                                        PHASES                                                    #
-# ------------------------------------------------------------------------------------------------ #
-phases:
-  dataprep:
-    stages:
-      ingest:
-        tasks:
-          - class_name: FilterTask
-            module: discover.flow.data_prep.ingest.task
-            params:
-              column: date
-              date: 2021
-              frac: 0.001
-              random_state: 55
 
 
+class DataBatchGenerator:
+    def __init__(self, data: pd.DataFrame, batch_size: int = 8):
+        """
+        Initializes the DataBatchGenerator.
 
+        Parameters:
+        - data (pd.DataFrame or list): The dataset to iterate over.
+        - batch_size (int): Number of rows to return per batch.
+        """
+        self.data = data
+        self.batch_size = batch_size
+        self.index = 0
+        # Calculate the number of batches
+        self.n_batches = math.ceil(len(self.data) / batch_size)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index >= len(self.data):
+            raise StopIteration  # End of data
+
+        # Get the next batch using iloc for DataFrame
+        start_idx = self.index
+        end_idx = min(start_idx + self.batch_size, len(self.data))
+        batch = self.data.iloc[start_idx:end_idx]
+
+        # Update index for the next batch
+        self.index += self.batch_size
+
+        return batch

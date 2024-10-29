@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Saturday October 26th 2024 09:35:33 am                                              #
+# Modified   : Monday October 28th 2024 09:55:36 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -91,10 +91,6 @@ class FilterTask(Task):
         frac (float): The fraction of the DataFrame to sample, where 0 < frac <= 1.
         random_state (int, optional): Random seed for reproducibility of the sample. Defaults to None.
 
-    Attributes:
-        _date (datetime): The date threshold for filtering the DataFrame.
-        _frac (float): The fraction of rows to sample from the filtered DataFrame.
-        _random_state (int): The random seed used for sampling.
     """
 
     def __init__(
@@ -104,6 +100,7 @@ class FilterTask(Task):
         Initializes the FilterTask with a date threshold and a sampling fraction.
 
         Args:
+            column (str): Column containing the review date.
             date (int): The year to filter the DataFrame by.
             frac (float): The fraction of rows to sample, where 0 < frac <= 1.
             random_state (int, optional): Random seed for reproducibility. Defaults to None.
@@ -126,7 +123,9 @@ class FilterTask(Task):
             pd.DataFrame: A new DataFrame containing the sampled rows after filtering by the date threshold.
         """
         df = data.loc[data[self._column] > self._date]
-        return df.sample(frac=self._frac, random_state=self._random_state)
+        if self._frac < 1.0:
+            df = df.sample(frac=self._frac, random_state=self._random_state)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
