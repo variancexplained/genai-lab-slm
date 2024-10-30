@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday October 28th 2024 02:23:54 pm                                                #
+# Modified   : Tuesday October 29th 2024 05:42:57 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,11 +20,9 @@
 import os
 import warnings
 
-import textstat
 from pyspark.ml import Pipeline
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql import types as T
 from sparknlp.annotator import PerceptronModel, Tokenizer
 from sparknlp.base import DocumentAssembler, Finisher
 
@@ -509,56 +507,6 @@ class ComputeAggDeviationStats(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                 COMPUTE READABILITY TASK                                         #
-# ------------------------------------------------------------------------------------------------ #
-class ComputeReadabilityTask(Task):
-    """
-    A task to compute the Flesch Reading Ease score for a specified column in a PySpark DataFrame.
-
-    This task applies the Flesch Reading Ease formula to evaluate the readability of text in each row of the specified
-    column. The result is stored in a new column within the DataFrame.
-
-    Attributes:
-        column (str): The name of the column containing the text to analyze. Defaults to "content".
-        feature_column (str): The name of the column where the readability score will be stored. Defaults to
-            "readability_flesch_reading_ease".
-
-    Methods:
-        run(data: DataFrame) -> DataFrame:
-            Executes the readability calculation on the specified column of the input DataFrame and returns the
-            DataFrame with the new readability score column.
-    """
-
-    def __init__(
-        self,
-        column: str = "content",
-        feature_column: str = "readability_flesch_reading_ease",
-    ) -> None:
-        super().__init__()
-        self._column = column
-        self._feature_column = feature_column
-
-    @task_logger
-    def run(self, data: DataFrame) -> DataFrame:
-        def calculate_flesch_reading_ease(text):
-            if text:
-                return textstat.flesch_reading_ease(text)
-            return None  # Return None if text is empty or null
-
-        # Register the function as a PySpark UDF
-        flesch_reading_ease_udf = F.udf(calculate_flesch_reading_ease, T.DoubleType())
-
-        # Apply the UDF to the specified column to create the readability score column
-        data = data.withColumn(
-            self._feature_column, flesch_reading_ease_udf(F.col(self._column))
-        )
-
-        data = data.fillna({self._feature_column: 60})
-
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA STATS TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
 class ComputeTQAFiltersTask(Task):
@@ -626,24 +574,6 @@ class ComputeTQAFiltersTask(Task):
         data = data.withColumn(
             "tqf_word_count_range",
             (F.col("stats_word_count") > 3) & (F.col("stats_word_count") < 256),
-        )
-
-        # 10. Whether readability is easy
-        data = data.withColumn(
-            "tqf_readability_easy", (F.col("readability_flesch_reading_ease") > 70)
-        )
-
-        # 11. Whether readability is standard to fairly difficult
-        data = data.withColumn(
-            "tqf_readability_std",
-            (F.col("readability_flesch_reading_ease") > 50)
-            & (F.col("readability_flesch_reading_ease") <= 70),
-        )
-
-        # 12. Whether readability is difficult
-        data = data.withColumn(
-            "tqf_readability_difficult",
-            (F.col("readability_flesch_reading_ease") <= 50),
         )
 
         # 13. Stop wprd match

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday October 28th 2024 04:12:56 pm                                                #
+# Modified   : Tuesday October 29th 2024 09:17:37 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ import warnings
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.functions import udf
+from pyspark.sql.functions import col, udf
 from pyspark.sql.types import FloatType
 
 from discover.flow.base.task import Task
@@ -44,7 +44,6 @@ class TQATask(Task):
         pos_diversity: float,
         pos_intensity: float,
         structural_complexity: float,
-        readability: float,
         tqa_check: float,
         tqa_column: str = "tqa_score",
     ) -> None:
@@ -53,7 +52,6 @@ class TQATask(Task):
         self._pos_diversity = pos_diversity
         self._pos_intensity = pos_intensity
         self._structural_complexity = structural_complexity
-        self._readability = readability
         self._tqa_check = tqa_check
         self._tqa_column = tqa_column
 
@@ -61,7 +59,7 @@ class TQATask(Task):
     def run(self, data: DataFrame) -> DataFrame:
 
         @udf(FloatType())
-        def compute_tqa_score(row):
+        def compute_pos_count_score(row):
             # POS Count Component
             pos_count = (
                 row["pos_n_nouns"]
@@ -70,7 +68,10 @@ class TQATask(Task):
                 + row["pos_n_adverbs"]
             )
             pos_count_score = pos_count * self._pos_count
+            return float(pos_count_score)
 
+        @udf(FloatType())
+        def compute_pos_diversity_score(row):
             # POS Diversity Component (entropy-based calculation)
             pos_tags = [
                 row["pos_p_nouns"],
@@ -80,7 +81,10 @@ class TQATask(Task):
             ]
             pos_diversity = -sum(p * math.log(p) for p in pos_tags if p > 0)
             pos_diversity_score = pos_diversity * self._pos_diversity
+            return float(pos_diversity_score)
 
+        @udf(FloatType())
+        def compute_structural_complexity_score(row):
             # Structural Complexity Component
             structural_complexity = (
                 0.4 * row["stats_unique_word_proportion"]
@@ -90,7 +94,10 @@ class TQATask(Task):
             structural_complexity_score = (
                 structural_complexity * self._structural_complexity
             )
+            return float(structural_complexity_score)
 
+        @udf(FloatType())
+        def compute_pos_intensity_score(row):
             # POS Intensity Component
             pos_intensity = (
                 row["pos_n_nouns"]
@@ -99,12 +106,10 @@ class TQATask(Task):
                 + row["pos_n_adverbs"]
             ) / row["stats_word_count"]
             pos_intensity_score = pos_intensity * self._pos_intensity
+            return float(pos_intensity_score)
 
-            # Readability Component
-            readability_score = (
-                row["readability_flesch_reading_ease"] * self._readability
-            )
-
+        @udf(FloatType())
+        def compute_tqa_check_score(row):
             # TQA Check Component
             tqa_check = (
                 0.3 * (1 - row["stats_digits_proportion"])
@@ -112,25 +117,62 @@ class TQATask(Task):
                 + 0.4 * row["tqf_has_terminal_punctuation"]
             )
             tqa_check_score = tqa_check * self._tqa_check
-
-            # Final TQA Score
-            score = (
-                pos_count_score
-                + pos_diversity_score
-                + structural_complexity_score
-                + pos_intensity_score
-                + readability_score
-                + tqa_check_score
-            )
-            return float(score)
+            return float(tqa_check_score)
 
         # Apply the UDF conditionally to rows where content length > 2
         data = data.withColumn(
-            self._tqa_column,
+            "tqm_pos_count_score",
             F.when(
                 F.length(data["content"]) > 2,
-                compute_tqa_score(F.struct(*data.columns)),
+                compute_pos_count_score(F.struct(*data.columns)),
             ).otherwise(0.0),
         )
+        # Calculate min and max values
+        min_pos_count = data.agg(F.min("tqm_pos_count_score")).collect()[0][0]
+        max_pos_count = data.agg(F.max("tqm_pos_count_score")).collect()[0][0]
 
+        # Apply min-max normalization to pos_count_score
+        data = data.withColumn(
+            "tqm_pos_count_score",
+            (col("tqm_pos_count_score") - min_pos_count)
+            / (max_pos_count - min_pos_count),
+        )
+
+        data = data.withColumn(
+            "tqm_pos_diversity_score",
+            F.when(
+                F.length(data["content"]) > 2,
+                compute_pos_diversity_score(F.struct(*data.columns)),
+            ).otherwise(0.0),
+        )
+        data = data.withColumn(
+            "tqm_structural_complexity_score",
+            F.when(
+                F.length(data["content"]) > 2,
+                compute_structural_complexity_score(F.struct(*data.columns)),
+            ).otherwise(0.0),
+        )
+        data = data.withColumn(
+            "tqm_pos_intensity_score",
+            F.when(
+                F.length(data["content"]) > 2,
+                compute_pos_intensity_score(F.struct(*data.columns)),
+            ).otherwise(0.0),
+        )
+        data = data.withColumn(
+            "tqm_tqa_check_score",
+            F.when(
+                F.length(data["content"]) > 2,
+                compute_tqa_check_score(F.struct(*data.columns)),
+            ).otherwise(0.0),
+        )
+        # Calculate the TQA score as a weighted combination of components
+        data = data.withColumn(
+            "tqa_score",
+            col("tqm_pos_count_score")
+            + col("tqm_pos_diversity_score")
+            + col("tqm_structural_complexity_score")
+            + col("tqm_pos_intensity_score")
+            + col("tqm_tqa_check_score"),
+        )
         return data

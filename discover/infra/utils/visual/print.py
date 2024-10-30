@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 6th 2024 11:07:56 pm                                                     #
-# Modified   : Tuesday October 29th 2024 02:19:48 am                                               #
+# Modified   : Tuesday October 29th 2024 12:23:08 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -115,6 +115,7 @@ class Printer:
             data (dict): The dictionary to be printed.
             text_col (str): The column containing text to print below the dictionary.
         """
+        text = None
         breadth = int(self._width / 2)
         s = f"\n\n{title.center(self._width, ' ')}"
         for k, v in data.items():

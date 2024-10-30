@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Sunday October 27th 2024 03:52:58 pm                                                #
+# Modified   : Tuesday October 29th 2024 11:07:58 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repository Module"""
 import logging
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 import pandas as pd
 import pyspark
@@ -273,6 +273,33 @@ class DatasetRepo(Repo):
                 msg = f"Exception occurred while reading dataset {dataset.asset_id} contents from file."
                 self._logger.exception(msg)
                 raise DatasetIOError(msg, e) from e
+
+    # -------------------------------------------------------------------------------------------- #
+    def select(self, asset_id: str, condition: Callable) -> pd.DataFrame:
+        """
+        Selects and returns rows from the asset data that meet a specified condition.
+
+        Parameters
+        ----------
+        asset_id : str
+            The unique identifier for the asset from which to retrieve data.
+
+        condition : Callable
+            A lambda function or callable expression that filters the DataFrame rows.
+            This function should accept a DataFrame and return a boolean Series to filter rows
+            (e.g., `lambda x: x['date'] > some_date`).
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame containing only the rows that satisfy the specified condition.
+
+        Example
+        -------
+        >>> select("asset_123", lambda x: x['date'] > '2023-01-01')
+        """
+        df = self.get(asset_id=asset_id)
+        return df[condition]
 
     # -------------------------------------------------------------------------------------------- #
     def get_metadata(self, asset_id: str) -> Optional[Dataset]:
