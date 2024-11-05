@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Tuesday October 29th 2024 05:45:18 pm                                               #
+# Modified   : Tuesday November 5th 2024 02:36:10 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,13 +31,6 @@ phases:
           nlp: False
           distributed: False
         tasks:
-          - class_name: FilterTask
-            module: discover.flow.data_prep.ingest.task
-            params:
-              column: date
-              date: 2021
-              frac: 1.0
-              random_state: 55
           - class_name: RemoveNewlinesTask
             module: discover.flow.data_prep.ingest.task
             params:
@@ -63,10 +56,96 @@ phases:
                 vote_count: int64
                 vote_sum: int64
                 date: datetime64[ms]
-          - class_name: ReviewLengthTask
-            module: discover.flow.data_prep.ingest.task
+      condition:
+        stage_name: condition
+        source_config:
+          filepath: data/raw/reviews
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: ingest
+          name: review
+          nlp: False
+          distributed: False
+        tasks:
+          - class_name: FilterTask
+            module: discover.flow.data_prep.condition.task
+            params:
+              column: date
+              date: 2021
+              frac: 1.0
+              random_state: 55
+          - class_name: RemoveNewlinesTask
+            module: discover.flow.data_prep.condition.task
             params:
               column: content
+          - class_name: VerifyEncodingTask
+            module: discover.flow.data_prep.condition.task
+            params:
+              column: content
+              encoding_sample: 0.01
+              random_state: 55
+          - class_name: CastDataTypeTask
+            module: discover.flow.data_prep.condition.task
+            params:
+              datatypes:
+                id: string
+                app_id: string
+                app_name: string
+                category_id: category
+                category: category
+                author: string
+                rating: int16
+                content: string
+                vote_count: int64
+                vote_sum: int64
+                date: datetime64[ms]
+          - class_name: ReviewLengthTask
+            module: discover.flow.data_prep.condition.task
+            params:
+              column: content
+              new_column:
+          - class_name: ComputeReviewAgeTask
+            module: discover.flow.data_prep.feature.task
+            params:
+              column: date
+              new_column: eda_review_age
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.feature.task
+            params:
+              agg_by: app_id
+              column: rating
+              new_column: eda_rating_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.feature.task
+            params:
+              agg_by: app_id
+              column: eda_review_length
+              new_column: eda_review_length_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.feature.task
+            params:
+              agg_by: app_id
+              column: eda_review_age
+              new_column: eda_review_age_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.feature.task
+            params:
+              agg_by: category_id
+              column: rating
+              new_column: eda_rating_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.feature.task
+            params:
+              agg_by: category_id
+              column: eda_review_length
+              new_column: eda_review_length_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.feature.task
+            params:
+              agg_by: category_id
+              column: eda_review_age
+              new_column: eda_review_age_deviation
       clean:
         stage_name: clean
         source_config:
@@ -121,20 +200,27 @@ phases:
             module: discover.flow.data_prep.clean.task
             params:
               column: content
-          - class_name: DetectNonEnglishTask
+          - class_name: RemoveNonEnglishTask
             module: discover.flow.data_prep.clean.task
             params:
               column: app_name
-              dc_column: dc_non_english_app_name
               n_jobs: 18
-              drop: True
-          - class_name: DetectNonEnglishTask
+          - class_name: RemoveNonEnglishTask
             module: discover.flow.data_prep.clean.task
             params:
               column: content
-              dc_column: dc_non_english_review
               n_jobs: 18
-              drop: True
+          - class_name: RemoveExcessiveSpecialCharsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
+              threshold: 0.3
+          - class_name: DelongationTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
+              threshold: 4
+              max_elongation: 3
       feature:
         stage_name: feature
         source_config:
@@ -162,23 +248,7 @@ phases:
             module: discover.flow.data_prep.feature.task
             params:
               column: content
-          - class_name: ComputeReviewAgeTask
-            module: discover.flow.data_prep.feature.task
-            params:
-              column: date
-              feature_column: stats_review_age
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.feature.task
-            params:
-              agg_by: app_id
-              column: rating
-              feature_column: stats_rating_deviation
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.feature.task
-            params:
-              agg_by: app_id
-              column: review_length
-              feature_column: stats_review_length_deviation
+
           - class_name: ComputeTQAFiltersTask
             module: discover.flow.data_prep.feature.task
             params: {}
@@ -190,22 +260,37 @@ phases:
           stage: feature
           name: review
           nlp: False
-          distributed: True
+          distributed: False
         destination_config:
           asset_type: dataset
           phase: dataprep
           stage: tqa
           name: review
           nlp: False
-          distributed: True
+          distributed: False
         tasks:
-          - class_name: TQATask
+          - class_name: TQATask1
             module: discover.flow.data_prep.tqa.task
             params:
-              tqa_column: tqa_score
-              pos_count: 0.4
-              pos_diversity: 0.2
-              pos_intensity: 0.1
-              structural_complexity: 0.2
-              tqa_check: 0.1
-
+              column: content
+              tqa_column: tqa_score1
+              pos_count_weight: 0.4
+              pos_diversity_weight: 0.2
+              pos_intensity_weight: 0.1
+              structural_complexity_weight: 0.2
+              tqa_check_weight: 0.1
+          - class_name: TQATask2Data
+            module: discover.flow.data_prep.tqa.task
+            params:
+              filepath: data/working/dataprep/tqa_small.csv
+              min_eda_review_length: 5
+              max_eda_review_length: 1000
+              frac: 0.01
+              random_state: 202
+          - class_name: TQATask2
+            module: discover.flow.data_prep.tqa.task
+            params:
+              column: content
+              tqa_column: tqa_score2
+              weights_filepath: models/tqa/tqa_weights.csv
+              ppl_full: 4.673929214477539

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Sunday October 27th 2024 01:20:53 pm                                                #
+# Modified   : Monday November 4th 2024 04:31:50 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from discover.infra.service.logging.task import task_logger
 warnings.filterwarnings("ignore")
 os.environ["PYTHONWARNINGS"] = "ignore"
 # ------------------------------------------------------------------------------------------------ #
-pandarallel.initialize(nb_workers=12, verbose=False)
+pandarallel.initialize(nb_workers=18, verbose=False)
 
 # ------------------------------------------------------------------------------------------------ #
 #                     LANGUAGE MODELS FOR LANGUAGE DETECTION                                       #
@@ -50,10 +50,74 @@ fasttext_model = fasttext.load_model("models/language_detection/lid.176.bin")
 #                                    Data Cleaning Task                                            #
 # ------------------------------------------------------------------------------------------------ #
 class DataCleaningTask(Task):
-    """"""
+    """
+    A task that performs data cleaning by removing rows marked for exclusion and
+    summarizing the effects of cleaning operations.
+
+    Attributes:
+        _summary (str): A summary of the task execution, describing rows removed or modified.
+
+    Methods:
+        summary() -> str:
+            Returns a string summary of the task's execution.
+
+        summarize(a: pd.DataFrame, b: pd.DataFrame) -> None:
+            Compares DataFrames `a` and `b`, setting the `_summary` attribute to describe
+            the difference between them in terms of rows removed or cells modified.
+
+        remove(df: pd.DataFrame) -> pd.DataFrame:
+            Removes rows marked for exclusion in the 'exclude' column of the provided
+            DataFrame `df`, and drops the 'exclude' column.
+    """
 
     def __init__(self):
         super().__init__()
+        self._summary = None
+
+    @property
+    def summary(self) -> str:
+        """Returns a string summary of the task's execution."""
+        return self._summary
+
+    def summarize(self, a: pd.DataFrame, b: pd.DataFrame) -> None:
+        """
+        Summarizes the difference between two DataFrames `a` and `b` and sets the `_summary` attribute.
+
+        If `a` and `b` are equal, `_summary` is set to None.
+        If `a` has more rows than `b`, `_summary` reports the number of rows removed.
+        If `a` has fewer rows than `b`, `_summary` reports the number of rows removed.
+        If `a` and `b` differ in values, `_summary` reports the number of modified cells.
+
+        Args:
+            a (pd.DataFrame): The original DataFrame.
+            b (pd.DataFrame): The cleaned DataFrame to compare against.
+        """
+        self._summary = "No changes made."
+        if a.shape[0] > b.shape[0]:
+            self._summary = f"Removed {a.shape[0] - b.shape[0]} rows."
+        elif a.shape[0] < b.shape[0]:
+            self._summary = f"Removed {b.shape[0] - a.shape[0]} rows."
+        elif a.eq(b).sum().sum() > 0:
+            changed_cells = a.shape[0] * a.shape[1] - a.eq(b).sum().sum()
+            self._summary = f"Modified {changed_cells} cells."
+
+    def remove(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Removes rows marked for exclusion and drops the 'exclude' column.
+
+        Checks for the presence of an 'exclude' column in the DataFrame `df`. If found,
+        it filters out rows where 'exclude' is True and drops the 'exclude' column.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to process.
+
+        Returns:
+            pd.DataFrame: The cleaned DataFrame with excluded rows removed.
+        """
+        if "exclude" in df.columns:
+            df = df.loc[~df["exclude"]]
+            df = df.drop(columns=["exclude"])
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -83,6 +147,11 @@ class RemoveDuplicateReviewIdTask(DataCleaningTask):
         self._column = column
         self._sort_by = sort_by
         self._keep = keep
+        self._summary = None
+
+    @property
+    def summary(self) -> str:
+        return self._summary
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -98,10 +167,12 @@ class RemoveDuplicateReviewIdTask(DataCleaningTask):
             pd.DataFrame: A DataFrame with duplicates removed, containing only the latest
                 or most relevant review for each unique 'id'.
         """
-        data_sorted = data.sort_values(by=self._sort_by, ascending=True)
-        return data_sorted[
-            ~data_sorted.duplicated(subset=self._column, keep=self._keep)
-        ]
+
+        df = data.sort_values(by=self._sort_by, ascending=True)
+        df["exclude"] = df.duplicated(subset=self._column, keep=self._keep)
+        df = self.remove(df=df)
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -154,11 +225,13 @@ class URLMaskTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with URLs masked in the specified column.
         """
+        df = data.copy()
         # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
+        df[self._column] = data[self._column].parallel_apply(
             lambda x: re.sub(self._pattern, self._replacement, str(x))
         )
-        return data
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -211,11 +284,13 @@ class EmailAddressMaskTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with email addresses masked in the specified column.
         """
+        df = data.copy()
         # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
+        df[self._column] = data[self._column].parallel_apply(
             lambda x: re.sub(self._pattern, self._replacement, str(x))
         )
-        return data
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -268,48 +343,29 @@ class PhoneNumberMaskTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with phone numbers masked in the specified column.
         """
+        df = data.copy()
         # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
+        df[self._column] = data[self._column].parallel_apply(
             lambda x: re.sub(self._pattern, self._replacement, str(x))
         )
-        return data
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                             REMOVE SPECIAL CHARS TASK                                            #
 # ------------------------------------------------------------------------------------------------ #
-class RemoveSpecialCharsTask(DataCleaningTask):
-    """
-    A data cleaning task to remove specified special characters within a column in a DataFrame.
+class RemoveExcessiveSpecialCharsTask(DataCleaningTask):
+    """"""
 
-    This task detects and replaces specified special characters (such as mathematical
-    and programming symbols) within a given column based on a regular expression pattern.
-    The matched characters can be removed or replaced with a specified placeholder
-    (default: empty string), and parallel processing is used for efficient handling of large datasets.
-
-    Attributes:
-        _replacement (str): The string used to replace special characters. Defaults to an empty string.
-        _column (str): The column in which special characters will be removed or replaced. Defaults to "content".
-        _pattern (str): Regular expression pattern to detect the specified special characters for removal.
-
-    Args:
-        replacement (str): The string to replace special characters with. Defaults to an empty string.
-        column (str): The name of the column in which special characters should be removed or replaced. Defaults to "content".
-
-    Methods:
-        run(data: pd.DataFrame) -> pd.DataFrame:
-            Replaces specified special characters in the designated column with the
-            placeholder string and returns the updated DataFrame.
-    """
-
-    def __init__(self, replacement: str = "", column: str = "content") -> None:
+    def __init__(self, threshold: float = 0.3, column: str = "content") -> None:
         """
         Initializes RemoveSpecialCharsTask with specified replacement text and target column.
         """
         super().__init__()
-        self._replacement = replacement
+        self._threshold = threshold
         self._column = column
-        self._pattern = r"[+\=*/^{}\[\]<>|\\~;:&@#_]"
+        self._pattern = r"[^\w\s]"
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -326,11 +382,25 @@ class RemoveSpecialCharsTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with specified special characters removed or replaced in the specified column.
         """
-        # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
-            lambda x: re.sub(self._pattern, self._replacement, str(x))
+        df = data.copy()
+        df[self._column] = data[self._column].parallel_apply(self._normalize_text)
+        df["exclude"] = df[self._column].parallel_apply(
+            lambda text: (
+                len(re.findall(self._pattern, text)) / len(text) if len(text) > 0 else 0
+            )
+            > self._threshold
         )
-        return data
+
+        df = self.remove(df=df)
+        self.summarize(a=data, b=df)
+        return df
+
+    def _normalize_text(self, text):
+        """Normalizes Unicode text to Compatibility Decomposition Form"""
+        normalized_text = unicodedata.normalize("NFKD", text)
+        # Encode to ASCII, ignoring characters that can’t be converted to ASCII
+        ascii_text = normalized_text.encode("ascii", "ignore").decode("ascii")
+        return ascii_text
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -381,11 +451,13 @@ class RemoveControlCharsTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with control characters removed or replaced in the specified column.
         """
+        df = data.copy()
         # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
+        df[self._column] = data[self._column].parallel_apply(
             lambda x: re.sub(self._pattern, self._replacement, str(x))
         )
-        return data
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -435,11 +507,13 @@ class RemoveHTMLCharsTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with HTML entities removed or replaced in the specified column.
         """
+        df = data.copy()
         # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
+        df[self._column] = data[self._column].parallel_apply(
             lambda x: re.sub(self._pattern, self._replacement, str(x))
         )
-        return data
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -488,11 +562,13 @@ class RemoveExcessiveWhitespaceTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with excessive whitespace normalized in the specified column.
         """
+        df = data.copy()
         # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
+        df[self._column] = data[self._column].parallel_apply(
             lambda x: re.sub(self._pattern, self._replacement, str(x))
         )
-        return data
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -549,11 +625,13 @@ class RemoveNonASCIICharsTask(DataCleaningTask):
         Returns:
             pd.DataFrame: Updated DataFrame with non-ASCII characters removed or replaced in the specified column.
         """
+        df = data.copy()
         # Apply the replacement using regex
-        data[self._column] = data[self._column].parallel_apply(
+        df[self._column] = data[self._column].parallel_apply(
             lambda x: re.sub(self._pattern, self._replacement, str(x))
         )
-        return data
+        self.summarize(a=data, b=df)
+        return df
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -599,9 +677,12 @@ class RemoveAccentsTask(DataCleaningTask):
         Returns:
             pd.DataFrame: The updated DataFrame with accents and diacritics removed in the specified column.
         """
+        df = data.copy()
         # Apply the accent removal function
-        data[self._column] = data[self._column].parallel_apply(self._remove_accents)
-        return data
+        df[self._column] = data[self._column].parallel_apply(self._remove_accents)
+
+        self.summarize(a=data, b=df)
+        return df
 
     def _remove_accents(self, text):
         """
@@ -677,7 +758,7 @@ def lm_lingua(text):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectNonEnglishTask(DataCleaningTask):
+class RemoveNonEnglishTask(DataCleaningTask):
     """Detects non-English text.
 
     Args:
@@ -687,22 +768,21 @@ class DetectNonEnglishTask(DataCleaningTask):
 
     def __init__(
         self,
-        dc_column: str,
         column: str = "content",
         n_jobs: int = 12,
-        drop: bool = False,
     ):
         super().__init__()
-        self._dc_column = dc_column
         self._column = column
         self._n_jobs = n_jobs
-        self._drop = drop
+
         # Load pre-trained FastText language identification model
         self._model_filepath = os.getenv("FASTTEXT_MODEL")
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        return self._run_both(data=data)
+        df = self._run_both(data=data)
+        self.summarize(a=data, b=df)
+        return df
 
     def _run_lingua(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes the task to detect non-English text in the specified column and add a new column with the results.
@@ -750,16 +830,74 @@ class DetectNonEnglishTask(DataCleaningTask):
         df = data.copy()
 
         # Conduct primary language detection
-        df[self._dc_column] = data[self._column].parallel_apply(lm_fasttext)
+        df["exclude"] = data[self._column].parallel_apply(lm_fasttext)
 
         # Apply re-evaluation only to rows where 'is_non_english' is True
-        df.loc[df[self._dc_column], self._dc_column] = df.loc[
-            df[self._dc_column], self._column
+        df.loc[df["exclude"], "exclude"] = df.loc[
+            df["exclude"], self._column
         ].parallel_apply(lambda text: lm_lingua(text))
 
-        # Drop non-english rows and indicator column if requested.
-        if self._drop:
-            df = df.loc[~df[self._dc_column]]
-            df = df.drop(columns=[self._dc_column], axis=1)
+        return self.remove(df=df)
 
+
+# ------------------------------------------------------------------------------------------------ #
+#                                 REMOVE EXCESSIVE ELONGATION                                      #
+# ------------------------------------------------------------------------------------------------ #
+class DelongationTask(DataCleaningTask):
+    """
+    A data cleaning task to normalize excessive elongation in text by limiting repeated
+    characters to a specified maximum.
+
+    Args:
+        column (str): The name of the column containing text to process. Default is "content".
+        threshold (int): The minimum number of consecutive repeated characters to trigger
+            normalization. Default is 4, meaning any character repeated 4 or more times
+            will be shortened.
+        max_elongation (int): The maximum number of consecutive repeated characters allowed
+            after normalization. Default is 3.
+    """
+
+    def __init__(
+        self, column: str = "content", threshold: int = 4, max_elongation: int = 3
+    ) -> None:
+        """
+        Initializes the DelongationTask with column, threshold, and max_elongation settings.
+
+        Args:
+            column (str): The name of the text column to clean.
+            threshold (int): The minimum repetition count to start limiting elongation.
+            max_elongation (int): The maximum allowed repetitions after normalization.
+        """
+        super().__init__()
+        self._column = column
+        self._max_elongation = max_elongation
+        # Define the pattern and replacement dynamically based on the parameters
+        self._pattern = rf"(.)\1{{{threshold - 1},}}"
+        self._replacement = r"\1" * max_elongation
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Applies the elongation normalization task to the specified column in the DataFrame.
+
+        Args:
+            data (pd.DataFrame): The DataFrame containing the text column to process.
+
+        Returns:
+            pd.DataFrame: A new DataFrame with the specified column processed to limit excessive
+            elongation in words.
+
+        Raises:
+            KeyError: If the specified column does not exist in the DataFrame.
+
+        Notes:
+            This method copies the DataFrame before making changes and logs the task
+            execution using the `task_logger` decorator.
+        """
+        df = data.copy()
+        # Apply the replacement using regex
+        df[self._column] = data[self._column].parallel_apply(
+            lambda x: re.sub(self._pattern, self._replacement, str(x))
+        )
+        self.summarize(a=data, b=df)
         return df

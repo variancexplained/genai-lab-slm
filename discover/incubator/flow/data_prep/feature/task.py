@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/feature/task.py                                            #
+# Filename   : /discover/incubator/flow/data_prep/feature/task.py                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday October 28th 2024 01:24:14 pm                                                #
+# Modified   : Monday November 4th 2024 11:13:03 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -279,8 +279,8 @@ class ComputeBasicStatsTask(Task):
         stats_char_count (int): The total number of characters in the text.
         stats_digits_count (int): The total number of digits in the text.
         stats_digits_proportion (float): The proportion of digits to total characters.
-        stats_punctuation_count (int): The total number of punctuation marks in the text.
-        stats_punctuation_proportion (float): The proportion of punctuation marks to total characters.
+        stats_special_chars_count (int): The total number of punctuation marks in the text.
+        stats_special_chars_proportion (float): The proportion of punctuation marks to total characters.
         stats_word_count (int): The total number of words in the text.
         stats_unique_word_count (int): The total number of unique words in the text.
         stats_unique_word_proportion (float): The proportion of unique words to total words.
@@ -322,16 +322,16 @@ class ComputeBasicStatsTask(Task):
 
         # 4. Punctuation count
         data = data.withColumn(
-            "stats_punctuation_count",
+            "stats_special_chars_count",
             F.expr("length(regexp_replace(content, '[^\\p{Punct}]', ''))"),
         )
 
         # 5. Punctuation proportion
         data = data.withColumn(
-            "stats_punctuation_proportion",
+            "stats_special_chars_proportion",
             F.when(
                 F.col("stats_char_count") > 0,
-                F.col("stats_punctuation_count") / F.col("stats_char_count"),
+                F.col("stats_special_chars_count") / F.col("stats_char_count"),
             ).otherwise(0),
         )
 
@@ -414,17 +414,17 @@ class ComputeReviewAgeTask(Task):
 
     Attributes:
         column (str): The name of the date column to calculate review age from. Defaults to "date".
-        feature_column (str): Statistic column to create. Default is 'stats_review_age'.
+        feature_column (str): Statistic column to create. Default is 'eda_review_age'.
 
     Methods:
         run(data: DataFrame) -> DataFrame:
             Calculates the review age for each row in the specified date column and returns the DataFrame
-            with the new "stats_review_age" column.
+            with the new "eda_review_age" column.
 
     """
 
     def __init__(
-        self, column: str = "date", feature_column: str = "stats_review_age"
+        self, column: str = "date", feature_column: str = "eda_review_age"
     ) -> None:
         super().__init__()
         self._column = column
@@ -436,13 +436,13 @@ class ComputeReviewAgeTask(Task):
         Executes the review age calculation on the specified date column.
 
         The function first identifies the maximum date within the column and then calculates the number of days
-        between each review date and this maximum date, storing the result in a new "stats_review_age" column.
+        between each review date and this maximum date, storing the result in a new "eda_review_age" column.
 
         Args:
             data (DataFrame): The input PySpark DataFrame containing the specified date column.
 
         Returns:
-            DataFrame: The input DataFrame with an additional "stats_review_age" column representing the
+            DataFrame: The input DataFrame with an additional "eda_review_age" column representing the
             review age in days.
         """
         # Step 1: Find the maximum date in the specified column
@@ -624,7 +624,7 @@ class ComputeTQAFiltersTask(Task):
 
         # 8. Whether punctuation to words ratio is greater than 0.25
         data = data.withColumn(
-            "tqf_high_punctuation_ratio", F.col("stats_punctuation_proportion") > 0.25
+            "tqf_high_punctuation_ratio", F.col("stats_special_chars_proportion") > 0.25
         )
 
         # 9. Whether word count is in the range > 3 and < 256

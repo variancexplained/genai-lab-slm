@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/tqa/stage.py                                               #
+# Filename   : /discover/flow/data_prep/condition/stage.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Monday November 4th 2024 11:50:10 am                                                #
+# Modified   : Monday November 4th 2024 11:29:42 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,16 +21,17 @@
 import logging
 from typing import List
 
-from pyspark.sql import DataFrame
+import pandas as pd
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.base.task import Task
 from discover.flow.data_prep.stage import DataPrepStage
+from discover.infra.utils.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
-class TQAStage(DataPrepStage):
+class ConditioningStage(DataPrepStage):
 
     def __init__(
         self,
@@ -56,18 +57,6 @@ class TQAStage(DataPrepStage):
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def _load_source_data(self) -> DataFrame:
-        """Loads the source dataset from the repository using the source asset ID."""
-        source_asset_id = AssetIDGen.get_asset_id(
-            asset_type=self._source_config.asset_type,
-            phase=PhaseDef.from_value(value=self._source_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._source_config.stage),
-            name=self._source_config.name,
-        )
-        dataset = self._repo.get(
-            asset_id=source_asset_id,
-            distributed=self._source_config.distributed,
-            nlp=self._source_config.nlp,
-        )
-
-        return dataset.content
+    def _load_source_data(self) -> pd.DataFrame:
+        """Obtains source data from file."""
+        return IOService.read(filepath=self._source_config.filepath)

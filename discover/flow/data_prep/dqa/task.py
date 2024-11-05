@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday October 25th 2024 07:26:42 pm                                                #
+# Modified   : Monday November 4th 2024 11:12:36 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -142,7 +142,7 @@ class DQATask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                       DUPLICATE                                                  #
 # ------------------------------------------------------------------------------------------------ #
-class DetectDuplicateTask(DQATask):
+class RemoveDuplicateTask(DQATask):
     """
     A task that detects duplicate data by row or cell.
 
@@ -166,7 +166,7 @@ class DetectDuplicateTask(DQATask):
         force: bool = False,
     ) -> None:
         """
-        Initializes the DetectDuplicateTask with the specified column(s) to check for duplicates and the name of the column to store the results.
+        Initializes the RemoveDuplicateTask with the specified column(s) to check for duplicates and the name of the column to store the results.
 
         Args:
             dqa_column (str): The column name where the duplicate flag will be stored.
@@ -252,7 +252,7 @@ def lm_lingua(text):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectNonEnglishTask(DQATask):
+class RemoveNonEnglishTask(DQATask):
     """Detects non-English text.
 
     Args:
@@ -635,7 +635,7 @@ class DetectMissingReviewsTask(DQATask):
 
     def __init__(
         self,
-        column: str = "review_length",
+        column: str = "eda_review_length",
         dqa_column: str = "b_missing_review",
         force: bool = False,
     ):
@@ -643,7 +643,7 @@ class DetectMissingReviewsTask(DQATask):
         Initializes the DetectMissingReviewsTask.
 
         Args:
-            column (str): The name of the DataFrame column that contains the review lengths. Defaults to "review_length".
+            column (str): The name of the DataFrame column that contains the review lengths. Defaults to "eda_review_length".
             dqa_column (str): The name of the output column to store the results. Defaults to "b_missing_review".
         """
         super().__init__(column=column, dqa_column=dqa_column, force=force)
@@ -673,7 +673,7 @@ class DetectMissingReviewsTask(DQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                                   DETECT NON-ASCII CHARS                                         #
 # ------------------------------------------------------------------------------------------------ #
-class DetectNonAsciiCharsTask(DQATask):
+class RemoveNonAsciiCharsTask(DQATask):
     """
     A task that detects non-ASCII characters within a specified column of a DataFrame.
 
@@ -694,7 +694,7 @@ class DetectNonAsciiCharsTask(DQATask):
         force: bool = False,
     ):
         """
-        Initializes the DetectNonAsciiCharsTask.
+        Initializes the RemoveNonAsciiCharsTask.
 
         Args:
             column (str): The name of the DataFrame column to check for non-ASCII characters. Defaults to "content".
@@ -731,7 +731,7 @@ class DetectNonAsciiCharsTask(DQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 DETECT EXCESSIVE NUMBERS                                         #
 # ------------------------------------------------------------------------------------------------ #
-class DetectExcessiveNumbersTask(DQATask):
+class RemoveExcessiveNumbersTask(DQATask):
     """
     A task that detects excessive numbers (long sequences of digits) within a specified column of a DataFrame.
 
@@ -754,7 +754,7 @@ class DetectExcessiveNumbersTask(DQATask):
         force: bool = False,
     ):
         """
-        Initializes the DetectExcessiveNumbersTask.
+        Initializes the RemoveExcessiveNumbersTask.
 
         Args:
             column (str): The name of the DataFrame column to check for excessive numbers. Defaults to "content".
@@ -851,7 +851,7 @@ class DetectControlCharsTask(DQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                                DETECT EXCESSIVE WHITESPACE                                       #
 # ------------------------------------------------------------------------------------------------ #
-class DetectExcessiveWhitespaceTask(DQATask):
+class RemoveExcessiveWhitespaceTask(DQATask):
     """
     A task that detects excessive whitespace within a specified column of a DataFrame.
 
@@ -872,7 +872,7 @@ class DetectExcessiveWhitespaceTask(DQATask):
         force: bool = False,
     ):
         """
-        Initializes the DetectExcessiveWhitespaceTask.
+        Initializes the RemoveExcessiveWhitespaceTask.
 
         Args:
             column (str): The name of the DataFrame column to check for excessive whitespace. Defaults to "content".

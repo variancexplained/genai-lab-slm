@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/tqa/task.py                                                #
+# Filename   : /discover/incubator/flow/data_prep/tqa/task.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Wednesday October 23rd 2024 07:42:31 pm                                             #
+# Modified   : Monday November 4th 2024 11:12:36 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -520,7 +520,7 @@ class DetectLongReviewsTask(TQATask):
     def __init__(
         self,
         iqr_factor: int = 3,
-        column: str = "review_length",
+        column: str = "eda_review_length",
         dqa_column: str = "b_long_review",
     ):
         super().__init__()

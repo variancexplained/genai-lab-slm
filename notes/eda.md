@@ -3,7 +3,7 @@
 1. Data Overview and Summary
 
 • Brief introduction to the dataset
-• Summary statistics for numerical variables (e.g., rating, vote_sum, vote_count, review_length)
+• Summary statistics for numerical variables (e.g., rating, vote_sum, vote_count, eda_review_length)
 • Overview of categorical variables (e.g., app_name, category, author)
 • Description of the time range covered by the dataset
 
@@ -15,8 +15,8 @@
 
 3. Variable Relationships
 
-• Correlation analysis between numerical variables (e.g., rating, vote_sum, vote_count, review_length)
-• Relationship between rating and other variables (e.g., review_length, vote_sum, vote_count)
+• Correlation analysis between numerical variables (e.g., rating, vote_sum, vote_count, eda_review_length)
+• Relationship between rating and other variables (e.g., eda_review_length, vote_sum, vote_count)
 • Relationship between app_name/category and other variables (e.g., average rating per app, distribution of reviews across categories)
 
 4. Temporal Analysis

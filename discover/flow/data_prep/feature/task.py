@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday October 29th 2024 05:42:57 pm                                               #
+# Modified   : Monday November 4th 2024 11:32:22 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -272,8 +272,8 @@ class ComputeBasicStatsTask(Task):
         stats_char_count (int): The total number of characters in the text.
         stats_digits_count (int): The total number of digits in the text.
         stats_digits_proportion (float): The proportion of digits to total characters.
-        stats_punctuation_count (int): The total number of punctuation marks in the text.
-        stats_punctuation_proportion (float): The proportion of punctuation marks to total characters.
+        stats_special_chars_count (int): The total number of punctuation marks in the text.
+        stats_special_chars_proportion (float): The proportion of punctuation marks to total characters.
         stats_word_count (int): The total number of words in the text.
         stats_unique_word_count (int): The total number of unique words in the text.
         stats_unique_word_proportion (float): The proportion of unique words to total words.
@@ -301,7 +301,7 @@ class ComputeBasicStatsTask(Task):
         # 2. Digits count
         data = data.withColumn(
             "stats_digits_count",
-            F.expr(f"length(regexp_replace({self._column}, '[^0-9]', ''))"),
+            F.expr("regexp_count(content, '[^0-9]')"),
         )
 
         # 3. Digits proportion
@@ -313,18 +313,18 @@ class ComputeBasicStatsTask(Task):
             ).otherwise(0),
         )
 
-        # 4. Punctuation count
+        # 4. Special chars count
         data = data.withColumn(
-            "stats_punctuation_count",
-            F.expr("length(regexp_replace(content, '[^\\p{Punct}]', ''))"),
+            "stats_special_chars_count",
+            F.expr("regexp_count(content, r'[^\\w\\s]')"),
         )
 
-        # 5. Punctuation proportion
+        # 5. Special chars proportion
         data = data.withColumn(
-            "stats_punctuation_proportion",
+            "stats_special_chars_proportion",
             F.when(
                 F.col("stats_char_count") > 0,
-                F.col("stats_punctuation_count") / F.col("stats_char_count"),
+                F.col("stats_special_chars_count") / F.col("stats_char_count"),
             ).otherwise(0),
         )
 
@@ -396,117 +396,6 @@ class ComputeBasicStatsTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                    COMPUTE REVIEW AGE                                            #
-# ------------------------------------------------------------------------------------------------ #
-class ComputeReviewAgeTask(Task):
-    """
-    A task to compute the "review age" of each entry in a specified date column of a PySpark DataFrame.
-
-    The review age is calculated as the difference in days between the latest date in the column and each
-    individual date, providing a measure of how old each review is relative to the most recent one.
-
-    Attributes:
-        column (str): The name of the date column to calculate review age from. Defaults to "date".
-        feature_column (str): Statistic column to create. Default is 'stats_review_age'.
-
-    Methods:
-        run(data: DataFrame) -> DataFrame:
-            Calculates the review age for each row in the specified date column and returns the DataFrame
-            with the new "stats_review_age" column.
-
-    """
-
-    def __init__(
-        self, column: str = "date", feature_column: str = "stats_review_age"
-    ) -> None:
-        super().__init__()
-        self._column = column
-        self._feature_column = feature_column
-
-    @task_logger
-    def run(self, data: DataFrame) -> DataFrame:
-        """
-        Executes the review age calculation on the specified date column.
-
-        The function first identifies the maximum date within the column and then calculates the number of days
-        between each review date and this maximum date, storing the result in a new "stats_review_age" column.
-
-        Args:
-            data (DataFrame): The input PySpark DataFrame containing the specified date column.
-
-        Returns:
-            DataFrame: The input DataFrame with an additional "stats_review_age" column representing the
-            review age in days.
-        """
-        # Step 1: Find the maximum date in the specified column
-        max_date = data.agg(F.max(self._column)).first()[0]
-
-        # Step 2: Calculate the "review age" as the difference between max_date and each row's date
-        data = data.withColumn(
-            self._feature_column, F.datediff(F.lit(max_date), F.col(self._column))
-        )
-
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                               COMPUTE AGGREGATE DEVIATION STATS                                  #
-# ------------------------------------------------------------------------------------------------ #
-class ComputeAggDeviationStats(Task):
-    """
-    A task to compute the deviation of a specified column's values from the average, grouped by an aggregation key.
-
-    This task calculates the deviation of each value in a specified column from the average of that column within
-    groups defined by an aggregation key. This can be used to identify how individual values deviate from the mean
-    within a specific context, such as ratings within each app.
-
-    Attributes:
-        agg_by (str): The column name to group by for aggregation. Defaults to "app_id".
-        column (str): The name of the column for which the deviation is calculated. Defaults to "rating".
-        feature_column (str): The name of the output column where the deviation will be stored. Defaults to "stats_deviation_rating".
-
-    Methods:
-        run(data: DataFrame) -> DataFrame:
-            Executes the deviation calculation for the specified column grouped by the aggregation key, and returns
-            the DataFrame with the new deviation column.
-
-    Deviation Calculation Steps:
-        1. Calculate the average value of the specified column grouped by the aggregation key.
-        2. Join the original DataFrame with the grouped averages on the aggregation key.
-        3. Calculate the deviation of each value from the group average and store it in the specified column.
-    """
-
-    def __init__(
-        self,
-        agg_by: str = "app_id",
-        column: str = "rating",
-        feature_column: str = "stats_deviation_rating",
-    ) -> None:
-        """Initializes the ComputeAggDeviationStats task with specified aggregation and target columns."""
-        super().__init__()
-        self._agg_by = agg_by
-        self._column = column
-        self._feature_column = feature_column
-
-    @task_logger
-    def run(self, data: DataFrame) -> DataFrame:
-        # Step 1: Calculate average for the aggregation
-        app_avg_df = data.groupBy(self._agg_by).agg(
-            F.avg(self._column).alias(f"stats_{self._column}_avg")
-        )
-        # Step 2: Join the original DataFrame with the app-level averages
-        data = data.join(app_avg_df, on=self._agg_by)
-
-        # Step 3: Calculate deviations
-        data = data.withColumn(
-            self._feature_column,
-            F.col(self._column) - F.col(f"stats_{self._column}_avg"),
-        )
-
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA STATS TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
 class ComputeTQAFiltersTask(Task):
@@ -560,23 +449,19 @@ class ComputeTQAFiltersTask(Task):
         # 6. Whether review has at least one verb
         data = data.withColumn("tqf_has_verb", F.col("pos_n_verbs") > 0)
 
-        # 7. Whether digits to words ratio is greater than 0.25
+        # 7. Whether punctuation to words ratio is greater than 0.25
         data = data.withColumn(
-            "tqf_high_digit_ratio", F.col("stats_digits_proportion") > 0.25
+            "tqf_high_special_chars_ratio",
+            F.col("stats_special_chars_proportion") > 0.25,
         )
 
-        # 8. Whether punctuation to words ratio is greater than 0.25
-        data = data.withColumn(
-            "tqf_high_punctuation_ratio", F.col("stats_punctuation_proportion") > 0.25
-        )
-
-        # 9. Whether word count is in the range > 3 and < 256
+        # 8. Whether word count is in the range > 3 and < 256
         data = data.withColumn(
             "tqf_word_count_range",
             (F.col("stats_word_count") > 3) & (F.col("stats_word_count") < 256),
         )
 
-        # 13. Stop wprd match
+        # 9. Stop wprd match
         # List of stop words to search for
         stop_words = ["the", "be", "to", "of", "and", "that", "have", "with"]
 
@@ -591,15 +476,15 @@ class ComputeTQAFiltersTask(Task):
             "tqf_stop_word_match", F.when(sum(conditions) >= 2, True).otherwise(False)
         )
 
-        # Create a new column "tqf_first_letter_cap" based on the first letter being uppercase
+        # 10. Create a new column "tqf_first_letter_cap" based on the first letter being uppercase
         data = data.withColumn(
             "tqf_first_letter_cap", F.expr("substring(content, 1, 1) rlike '^[A-Z]'")
         )
 
-        # Create a new column "tqf_no_all_caps" based on whether the content is all caps
+        # 11. Create a new column "tqf_no_all_caps" based on whether the content is all caps
         data = data.withColumn("tqf_no_all_caps", ~F.col("content").rlike("^[^a-z]*$"))
 
-        # Create a new column "tqf_high_word_repetition" if 'stats_word_repetition_ratio' >= 0.2
+        # 12. Create a new column "tqf_high_word_repetition" if 'stats_word_repetition_ratio' >= 0.2
         data = data.withColumn(
             "tqf_high_word_repetition", F.col("stats_word_repetition_ratio") >= 0.2
         )
@@ -611,5 +496,8 @@ class ComputeTQAFiltersTask(Task):
         data = data.withColumn(
             "tqf_no_special_chars", ~F.col("content").rlike(special_chars_pattern)
         )
+
+        # Delete tokens an pos tags from dataset
+        data = data.drop("tp_tokens", "tp_pos")
 
         return data

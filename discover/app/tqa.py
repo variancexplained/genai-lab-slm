@@ -11,13 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 29th 2024 08:20:00 pm                                               #
-# Modified   : Tuesday October 29th 2024 11:59:59 pm                                               #
+# Modified   : Wednesday October 30th 2024 12:52:42 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Text Quality Analysis Module"""
-import matplotlib.pyplot as plt
+import logging
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -36,6 +37,9 @@ class TextQualityAnalysis:
     def plot_thresholds(
         self, min: float = 0.1, max: float = 0.9, num: int = 20, metrics: list = None
     ) -> None:
+        logging.getLogger("matplotlib").setLevel(logging.ERROR)
+        import matplotlib.pyplot as plt
+
         thresholds = np.linspace(
             self._df["tqa_score"].quantile(min),
             self._df["tqa_score"].quantile(max),
@@ -85,8 +89,16 @@ class DatasetEvaluation:
         self._df = df
 
     def histogram(
-        self, column: str, min: float = 0.1, max: float = 0.9, num: int = 6
+        self,
+        column: str,
+        min: float = 0.1,
+        max: float = 0.9,
+        num: int = 6,
+        cumulative: bool = False,
     ) -> None:
+        logging.getLogger("matplotlib").setLevel(logging.ERROR)
+        import matplotlib.pyplot as plt
+
         column_label = column.replace("_", " ")
 
         thresholds = np.linspace(
@@ -105,6 +117,7 @@ class DatasetEvaluation:
             color="black",
             label="Full Dataset",
             ax=ax,
+            cumulative=cumulative,
             linewidth=2,
             linestyle="--",
             alpha=0.8,
@@ -120,6 +133,7 @@ class DatasetEvaluation:
                 label=f"Threshold > {round(threshold,2)}",
                 color=colors[i],
                 alpha=0.7,
+                cumulative=cumulative,
                 ax=ax,
             )
 
@@ -132,6 +146,9 @@ class DatasetEvaluation:
     def kstest(
         self, column: str, min: float = 0.1, max: float = 0.9, num: int = 6
     ) -> None:
+        logging.getLogger("matplotlib").setLevel(logging.ERROR)
+        import matplotlib.pyplot as plt
+
         column_label = column.replace("_", " ").capitalize()
 
         thresholds = np.linspace(
@@ -150,12 +167,17 @@ class DatasetEvaluation:
         for i, threshold in enumerate(thresholds):
             df2 = self._df.loc[self._df["tqa_score"] >= threshold]
             ks_stat = ks_2samp(df1[column], df2[column])
-            t.append(round(threshold, 2))
+            t.append(str(round(threshold, 2)))
             ks.append(float(ks_stat.statistic))
 
         ks_df = pd.DataFrame({"Threshold": t, "KS-Statistic": ks})
+        ks_df["Threshold"] = ks_df["Threshold"].astype("category")
         sns.barplot(
-            data=ks_df, x="Threshold", y="KS-Statistic", ax=ax, palette="viridis"
+            data=ks_df,
+            x="Threshold",
+            y="KS-Statistic",
+            ax=ax,
+            palette="viridis",
         )
         # Set titles and labels
         ax.set_title(
@@ -167,5 +189,51 @@ class DatasetEvaluation:
             linestyle="--",
             label="Practical Similarity Threshold (0.05)",
         )
+        plt.tight_layout()
+        plt.legend()
+        plt.show()
+
+    def violin(
+        self,
+        column: str,
+        min: float = 0.1,
+        max: float = 0.9,
+        num: int = 6,
+        cumulative: bool = False,
+    ) -> None:
+        logging.getLogger("matplotlib").setLevel(logging.ERROR)
+        import matplotlib.pyplot as plt
+
+        column_label = column.replace("_", " ").capitalize()
+
+        thresholds = np.linspace(
+            self._df["tqa_score"].quantile(min),
+            self._df["tqa_score"].quantile(max),
+            num=num,
+        )
+        # Obtain a canvas for 2 plots
+        fig, ax = plt.subplots(figsize=(12, 4))
+        # Set aside the full dataset
+        df1 = self._df
+        df1["Dataset"] = "Full"
+
+        # Filter the dataset by thresholds
+        for i, threshold in enumerate(thresholds):
+            df2 = self._df.loc[self._df["tqa_score"] >= threshold]
+            df2["Dataset"] = f"Threshold > {round(threshold,2)}"
+            df1 = pd.concat([df1, df2])
+
+        sns.violinplot(
+            data=df1,
+            y=column,
+            palette="viridis",
+            hue="Dataset",
+            alpha=0.7,
+            ax=ax,
+        )
+
+        # Set titles and labels
+        ax.set_title(f"Distribution of {column_label} Across Thresholds")
+        plt.legend()
         plt.tight_layout()
         plt.show()

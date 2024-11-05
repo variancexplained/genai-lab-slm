@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Monday October 28th 2024 10:29:47 am                                                #
+# Modified   : Tuesday November 5th 2024 02:34:01 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,10 +38,12 @@ class StageDef(Enum):
 class DataPrepStageDef(StageDef):
     """"""
 
-    INGEST = ("ingest", "00_ingest", "Data Ingestion Stage")
-    CLEAN = ("clean", "01_clean", "Data Cleaning Stage")
-    FEATURE = ("feature", "02_feature", "Feature Engineering Stage")
-    TQA = ("tqa", "03_tqa", "Text Quality Analysis Stage")
+    RAW = ("raw", "00_raw", "Raw Dataset ")
+    INGEST = ("ingest", "01_ingest", "Data Ingestion Stage")
+    CONDITION = ("condition", "02_condition", "Data Conditioning Stage")
+    CLEAN = ("clean", "03_clean", "Data Cleaning Stage")
+    FEATURE = ("feature", "04_feature", "Feature Engineering Stage")
+    TQA = ("tqa", "05_tqa", "Text Quality Analysis Stage")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)
@@ -52,29 +54,17 @@ class DataPrepStageDef(StageDef):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class FeatureEngineeringStageDef(StageDef):
+class PTModelingStageDef(StageDef):
     """"""
 
-    REVIEW = ("review", "00_review", "Review Feature Engineering Stage")
-    APP = ("app", "01_app", "App Feature Engineering Stage")
-    USER = ("user", "02_user", "User Feature Engineering Stage")
-    CATEGORY = ("category", "03_category", "Category Feature Engineering Stage")
-
-    def __new__(cls, name: str, directory: str, description: str):
-        obj = object.__new__(cls)
-        obj._value_ = name
-        obj.directory = directory
-        obj.description = description
-        return obj
-
-
-# ------------------------------------------------------------------------------------------------ #
-class AnalysisStageDef(StageDef):
-    """"""
-
-    SENTIMENT = ("sentiment", "00_sentiment", "Sentiment Analysis Stage")
-    ASPECT = ("aspect", "01_aspect", "Aspect-Based Sentiment Analysis Stage")
-    EMOTION = ("emotion", "02_emotion", "Emotion-Intensity Analysis Stage")
+    PRETRAINING = ("pretraining", "00_pretraining", "ABSA Pretraining Stage")
+    FINETUNE1 = ("fine_tune_1", "01_fine_tune", "Model Fine-Tuning: Stage 1")
+    FINETUNE2 = ("fine_tune_2", "02_fine_tune", "Model Fine-Tuning: Stage 2")
+    FINETUNE3 = ("fine_tune_3", "03_fine_tune", "Model Fine-Tuning: Stage 3")
+    FINETUNE4 = ("fine_tune_4", "04_fine_tune", "Model Fine-Tuning: Stage 4")
+    FINETUNE5 = ("fine_tune_5", "05_fine_tune", "Model Fine-Tuning: Stage 5")
+    ABSA = ("absa", "06_absa", "Aspect-Based Sentiment Analysis Stage")
+    EMOTION = ("emotion", "07_emotion", "Emotion Analysis Stage")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)

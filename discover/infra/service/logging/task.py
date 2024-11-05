@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Wednesday October 23rd 2024 11:18:49 pm                                             #
+# Modified   : Monday November 4th 2024 09:18:36 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -74,6 +74,12 @@ def task_logger(func):
             logger.debug(f"Started: {start_fmt}")
             logger.debug(f"Completed: {end_fmt}")
             logger.debug(f"Runtime: {duration_fmt}")
+
+            # Print summary if a summary property exists.
+            if hasattr(self, "summary"):
+                if self.summary:
+                    printer.print_kv(k="Summary", v=self.summary)
+                    logger.debug(f"Summary: {self.summary}")
 
             print_task_specific_info(
                 logger=logger, class_instance=self.__class__, result=result
