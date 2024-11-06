@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Tuesday November 5th 2024 02:34:01 am                                               #
+# Modified   : Tuesday November 5th 2024 05:31:13 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,7 +38,7 @@ class StageDef(Enum):
 class DataPrepStageDef(StageDef):
     """"""
 
-    RAW = ("raw", "00_raw", "Raw Dataset ")
+    RAW = ("raw", "00_raw", "Raw Dataset")
     INGEST = ("ingest", "01_ingest", "Data Ingestion Stage")
     CONDITION = ("condition", "02_condition", "Data Conditioning Stage")
     CLEAN = ("clean", "03_clean", "Data Cleaning Stage")
@@ -78,12 +78,7 @@ class PTModelingStageDef(StageDef):
 class PhaseDef(Enum):
     # Defining phases with name, directory, and description
     DATAPREP = ("dataprep", "01_dataprep", "Data Preparation Phase")
-    FEATURE = (
-        "feature",
-        "02_feature",
-        "Feature Engineering Phase",
-    )
-    ANALYSIS = ("analysis", "03_analysis", "Analysis Phase")
+    MODELING = ("modeling", "02_modeling", "Modeling Phase")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)

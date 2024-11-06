@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Sunday October 20th 2024 11:56:22 pm                                                #
+# Modified   : Tuesday November 5th 2024 05:47:34 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,6 +23,7 @@ from typing import Any, Dict
 
 from dotenv import load_dotenv
 
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.base import ConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
@@ -100,6 +101,18 @@ class FlowConfigReader(ConfigReader):
             The file path to the `.env` file that holds environment variables.
         """
         super().__init__(env_file_path=env_file_path)
+
+    def get_stage_config(self, phase: PhaseDef, stage: StageDef) -> dict:
+        """Returns the configuration for a workflow stage
+
+        Args:
+            phase (PhaseDef): Workflow phase
+            stage (StageDef): Workflow stage within the phase.
+        """
+        phase = phase.value
+        stage = stage.value
+        config = self.get_config(section="phases", namespace=False)
+        return config[phase]["stages"][stage]
 
     def _load_base_config(self) -> Dict[str, Any]:
         """

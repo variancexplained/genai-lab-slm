@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Tuesday October 29th 2024 11:07:58 am                                               #
+# Modified   : Tuesday November 5th 2024 05:36:34 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -171,8 +171,6 @@ class DatasetRepo(Repo):
 
             # Raise the original exception
             raise DatasetCreationError(msg, e) from e
-
-        return dataset
 
     # -------------------------------------------------------------------------------------------- #
     def _validate_add(self, dataset: Dataset) -> None:

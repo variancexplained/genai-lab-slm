@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Saturday October 26th 2024 12:05:21 pm                                              #
+# Modified   : Tuesday November 5th 2024 05:29:31 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,10 +19,10 @@
 """Dataset Module"""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Optional
 
 import pandas as pd
-from pydantic.dataclasses import dataclass
 
 from discover.assets.base import Asset
 

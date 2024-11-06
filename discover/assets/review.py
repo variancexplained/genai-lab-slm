@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Monday November 4th 2024 11:39:44 pm                                                #
+# Modified   : Tuesday November 5th 2024 06:12:01 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -124,7 +124,7 @@ class Review:
     ) -> plt.Axes:
         var = x if x else y
         orient = "v" if x else "h"
-        figsize = (12, 4) if orient == "v" else (4, 6)
+        figsize = (12, 4) if orient == "v" else (12, 6)
         fig, ax = plt.subplots(figsize=figsize)
 
         df = self._df

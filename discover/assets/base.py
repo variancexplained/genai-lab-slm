@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Thursday October 17th 2024 01:45:51 am                                              #
+# Modified   : Tuesday November 5th 2024 05:32:25 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,11 +19,9 @@
 """Base Module for the Asset Dimension"""
 from __future__ import annotations
 
-from dataclasses import fields
+from dataclasses import dataclass, fields
 from datetime import datetime
 from typing import Any, Optional
-
-from pydantic.dataclasses import dataclass
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.data_class import DataClass
