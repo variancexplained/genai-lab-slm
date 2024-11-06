@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday November 4th 2024 04:31:50 pm                                                #
+# Modified   : Wednesday November 6th 2024 11:30:17 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -117,6 +117,149 @@ class DataCleaningTask(Task):
         if "exclude" in df.columns:
             df = df.loc[~df["exclude"]]
             df = df.drop(columns=["exclude"])
+        return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+class VerifyEncodingTask(DataCleaningTask):
+    """
+    A task that verifies and fixes UTF-8 encoding issues in a specified text column of a pandas DataFrame.
+
+    Args:
+        column (str): The name of the column in the DataFrame that contains text data.
+        encoding_sample (float): The fraction of rows to sample for checking encoding issues, where 0 < encoding_sample <= 1.
+        random_state (int, optional): Random seed for reproducibility of the sample. Defaults to None.
+
+    Attributes:
+        _column (str): The column name in the DataFrame to check for encoding issues.
+        _encoding_sample (float): The fraction of data to sample for encoding verification.
+        _random_state (int): The random seed for sampling.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame: Verifies and fixes any UTF-8 encoding issues in the specified text column.
+    """
+
+    def __init__(self, column: str) -> None:
+        """
+        Initializes the VerifyEncodingTask with the text column and sample fraction for encoding verification.
+
+        Args:
+            column (str): The column in the DataFrame that contains text data.
+        """
+        super().__init__()
+        self._column = column
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Verifies the UTF-8 encoding of a sample of the text column and re-encodes the entire column if issues are found.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with UTF-8 encoding issues resolved in the specified text column.
+        """
+
+        df = data.copy()
+        df[self._column] = (
+            data[self._column].str.encode("utf-8", errors="ignore").str.decode("utf-8")
+        )
+        self.summarize(a=data, b=df)
+        return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+class RemoveNewlinesTask(DataCleaningTask):
+    """
+    A task that removes newlines from a specified text column in a pandas DataFrame.
+
+    Args:
+        column (str): The name of the column in the DataFrame that contains text data.
+
+    Attributes:
+        _column (str): The name of the column in the DataFrame that contains text data from which newlines will be removed.
+
+    Methods:
+        run(data: pd.DataFrame, **kwargs) -> pd.DataFrame: Removes newlines from the specified text column in the input DataFrame.
+    """
+
+    def __init__(self, column: str) -> None:
+        """
+        Initializes the RemoveNewlinesTask with the specified column name.
+
+        Args:
+            column (str): The name of the column in the DataFrame that contains text data.
+        """
+        super().__init__()
+        self._column = column
+
+    @task_logger
+    def run(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        Removes newlines from the specified text column in the provided DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+            **kwargs: Additional keyword arguments (not used in this implementation).
+
+        Returns:
+            pd.DataFrame: A DataFrame with newlines removed from the specified text column.
+        """
+        df = data.copy()
+        df[self._column] = data[self._column].str.replace("\n", " ")
+        self.summarize(a=data, b=df)
+        return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+class CastDataTypeTask(DataCleaningTask):
+    """
+    A task that casts the data types of specified columns in a pandas DataFrame.
+
+    Args:
+        datatypes (dict): A dictionary where the keys are column names and the values are the desired data types for each column.
+
+    Attributes:
+        _datatypes (dict): The dictionary that maps column names to the desired data types.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame: Casts the specified columns to the desired data types.
+    """
+
+    def __init__(self, datatypes: dict) -> None:
+        """
+        Initializes the CastDataTypeTask with a dictionary of column names and their corresponding data types.
+
+        Args:
+            datatypes (dict): A dictionary where keys are column names and values are the target data types (e.g., 'float', 'int', 'str').
+        """
+        super().__init__()
+        self._datatypes = datatypes
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Casts the data types of the specified columns in the DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame in which columns will be cast to new data types.
+
+        Returns:
+            pd.DataFrame: The DataFrame with columns cast to the specified data types.
+
+        Raises:
+            ValueError: If a column specified in the datatypes dictionary is not found in the DataFrame.
+        """
+        df = data.copy()
+        for column, dtype in self._datatypes.items():
+            if column in data.columns:
+                df[column] = data[column].astype(dtype)
+            else:
+                msg = f"Column {column} not found in DataFrame"
+                self._logger.exception(msg)
+                raise ValueError(msg)
+        self.summarize(a=data, b=df)
         return df
 
 
@@ -383,7 +526,6 @@ class RemoveExcessiveSpecialCharsTask(DataCleaningTask):
             pd.DataFrame: Updated DataFrame with specified special characters removed or replaced in the specified column.
         """
         df = data.copy()
-        df[self._column] = data[self._column].parallel_apply(self._normalize_text)
         df["exclude"] = df[self._column].parallel_apply(
             lambda text: (
                 len(re.findall(self._pattern, text)) / len(text) if len(text) > 0 else 0
@@ -397,6 +539,59 @@ class RemoveExcessiveSpecialCharsTask(DataCleaningTask):
 
     def _normalize_text(self, text):
         """Normalizes Unicode text to Compatibility Decomposition Form"""
+        normalized_text = unicodedata.normalize("NFKD", text)
+        # Encode to ASCII, ignoring characters that can’t be converted to ASCII
+        ascii_text = normalized_text.encode("ascii", "ignore").decode("ascii")
+        return ascii_text
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                             NORMALIZE UNICODE TEXT TASK                                          #
+# ------------------------------------------------------------------------------------------------ #
+class NormalizeUnicodeTextTask(DataCleaningTask):
+    """A task to normalize Unicode text in a specified column of a DataFrame.
+
+    This task normalizes Unicode text using Compatibility Decomposition Form (NFKD)
+    and converts it to ASCII, removing characters that cannot be converted.
+
+    Attributes:
+        column (str): The name of the column to be normalized. Defaults to "content".
+    """
+
+    def __init__(self, column: str = "content") -> None:
+        """Initializes NormalizeUnicodeTextTask with the specified column name.
+
+        Args:
+            column (str): The name of the column to be normalized. Defaults to "content".
+        """
+        super().__init__()
+        self._column = column
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Runs the normalization task on the specified column of the DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text to be normalized.
+
+        Returns:
+            pd.DataFrame: A DataFrame with the normalized text in the specified column.
+        """
+        df = data.copy()
+        df[self._column] = data[self._column].parallel_apply(self._normalize_text)
+
+        self.summarize(a=data, b=df)
+        return df
+
+    def _normalize_text(self, text):
+        """Normalizes Unicode text to Compatibility Decomposition Form (NFKD).
+
+        Args:
+            text (str): The input text to be normalized.
+
+        Returns:
+            str: The normalized ASCII text.
+        """
         normalized_text = unicodedata.normalize("NFKD", text)
         # Encode to ASCII, ignoring characters that can’t be converted to ASCII
         ascii_text = normalized_text.encode("ascii", "ignore").decode("ascii")

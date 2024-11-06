@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Wednesday November 6th 2024 05:54:19 am                                             #
+# Modified   : Wednesday November 6th 2024 11:28:57 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,77 +31,12 @@ phases:
           nlp: False
           distributed: False
         tasks:
-          - class_name: RemoveNewlinesTask
-            module: discover.flow.data_prep.ingest.task
-            params:
-              column: content
-          - class_name: VerifyEncodingTask
-            module: discover.flow.data_prep.ingest.task
-            params:
-              column: content
-              encoding_sample: 0.01
-              random_state: 55
-          - class_name: CastDataTypeTask
-            module: discover.flow.data_prep.ingest.task
-            params:
-              datatypes:
-                id: string
-                app_id: string
-                app_name: string
-                category_id: category
-                category: category
-                author: string
-                rating: int16
-                content: string
-                vote_count: int64
-                vote_sum: int64
-                date: datetime64[ms]
-          - class_name: ReviewLengthTask
-            module: discover.flow.data_prep.ingest.task
-            params:
-              column: content
-              new_column:
-          - class_name: ComputeReviewAgeTask
+          - class_name: FilterTask
             module: discover.flow.data_prep.ingest.task
             params:
               column: date
-              new_column: eda_review_age
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.ingest.task
-            params:
-              agg_by: app_id
-              column: rating
-              new_column: eda_rating_deviation
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.ingest.task
-            params:
-              agg_by: app_id
-              column: eda_review_length
-              new_column: eda_review_length_deviation
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.ingest.task
-            params:
-              agg_by: app_id
-              column: eda_review_age
-              new_column: eda_review_age_deviation
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.ingest.task
-            params:
-              agg_by: category_id
-              column: rating
-              new_column: eda_rating_deviation
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.ingest.task
-            params:
-              agg_by: category_id
-              column: eda_review_length
-              new_column: eda_review_length_deviation
-          - class_name: ComputeAggDeviationStats
-            module: discover.flow.data_prep.ingest.task
-            params:
-              agg_by: category_id
-              column: eda_review_age
-              new_column: eda_review_age_deviation
+              frac: 1.0
+              date: 2008
       clean:
         stage_name: clean
         source_config:
@@ -117,11 +52,25 @@ phases:
           nlp: False
           distributed: False
         tasks:
-          - class_name: RemoveDuplicateReviewIdTask
+          - class_name: CastDataTypeTask
             module: discover.flow.data_prep.clean.task
             params:
-              column: id
-              sort_by: date
+              datatypes:
+                id: string
+                app_id: string
+                app_name: string
+                category_id: category
+                category: category
+                author: string
+                rating: int16
+                content: string
+                vote_count: int64
+                vote_sum: int64
+                date: datetime64[ms]
+          - class_name: RemoveNewlinesTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
           - class_name: URLMaskTask
             module: discover.flow.data_prep.clean.task
             params:
@@ -142,6 +91,10 @@ phases:
             params:
               replacement: ""
               column: content
+          - class_name: RemoveAccentsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
           - class_name: RemoveHTMLCharsTask
             module: discover.flow.data_prep.clean.task
             params:
@@ -151,10 +104,6 @@ phases:
             module: discover.flow.data_prep.clean.task
             params:
               replacement: " "
-              column: content
-          - class_name: RemoveAccentsTask
-            module: discover.flow.data_prep.clean.task
-            params:
               column: content
           - class_name: RemoveNonEnglishTask
             module: discover.flow.data_prep.clean.task
@@ -171,12 +120,88 @@ phases:
             params:
               column: content
               threshold: 0.3
+          - class_name: RemoveDuplicateReviewIdTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: id
+              sort_by: date
           - class_name: DelongationTask
             module: discover.flow.data_prep.clean.task
             params:
               column: content
               threshold: 4
               max_elongation: 3
+          - class_name: NormalizeUnicodeTextTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
+          - class_name: VerifyEncodingTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
+          - class_name: RemoveNonASCIICharsTask
+            module: discover.flow.data_prep.clean.task
+            params:
+              column: content
+      enrichment:
+        stage_name: enrichment
+        source_config:
+          filepath: data/raw/reviews
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: ingest
+          name: review
+          nlp: False
+          distributed: False
+        tasks:
+
+          - class_name: ReviewLengthTask
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              column: content
+              new_column:
+          - class_name: ComputeReviewAgeTask
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              column: date
+              new_column: eda_review_age
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              agg_by: app_id
+              column: rating
+              new_column: eda_rating_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              agg_by: app_id
+              column: eda_review_length
+              new_column: eda_review_length_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              agg_by: app_id
+              column: eda_review_age
+              new_column: eda_review_age_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              agg_by: category_id
+              column: rating
+              new_column: eda_rating_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              agg_by: category_id
+              column: eda_review_length
+              new_column: eda_review_length_deviation
+          - class_name: ComputeAggDeviationStats
+            module: discover.flow.data_prep.enrichment.task
+            params:
+              agg_by: category_id
+              column: eda_review_age
+              new_column: eda_review_age_deviation
       feature:
         stage_name: feature
         source_config:

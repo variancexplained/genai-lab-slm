@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Wednesday November 6th 2024 12:22:58 pm                                             #
+# Modified   : Saturday October 26th 2024 02:59:16 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,7 +30,7 @@ from discover.flow.data_prep.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class EnrichmentStage(DataPrepStage):
+class FeatureEngineeringStage(DataPrepStage):
 
     def __init__(
         self,
