@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Tuesday November 5th 2024 05:31:13 pm                                               #
+# Modified   : Thursday November 7th 2024 10:06:08 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -40,10 +40,7 @@ class DataPrepStageDef(StageDef):
 
     RAW = ("raw", "00_raw", "Raw Dataset")
     INGEST = ("ingest", "01_ingest", "Data Ingestion Stage")
-    CONDITION = ("condition", "02_condition", "Data Conditioning Stage")
-    CLEAN = ("clean", "03_clean", "Data Cleaning Stage")
-    FEATURE = ("feature", "04_feature", "Feature Engineering Stage")
-    TQA = ("tqa", "05_tqa", "Text Quality Analysis Stage")
+    CLEAN = ("clean", "02_clean", "Data Cleaning Stage")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)
@@ -51,6 +48,29 @@ class DataPrepStageDef(StageDef):
         obj.directory = directory
         obj.description = description
         return obj
+
+
+# ------------------------------------------------------------------------------------------------ #
+class EnrichmentStageDef(StageDef):
+    """"""
+
+    METADATA = ("metadata", "00_metadata", "Review Metadata Stage")
+    SENTIMENT = ("sentiment", "01_sentiment", "Sentiment Classification Stage")
+    QUALITY = ("quality", "02_quality", "Review Quality Stage")
+    DEVIATION = ("deviation", "03_deviation", "Review Deviation Analysis Stage")
+
+    def __new__(cls, name: str, directory: str, description: str):
+        obj = object.__new__(cls)
+        obj._value_ = name
+        obj.directory = directory
+        obj.description = description
+        return obj
+
+
+# ------------------------------------------------------------------------------------------------ #
+class AggregationStageDef(StageDef):
+    APP = ("app", "00_app", "App Aggregation Stage")
+    CATEGORY = ("category", "01_category", "Category Aggregation Stage")
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -78,7 +98,8 @@ class PTModelingStageDef(StageDef):
 class PhaseDef(Enum):
     # Defining phases with name, directory, and description
     DATAPREP = ("dataprep", "01_dataprep", "Data Preparation Phase")
-    MODELING = ("modeling", "02_modeling", "Modeling Phase")
+    ENRICHMENT = ("enrichment", "02_enrichment", "Data Enrichment Phase")
+    AGGREGATION = ("aggregation", "03_aggregation", "Data Aggregation Phase")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Monday November 4th 2024 09:18:36 am                                                #
+# Modified   : Friday November 8th 2024 01:11:40 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,9 +19,6 @@
 import functools
 import logging
 from datetime import datetime
-from typing import Type
-
-import pandas as pd
 
 from discover.infra.utils.date_time.format import ThirdDateFormatter
 from discover.infra.utils.visual.print import Printer
@@ -81,10 +78,6 @@ def task_logger(func):
                     printer.print_kv(k="Summary", v=self.summary)
                     logger.debug(f"Summary: {self.summary}")
 
-            print_task_specific_info(
-                logger=logger, class_instance=self.__class__, result=result
-            )
-
         except Exception as e:
             # If an exception occurs, prepare the function signature for more informative logging.
             # This includes representations of positional arguments and keyword arguments.
@@ -103,26 +96,3 @@ def task_logger(func):
         return result
 
     return wrapper
-
-
-def print_task_specific_info(
-    logger: logging.Logger, class_instance: Type, result: pd.DataFrame
-) -> None:
-    from discover.flow.data_prep.dqa.task import DQATask
-
-    if issubclass(class_instance, DQATask):
-        print_dqa_info(logger=logger, result=result)
-
-
-def print_dqa_info(logger: logging.Logger, result: pd.DataFrame) -> None:
-    column = result.name
-    printer.print_kv(k="DQA Check", v=column)
-    logger.debug(f"Column Assessed: {column}")
-    # Print anamolies
-    anomalies = result.sum()
-    n = result.shape[0]
-    p = round(anomalies / n * 100, 2)
-    k = "Anomalies Detected"
-    v = f"{anomalies} ({p}%) of {n} records"
-    printer.print_kv(k=k, v=v)
-    logger.debug(f"{k}: {v}")
