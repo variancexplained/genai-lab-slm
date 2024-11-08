@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Thursday November 7th 2024 10:06:08 pm                                              #
+# Modified   : Friday November 8th 2024 08:55:21 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -71,6 +71,13 @@ class EnrichmentStageDef(StageDef):
 class AggregationStageDef(StageDef):
     APP = ("app", "00_app", "App Aggregation Stage")
     CATEGORY = ("category", "01_category", "Category Aggregation Stage")
+
+    def __new__(cls, name: str, directory: str, description: str):
+        obj = object.__new__(cls)
+        obj._value_ = name
+        obj.directory = directory
+        obj.description = description
+        return obj
 
 
 # ------------------------------------------------------------------------------------------------ #

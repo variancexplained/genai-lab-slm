@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Friday November 8th 2024 02:05:59 am                                                #
+# Modified   : Friday November 8th 2024 04:03:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,14 +19,16 @@
 """Ingest Module"""
 import math
 
+import pyspark.pandas as ps
 from pyspark.ml import Pipeline
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from sparknlp.annotator import PerceptronModel, Tokenizer
 from sparknlp.base import DocumentAssembler, Finisher
 
 from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
+from discover.infra.utils.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -787,7 +789,7 @@ class TQATask2(Task):
         ppl_full (float): The perplexity value for normalization.
         column (str): The name of the column in the DataFrame containing text data. Defaults to "content".
         new_column (str): The name of the output column for the computed TQA score. Defaults to "enrichment_tqa_score2".
-        weights_filepath (str): The file path to load weights from a CSV file. Defaults to "models/tqa/weights.csv".
+        ppl_filepath (str): Path to file containing filtered perplexity scores. Defaults to "models/tqa/tqa_ppl.csv".
     """
 
     def __init__(
@@ -795,7 +797,7 @@ class TQATask2(Task):
         ppl_full: float,
         column: str = "content",
         new_column: str = "enrichment_tqa_score2",
-        weights_filepath: str = "models/tqa/weights.csv",
+        ppl_filepath: str = "models/tqa/tqa_ppl.csv",
     ):
         """
         Initializes the TQATask2 with specified parameters and loads weights for computation.
@@ -804,13 +806,13 @@ class TQATask2(Task):
             ppl_full (float): The perplexity value for normalization.
             column (str): The name of the column in the DataFrame containing text data. Defaults to "content".
             new_column (str): The name of the output column for the computed TQA score. Defaults to "enrichment_tqa_score2".
-            weights_filepath (str): The file path to load weights from a CSV file. Defaults to "models/tqa/weights.csv".
+            ppl_filepath (str): Path to file containing filtered perplexity scores. Defaults to "models/tqa/tqa_ppl.csv".
         """
         super().__init__()
         self._ppl_full = ppl_full
         self._column = column
-        self._new_column = new_column
-        self._weights_filepath = weights_filepath
+        self._new_column = (new_column,)
+        self._ppl_filepath = ppl_filepath
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -823,22 +825,16 @@ class TQATask2(Task):
         Returns:
             DataFrame: The input DataFrame with an additional column for the computed TQA score.
         """
-        # Create a lightweight Spark session
-        spark = (
-            SparkSession.builder.master("local[*]")
-            .appName("LightweightTQATask")
-            .getOrCreate()
-        )
 
-        # Load weights using the created Spark session
-        weights_df = spark.read.csv(
-            self._weights_filepath, header=True, inferSchema=True
-        )
+        # Load perplexity scores
+        ppl_pandas_df = IOService.read(self._ppl_filepath)
+        # Convert to spark DataFrame
+        ppl_spark_df = ps.DataFrame(ppl_pandas_df).to_spark()
 
         # Compute the weights as a list of scalar values
         weights = [
             max(0.0, (self._ppl_full - row["Perplexity"]) / self._ppl_full)
-            for row in weights_df.collect()
+            for row in ppl_spark_df.collect()
         ]
 
         # Obtain the list of filter columns
@@ -846,14 +842,12 @@ class TQATask2(Task):
 
         # Compute the weighted sum of filter indicators
         filter_sum_expr = sum(
-            F.col(filter_col) * weight for filter_col, weight in zip(filters, weights)
+            F.col(filter_col).cast("double") * weight
+            for filter_col, weight in zip(filters, weights)
         )
 
         # Add the computed TQA score as a new column
         data = data.withColumn(self._new_column, filter_sum_expr)
-
-        # Stop the Spark session
-        spark.stop()
 
         return data
 

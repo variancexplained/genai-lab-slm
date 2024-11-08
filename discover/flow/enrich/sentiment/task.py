@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday November 8th 2024 01:34:54 am                                                #
+# Modified   : Friday November 8th 2024 11:50:13 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,7 +37,7 @@ os.environ["PYTHONWARNINGS"] = "ignore"
 pandarallel.initialize(nb_workers=18, progress_bar=True, verbose=False)
 
 
-class SentimentClassifierTask(Task):
+class SentimentAnalysisTask(Task):
     """
     A base class for sentiment classification tasks.
 
@@ -54,7 +54,7 @@ class SentimentClassifierTask(Task):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "enrich_sentiment",
+        new_column: str = "enrichment_sentiment",
     ) -> None:
         super().__init__()
         self._column = column
@@ -91,11 +91,11 @@ class SentimentClassifierTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class SpacySentimentClassifierTask(SentimentClassifierTask):
+class SpacySentimentAnalysisTask(SentimentAnalysisTask):
     """
     A sentiment classification task using spaCy for natural language processing.
 
-    This class inherits from SentimentClassifierTask and uses a spaCy pipeline
+    This class inherits from SentimentAnalysisTask and uses a spaCy pipeline
     to classify the sentiment of text data. The `classify` method calculates
     sentiment based on the vectors and sentiment attributes of tokens.
 
@@ -134,11 +134,11 @@ class SpacySentimentClassifierTask(SentimentClassifierTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class TextBlobSentimentClassifierTask(SentimentClassifierTask):
+class TextBlobSentimentAnalysisTask(SentimentAnalysisTask):
     """
     A sentiment classification task using TextBlob for natural language processing.
 
-    This class inherits from SentimentClassifierTask and uses TextBlob to classify
+    This class inherits from SentimentAnalysisTask and uses TextBlob to classify
     the sentiment of text data. The `classify` method returns the polarity score
     provided by TextBlob's sentiment analysis.
 
@@ -162,3 +162,57 @@ class TextBlobSentimentClassifierTask(SentimentClassifierTask):
             to 1.0 (positive sentiment).
         """
         return TextBlob(text).sentiment.polarity
+
+
+# ------------------------------------------------------------------------------------------------ #
+class SentimentClassificationTask(Task):
+    def __init__(
+        self,
+        column: str = "enrichment_sentiment",
+        new_column: str = "enrichment_sentiment_classification",
+        min_sentiment: float = -1.0,
+        max_sentiment: float = 1.0,
+    ):
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
+        self._min_sentiment = min_sentiment
+        self._max_sentiment = max_sentiment
+        self._range_span = max_sentiment - min_sentiment
+        self._third_size = self._range_span / 3
+
+        # Compute the range and thresholds in the constructor
+        range_start = -1
+        range_end = 1
+        range_span = range_end - range_start
+
+        # Calculate the size of each third
+        third_size = range_span / 3
+
+        # Compute thresholds
+        self._negative_threshold = range_start + third_size  # -0.33
+        self._positive_threshold = range_end - third_size  # 0.33
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Applies the sentiment classification to each entry in the specified column
+        of the DataFrame and stores the result in a new column.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the sentiment scores.
+
+        Returns:
+            pd.DataFrame: The DataFrame with an additional column for sentiment classification.
+        """
+        data[self._new_column] = data[self._column].parallel_apply(self.classify)
+        return data
+
+    def classify(self, score) -> str:
+        # Classification logic using precomputed thresholds
+        if score < self._negative_threshold:
+            return "negative"
+        elif score > self._positive_threshold:
+            return "positive"
+        else:
+            return "neutral"

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:59:53 pm                                              #
-# Modified   : Friday November 8th 2024 12:53:40 am                                                #
+# Modified   : Friday November 8th 2024 09:01:17 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from pyspark.sql import DataFrame
 from discover.assets.dataset import Dataset
 from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
-from discover.core.flow import AggregationStageDef, PhaseDef
+from discover.core.flow import AggregationStageDef, EnrichmentStageDef, PhaseDef
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task
 from discover.infra.persistence.repo.dataset import DatasetRepo
@@ -135,7 +135,7 @@ class AggregationStage(Stage):
         source_asset_id = AssetIDGen.get_asset_id(
             asset_type=self._source_config.asset_type,
             phase=PhaseDef.from_value(value=self._source_config.phase),
-            stage=AggregationStageDef.from_value(value=self._source_config.stage),
+            stage=EnrichmentStageDef.from_value(value=self._source_config.stage),
             name=self._source_config.name,
         )
         return self._repo.get(asset_id=source_asset_id).content
