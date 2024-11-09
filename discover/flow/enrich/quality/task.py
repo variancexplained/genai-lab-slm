@@ -11,13 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Friday November 8th 2024 04:03:14 pm                                                #
+# Modified   : Friday November 8th 2024 10:33:12 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Ingest Module"""
 import math
+import os
 
 import pyspark.pandas as ps
 from pyspark.ml import Pipeline
@@ -29,6 +30,9 @@ from sparknlp.base import DocumentAssembler, Finisher
 from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
 from discover.infra.utils.file.io import IOService
+
+# ------------------------------------------------------------------------------------------------ #
+os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -327,17 +331,30 @@ class ComputeBasicStatsTask(Task):
             ).otherwise(0),
         )
 
-        # 6. Split content into words
+        # 6. Punctuation count
+        data = data.withColumn(
+            "stats_punctuation_count", F.expr("regexp_count(content, '[.,!?;:]')")
+        )
+
+        # 7. Punctuation Proportion
+        data = data.withColumn(
+            "stats_punctuation_proportion",
+            F.when(
+                F.col("stats_char_count") > 0,
+                F.col("stats_punctuation_count") / F.col("stats_char_count"),
+            ).otherwise(0),
+        )
+        # 8. Split content into words
         data = data.withColumn("words", F.split(F.col(self._column), "\\s+"))
 
-        # 7. Word count
+        # 9. Word count
         data = data.withColumn("stats_word_count", F.size("words"))
 
-        # 8 Unique word count
+        # 10. Unique word count
         data = data.withColumn("unique_words", F.array_distinct("words"))
         data = data.withColumn("stats_unique_word_count", F.size("unique_words"))
 
-        # 9 Unique word proportion
+        # 11. Unique word proportion
         data = data.withColumn(
             "stats_unique_word_proportion",
             F.when(
@@ -346,7 +363,7 @@ class ComputeBasicStatsTask(Task):
             ).otherwise(0),
         )
 
-        # 10 Word Repetition Ratio
+        # 12. Word Repetition Ratio
         data = data.withColumn(
             "stats_word_repetition_ratio", 1 - F.col("stats_unique_word_proportion")
         )
@@ -354,7 +371,7 @@ class ComputeBasicStatsTask(Task):
         # Drop intermediate columns
         data = data.drop("words", "unique_words")
 
-        # 10. Word length statistics
+        # 13. Word length statistics
         # Split content into words and calculate word lengths
         data = data.withColumn(
             "word_lengths",
@@ -448,10 +465,16 @@ class ComputeTQAFiltersTask(Task):
         # 6. Whether review has at least one verb
         data = data.withColumn("tqf_has_verb", F.col("pos_n_verbs") > 0)
 
-        # 7. Whether punctuation to words ratio is greater than 0.25
+        # 7. Whether special characters to words ratio is greater than 0.25
         data = data.withColumn(
             "tqf_high_special_chars_ratio",
             F.col("stats_special_chars_proportion") > 0.25,
+        )
+
+        # 8. Whether punctuation to words ratio is greater than 0.25
+        data = data.withColumn(
+            "tqf_high_punctuation_ratio",
+            F.col("stats_punctuation_proportion") > 0.25,
         )
 
         # 8. Whether word count is in the range > 3 and < 256
@@ -811,7 +834,7 @@ class TQATask2(Task):
         super().__init__()
         self._ppl_full = ppl_full
         self._column = column
-        self._new_column = (new_column,)
+        self._new_column = new_column
         self._ppl_filepath = ppl_filepath
 
     @task_logger
@@ -828,22 +851,24 @@ class TQATask2(Task):
 
         # Load perplexity scores
         ppl_pandas_df = IOService.read(self._ppl_filepath)
+        ppl_pandas_df = ppl_pandas_df.reset_index(drop=True)
+
         # Convert to spark DataFrame
         ppl_spark_df = ps.DataFrame(ppl_pandas_df).to_spark()
-
         # Compute the weights as a list of scalar values
         weights = [
-            max(0.0, (self._ppl_full - row["Perplexity"]) / self._ppl_full)
+            {
+                "Filter": row["Filter"],
+                "Weight": max(
+                    0.0, (self._ppl_full - row["Perplexity"]) / self._ppl_full
+                ),
+            }
             for row in ppl_spark_df.collect()
         ]
 
-        # Obtain the list of filter columns
-        filters = [col for col in data.columns if col.startswith("tqf")]
-
         # Compute the weighted sum of filter indicators
         filter_sum_expr = sum(
-            F.col(filter_col).cast("double") * weight
-            for filter_col, weight in zip(filters, weights)
+            [F.col(item["Filter"]).cast("double") * item["Weight"] for item in weights]
         )
 
         # Add the computed TQA score as a new column

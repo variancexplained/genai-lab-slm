@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 10:15:01 pm                                              #
-# Modified   : Thursday November 7th 2024 10:24:53 pm                                              #
+# Modified   : Friday November 8th 2024 05:48:32 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -118,4 +118,128 @@ class ComputeReviewLengthTask(Task):
         data = data.withColumn(
             self._new_column, F.size(F.split(F.col(self._column), " "))
         )
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     REVIEW MONTH                                                 #
+# ------------------------------------------------------------------------------------------------ #
+class ComputeReviewMonthTask(Task):
+    """
+    Task to compute the month from a review date and add it as a new column in the DataFrame.
+
+    This task extracts the month from the specified date column using PySpark's
+    built-in `month` function and appends the result as a new column.
+
+    Attributes:
+        column (str): The name of the column containing date information. Defaults to "date".
+        new_column (str): The name of the new column to be created with the extracted month.
+            Defaults to "enrichment_meta_review_month".
+    """
+
+    def __init__(
+        self, column: str = "date", new_column: str = "enrichment_meta_review_month"
+    ) -> None:
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        """
+        Runs the task to compute the review month and add it to the DataFrame.
+
+        Args:
+            data (DataFrame): The input PySpark DataFrame containing a date column.
+
+        Returns:
+            DataFrame: The DataFrame with the added column for the review month.
+        """
+        # Use PySpark's `withColumn` to compute the month from the date column
+        data = data.withColumn(self._new_column, F.month(self._column))
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                 REVIEW DAY OF WEEK                                               #
+# ------------------------------------------------------------------------------------------------ #
+class ComputeReviewDayofWeekTask(Task):
+    """
+    Task to compute the day of the week from a review date and add it as a new column in the DataFrame.
+
+    This task extracts the day of the week from the specified date column using PySpark's
+    built-in `dayofweek` function and appends the result as a new column. The day of the week
+    is represented as an integer, where 1 corresponds to Monday and 7 to Sunday.
+
+    Attributes:
+        column (str): The name of the column containing date information. Defaults to "date".
+        new_column (str): The name of the new column to be created with the extracted day of the week.
+            Defaults to "enrichment_meta_review_day_of_week".
+    """
+
+    def __init__(
+        self,
+        column: str = "date",
+        new_column: str = "enrichment_meta_review_day_of_week",
+    ) -> None:
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        """
+        Runs the task to compute the review day of the week and add it to the DataFrame.
+
+        Args:
+            data (DataFrame): The input PySpark DataFrame containing a date column.
+
+        Returns:
+            DataFrame: The DataFrame with the added column for the day of the week.
+        """
+        # Extract day of the week from the date
+        # The day of the week is returned as an integer (1 = Monday, 7 = Sunday)
+        data = data.withColumn(self._new_column, F.dayofweek(self._column))
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                 REVIEW HOUR OF DAY                                               #
+# ------------------------------------------------------------------------------------------------ #
+class ComputeReviewHourTask(Task):
+    """
+    Task to compute the hour from a review date and add it as a new column in the DataFrame.
+
+    This task extracts the hour from the specified date column using PySpark's
+    built-in `hour` function and appends the result as a new column. The hour is
+    represented as an integer from 0 to 23, indicating the hour of the day.
+
+    Attributes:
+        column (str): The name of the column containing date information. Defaults to "date".
+        new_column (str): The name of the new column to be created with the extracted hour.
+            Defaults to "enrichment_meta_review_hour".
+    """
+
+    def __init__(
+        self,
+        column: str = "date",
+        new_column: str = "enrichment_meta_review_hour",
+    ) -> None:
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        """
+        Runs the task to compute the review hour and add it to the DataFrame.
+
+        Args:
+            data (DataFrame): The input PySpark DataFrame containing a date column.
+
+        Returns:
+            DataFrame: The DataFrame with the added column for the hour of the day.
+        """
+        # Extract hour of the day from the date
+        data = data.withColumn(self._new_column, F.hour(self._column))
         return data

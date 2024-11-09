@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday November 8th 2024 11:50:13 am                                                #
+# Modified   : Friday November 8th 2024 09:28:24 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -112,25 +112,23 @@ class SpacySentimentAnalysisTask(SentimentAnalysisTask):
         pipeline: str = "en_core_web_sm",
     ):
         super().__init__(column=column, new_column=new_column)
+        from spacytextblob.spacytextblob import SpacyTextBlob  # noqa
+
         self._pipeline = pipeline
         self._nlp = spacy.load(self._pipeline)
+        self._nlp.add_pipe("spacytextblob")
 
     def classify(self, text):
         """
         Classifies the sentiment of the given text using the spaCy NLP pipeline.
 
         Args:
-            text: The text to classify.
+            row: The row to classify.
 
         Returns:
             float: The accumulated sentiment score of the text based on token vectors.
         """
-        doc = self._nlp(text)
-        sentiment = 0
-        for token in doc:
-            if token.has_vector and token.vector_norm > 0:
-                sentiment += token.sentiment
-        return sentiment
+        return self._nlp(text)._.blob.polarity
 
 
 # ------------------------------------------------------------------------------------------------ #
