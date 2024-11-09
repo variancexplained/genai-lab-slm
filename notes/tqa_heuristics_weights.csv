@@ -1,0 +1,14 @@
+Filter,Heuristic,Perplexity,Weight
+tqf_has_verb,Has Verb,4.389349461,0.06088662
+tqf_has_determiner,Has Determiner,4.46287775,0.045155041
+tqf_high_word_repetition,Word Repetition Ratio,4.503225803,0.036522464
+tqf_has_noun,Has Noun,4.512285233,0.034584174
+tqf_word_count_range,Word Count Range,4.521953106,0.032515706
+tqf_has_adjective,Has Adjective,4.546494961,0.027264909
+tqf_stop_word_match,Stop Word Match,4.549662113,0.026587288
+tqf_has_adverb,Has Adverb,4.583549023,0.01933709
+tqf_has_terminal_punctuation,Has Terminal Punctuation,4.651699066,0.004756201
+tqf_high_punctuation_ratio,High Punctuation Ratio,5.892704487,0
+tqf_first_letter_cap,First Letter Capitalized,4.761631012,0
+tqf_no_all_caps,All Caps,4.678274155,0
+tqf_no_special_chars,No Special Characters,4.916765213,0

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Friday November 8th 2024 10:33:12 pm                                                #
+# Modified   : Saturday November 9th 2024 02:49:14 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,9 @@
 import math
 import os
 
+import matplotlib.pyplot as plt
 import pyspark.pandas as ps
+import seaborn as sns
 from pyspark.ml import Pipeline
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
@@ -31,6 +33,9 @@ from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
 from discover.infra.utils.file.io import IOService
 
+# ------------------------------------------------------------------------------------------------ #
+sns.set_style("whitegrid")
+sns.set_palette("Blues_r")
 # ------------------------------------------------------------------------------------------------ #
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
@@ -836,6 +841,9 @@ class TQATask2(Task):
         self._column = column
         self._new_column = new_column
         self._ppl_filepath = ppl_filepath
+        # Load perplexity scores
+        self._ppl_pandas_df = IOService.read(self._ppl_filepath)
+        self._ppl_pandas_df = self._ppl_pandas_df.reset_index(drop=True)
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -849,12 +857,8 @@ class TQATask2(Task):
             DataFrame: The input DataFrame with an additional column for the computed TQA score.
         """
 
-        # Load perplexity scores
-        ppl_pandas_df = IOService.read(self._ppl_filepath)
-        ppl_pandas_df = ppl_pandas_df.reset_index(drop=True)
-
         # Convert to spark DataFrame
-        ppl_spark_df = ps.DataFrame(ppl_pandas_df).to_spark()
+        ppl_spark_df = ps.DataFrame(self._ppl_pandas_df).to_spark()
         # Compute the weights as a list of scalar values
         weights = [
             {
@@ -875,6 +879,14 @@ class TQATask2(Task):
         data = data.withColumn(self._new_column, filter_sum_expr)
 
         return data
+
+    def plot_weights(self) -> None:
+        fig, ax = plt.subplots(figsize=(12, 4))
+        # Filter 0 value weights
+        df = self._ppl_pandas_df.loc[self._ppl_pandas_df["Weight"] > 0]
+        sns.barplot(data=df, y="Filter", x="Weight", ax=ax)
+        ax.set_title("Perplexity-Based Text Quality Heuristics and Weights")
+        plt.tight_layout()
 
 
 # ------------------------------------------------------------------------------------------------ #
