@@ -4,42 +4,52 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/app/base.py                                                               #
+# Filename   : /discover/flow/data_prep/dqm/stage.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Sunday November 10th 2024 08:31:37 pm                                               #
+# Created    : Saturday October 19th 2024 12:57:59 pm                                              #
+# Modified   : Monday November 11th 2024 03:15:29 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Analysis Class"""
-from __future__ import annotations
+"""Ingest Stage Module"""
 
-from abc import ABC
+import logging
+from typing import List
 
-import pandas as pd
-from dependency_injector.wiring import Provide, inject
-
-from discover.container import DiscoverContainer
-from discover.infra.persistence.repo.dataset import DatasetRepo
-from discover.infra.utils.visual.print import Printer
-
-# ------------------------------------------------------------------------------------------------ #
-printer = Printer()
+from discover.assets.idgen import AssetIDGen
+from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.flow.base.task import Task
+from discover.flow.data_prep.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class Analysis(ABC):
+class DQAStage(DataPrepStage):
 
-    @inject
     def __init__(
-        self, repo: DatasetRepo = Provide[DiscoverContainer.repo.dataset_repo]
+        self,
+        source_config: dict,
+        destination_config: dict,
+        tasks: List[Task],
+        force: bool = False,
+        **kwargs,
     ) -> None:
-        self._repo = repo
+        super().__init__(
+            source_config=source_config,
+            destination_config=destination_config,
+            tasks=tasks,
+            force=force,
+        )
 
-    def load_data(self, asset_id: str) -> pd.DataFrame:
-        return self._repo.get(asset_id=asset_id, distributed=False, nlp=False)
+        self._destination_asset_id = AssetIDGen.get_asset_id(
+            asset_type=self._destination_config.asset_type,
+            phase=PhaseDef.from_value(value=self._destination_config.phase),
+            stage=DataPrepStageDef.from_value(value=self._destination_config.stage),
+            name=self._destination_config.name,
+        )
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")

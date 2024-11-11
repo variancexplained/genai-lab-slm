@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Monday October 21st 2024 12:06:20 am                                                #
+# Modified   : Monday November 11th 2024 03:39:12 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -180,7 +180,19 @@ class DataPrepStage(Stage):
             stage=DataPrepStageDef.from_value(value=self._source_config.stage),
             name=self._source_config.name,
         )
-        return self._repo.get(asset_id=source_asset_id).content
+        dataset = self._repo.get(
+            asset_id=source_asset_id,
+            distributed=self._source_config.distributed,
+            nlp=self._source_config.nlp,
+        )
+
+        if self._source_config.distributed:
+            # Rename the pandas index column if it exists
+            if "__index_level_0__" in dataset.content.columns:
+                dataset.content = dataset.content.withColumnRenamed(
+                    "__index_level_0__", "pandas_index"
+                )
+        return dataset.content
 
     def _create_destination_dataset(
         self, data: Union[pd.DataFrame, pyspark.sql.DataFrame]

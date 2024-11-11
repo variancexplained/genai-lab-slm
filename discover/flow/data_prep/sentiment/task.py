@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/enrich/sentiment/task.py                                             #
+# Filename   : /discover/flow/data_prep/sentiment/task.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday November 8th 2024 09:28:24 pm                                                #
+# Modified   : Monday November 11th 2024 03:58:18 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,10 +33,10 @@ from discover.infra.service.logging.task import task_logger
 # ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
 os.environ["PYTHONWARNINGS"] = "ignore"
-# ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(nb_workers=18, progress_bar=True, verbose=False)
 
 
+# ------------------------------------------------------------------------------------------------ #
 class SentimentAnalysisTask(Task):
     """
     A base class for sentiment classification tasks.
@@ -54,7 +54,7 @@ class SentimentAnalysisTask(Task):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "enrichment_sentiment",
+        new_column: str = "sentiment",
     ) -> None:
         super().__init__()
         self._column = column
@@ -108,7 +108,7 @@ class SpacySentimentAnalysisTask(SentimentAnalysisTask):
     def __init__(
         self,
         column="content",
-        new_column="enrichment_sentiment",
+        new_column="sentiment",
         pipeline: str = "en_core_web_sm",
     ):
         super().__init__(column=column, new_column=new_column)
@@ -145,7 +145,7 @@ class TextBlobSentimentAnalysisTask(SentimentAnalysisTask):
         new_column (str): The name of the column where the sentiment results will be stored.
     """
 
-    def __init__(self, column="content", new_column="enrichment_sentiment"):
+    def __init__(self, column="content", new_column="sentiment"):
         super().__init__(column=column, new_column=new_column)
 
     def classify(self, text):
@@ -163,15 +163,15 @@ class TextBlobSentimentAnalysisTask(SentimentAnalysisTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class SentimentClassificationTask(Task):
+class SentimentClassificationTask(SentimentAnalysisTask):
     def __init__(
         self,
-        column: str = "enrichment_sentiment",
-        new_column: str = "enrichment_sentiment_classification",
+        column: str = "column",
+        new_column: str = "sentiment",
         min_sentiment: float = -1.0,
         max_sentiment: float = 1.0,
     ):
-        super().__init__()
+        super().__init__(column=column, new_column=new_column)
         self._column = column
         self._new_column = new_column
         self._min_sentiment = min_sentiment
@@ -190,21 +190,6 @@ class SentimentClassificationTask(Task):
         # Compute thresholds
         self._negative_threshold = range_start + third_size  # -0.33
         self._positive_threshold = range_end - third_size  # 0.33
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Applies the sentiment classification to each entry in the specified column
-        of the DataFrame and stores the result in a new column.
-
-        Args:
-            data (pd.DataFrame): The input DataFrame containing the sentiment scores.
-
-        Returns:
-            pd.DataFrame: The DataFrame with an additional column for sentiment classification.
-        """
-        data[self._new_column] = data[self._column].parallel_apply(self.classify)
-        return data
 
     def classify(self, score) -> str:
         # Classification logic using precomputed thresholds

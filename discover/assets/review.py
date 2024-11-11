@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Tuesday November 5th 2024 06:12:01 pm                                               #
+# Modified   : Saturday November 9th 2024 10:53:38 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -93,14 +93,18 @@ class Review:
         n = self._df.shape[0]
         p = self._df.shape[1]
         n_auth = self._df["author"].nunique()
+        n_auth_inf = self._df.loc[self._df["vote_count"] > 0]["author"].nunique()
+        n_repeat_auth = (self._df["author"].value_counts() > 1).sum()
         n_apps = self._df["app_id"].nunique()
         n_categories = self._df["category"].nunique()
-        mem = self._df.memory_usage(deep=True)
+        mem = self._df.memory_usage(deep=True).sum().sum()
         dt_first = self._df["date"].min()
         dt_last = self._df["date"].max()
         d = {
             "Number of Reviews": n,
-            "Number of Authors": n_auth,
+            "Number of Reviewrs": n_auth,
+            "Number of Repeat Reviewers": n_repeat_auth,
+            "Number of Influential Reviewers": n_auth_inf,
             "Number of Apps": n_apps,
             "Number of Categories": n_categories,
             "Features": p,
@@ -108,7 +112,7 @@ class Review:
             "Date of First Review": dt_first,
             "Date of Last Review": dt_last,
         }
-        title = "AppVoCAI Dataset Overview"
+        title = "AppVoCAI Dataset Overview and Characteristics"
         printer.print_dict(title=title, data=d)
 
     def categories(

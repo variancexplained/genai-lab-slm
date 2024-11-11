@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Wednesday November 6th 2024 11:19:38 am                                             #
+# Modified   : Sunday November 10th 2024 12:39:03 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -84,3 +84,185 @@ class FilterTask(Task):
         if self._frac < 1.0:
             df = df.sample(frac=self._frac, random_state=self._random_state)
         return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+class VerifyEncodingTask(Task):
+    """
+    A task that verifies and fixes UTF-8 encoding issues in a specified text column of a pandas DataFrame.
+
+    Args:
+        column (str): The name of the column in the DataFrame that contains text data.
+        encoding_sample (float): The fraction of rows to sample for checking encoding issues, where 0 < encoding_sample <= 1.
+        random_state (int, optional): Random seed for reproducibility of the sample. Defaults to None.
+
+    Attributes:
+        _column (str): The column name in the DataFrame to check for encoding issues.
+        _encoding_sample (float): The fraction of data to sample for encoding verification.
+        _random_state (int): The random seed for sampling.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame: Verifies and fixes any UTF-8 encoding issues in the specified text column.
+    """
+
+    def __init__(self, column: str) -> None:
+        """
+        Initializes the VerifyEncodingTask with the text column and sample fraction for encoding verification.
+
+        Args:
+            column (str): The column in the DataFrame that contains text data.
+        """
+        super().__init__()
+        self._column = column
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Verifies the UTF-8 encoding of a sample of the text column and re-encodes the entire column if issues are found.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with UTF-8 encoding issues resolved in the specified text column.
+        """
+
+        df = data.copy()
+        df[self._column] = (
+            data[self._column].str.encode("utf-8", errors="ignore").str.decode("utf-8")
+        )
+        self.summarize(a=data, b=df)
+        return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+class RemoveNewlinesTask(Task):
+    """
+    A task that removes newlines from a specified text column in a pandas DataFrame.
+
+    Args:
+        column (str): The name of the column in the DataFrame that contains text data.
+
+    Attributes:
+        _column (str): The name of the column in the DataFrame that contains text data from which newlines will be removed.
+
+    Methods:
+        run(data: pd.DataFrame, **kwargs) -> pd.DataFrame: Removes newlines from the specified text column in the input DataFrame.
+    """
+
+    def __init__(self, column: str) -> None:
+        """
+        Initializes the RemoveNewlinesTask with the specified column name.
+
+        Args:
+            column (str): The name of the column in the DataFrame that contains text data.
+        """
+        super().__init__()
+        self._column = column
+
+    @task_logger
+    def run(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        Removes newlines from the specified text column in the provided DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+            **kwargs: Additional keyword arguments (not used in this implementation).
+
+        Returns:
+            pd.DataFrame: A DataFrame with newlines removed from the specified text column.
+        """
+        df = data.copy()
+        df[self._column] = data[self._column].str.replace("\n", " ")
+        self.summarize(a=data, b=df)
+        return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+class CastDataTypeTask(Task):
+    """
+    A task that casts the data types of specified columns in a pandas DataFrame.
+
+    Args:
+        datatypes (dict): A dictionary where the keys are column names and the values are the desired data types for each column.
+
+    Attributes:
+        _datatypes (dict): The dictionary that maps column names to the desired data types.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame: Casts the specified columns to the desired data types.
+    """
+
+    def __init__(self, datatypes: dict) -> None:
+        """
+        Initializes the CastDataTypeTask with a dictionary of column names and their corresponding data types.
+
+        Args:
+            datatypes (dict): A dictionary where keys are column names and values are the target data types (e.g., 'float', 'int', 'str').
+        """
+        super().__init__()
+        self._datatypes = datatypes
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Casts the data types of the specified columns in the DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame in which columns will be cast to new data types.
+
+        Returns:
+            pd.DataFrame: The DataFrame with columns cast to the specified data types.
+
+        Raises:
+            ValueError: If a column specified in the datatypes dictionary is not found in the DataFrame.
+        """
+        df = data.copy()
+        for column, dtype in self._datatypes.items():
+            if column in data.columns:
+                df[column] = data[column].astype(dtype)
+            else:
+                msg = f"Column {column} not found in DataFrame"
+                self._logger.exception(msg)
+                raise ValueError(msg)
+        self.summarize(a=data, b=df)
+        return df
+
+
+# ------------------------------------------------------------------------------------------------ #
+class AddReviewLengthTask(Task):
+    """
+    A task for adding a new column to a pandas DataFrame that contains the length of the text
+    in a specified column.
+
+    This class calculates the length of each text entry in the given column and stores
+    the result in a new column. The operation is performed in a vectorized manner for
+    efficiency.
+
+    Attributes:
+        column (str): The name of the column containing the text for which the length
+            will be calculated. Defaults to 'content'.
+        new_column (str): The name of the new column where the lengths will be stored.
+            Defaults to 'review_length'.
+    """
+
+    def __init__(
+        self, column: str = "content", new_column: str = "review_length"
+    ) -> None:
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Adds a new column to the DataFrame with the length of the text in the specified column.
+
+        Args:
+            data (pd.DataFrame): The input pandas DataFrame containing the data to be processed.
+
+        Returns:
+            pd.DataFrame: The modified DataFrame with the new column containing the lengths of the text.
+        """
+        data[self._new_column] = data[self._column].str.len()
+        return data

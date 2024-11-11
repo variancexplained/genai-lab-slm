@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Wednesday November 6th 2024 11:26:19 am                                             #
+# Modified   : Monday November 11th 2024 03:22:05 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,5 +38,5 @@ phases:
             module: discover.flow.data_prep.ingest.task
             params:
               column: date
-              frac: 1.0
-              date: 2008
+              frac: 0.01
+              date: 2020

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Saturday November 9th 2024 02:49:14 pm                                              #
+# Modified   : Sunday November 10th 2024 03:44:41 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from discover.infra.service.logging.task import task_logger
 from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
-sns.set_style("whitegrid")
+sns.set_style("white")
 sns.set_palette("Blues_r")
 # ------------------------------------------------------------------------------------------------ #
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
@@ -556,7 +556,7 @@ class TQATask1(Task):
         structural_complexity_weight: float,
         tqa_check_weight: float,
         column: str = "content",
-        new_column: str = "enrichment_tqa_score1",
+        new_column: str = "dqa_text_syntactic_score",
     ) -> None:
         """
         Initializes the TQATask1 with specified weights and output column name.
@@ -824,7 +824,7 @@ class TQATask2(Task):
         self,
         ppl_full: float,
         column: str = "content",
-        new_column: str = "enrichment_tqa_score2",
+        new_column: str = "dqa_text_perplexity_score",
         ppl_filepath: str = "models/tqa/tqa_ppl.csv",
     ):
         """
@@ -906,7 +906,7 @@ class TQATask3(Task):
 
     def __init__(
         self,
-        new_column: str = "enrichment_tqa_score_final",
+        new_column: str = "dqa_text_score",
         tqa1_weight: float = 0.4,
         tqa2_weight: float = 0.6,
     ):
@@ -937,37 +937,46 @@ class TQATask3(Task):
         """
         # Normalize both scores to [0, 1]
         min_max_enrichment_tqa_score1 = data.select(
-            F.min("enrichment_tqa_score1"), F.max("enrichment_tqa_score1")
+            F.min("dqa_text_syntactic_score"), F.max("dqa_text_syntactic_score")
         ).first()
         min_enrichment_tqa_score1, max_enrichment_tqa_score1 = (
             min_max_enrichment_tqa_score1
         )
 
         min_max_enrichment_tqa_score2 = data.select(
-            F.min("enrichment_tqa_score2"), F.max("enrichment_tqa_score2")
+            F.min("dqa_text_perplexity_score"), F.max("dqa_text_perplexity_score")
         ).first()
         min_enrichment_tqa_score2, max_enrichment_tqa_score2 = (
             min_max_enrichment_tqa_score2
         )
 
         data = data.withColumn(
-            "enrichment_tqa_score1",
-            (F.col("enrichment_tqa_score1") - min_enrichment_tqa_score1)
+            "dqa_text_syntactic_score",
+            (F.col("dqa_text_syntactic_score") - min_enrichment_tqa_score1)
             / (max_enrichment_tqa_score1 - min_enrichment_tqa_score1),
         )
 
         data = data.withColumn(
-            "enrichment_tqa_score2",
-            (F.col("enrichment_tqa_score2") - min_enrichment_tqa_score2)
+            "dqa_text_perplexity_score",
+            (F.col("dqa_text_perplexity_score") - min_enrichment_tqa_score2)
             / (max_enrichment_tqa_score2 - min_enrichment_tqa_score2),
         )
 
         # Combine scores using weights
         data = data.withColumn(
             self._new_column,
-            self._tqa1_weight * F.col("enrichment_tqa_score1")
-            + self._tqa2_weight * F.col("enrichment_tqa_score2"),
+            self._tqa1_weight * F.col("dqa_text_syntactic_score")
+            + self._tqa2_weight * F.col("dqa_text_perplexity_score"),
         )
 
+        # Compute min and max of the new column
+        min_value = data.agg(F.min(self._new_column)).collect()[0][0]
+        max_value = data.agg(F.max(self._new_column)).collect()[0][0]
+
+        # Apply Min-Max transformation
+        data = data.withColumn(
+            self._new_column,
+            (F.col(self._new_column) - min_value) / (max_value - min_value),
+        )
         self._data = data
         return data

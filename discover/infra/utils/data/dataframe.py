@@ -11,16 +11,19 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 04:35:45 pm                                              #
-# Modified   : Friday October 18th 2024 02:44:28 pm                                                #
+# Modified   : Sunday November 10th 2024 07:12:20 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """DataFrame Utility Module"""
 
-from typing import Union
+import math
+from enum import Enum
+from typing import Tuple, Union
 
 import pandas as pd
+import psutil
 from pyspark.sql import DataFrame as SparkDataFrame
 
 
@@ -85,3 +88,58 @@ def split_dataframe(data, n):
         chunks.append(data.iloc[n * chunk_size :])
 
     return chunks
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DatasetSizeThreshold(Enum):
+    """Manages the relationship between maximum dataset size and partition size."""
+
+    SMALL = (10 * 1024**3, 256 * 1024**2)  # < 10 GB, 256 MB partitions
+    MEDIUM = (100 * 1024**3, 512 * 1024**2)  # 10 GB - 100 GB, 512 MB partitions
+    LARGE = (1024 * 1024**3, 768 * 1024**2)  # 100 GB - 1 TB, 768 MB partitions
+    VERY_LARGE = (float("inf"), 1024 * 1024**2)  # > 1 TB, 1 GB partitions
+
+    def __init__(self, max_size, partition_size):
+        self.max_size = max_size
+        self.partition_size = partition_size
+
+    @classmethod
+    def get_partition_size(cls, df_size: float):
+        """Return the appropriate enum member based on the size of the dataset."""
+
+        # Iterate over the enum members to find the appropriate one
+        for threshold in cls:
+            if df_size <= threshold.max_size:
+                return threshold
+
+
+# ------------------------------------------------------------------------------------------------ #
+class Optimizer:
+    def compute_partitions(
+        self, df: pd.DataFrame, adjust: float = 1.0
+    ) -> Tuple[int, float]:
+
+        # Obtain dataframe size
+        df_size = df.memory_usage(deep=True).sum()
+
+        # Determine the partition size based on dataset size thresholds
+        partition_enum = DatasetSizeThreshold.get_partition_size(df_size=df_size)
+
+        # Get the partition size
+        partition_size = partition_enum.partition_size * adjust
+
+        # Get the number of CPU cores (logical cores for maximum parallelism)
+        num_cores = psutil.cpu_count(logical=True)
+
+        # Calculate the number of partitions
+        npartitions = min(
+            max(
+                num_cores,
+                math.ceil(df_size / partition_size),
+            ),
+            10000,
+        )
+
+        # Return results in MB for easier interpretation
+        partition_size_mb = partition_size / (1024**2)
+        return npartitions, partition_size_mb

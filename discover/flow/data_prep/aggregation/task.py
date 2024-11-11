@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/enrich/aggregation/task.py                                           #
+# Filename   : /discover/flow/data_prep/aggregation/task.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Friday November 8th 2024 12:30:50 am                                                #
+# Modified   : Monday November 11th 2024 05:06:09 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -40,11 +40,16 @@ class AppAggregationTask(Task):
             Aggregates the input DataFrame at the app level and returns the aggregated results.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, dataset_name: str) -> None:
         """
         Initializes the AppAggregationTask.
         """
         super().__init__()
+        self._dataset_name = dataset_name
+
+    @property
+    def dataset_name(self) -> str:
+        return self._dataset_name
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -55,7 +60,7 @@ class AppAggregationTask(Task):
         Args:
             data (DataFrame): The input PySpark DataFrame with columns:
                 app_id, app_name, category_id, category, author, rating, content, vote_sum,
-                vote_count, date, enrichment_meta_review_length, enrichment_meta_review_age,
+                vote_count, date, enr_review_length, enr_review_age,
                 enrichment_tqa_score1, enrichment_tqa_score2, enrichment_tqa_score_final.
 
         Returns:
@@ -84,10 +89,10 @@ class AppAggregationTask(Task):
         # Define a window specification to rank reviews within each app
         window_spec_vote_sum = Window.partitionBy("app_id").orderBy(F.desc("vote_sum"))
         window_spec_tqa_score = Window.partitionBy("app_id").orderBy(
-            F.desc("enrichment_tqa_score_final")
+            F.desc("dqa_text_score")
         )
         window_spec_review_length = Window.partitionBy("app_id").orderBy(
-            F.desc("enrichment_meta_review_length")
+            F.desc("review_length")
         )
 
         # Add columns for the review length, highest vote sum, and highest TQA score review content
@@ -104,19 +109,19 @@ class AppAggregationTask(Task):
             F.count("*").alias("review_count"),
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
-            F.avg("enrichment_meta_review_length").alias("average_review_length"),
-            F.avg("enrichment_meta_review_age").alias("average_review_age"),
+            F.avg("review_length").alias("average_review_length"),
+            F.avg("enr_review_age").alias("average_review_age"),
             F.sum("vote_sum").alias("total_vote_sum"),
             F.sum("vote_count").alias("total_vote_count"),
             F.min("date").alias("first_review_date"),
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
-            F.avg("enrichment_tqa_score1").alias("average_tqa_score_1"),
-            F.avg("enrichment_tqa_score2").alias("average_tqa_score_2"),
-            F.avg("enrichment_tqa_score_final").alias("average_tqa_score_final"),
-            F.max("enrichment_tqa_score1").alias("max_tqa_score_1"),
-            F.max("enrichment_tqa_score2").alias("max_tqa_score_2"),
-            F.max("enrichment_tqa_score_final").alias("max_tqa_score_final"),
+            F.avg("dqa_text_syntactic_score").alias("average_tqa_score_1"),
+            F.avg("dqa_text_perplexity_score").alias("average_tqa_score_2"),
+            F.avg("dqa_text_score").alias("average_tqa_score_final"),
+            F.max("dqa_text_syntactic_score").alias("max_tqa_score_1"),
+            F.max("dqa_text_perplexity_score").alias("max_tqa_score_2"),
+            F.max("dqa_text_score").alias("max_tqa_score_final"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
                 "review_highest_vote_sum"
             ),
@@ -151,11 +156,16 @@ class CategoryAggregationTask(Task):
             Aggregates the input DataFrame at the category level and returns the aggregated results.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, dataset_name: str) -> None:
         """
-        Initializes the CategoryAggregationTask.
+        Initializes the AppAggregationTask.
         """
         super().__init__()
+        self._dataset_name = dataset_name
+
+    @property
+    def dataset_name(self) -> str:
+        return self._dataset_name
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -166,7 +176,7 @@ class CategoryAggregationTask(Task):
         Args:
             data (DataFrame): The input PySpark DataFrame with columns:
                 category_id, category, author, rating, content, vote_sum, vote_count, date,
-                enrichment_meta_review_length, enrichment_meta_review_age, enrichment_tqa_score1,
+                enr_review_length, enr_review_age, enrichment_tqa_score1,
                 enrichment_tqa_score2, enrichment_tqa_score_final.
 
         Returns:
@@ -197,10 +207,10 @@ class CategoryAggregationTask(Task):
             F.desc("vote_sum")
         )
         window_spec_tqa_score = Window.partitionBy("category_id").orderBy(
-            F.desc("enrichment_tqa_score_final")
+            F.desc("dqa_text_score")
         )
         window_spec_review_length = Window.partitionBy("category_id").orderBy(
-            F.desc("enrichment_meta_review_length")
+            F.desc("review_length")
         )
 
         # Add columns for the review length, highest vote sum, and highest TQA score review content
@@ -215,19 +225,19 @@ class CategoryAggregationTask(Task):
             F.count("*").alias("review_count"),
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
-            F.avg("enrichment_meta_review_length").alias("average_review_length"),
-            F.avg("enrichment_meta_review_age").alias("average_review_age"),
+            F.avg("review_length").alias("average_review_length"),
+            F.avg("enr_review_age").alias("average_review_age"),
             F.sum("vote_sum").alias("total_vote_sum"),
             F.sum("vote_count").alias("total_vote_count"),
             F.min("date").alias("first_review_date"),
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
-            F.avg("enrichment_tqa_score1").alias("average_tqa_score_1"),
-            F.avg("enrichment_tqa_score2").alias("average_tqa_score_2"),
-            F.avg("enrichment_tqa_score_final").alias("average_tqa_score_final"),
-            F.max("enrichment_tqa_score1").alias("max_tqa_score_1"),
-            F.max("enrichment_tqa_score2").alias("max_tqa_score_2"),
-            F.max("enrichment_tqa_score_final").alias("max_tqa_score_final"),
+            F.avg("dqa_text_syntactic_score").alias("average_tqa_score_1"),
+            F.avg("dqa_text_perplexity_score").alias("average_tqa_score_2"),
+            F.avg("dqa_text_score").alias("average_tqa_score_final"),
+            F.max("dqa_text_syntactic_score").alias("max_tqa_score_1"),
+            F.max("dqa_text_perplexity_score").alias("max_tqa_score_2"),
+            F.max("dqa_text_score").alias("max_tqa_score_final"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
                 "review_highest_vote_sum"
             ),

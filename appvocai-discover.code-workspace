@@ -155,6 +155,7 @@
 				"file:///home/john/projects/appvocai-discover/config/test/flow.yaml",
 				"file:///home/john/projects/appvocai-discover/config/flow.yaml"
 			]
-		}
+		},
+		"notebook.output.textLineLimit": 50
 	}
 }

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/enrich/metadata/task.py                                              #
+# Filename   : /discover/flow/data_prep/quant/task.py                                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 10:15:01 pm                                              #
-# Modified   : Friday November 8th 2024 05:48:32 pm                                                #
+# Modified   : Monday November 11th 2024 04:12:00 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,16 +37,16 @@ class ComputeReviewAgeTask(Task):
 
     Attributes:
         column (str): The name of the date column to calculate review age from. Defaults to "date".
-        new_column (str): The name of the new column to store the review age. Default is 'enrichment_meta_review_age'.
+        new_column (str): The name of the new column to store the review age. Default is 'enr_review_age'.
 
     Methods:
         run(data: DataFrame) -> DataFrame:
             Calculates the review age for each row in the specified date column and returns the DataFrame
-            with the new "enrichment_meta_review_age" column.
+            with the new "enr_review_age" column.
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "enrichment_meta_review_age"
+        self, column: str = "date", new_column: str = "enr_review_age"
     ) -> None:
         super().__init__()
         self._column = column
@@ -58,13 +58,13 @@ class ComputeReviewAgeTask(Task):
         Executes the review age calculation on the specified date column.
 
         The function first identifies the maximum date within the column and then calculates the number of days
-        between each review date and this maximum date, storing the result in a new "enrichment_meta_review_age" column.
+        between each review date and this maximum date, storing the result in a new "enr_review_age" column.
 
         Args:
             data (DataFrame): The input PySpark DataFrame containing the specified date column.
 
         Returns:
-            DataFrame: The input DataFrame with an additional "enrichment_meta_review_age" column representing the
+            DataFrame: The input DataFrame with an additional "enr_review_age" column representing the
             review age in days.
         """
         # Step 1: Find the maximum date in the specified column
@@ -75,49 +75,6 @@ class ComputeReviewAgeTask(Task):
             self._new_column, F.datediff(F.lit(max_date), F.col(self._column))
         )
 
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     REVIEW LENGTH                                                #
-# ------------------------------------------------------------------------------------------------ #
-class ComputeReviewLengthTask(Task):
-    """
-    A task to compute the length of text in a specified column by counting the number of words.
-
-    This task adds a new column `enrichment_meta_review_length` to the input DataFrame, where each value represents
-    the number of words in the corresponding text entry from the specified column.
-
-    Attributes:
-        _column (str): The name of the column in the DataFrame that contains the text data.
-        _new_column (str): Name of the column that will contain review length.
-    """
-
-    def __init__(
-        self, column: str, new_column: str = "enrichment_meta_review_length"
-    ) -> None:
-        super().__init__()
-        self._column = column
-        self._new_column = new_column
-
-    @task_logger
-    def run(self, data: DataFrame) -> DataFrame:
-        """
-        Executes the task to compute the word count of text in the specified column.
-
-        This method adds a new column `enrichment_meta_review_length` to the input DataFrame, containing
-        the number of words in each review.
-
-        Args:
-            data (DataFrame): The input PySpark DataFrame containing the column with text data.
-
-        Returns:
-            DataFrame: The DataFrame with an additional column `enrichment_meta_review_length`.
-        """
-        # Use PySpark's `withColumn` and `size` to compute the word count
-        data = data.withColumn(
-            self._new_column, F.size(F.split(F.col(self._column), " "))
-        )
         return data
 
 
@@ -134,11 +91,11 @@ class ComputeReviewMonthTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted month.
-            Defaults to "enrichment_meta_review_month".
+            Defaults to "enr_review_month".
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "enrichment_meta_review_month"
+        self, column: str = "date", new_column: str = "enr_review_month"
     ) -> None:
         super().__init__()
         self._column = column
@@ -174,13 +131,13 @@ class ComputeReviewDayofWeekTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted day of the week.
-            Defaults to "enrichment_meta_review_day_of_week".
+            Defaults to "enr_review_day_of_week".
     """
 
     def __init__(
         self,
         column: str = "date",
-        new_column: str = "enrichment_meta_review_day_of_week",
+        new_column: str = "enr_review_day_of_week",
     ) -> None:
         super().__init__()
         self._column = column
@@ -217,13 +174,13 @@ class ComputeReviewHourTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted hour.
-            Defaults to "enrichment_meta_review_hour".
+            Defaults to "enr_review_hour".
     """
 
     def __init__(
         self,
         column: str = "date",
-        new_column: str = "enrichment_meta_review_hour",
+        new_column: str = "enr_review_hour",
     ) -> None:
         super().__init__()
         self._column = column
@@ -242,4 +199,54 @@ class ComputeReviewHourTask(Task):
         """
         # Extract hour of the day from the date
         data = data.withColumn(self._new_column, F.hour(self._column))
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                               COMPUTE PCT DEVIATION                                              #
+# ------------------------------------------------------------------------------------------------ #
+class ComputePercentDeviationTask(Task):
+    """
+    A task to compute the percent deviation of a specified column from the average
+    grouped by a given level and store the result in a new column.
+
+    Attributes:
+        column (str): The name of the column for which to compute percent deviation.
+        new_column (str): The name of the new column to store the percent deviation values.
+        by (str): The level by which the average is computed for the deviation calculation.
+    """
+
+    def __init__(self, column: str, new_column: str, by: str = "category") -> None:
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
+        self._by = by
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        """
+        Computes the percent deviation of the specified column from the average
+        grouped by the 'by' variable and adds it as a new column to the DataFrame.
+
+        Args:
+            data (DataFrame): The input PySpark DataFrame containing the data.
+
+        Returns:
+            DataFrame: The PySpark DataFrame with the new column containing percent deviation.
+        """
+        # Calculate the average of the specified column, grouped by the 'by' variable
+        avg_values = data.groupBy(self._by).agg(F.avg(self._column).alias("avg_value"))
+
+        # Join the average values back to the original DataFrame
+        data = data.join(avg_values, on=self._by, how="left")
+
+        # Compute the percent deviation and add it as a new column
+        data = data.withColumn(
+            self._new_column,
+            ((F.col(self._column) - F.col("avg_value")) / F.col("avg_value")) * 100,
+        )
+
+        # Drop the temporary 'avg_value' column
+        data = data.drop("avg_value")
+
         return data

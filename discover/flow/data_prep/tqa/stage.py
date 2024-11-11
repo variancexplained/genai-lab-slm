@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/enrich/quality/stage.py                                              #
+# Filename   : /discover/flow/data_prep/tqa/stage.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:01:19 pm                                              #
-# Modified   : Friday November 8th 2024 12:03:25 am                                                #
+# Modified   : Monday November 11th 2024 04:08:45 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,11 +21,11 @@ from __future__ import annotations
 from typing import List
 
 from discover.flow.base.task import Task
-from discover.flow.enrich.stage import EnrichmentStage
+from discover.flow.data_prep.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class QualityStage(EnrichmentStage):
+class TQAStage(DataPrepStage):
     """
     A class that represents a stage in the data enrichment pipeline, responsible for enhancing
     and processing data through a series of tasks.

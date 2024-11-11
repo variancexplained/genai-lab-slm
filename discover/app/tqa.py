@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 29th 2024 08:20:00 pm                                               #
-# Modified   : Wednesday October 30th 2024 12:52:42 am                                             #
+# Modified   : Saturday November 9th 2024 07:53:16 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import seaborn as sns
 from scipy.stats import ks_2samp
 
 # ------------------------------------------------------------------------------------------------ #
-sns.set_style("whitegrid")
+sns.set_style("white")
 sns.set_palette("vlag")
 
 
