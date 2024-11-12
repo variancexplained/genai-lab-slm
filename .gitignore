@@ -12,6 +12,7 @@ data/ext/
 data/raw/
 data/working/
 data/archive/
+data/stage/
 tests/data/
 
 # Workspace

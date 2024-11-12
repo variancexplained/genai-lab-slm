@@ -1,6 +1,6 @@
 {
-  "title": "AppVoCAI Reviews Dataset",
-  "id": "johnjamesai/review",
+  "title": "AppVoCAI Reviews Dataset (DEV)",
+  "id": "johnjames/dataset-dev-dataprep-tqa-review",
   "licenses": [
     {
       "name": "CC0-1.0"

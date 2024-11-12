@@ -11,18 +11,24 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday November 12th 2024 03:09:28 pm                                              #
-# Modified   : Tuesday November 12th 2024 03:27:29 pm                                              #
+# Modified   : Tuesday November 12th 2024 04:40:14 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import json
 import os
 import subprocess
+
+import pandas as pd
 
 from discover.infra.utils.file.compress import ZipFileHandler
 from discover.infra.utils.file.io import IOService
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                     KAGGLE SERVICE                                               #
+# ------------------------------------------------------------------------------------------------ #
 class KaggleService:
     def __init__(
         self,
@@ -70,6 +76,9 @@ class KaggleService:
         # Compress the file
         zip_path = os.path.splitext(filepath)[0] + ".zip"
         self._zip_file_handler.compress_file(filepath=filepath, zippath=zip_path)
+
+        # Remove the non-zipped file to avoid uploading it
+        os.remove(path=filepath)
 
         # Check if the zipped file exists, then upload using subprocess
         if os.path.exists(zip_path):
@@ -129,3 +138,67 @@ class KaggleService:
             )
         else:
             raise FileNotFoundError(f"Compressed file {zip_path} not found for update.")
+
+    def exists(self, dataset_name: str) -> bool:
+        """
+        Check if a dataset exists on Kaggle.
+
+        Args:
+            dataset_name (str): The name of the dataset (username/dataset-name).
+
+        Returns:
+            bool: True if the dataset exists, False otherwise.
+        """
+        try:
+            # Use the Kaggle API to list the dataset and check if it exists
+            result = subprocess.run(
+                ["kaggle", "datasets", "list", "--search", dataset_name],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            # Check if the dataset name appears in the output
+            return dataset_name in result.stdout
+        except subprocess.CalledProcessError:
+            # If the Kaggle API command fails, return False
+            return False
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                  KAGGLE CREATE DATASET                                           #
+# ------------------------------------------------------------------------------------------------ #
+def create_dataset(username: str, df: pd.DataFrame, filename: str, title: str):
+    """
+    Create a Kaggle dataset from a DataFrame in the Kaggle environment.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to save and upload as a dataset.
+        filename (str): The name of the file to save the DataFrame as (e.g., 'sentiment_analysis.csv').
+        title (str): The title of the dataset.
+    """
+
+    # Save the DataFrame to a CSV file in the working directory
+    csv_path = os.path.join("/kaggle/working", filename)
+    df.to_csv(csv_path, index=False)
+
+    # Get the file name without the extension for the dataset ID
+    dataset_name = os.path.splitext(filename)[0]
+
+    # Create the metadata dictionary
+    metadata = {
+        "title": title,
+        "id": f"{username}/{dataset_name}",
+        "licenses": [{"name": "CC0-1.0"}],
+    }
+
+    # Save the metadata to a JSON file in the same directory as the file
+    metadata_filepath = os.path.join("/kaggle/working", "dataset-metadata.json")
+    with open(metadata_filepath, "w") as f:
+        json.dump(metadata, f)
+
+    # Use the Kaggle API to create the dataset
+    subprocess.run(
+        ["kaggle", "datasets", "create", "-p", "/kaggle/working"], check=True
+    )
+
+    print(f"Dataset '{title}' created successfully on Kaggle.")
