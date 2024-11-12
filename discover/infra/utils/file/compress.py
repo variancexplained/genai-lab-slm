@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/infra/tools/file/compress.py                                              #
+# Filename   : /discover/infra/utils/file/compress.py                                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday April 28th 2024 12:15:31 am                                                  #
-# Modified   : Saturday October 12th 2024 07:08:16 am                                              #
+# Modified   : Tuesday November 12th 2024 03:25:28 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@
 import logging
 import os
 import tarfile
+import zipfile
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -93,12 +94,12 @@ class TarGzHandler:
             )
             raise
 
-    def compress_file(self, file_path, tar_gz_path):
+    def compress_file(self, filepath, tar_gz_path):
         """
         Compresses a single file into a .tar.gz file.
 
         Args:
-            file_path (str): The file to be compressed.
+            filepath (str): The file to be compressed.
             tar_gz_path (str): The path where the .tar.gz file will be created.
 
         Raises:
@@ -107,15 +108,64 @@ class TarGzHandler:
         os.makedirs(os.path.dirname(tar_gz_path), exist_ok=True)
         try:
             with tarfile.open(tar_gz_path, "w:gz") as tar:
-                tar.add(file_path, arcname=os.path.basename(file_path))
-                print(f"Compressed {file_path} into {tar_gz_path}")
+                tar.add(filepath, arcname=os.path.basename(filepath))
+                print(f"Compressed {filepath} into {tar_gz_path}")
         except FileNotFoundError as e:
             self._logger.exception(
-                f"Error compressing {file_path} into {tar_gz_path}: {e}"
+                f"Error compressing {filepath} into {tar_gz_path}: {e}"
             )
             raise
         except tarfile.TarError as e:
             self._logger.exception(
-                f"Error compressing {file_path} into {tar_gz_path}: {e}"
+                f"Error compressing {filepath} into {tar_gz_path}: {e}"
             )
             raise
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                  ZIP FILE HANDLER                                                #
+# ------------------------------------------------------------------------------------------------ #
+class ZipFileHandler:
+    def __init__(self):
+        """Initialize the ZipFileHandler with no arguments."""
+        pass
+
+    def extract(self, zippath, extract_to):
+        """
+        Extracts the contents of the zip file to the specified directory.
+
+        Args:
+            zippath (str): The path to the zip file to extract.
+            extract_to (str): The directory to extract the contents to.
+        """
+        with zipfile.ZipFile(zippath, "r") as zip_ref:
+            zip_ref.extractall(extract_to)
+        print(f"Extracted {zippath} to {extract_to}")
+
+    def compress_file(self, filepath, zippath):
+        """
+        Compresses a single file into the zip file.
+
+        Args:
+            filepath (str): The path to the file to compress.
+            zippath (str): The path to the zip file to create.
+        """
+        with zipfile.ZipFile(zippath, "w", zipfile.ZIP_DEFLATED) as zip_ref:
+            zip_ref.write(filepath, os.path.basename(filepath))
+        print(f"Compressed {filepath} into {zippath}")
+
+    def compress_directory(self, directory, zippath):
+        """
+        Compresses the contents of an entire directory into the zip file.
+
+        Args:
+            directory (str): The path to the directory to compress.
+            zippath (str): The path to the zip file to create.
+        """
+        with zipfile.ZipFile(zippath, "w", zipfile.ZIP_DEFLATED) as zip_ref:
+            for root, _, files in os.walk(directory):
+                for file in files:
+                    filepath = os.path.join(root, file)
+                    arcname = os.path.relpath(filepath, directory)
+                    zip_ref.write(filepath, arcname)
+        print(f"Compressed {directory} into {zippath}")
