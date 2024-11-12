@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Tuesday November 12th 2024 02:11:45 am                                              #
+# Modified   : Tuesday November 12th 2024 04:43:55 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@
 
 from typing import Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
@@ -35,7 +36,7 @@ pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
 # ------------------------------------------------------------------------------------------------ #
-accuracy_cols = [
+noise_cols = [
     "tqd_ctrl_chars",
     "tqd_accents",
     "tqd_html_chars",
@@ -176,23 +177,11 @@ class DQA(Analysis):
         self._scores = pd.DataFrame(data=d)
         return self._scores
 
-    def summarize_noise(self) -> None:
-        # Extract the dqa data
-        dqa = self._df[self._cols]
-        # Sum the indicator variables
-        df = dqa.sum(axis=0)
-        # Create a dataframe of counts
-        df = pd.DataFrame(df, columns=["n"])
-        # Add relative counts
-        df["%"] = round(dqa.sum(axis=0) / self._df.shape[0] * 100, 2)
-        # Reset the index and expose the defect column
-        df = df.reset_index(names=["Defect"])
-        # Convert columns to labels
-        df["Defect"] = df["Defect"].apply(self._convert_labels)
-        # Select and order columns
-        df = df[["Defect", "n", "%"]]
-        print(df.head())
-        return df.sort_values(by="n", ascending=False).reset_index(drop=True)
+    def summarize_noise(self) -> pd.DataFrame:
+        return self._compute_frequency_distribution(cols=noise_cols)
+
+    def summarize_privacy(self) -> pd.DataFrame:
+        return self._compute_frequency_distribution(cols=privacy_cols)
 
     def plot_quality(self) -> None:
         viz.barplot(
@@ -215,6 +204,26 @@ class DQA(Analysis):
             title="Distribution of Sentiment Classification",
         )
         return self._df["quant_sentiment_score"].describe().to_frame().T
+
+    def plot_privacy(self) -> None:
+        privacy = self.summarize_privacy()
+        viz.barplot(
+            data=privacy,
+            y="Defect",
+            x="%",
+            title="Personally Identifiable Information (PII)",
+        )
+
+    def plot_text_quality(self) -> pd.DataFrame:
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 4))
+        viz.kdeplot(data=self._df, x="tqa_score", ax=axes[0])
+        viz.violinplot(data=self._df, x="tqa_score", ax=axes[1])
+        fig.suptitle("Distribution of Text Quality Scores")
+        return self._df["tqa_score"].describe().to_frame().T
+
+    def plot_noise(self) -> None:
+        noise = self.summarize_noise()
+        viz.barplot(data=noise, y="Defect", x="%", title="Noise Density")
 
     def get_defects(
         self, defect: str, n: int = 10, random_state: int = None
@@ -277,7 +286,7 @@ class DQA(Analysis):
 
     def _compute_accuracy(self) -> float:
         N = self._df.shape[0]
-        return 1 - (self._df[accuracy_cols].any(axis=1).sum() / N)
+        return 1 - (self._df[noise_cols].any(axis=1).sum() / N)
 
     def _compute_privacy(self) -> float:
         N = self._df.shape[0]
@@ -301,3 +310,20 @@ class DQA(Analysis):
             + self.interpretability * self._config.interpretability_weight
             + self.text_quality * self._config.text_quality_weight
         )
+
+    def _compute_frequency_distribution(self, cols: list) -> pd.DataFrame:
+        # Extract the dqa data
+        dqa = self._df[cols]
+        # Sum the indicator variables
+        df = dqa.sum(axis=0)
+        # Create a dataframe of counts
+        df = pd.DataFrame(df, columns=["n"])
+        # Add relative counts
+        df["%"] = round(dqa.sum(axis=0) / self._df.shape[0] * 100, 2)
+        # Reset the index and expose the defect column
+        df = df.reset_index(names=["Defect"])
+        # Convert columns to labels
+        df["Defect"] = df["Defect"].apply(self._convert_labels)
+        # Select and order columns
+        df = df[["Defect", "n", "%"]]
+        return df.sort_values(by="n", ascending=False).reset_index(drop=True)
