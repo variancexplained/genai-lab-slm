@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Monday November 11th 2024 04:51:24 am                                               #
+# Modified   : Tuesday November 12th 2024 02:06:54 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -65,12 +65,177 @@ phases:
             module: discover.flow.data_prep.ingest.task
             params:
               column: content
+      tqd:
+        stage_name: tqd
+        source_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: ingest
+          name: review
+          nlp: True
+          distributed: True
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: tqd
+          name: review
+          nlp: True
+          distributed: True
+        tasks:
+          - class_name: DetectOrRepairURLTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_url
+              mode: detect
+          - class_name: DetectOrRepairEmailAddressTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_email
+              mode: detect
+          - class_name: DetectOrRepairPhoneNumberTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_phone
+              mode: detect
+          - class_name: DetectOrRepairControlCharsTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_ctrl_chars
+              mode: detect
+          - class_name: DetectOrRepairAccentedCharsTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_accents
+              mode: detect
+          - class_name: DetectOrRepairHTMLCharsTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_html_chars
+              mode: detect
+          - class_name: DetectOrRepairExcessiveWhitespaceTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_excess_whitespace
+              mode: detect
+          - class_name: DetectOrRepairNonEnglishTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: app_name
+              new_column: tqd_non_english_app_name
+              mode: detect
+          - class_name: DetectOrRepairNonEnglishTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_non_english_text
+              mode: detect
+          - class_name: DetectOrRepairExcessiveSpecialCharsTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_excess_special_chars
+              threshold: 0.3
+              mode: detect
+          - class_name: DetectOrRepairDuplicateReviewIdTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: id
+              new_column: tqd_duplicate_review_id
+              mode: detect
+          - class_name: DetectOrRepairElongationTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              threshold: 4
+              new_column: tqd_elongation
+              mode: detect
+          - class_name: DetectOrRepairNonASCIITextTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_non_ascii_chars
+              mode: detect
+          - class_name: DetectOrRepairOutliersTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: review_length
+              mode: detect
+              new_column: tqd_review_length_outlier
+          - class_name: DetectOrRemoveShortReviewsTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: review_length
+              mode: detect
+              new_column: tqd_short_review
+              threshold: 3
+      tqa:
+        stage_name: tqa
+        source_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: tqd
+          name: review
+          nlp: True
+          distributed: True
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: tqa
+          name: review
+          nlp: False
+          distributed: True
+        tasks:
+        - class_name: NLPTask
+          module: discover.flow.data_prep.tqa.task
+          params:
+            column: content
+        - class_name: ComputePOSStatsTask
+          module: discover.flow.data_prep.tqa.task
+          params:
+            column: content
+        - class_name: ComputeBasicStatsTask
+          module: discover.flow.data_prep.tqa.task
+          params:
+            column: content
+        - class_name: ComputeTQAFiltersTask
+          module: discover.flow.data_prep.tqa.task
+          params: {}
+        - class_name: TQATask1
+          module: discover.flow.data_prep.tqa.task
+          params:
+            column: content
+            new_column: tqa_syntactic_score
+            pos_count_weight: 0.4
+            pos_diversity_weight: 0.2
+            pos_intensity_weight: 0.1
+            structural_complexity_weight: 0.2
+            tqa_check_weight: 0.1
+        - class_name: TQATask2
+          module: discover.flow.data_prep.tqa.task
+          params:
+            column: content
+            new_column: tqa_perplexity_score
+            ppl_filepath: models/tqa/tqa_ppl.csv
+            ppl_full: 4.673929214477539
+        - class_name: TQATask3
+          module: discover.flow.data_prep.tqa.task
+          params:
+            tqa_syntactic_weight: 0.4
+            tqa_perplexity_weight: 0.6
+            new_column: tqa_score
       sentiment:
         stage_name: sentiment
         source_config:
           asset_type: dataset
           phase: dataprep
-          stage: ingest
+          stage: tqa
           name: review
           nlp: False
           distributed: False
@@ -82,80 +247,16 @@ phases:
           nlp: False
           distributed: False
         tasks:
-          - class_name: SpacySentimentAnalysisTask
+          - class_name: VaderSentimentAnalysisTask
             module: discover.flow.data_prep.sentiment.task
             params:
               column: content
-              new_column: sentiment
-              pipeline: en_core_web_sm
-          - class_name: SentimentClassificationTask
-            module: discover.flow.data_prep.sentiment.task
-            params:
-              column: sentiment
-              new_column: sentiment_classification
-              min_sentiment: -1.0
-              max_sentiment: 1.0
-      tqa:
-          stage_name: tqa
-          source_config:
-            asset_type: dataset
-            phase: dataprep
-            stage: sentiment
-            name: review
-            nlp: True
-            distributed: True
-          destination_config:
-            asset_type: dataset
-            phase: dataprep
-            stage: tqa
-            name: review
-            nlp: False
-            distributed: True
-          tasks:
-          - class_name: NLPTask
-            module: discover.flow.data_prep.tqa.task
-            params:
-              column: content
-          - class_name: ComputePOSStatsTask
-            module: discover.flow.data_prep.tqa.task
-            params:
-              column: content
-          - class_name: ComputeBasicStatsTask
-            module: discover.flow.data_prep.tqa.task
-            params:
-              column: content
-          - class_name: ComputeTQAFiltersTask
-            module: discover.flow.data_prep.tqa.task
-            params: {}
-          - class_name: TQATask1
-            module: discover.flow.data_prep.tqa.task
-            params:
-              column: content
-              new_column: dqa_text_syntactic_score
-              pos_count_weight: 0.4
-              pos_diversity_weight: 0.2
-              pos_intensity_weight: 0.1
-              structural_complexity_weight: 0.2
-              tqa_check_weight: 0.1
-          - class_name: TQATask2
-            module: discover.flow.data_prep.tqa.task
-            params:
-              column: content
-              new_column: dqa_text_perplexity_score
-              ppl_filepath: models/tqa/tqa_ppl.csv
-              ppl_full: 4.673929214477539
-          - class_name: TQATask3
-            module: discover.flow.data_prep.tqa.task
-            params:
-              tqa1_weight: 0.4
-              tqa2_weight: 0.6
-              new_column: dqa_text_score
       quant:
         stage_name: quant
         source_config:
           asset_type: dataset
           phase: dataprep
-          stage: tqa
+          stage: sentiment
           name: review
           nlp: False
           distributed: True
@@ -171,46 +272,46 @@ phases:
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: enr_review_age
+              new_column: quant_review_age
           - class_name: ComputeReviewMonthTask
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: enr_review_month
+              new_column: quant_review_month
           - class_name: ComputeReviewDayofWeekTask
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: enr_review_day_of_week
+              new_column: quant_review_day_of_week
           - class_name: ComputeReviewHourTask
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: enr_review_hour
+              new_column: quant_review_hour
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
               column: rating
-              new_column: enr_pct_deviation_rating
+              new_column: quant_pct_deviation_rating
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
               column: review_length
-              new_column: enr_pct_deviation_review_length
+              new_column: quant_pct_deviation_review_length
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
-              column: sentiment
-              new_column: enr_pct_deviation_sentiment
+              column: quant_sentiment_score
+              new_column: quant_pct_deviation_sentiment
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
-              column: dqa_text_score
-              new_column: enr_pct_deviation_tqa_score
+              column: tqa_score
+              new_column: quant_pct_deviation_tqa_score
       agg:
         stage_name: agg
         source_config:
@@ -236,130 +337,6 @@ phases:
             module: discover.flow.data_prep.aggregation.task
             params:
               dataset_name: category
-      dqa:
-        stage_name: dqa
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: agg
-          name: review
-          nlp: True
-          distributed: True
-        destination_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: dqa
-          name: review
-          nlp: True
-          distributed: True
-        tasks:
-          - class_name: DetectOrRepairURLTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_url
-              mode: detect
-          - class_name: DetectOrRepairEmailAddressTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_email
-              mode: detect
-          - class_name: DetectOrRepairPhoneNumberTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_phone
-              mode: detect
-          - class_name: DetectOrRepairControlCharsTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_ctrl_chars
-              mode: detect
-          - class_name: DetectOrRepairAccentedCharsTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_accents
-              mode: detect
-          - class_name: DetectOrRepairHTMLCharsTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_html_chars
-              mode: detect
-          - class_name: DetectOrRepairExcessiveWhitespaceTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_excess_whitespace
-              mode: detect
-          - class_name: DetectOrRepairNonEnglishTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: app_name
-              new_column: dqa_non_english_app_name
-              mode: detect
-          - class_name: DetectOrRepairNonEnglishTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_non_english_text
-              mode: detect
-          - class_name: DetectOrRepairExcessiveSpecialCharsTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_excess_special_chars
-              threshold: 0.3
-              mode: detect
-          - class_name: DetectOrRepairDuplicateReviewIdTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: id
-              new_column: dqa_duplicate_review_id
-              mode: detect
-          - class_name: DetectOrRepairElongationTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              threshold: 4
-              new_column: dqa_elongation
-              mode: detect
-          - class_name: DetectOrRepairNonASCIITextTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: content
-              new_column: dqa_non_ascii_chars
-              mode: detect
-          - class_name: DetectOrRepairOutliersTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: rating
-              mode: detect
-          - class_name: DetectOrRepairOutliersTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: vote_count
-              mode: detect
-          - class_name: DetectOrRepairOutliersTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: vote_sum
-              mode: detect
-          - class_name: DetectOrRepairOutliersTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: review_length
-              mode: detect
-          - class_name: DetectOrRemoveShortReviewsTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: review_length
-              mode: detect
-              new_column: dqa_short_review
-              threshold: 3
       clean:
         stage_name: clean
         source_config:

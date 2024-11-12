@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Sunday November 10th 2024 09:56:03 pm                                               #
+# Modified   : Tuesday November 12th 2024 01:29:23 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -267,14 +267,14 @@ class DetectOrRepairDuplicateReviewIdTask(DetectOrRepairTask):
         _mode (str): The mode of operation, either 'detect' or 'repair'.
         _column (str): The name of the column to check for duplicates (default is "id").
         _new_column (str): The name of the new column for detecting duplicates
-            (default is "dqm_duplicate_review_id").
+            (default is "tqd_duplicate_review_id").
     """
 
     def __init__(
         self,
         mode: str = "detect",
         column: str = "id",
-        new_column: str = "dqm_duplicate_review_id",
+        new_column: str = "tqd_duplicate_review_id",
     ):
         """
         Initializes the DetectOrRepairDuplicateReviewIdTask class.
@@ -342,7 +342,7 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for URLs (default is "content").
-        _new_column (str): The name of the new column for URL detection flags (default is "dqa_has_url").
+        _new_column (str): The name of the new column for URL detection flags (default is "tqd_has_url").
         _replacement (str): The string to replace URLs with in 'repair' mode (default is "[URL]").
         _threshold (float): An optional threshold for detection logic (default is None).
         _mode (str): The mode of operation, either 'detect' to flag URLs or 'repair' to replace them.
@@ -351,7 +351,7 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_url",
+        new_column: str = "tqd_has_url",
         replacement: str = "[URL]",
         threshold: float = None,
         mode: str = "detect",
@@ -388,7 +388,7 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for email addresses (default is "content").
-        _new_column (str): The name of the new column for email detection flags (default is "dqa_has_email").
+        _new_column (str): The name of the new column for email detection flags (default is "tqd_has_email").
         _replacement (str): The string to replace email addresses with in 'repair' mode (default is "[EMAIL]").
         _threshold (float): An optional threshold for detection logic (default is None).
         _mode (str): The mode of operation, either 'detect' to flag email addresses or 'repair' to replace them.
@@ -397,7 +397,7 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_email",
+        new_column: str = "tqd_has_email",
         replacement: str = "[EMAIL]",
         threshold: float = None,
         mode: str = "detect",
@@ -424,7 +424,7 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for phone numbers (default is "content").
-        _new_column (str): The name of the new column for phone number detection flags (default is "dqa_has_phone").
+        _new_column (str): The name of the new column for phone number detection flags (default is "tqd_has_phone").
         _replacement (str): The string to replace phone numbers with in 'repair' mode (default is "[PHONE]").
         _threshold (float): An optional threshold for detection logic (default is None).
         _mode (str): The mode of operation, either 'detect' to flag phone numbers or 'repair' to replace them.
@@ -433,7 +433,7 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_phone",
+        new_column: str = "tqd_has_phone",
         replacement: str = "[PHONE]",
         threshold: float = None,
         mode: str = "detect",
@@ -460,7 +460,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for excessive special characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_excess_special_chars").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_excess_special_chars").
         _threshold (float): The threshold for the number of special characters required to trigger detection (default is None).
         _mode (str): The mode of operation, either 'detect' to flag rows or 'repair' to remove them.
     """
@@ -468,7 +468,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_excess_special_chars",
+        new_column: str = "tqd_has_excess_special_chars",
         threshold: float = None,
         mode: str = "detect",
         replacement: str = " ",
@@ -495,13 +495,13 @@ class DetectOrRepairNonASCIITextTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for Unicode characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_unicode_chars").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_unicode_chars").
     """
 
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_non_ascii_chars",
+        new_column: str = "tqd_non_ascii_chars",
         mode: str = "detect",
     ) -> None:
         """
@@ -564,7 +564,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for control characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_ctrl_chars").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_ctrl_chars").
         _replacement (str): The string to replace control characters with in 'repair' mode (default is an empty string).
         _mode (str): The mode of operation, either 'detect' to flag control characters or 'repair' to replace them.
     """
@@ -572,7 +572,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_ctrl_chars",
+        new_column: str = "tqd_has_ctrl_chars",
         replacement: str = "",
         mode: str = "detect",
     ) -> None:
@@ -606,7 +606,7 @@ class DetectOrRepairHTMLCharsTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for HTML character entities (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_html_chars").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_html_chars").
         _mode (str): The mode of operation, either 'detect' to flag HTML character entities or 'repair' to replace them.
         _replacement (str): The string to replace HTML character entities with in 'repair' mode (default is an empty string).
     """
@@ -614,7 +614,7 @@ class DetectOrRepairHTMLCharsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_html_chars",
+        new_column: str = "tqd_has_html_chars",
         mode: str = "detect",
         replacement: str = "",
     ) -> None:
@@ -639,7 +639,7 @@ class DetectOrRepairExcessiveWhitespaceTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for excessive whitespace (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_excess_whitespace").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_excess_whitespace").
         _mode (str): The mode of operation, either 'detect' to flag excessive whitespace or 'repair' to replace it.
         _replacement (str): The string to replace excessive whitespace with in 'repair' mode (default is a single space).
     """
@@ -647,7 +647,7 @@ class DetectOrRepairExcessiveWhitespaceTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_excess_whitespace",
+        new_column: str = "tqd_has_excess_whitespace",
         mode: str = "detect",
         replacement: str = " ",
     ) -> None:
@@ -672,14 +672,14 @@ class DetectOrRepairAccentedCharsTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for accented characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_accented_chars").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_accented_chars").
         _mode (str): The mode of operation, either 'detect' to flag accented characters or 'repair' to remove them.
     """
 
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_accented_chars",
+        new_column: str = "tqd_has_accented_chars",
         mode: str = "detect",
     ) -> None:
         # Regex pattern for accented and diacritic characters
@@ -787,14 +787,14 @@ class DetectOrRepairNonEnglishTask(DetectOrRemoveTask):
 
     Attributes:
         _column (str): The name of the column to check for non-English text (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_non_english").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_non_english").
         _mode (str): The mode of operation, either 'detect' to flag non-English text or 'remove' to delete such rows.
     """
 
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "dqa_has_non_english",
+        new_column: str = "tqd_has_non_english",
         mode: str = "detect",
     ) -> None:
         super().__init__()
@@ -873,7 +873,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
     Attributes:
         _column (str): The name of the column to check for character elongation (default is "content").
         _threshold (int): The minimum number of consecutive repeating characters to be considered elongation (default is 4).
-        _new_column (str): The name of the new column for detection flags (default is "dqa_has_elongation").
+        _new_column (str): The name of the new column for detection flags (default is "tqd_has_elongation").
         _max_elongation (int): The maximum allowed repetition of characters when repairing (default is 3).
         _mode (str): The mode of operation, either 'detect' to flag elongation or 'repair' to limit character repetition.
     """
@@ -882,7 +882,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
         self,
         column: str = "content",
         threshold: int = 4,
-        new_column: str = "dqa_has_elongation",
+        new_column: str = "tqd_has_elongation",
         max_elongation: int = 3,
         mode: str = "detect",
     ) -> None:
@@ -907,14 +907,18 @@ class DetectOrRepairOutliersTask(DetectOrRemoveTask):
     or remove rows containing outliers.
 
     Attributes:
-        _column (str): The name of the column to check for outliers (default is "vote_count").
+        _column (str): The name of the column to check for outliers (default is "review_length").
         _mode (str): The mode of operation, either 'detect' to flag outliers or 'remove' to delete such rows.
         _new_column (str): The name of the new column for outlier detection flags, dynamically generated based on the column name.
     """
 
-    def __init__(self, column: str = "vote_count", mode: str = "detect") -> None:
+    def __init__(
+        self,
+        column: str = "review_length",
+        new_column: str = "tqd_outlier_review_length",
+        mode: str = "detect",
+    ) -> None:
         pattern = None
-        new_column = f"dqa_outlier_{column}"
         super().__init__(
             pattern=pattern, column=column, mode=mode, new_column=new_column
         )
@@ -969,7 +973,7 @@ class DetectOrRemoveShortReviewsTask(DetectOrRemoveTask):
         column: str = "review_length",
         mode: str = "detect",
         threshold: int = 3,
-        new_column: str = "dqa_short_review",
+        new_column: str = "tqd_short_review",
     ) -> None:
         super().__init__(
             column=column, mode=mode, new_column=new_column, threshold=threshold

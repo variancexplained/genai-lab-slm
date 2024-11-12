@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 10:15:01 pm                                              #
-# Modified   : Monday November 11th 2024 04:12:00 am                                               #
+# Modified   : Monday November 11th 2024 10:37:05 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,16 +37,16 @@ class ComputeReviewAgeTask(Task):
 
     Attributes:
         column (str): The name of the date column to calculate review age from. Defaults to "date".
-        new_column (str): The name of the new column to store the review age. Default is 'enr_review_age'.
+        new_column (str): The name of the new column to store the review age. Default is 'quant_review_age'.
 
     Methods:
         run(data: DataFrame) -> DataFrame:
             Calculates the review age for each row in the specified date column and returns the DataFrame
-            with the new "enr_review_age" column.
+            with the new "quant_review_age" column.
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "enr_review_age"
+        self, column: str = "date", new_column: str = "quant_review_age"
     ) -> None:
         super().__init__()
         self._column = column
@@ -58,13 +58,13 @@ class ComputeReviewAgeTask(Task):
         Executes the review age calculation on the specified date column.
 
         The function first identifies the maximum date within the column and then calculates the number of days
-        between each review date and this maximum date, storing the result in a new "enr_review_age" column.
+        between each review date and this maximum date, storing the result in a new "quant_review_age" column.
 
         Args:
             data (DataFrame): The input PySpark DataFrame containing the specified date column.
 
         Returns:
-            DataFrame: The input DataFrame with an additional "enr_review_age" column representing the
+            DataFrame: The input DataFrame with an additional "quant_review_age" column representing the
             review age in days.
         """
         # Step 1: Find the maximum date in the specified column
@@ -91,11 +91,11 @@ class ComputeReviewMonthTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted month.
-            Defaults to "enr_review_month".
+            Defaults to "quant_review_month".
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "enr_review_month"
+        self, column: str = "date", new_column: str = "quant_review_month"
     ) -> None:
         super().__init__()
         self._column = column
@@ -131,13 +131,13 @@ class ComputeReviewDayofWeekTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted day of the week.
-            Defaults to "enr_review_day_of_week".
+            Defaults to "quant_review_day_of_week".
     """
 
     def __init__(
         self,
         column: str = "date",
-        new_column: str = "enr_review_day_of_week",
+        new_column: str = "quant_review_day_of_week",
     ) -> None:
         super().__init__()
         self._column = column
@@ -174,13 +174,13 @@ class ComputeReviewHourTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted hour.
-            Defaults to "enr_review_hour".
+            Defaults to "quant_review_hour".
     """
 
     def __init__(
         self,
         column: str = "date",
-        new_column: str = "enr_review_hour",
+        new_column: str = "quant_review_hour",
     ) -> None:
         super().__init__()
         self._column = column

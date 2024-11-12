@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Sunday November 10th 2024 12:39:03 pm                                               #
+# Modified   : Monday November 11th 2024 09:24:03 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -127,12 +127,10 @@ class VerifyEncodingTask(Task):
             pd.DataFrame: The DataFrame with UTF-8 encoding issues resolved in the specified text column.
         """
 
-        df = data.copy()
-        df[self._column] = (
+        data[self._column] = (
             data[self._column].str.encode("utf-8", errors="ignore").str.decode("utf-8")
         )
-        self.summarize(a=data, b=df)
-        return df
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -172,10 +170,9 @@ class RemoveNewlinesTask(Task):
         Returns:
             pd.DataFrame: A DataFrame with newlines removed from the specified text column.
         """
-        df = data.copy()
-        df[self._column] = data[self._column].str.replace("\n", " ")
-        self.summarize(a=data, b=df)
-        return df
+
+        data[self._column] = data[self._column].str.replace("\n", " ")
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -217,16 +214,16 @@ class CastDataTypeTask(Task):
         Raises:
             ValueError: If a column specified in the datatypes dictionary is not found in the DataFrame.
         """
-        df = data.copy()
+
         for column, dtype in self._datatypes.items():
             if column in data.columns:
-                df[column] = data[column].astype(dtype)
+                data[column] = data[column].astype(dtype)
             else:
                 msg = f"Column {column} not found in DataFrame"
                 self._logger.exception(msg)
                 raise ValueError(msg)
-        self.summarize(a=data, b=df)
-        return df
+
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #

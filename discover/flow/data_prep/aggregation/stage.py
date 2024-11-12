@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:59:53 pm                                              #
-# Modified   : Monday November 11th 2024 03:46:51 pm                                               #
+# Modified   : Monday November 11th 2024 10:33:00 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ import pandas as pd
 import pyspark
 
 from discover.assets.dataset import Dataset
+from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.base.task import Task
 from discover.flow.data_prep.stage import DataPrepStage
@@ -63,31 +64,37 @@ class AggregationStage(DataPrepStage):
         )
 
     @stage_logger
-    def run(self) -> str:
+    def run(self) -> dict:
         """Executes the stage by loading the source dataset, applying tasks, and saving the result.
 
         Returns:
-            asset_id (str): Returns the asset_id for the asset created.
+            asset_ids (dict): Returns a dictionary of asset ids
         """
-        if (
-            self._endpoint_exists(asset_id=self._destination_asset_id)
-            and not self._force
-        ):
-            return self._destination_asset_id
-        else:
-            if self._repo.exists(asset_id=self._destination_asset_id):
-                self._repo.remove(asset_id=self._destination_asset_id)
+        asset_ids = {}
+        data = None
+        for task in self._tasks:
+            asset_id = AssetIDGen.get_asset_id(
+                asset_type="dataset",
+                phase=PhaseDef.DATAPREP,
+                stage=DataPrepStageDef.AGG,
+                name=task.dataset_name,
+            )
+            if self._endpoint_exists(asset_id=asset_id) and not self._force:
+                asset_ids[task.dataset_name] = asset_id
+            else:
+                if self._endpoint_exists(asset_id=asset_id):
+                    self._repo.remove(asset_id=asset_id)
+                if data is None:
+                    data = self._load_source_data()
 
-            data = self._load_source_data()
-
-            for task in self._tasks:
                 agg = task.run(data=data)
                 dataset = self._create_destination_dataset(
                     data=agg, dataset_name=task.dataset_name
                 )
                 self._save_destination_dataset(dataset=dataset)
+                asset_ids[task.dataset_name] = dataset.asset_id
 
-            return self._destination_asset_id
+        return asset_ids
 
     def _create_destination_dataset(
         self, data: Union[pd.DataFrame, pyspark.sql.DataFrame], dataset_name: str

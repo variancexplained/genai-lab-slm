@@ -11,24 +11,21 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Monday November 11th 2024 03:15:29 am                                               #
+# Modified   : Monday November 11th 2024 07:58:20 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Ingest Stage Module"""
 
-import logging
 from typing import List
 
-from discover.assets.idgen import AssetIDGen
-from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.base.task import Task
 from discover.flow.data_prep.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DQAStage(DataPrepStage):
+class TextQualityDetectionStage(DataPrepStage):
 
     def __init__(
         self,
@@ -44,12 +41,3 @@ class DQAStage(DataPrepStage):
             tasks=tasks,
             force=force,
         )
-
-        self._destination_asset_id = AssetIDGen.get_asset_id(
-            asset_type=self._destination_config.asset_type,
-            phase=PhaseDef.from_value(value=self._destination_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._destination_config.stage),
-            name=self._destination_config.name,
-        )
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")

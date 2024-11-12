@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday November 11th 2024 03:58:18 am                                               #
+# Modified   : Tuesday November 12th 2024 02:09:06 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,13 +19,13 @@
 """Data Cleaning Module"""
 import os
 import warnings
-from abc import abstractmethod
 from typing import Union
 
 import pandas as pd
 import spacy
 from pandarallel import pandarallel
 from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
 from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
@@ -54,7 +54,7 @@ class SentimentAnalysisTask(Task):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "sentiment",
+        new_column: str = "quant_sentiment_score",
     ) -> None:
         super().__init__()
         self._column = column
@@ -75,7 +75,6 @@ class SentimentAnalysisTask(Task):
         data[self._new_column] = data[self._column].parallel_apply(self.classify)
         return data
 
-    @abstractmethod
     def classify(self, text) -> Union[float, str]:
         """
         Abstract method for classifying the sentiment of a given text.
@@ -108,7 +107,7 @@ class SpacySentimentAnalysisTask(SentimentAnalysisTask):
     def __init__(
         self,
         column="content",
-        new_column="sentiment",
+        new_column="quant_sentiment_score",
         pipeline: str = "en_core_web_sm",
     ):
         super().__init__(column=column, new_column=new_column)
@@ -145,7 +144,7 @@ class TextBlobSentimentAnalysisTask(SentimentAnalysisTask):
         new_column (str): The name of the column where the sentiment results will be stored.
     """
 
-    def __init__(self, column="content", new_column="sentiment"):
+    def __init__(self, column="content", new_column="quant_sentiment_score"):
         super().__init__(column=column, new_column=new_column)
 
     def classify(self, text):
@@ -163,11 +162,70 @@ class TextBlobSentimentAnalysisTask(SentimentAnalysisTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
+class VaderSentimentAnalysisTask(SentimentAnalysisTask):
+    """
+    A task for performing sentiment analysis using VADER.
+
+    This class uses the VADER SentimentIntensityAnalyzer to analyze the sentiment
+    of text data and compute sentiment scores, adding the results to the DataFrame.
+
+    Attributes:
+        column (str): The name of the DataFrame column containing the text to be analyzed.
+        _analyzer (SentimentIntensityAnalyzer): An instance of VADER's SentimentIntensityAnalyzer.
+    """
+
+    def __init__(self, column="content", **kwargs):
+        self._column = column
+        self._analyzer = SentimentIntensityAnalyzer()
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Executes the sentiment analysis task on a given DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with two additional columns:
+                - `quant_sentiment_score`: The compound sentiment score from VADER.
+                - `quant_sentiment_class`: The sentiment class ('neg', 'neu', 'pos')
+                  with the highest proportion.
+        """
+        data[["quant_sentiment_score", "quant_sentiment_class"]] = data[
+            self._column
+        ].parallel_apply(self._analyze)
+        return data
+
+    def _analyze(self, text):
+        """
+        Analyzes the sentiment of a given piece of text using VADER.
+
+        Args:
+            text (str): The text to analyze.
+
+        Returns:
+            pd.Series: A Series containing:
+                - `compound_score` (float): The compound sentiment score.
+                - `highest_class` (str): The sentiment class with the highest proportion.
+        """
+        if pd.isna(text):
+            return pd.Series([0.0, "neu"])
+        scores = self._analyzer.polarity_scores(text)
+        compound_score = scores["compound"]
+
+        # Find the sentiment class with the highest proportion
+        highest_class = max(["neg", "neu", "pos"], key=lambda k: scores[k])
+
+        return pd.Series([compound_score, highest_class])
+
+
+# ------------------------------------------------------------------------------------------------ #
 class SentimentClassificationTask(SentimentAnalysisTask):
     def __init__(
         self,
         column: str = "column",
-        new_column: str = "sentiment",
+        new_column: str = "quant_sentiment_class",
         min_sentiment: float = -1.0,
         max_sentiment: float = 1.0,
     ):

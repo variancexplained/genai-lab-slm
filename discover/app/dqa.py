@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Monday November 11th 2024 02:27:14 am                                               #
+# Modified   : Tuesday November 12th 2024 02:11:45 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,50 +20,163 @@
 
 from typing import Optional
 
+import numpy as np
 import pandas as pd
+from explorify.eda.visualize.visualizer import Visualizer
+from pandarallel import pandarallel
 
 from discover.app.base import Analysis
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.infra.config.app import AppConfigReader
 
-labels = {
-    "dqa_accents": "Contains Accents and Diacritics.",
-    "dqa_ctrl_chars": "Contains Control Characters",
-    "dqa_duplicate_review_id": "Contains Duplicate Review Id",
-    "dqa_elongation": "Contains Elongation",
-    "dqa_email": "Contains Email Addresses",
-    "dqa_excess_special_chars": "Contains Excessive Special Characters",
-    "dqa_excess_whitespace": "Contains Excessive Whitespace",
-    "dqa_html_chars": "Contains HTML Characters",
-    "dqa_non_english_app_name": "Contains Non-English App Name",
-    "dqa_non_english_text": "Contains Non-English Review Text",
-    "dqa_phone": "Contains Phone Number(s)",
-    "dqa_short_review": "Contains Short Review < 3 Words",
-    "dqa_unicode_chars": "Contains Unicode Characters",
-    "dqa_url": "Contains URL(s)",
-}
+# ------------------------------------------------------------------------------------------------ #
+pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
+# ------------------------------------------------------------------------------------------------ #
+viz = Visualizer()
+# ------------------------------------------------------------------------------------------------ #
+accuracy_cols = [
+    "tqd_ctrl_chars",
+    "tqd_accents",
+    "tqd_html_chars",
+    "tqd_excess_whitespace",
+    "tqd_excess_special_chars",
+    "tqd_elongation",
+    "tqd_non_ascii_chars",
+]
+
+privacy_cols = [
+    "tqd_url",
+    "tqd_email",
+    "tqd_phone",
+]
+
+interpretability_cols = [
+    "tqd_non_english_app_name",
+    "tqd_non_english_text",
+]
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                         DATA QUAAITY ANALYSIS SERVICE                                            #
 # ------------------------------------------------------------------------------------------------ #
 class DQA(Analysis):
-    def __init__(self, name: str = "review") -> None:
+    def __init__(
+        self,
+        name: str = "review",
+        config_reader_cls: type[AppConfigReader] = AppConfigReader,
+    ) -> None:
         super().__init__()
+        self._config = config_reader_cls().get_config(section="dqa", namespace=True)
         # Obtain the dataset asset id
         asset_id = AssetIDGen().get_asset_id(
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
-            stage=DataPrepStageDef.DQA,
+            stage=DataPrepStageDef.QUANT,
             name=name,
         )
         # Load the dataset
         self._df = self.load_data(asset_id=asset_id).content
-        print(self._df.info())
-        # Extract the columns containing the binary indicators of defects
-        self._cols = [col for col in self._df.columns if col.startswith("dqa")]
 
-    def summarize(self) -> None:
+        # Measures
+        self._completeness = None
+        self._validity = None
+        self._uniqueness = None
+        self._balance = None
+        self._accuracy = None
+        self._privacy = None
+        self._interpretability = None
+        self._text_quality = None
+        self._scores = None
+
+        # Extract the columns containing the binary indicators of defects
+        self._cols = [col for col in self._df.columns if col.startswith("tqd")]
+
+    @property
+    def completeness(self) -> float:
+        if not self._completeness:
+            self._completeness = self._compute_completeness()
+        return self._completeness
+
+    @property
+    def validity(self) -> float:
+        if not self._validity:
+            self._validity = self._compute_validity()
+        return self._validity
+
+    @property
+    def uniqueness(self) -> float:
+        if not self._uniqueness:
+            self._uniqueness = self._compute_uniqueness()
+        return self._uniqueness
+
+    @property
+    def balance(self) -> float:
+        if not self._balance:
+            self._balance = self._compute_balance()
+        return self._balance
+
+    @property
+    def accuracy(self) -> float:
+        if not self._accuracy:
+            self._accuracy = self._compute_accuracy()
+        return self._accuracy
+
+    @property
+    def privacy(self) -> float:
+        if not self._privacy:
+            self._privacy = self._compute_privacy()
+        return self._privacy
+
+    @property
+    def interpretability(self) -> float:
+        if not self._interpretability:
+            self._interpretability = self._compute_interpretability()
+        return self._interpretability
+
+    @property
+    def text_quality(self) -> float:
+        if not self._text_quality:
+            self._text_quality = self._compute_text_quality()
+        return self._text_quality
+
+    @property
+    def quality(self) -> float:
+        return self._compute_quality()
+
+    @property
+    def quality_scores(self) -> pd.DataFrame:
+        if self._scores is None:
+            self._scores = self._summarize_quality()
+        return self._scores
+
+    def _summarize_quality(self) -> pd.DataFrame:
+        d = {
+            "Dimension": [
+                "Completeness",
+                "Validity",
+                "Uniqueness",
+                "Balance",
+                "Accuracy",
+                "Data Privacy",
+                "Interpretability",
+                "Text Quality",
+            ],
+            "Score": [
+                self.completeness,
+                self.validity,
+                self.uniqueness,
+                self.balance,
+                self.accuracy,
+                self.privacy,
+                self.interpretability,
+                self.text_quality,
+            ],
+        }
+        self._scores = pd.DataFrame(data=d)
+        return self._scores
+
+    def summarize_noise(self) -> None:
         # Extract the dqa data
         dqa = self._df[self._cols]
         # Sum the indicator variables
@@ -81,6 +194,28 @@ class DQA(Analysis):
         print(df.head())
         return df.sort_values(by="n", ascending=False).reset_index(drop=True)
 
+    def plot_quality(self) -> None:
+        viz.barplot(
+            data=self.quality_scores,
+            x="Dimension",
+            y="Score",
+            palette="Blues_r",
+            title=f"AppVoCAI Dataset Quality Analysis\nQuality Score: {round(self.quality,3)}",
+        )
+
+    def plot_validity(self) -> pd.DataFrame:
+        outliers = self._df.loc[self._df["tqd_review_length_outlier"]]["review_length"]
+        viz.violinplot(x=outliers, title="Distribution of Review Length Outliers")
+        return outliers.describe().to_frame().T
+
+    def plot_balance(self) -> pd.DataFrame:
+        viz.countplot(
+            data=self._df,
+            x="quant_sentiment_class",
+            title="Distribution of Sentiment Classification",
+        )
+        return self._df["quant_sentiment_score"].describe().to_frame().T
+
     def get_defects(
         self, defect: str, n: int = 10, random_state: int = None
     ) -> pd.DataFrame:
@@ -93,18 +228,76 @@ class DQA(Analysis):
         n = min(n, len(self._df))
         return self._df.sample(n=n, random_state=random_state)
 
-    def completeness(self) -> float:
-        nulls = len(self._df[self._df.isna().any(axis=1)])
-        nullness = nulls / self._df.shape[0]
-        return 1 - nullness
-
     def _get_column_name(self, substring) -> Optional[str]:
         return [col for col in self._cols if substring in col][0]
 
     def _convert_labels(self, txt) -> str:
         """Converts column names to Title case labels."""
-        txt = txt.replace("dqa_", "")
+        txt = txt.replace("tqd_", "")
         txt = txt.replace("_", " ")
         txt = txt.title()
         txt = "Contains " + txt
         return txt
+
+    def _compute_completeness(self) -> float:
+        complete_rows = self._df.dropna().shape[0]
+        total_rows = self._df.shape[0]
+        completeness = complete_rows / total_rows
+        return completeness
+
+    def _compute_validity(self) -> float:
+        N = self._df.shape[0]
+        valid_ratings = (
+            N
+            - self._df[
+                ~self._df["rating"].parallel_apply(
+                    lambda x: isinstance(x, int) and 1 <= x <= 5
+                )
+            ].shape[0]
+        )
+        non_outliers = N - self._df["tqd_review_length_outlier"].sum()
+        return ((valid_ratings / N) * self._config.rating_validity_weight) + (
+            (non_outliers / N) * self._config.outlier_validity_weight
+        )
+
+    def _compute_uniqueness(self) -> float:
+        N = self._df.shape[0]
+        n_unique_reviews = self._df[["app_id", "content"]].drop_duplicates().shape[0]
+        n_unique_ids = self._df["id"].nunique()
+        return ((n_unique_reviews / N) * self._config.review_uniqueness_weight) + (
+            (n_unique_ids / N) * self._config.id_uniqueness_weight
+        )
+
+    def _compute_balance(self) -> float:
+        sentiments = self._df["quant_sentiment_score"].values
+        N = len(sentiments)
+        mean_sentiment = np.mean(sentiments)
+        balance = 1 - (np.sum(np.abs(sentiments - mean_sentiment)) / N)
+        return balance
+
+    def _compute_accuracy(self) -> float:
+        N = self._df.shape[0]
+        return 1 - (self._df[accuracy_cols].any(axis=1).sum() / N)
+
+    def _compute_privacy(self) -> float:
+        N = self._df.shape[0]
+        return 1 - (self._df[privacy_cols].any(axis=1).sum() / N)
+
+    def _compute_interpretability(self) -> float:
+        N = self._df.shape[0]
+        return 1 - (self._df[interpretability_cols].any(axis=1).sum() / N)
+
+    def _compute_text_quality(self) -> float:
+        return self._df["tqa_score"].mean()
+
+    def _compute_quality(self) -> float:
+        return (
+            self.completeness * self._config.completeness_weight
+            + self.validity * self._config.validity_weight
+            + self.uniqueness * self._config.uniqueness_weight
+            + self.balance * self._config.balance_weight
+            + self.accuracy * self._config.accuracy_weight
+            + self.privacy * self._config.privacy_weight
+            + self.interpretability * self._config.interpretability_weight
+            + self.text_quality * self._config.text_quality_weight
+        )

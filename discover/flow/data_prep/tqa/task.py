@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/enrich/quality/task.py                                               #
+# Filename   : /discover/flow/data_prep/tqa/task.py                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Sunday November 10th 2024 03:44:41 am                                               #
+# Modified   : Monday November 11th 2024 07:40:20 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -556,7 +556,7 @@ class TQATask1(Task):
         structural_complexity_weight: float,
         tqa_check_weight: float,
         column: str = "content",
-        new_column: str = "dqa_text_syntactic_score",
+        new_column: str = "tqa_syntactic_score",
     ) -> None:
         """
         Initializes the TQATask1 with specified weights and output column name.
@@ -824,7 +824,7 @@ class TQATask2(Task):
         self,
         ppl_full: float,
         column: str = "content",
-        new_column: str = "dqa_text_perplexity_score",
+        new_column: str = "tqa_perplexity_score",
         ppl_filepath: str = "models/tqa/tqa_ppl.csv",
     ):
         """
@@ -899,28 +899,28 @@ class TQATask3(Task):
 
     Attributes:
         new_column (str): Column containing the final text quality score.
-        tqa1_weight (float): The weight assigned to the first TQA score. Defaults to 0.4.
-        tqa2_weight (float): The weight assigned to the second TQA score. Defaults to 0.6.
+        tqa_syntactic_weight (float): The weight assigned to the first TQA score. Defaults to 0.4.
+        tqa_perplexity_weight (float): The weight assigned to the second TQA score. Defaults to 0.6.
         _data (DataFrame): The DataFrame holding the data after computation.
     """
 
     def __init__(
         self,
-        new_column: str = "dqa_text_score",
-        tqa1_weight: float = 0.4,
-        tqa2_weight: float = 0.6,
+        new_column: str = "tqa_score",
+        tqa_syntactic_weight: float = 0.4,
+        tqa_perplexity_weight: float = 0.6,
     ):
         """
         Initializes the TQATask3 with specified weights for combining the two TQA scores.
 
         Args:
-            tqa1_weight (float): Weight for the first TQA score. Defaults to 0.4.
-            tqa2_weight (float): Weight for the second TQA score. Defaults to 0.6.
+            tqa_syntactic_weight (float): Weight for the first TQA score. Defaults to 0.4.
+            tqa_perplexity_weight (float): Weight for the second TQA score. Defaults to 0.6.
         """
         super().__init__()
         self._new_column = new_column
-        self._tqa1_weight = tqa1_weight
-        self._tqa2_weight = tqa2_weight
+        self._tqa_syntactic_weight = tqa_syntactic_weight
+        self._tqa_perplexity_weight = tqa_perplexity_weight
         self._data = None
 
     @task_logger
@@ -937,36 +937,36 @@ class TQATask3(Task):
         """
         # Normalize both scores to [0, 1]
         min_max_enrichment_tqa_score1 = data.select(
-            F.min("dqa_text_syntactic_score"), F.max("dqa_text_syntactic_score")
+            F.min("tqa_syntactic_score"), F.max("tqa_syntactic_score")
         ).first()
         min_enrichment_tqa_score1, max_enrichment_tqa_score1 = (
             min_max_enrichment_tqa_score1
         )
 
         min_max_enrichment_tqa_score2 = data.select(
-            F.min("dqa_text_perplexity_score"), F.max("dqa_text_perplexity_score")
+            F.min("tqa_perplexity_score"), F.max("tqa_perplexity_score")
         ).first()
         min_enrichment_tqa_score2, max_enrichment_tqa_score2 = (
             min_max_enrichment_tqa_score2
         )
 
         data = data.withColumn(
-            "dqa_text_syntactic_score",
-            (F.col("dqa_text_syntactic_score") - min_enrichment_tqa_score1)
+            "tqa_syntactic_score",
+            (F.col("tqa_syntactic_score") - min_enrichment_tqa_score1)
             / (max_enrichment_tqa_score1 - min_enrichment_tqa_score1),
         )
 
         data = data.withColumn(
-            "dqa_text_perplexity_score",
-            (F.col("dqa_text_perplexity_score") - min_enrichment_tqa_score2)
+            "tqa_perplexity_score",
+            (F.col("tqa_perplexity_score") - min_enrichment_tqa_score2)
             / (max_enrichment_tqa_score2 - min_enrichment_tqa_score2),
         )
 
         # Combine scores using weights
         data = data.withColumn(
             self._new_column,
-            self._tqa1_weight * F.col("dqa_text_syntactic_score")
-            + self._tqa2_weight * F.col("dqa_text_perplexity_score"),
+            self._tqa_syntactic_weight * F.col("tqa_syntactic_score")
+            + self._tqa_perplexity_weight * F.col("tqa_perplexity_score"),
         )
 
         # Compute min and max of the new column

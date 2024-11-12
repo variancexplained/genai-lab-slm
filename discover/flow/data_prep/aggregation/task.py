@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Monday November 11th 2024 05:06:09 am                                               #
+# Modified   : Monday November 11th 2024 10:37:05 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -60,7 +60,7 @@ class AppAggregationTask(Task):
         Args:
             data (DataFrame): The input PySpark DataFrame with columns:
                 app_id, app_name, category_id, category, author, rating, content, vote_sum,
-                vote_count, date, enr_review_length, enr_review_age,
+                vote_count, date, quant_review_length, quant_review_age,
                 enrichment_tqa_score1, enrichment_tqa_score2, enrichment_tqa_score_final.
 
         Returns:
@@ -89,7 +89,7 @@ class AppAggregationTask(Task):
         # Define a window specification to rank reviews within each app
         window_spec_vote_sum = Window.partitionBy("app_id").orderBy(F.desc("vote_sum"))
         window_spec_tqa_score = Window.partitionBy("app_id").orderBy(
-            F.desc("dqa_text_score")
+            F.desc("tqa_score")
         )
         window_spec_review_length = Window.partitionBy("app_id").orderBy(
             F.desc("review_length")
@@ -110,18 +110,19 @@ class AppAggregationTask(Task):
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
             F.avg("review_length").alias("average_review_length"),
-            F.avg("enr_review_age").alias("average_review_age"),
+            F.avg("quant_review_age").alias("average_review_age"),
             F.sum("vote_sum").alias("total_vote_sum"),
             F.sum("vote_count").alias("total_vote_count"),
             F.min("date").alias("first_review_date"),
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
-            F.avg("dqa_text_syntactic_score").alias("average_tqa_score_1"),
-            F.avg("dqa_text_perplexity_score").alias("average_tqa_score_2"),
-            F.avg("dqa_text_score").alias("average_tqa_score_final"),
-            F.max("dqa_text_syntactic_score").alias("max_tqa_score_1"),
-            F.max("dqa_text_perplexity_score").alias("max_tqa_score_2"),
-            F.max("dqa_text_score").alias("max_tqa_score_final"),
+            F.avg("quant_sentiment_score").alias("average_sentiment"),
+            F.avg("tqa_syntactic_score").alias("average_tqa_score_1"),
+            F.avg("tqa_perplexity_score").alias("average_tqa_score_2"),
+            F.avg("tqa_score").alias("average_tqa_score_final"),
+            F.max("tqa_syntactic_score").alias("max_tqa_score_1"),
+            F.max("tqa_perplexity_score").alias("max_tqa_score_2"),
+            F.max("tqa_score").alias("max_tqa_score_final"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
                 "review_highest_vote_sum"
             ),
@@ -176,7 +177,7 @@ class CategoryAggregationTask(Task):
         Args:
             data (DataFrame): The input PySpark DataFrame with columns:
                 category_id, category, author, rating, content, vote_sum, vote_count, date,
-                enr_review_length, enr_review_age, enrichment_tqa_score1,
+                quant_review_length, quant_review_age, enrichment_tqa_score1,
                 enrichment_tqa_score2, enrichment_tqa_score_final.
 
         Returns:
@@ -207,7 +208,7 @@ class CategoryAggregationTask(Task):
             F.desc("vote_sum")
         )
         window_spec_tqa_score = Window.partitionBy("category_id").orderBy(
-            F.desc("dqa_text_score")
+            F.desc("tqa_score")
         )
         window_spec_review_length = Window.partitionBy("category_id").orderBy(
             F.desc("review_length")
@@ -226,18 +227,19 @@ class CategoryAggregationTask(Task):
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
             F.avg("review_length").alias("average_review_length"),
-            F.avg("enr_review_age").alias("average_review_age"),
+            F.avg("quant_review_age").alias("average_review_age"),
             F.sum("vote_sum").alias("total_vote_sum"),
             F.sum("vote_count").alias("total_vote_count"),
             F.min("date").alias("first_review_date"),
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
-            F.avg("dqa_text_syntactic_score").alias("average_tqa_score_1"),
-            F.avg("dqa_text_perplexity_score").alias("average_tqa_score_2"),
-            F.avg("dqa_text_score").alias("average_tqa_score_final"),
-            F.max("dqa_text_syntactic_score").alias("max_tqa_score_1"),
-            F.max("dqa_text_perplexity_score").alias("max_tqa_score_2"),
-            F.max("dqa_text_score").alias("max_tqa_score_final"),
+            F.avg("quant_sentiment_score").alias("average_sentiment"),
+            F.avg("tqa_syntactic_score").alias("average_tqa_score_1"),
+            F.avg("tqa_perplexity_score").alias("average_tqa_score_2"),
+            F.avg("tqa_score").alias("average_tqa_score_final"),
+            F.max("tqa_syntactic_score").alias("max_tqa_score_1"),
+            F.max("tqa_perplexity_score").alias("max_tqa_score_2"),
+            F.max("tqa_score").alias("max_tqa_score_final"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
                 "review_highest_vote_sum"
             ),
