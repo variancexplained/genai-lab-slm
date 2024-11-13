@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Tuesday November 12th 2024 02:06:54 am                                              #
+# Modified   : Wednesday November 13th 2024 02:25:29 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,6 +37,7 @@ phases:
               column: date
               frac: 1.0
               date: 2020
+              random_state: 65
           - class_name: VerifyEncodingTask
             module: discover.flow.data_prep.ingest.task
             params:
@@ -65,12 +66,35 @@ phases:
             module: discover.flow.data_prep.ingest.task
             params:
               column: content
+      sentiment:
+        stage_name: sentiment
+        source_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: ingest
+          name: review
+          nlp: False
+          distributed: False
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: sentiment
+          name: review
+          nlp: False
+          distributed: False
+        tasks:
+          - class_name: MergeSentimentsTask
+            module: discover.flow.data_prep.sentiment.task
+            params:
+              new_column: dqp_sentiment
+              location: models/sentiment/inference
+              file_prefix: sentiments_
       tqd:
         stage_name: tqd
         source_config:
           asset_type: dataset
           phase: dataprep
-          stage: ingest
+          stage: sentiment
           name: review
           nlp: True
           distributed: True
@@ -168,13 +192,6 @@ phases:
               column: review_length
               mode: detect
               new_column: tqd_review_length_outlier
-          - class_name: DetectOrRemoveShortReviewsTask
-            module: discover.flow.data_prep.dqm.task
-            params:
-              column: review_length
-              mode: detect
-              new_column: tqd_short_review
-              threshold: 3
       tqa:
         stage_name: tqa
         source_config:
@@ -230,40 +247,19 @@ phases:
             tqa_syntactic_weight: 0.4
             tqa_perplexity_weight: 0.6
             new_column: tqa_score
-      sentiment:
-        stage_name: sentiment
+      edp:
+        stage_name: edp
         source_config:
           asset_type: dataset
           phase: dataprep
           stage: tqa
           name: review
           nlp: False
-          distributed: False
-        destination_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: sentiment
-          name: review
-          nlp: False
-          distributed: False
-        tasks:
-          - class_name: VaderSentimentAnalysisTask
-            module: discover.flow.data_prep.sentiment.task
-            params:
-              column: content
-      quant:
-        stage_name: quant
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: sentiment
-          name: review
-          nlp: False
           distributed: True
         destination_config:
           asset_type: dataset
           phase: dataprep
-          stage: quant
+          stage: edp
           name: review
           nlp: False
           distributed: True
@@ -272,52 +268,52 @@ phases:
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: quant_review_age
+              new_column: edp_review_age
           - class_name: ComputeReviewMonthTask
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: quant_review_month
+              new_column: edp_review_month
           - class_name: ComputeReviewDayofWeekTask
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: quant_review_day_of_week
+              new_column: edp_review_day_of_week
           - class_name: ComputeReviewHourTask
             module: discover.flow.data_prep.quant.task
             params:
               column: date
-              new_column: quant_review_hour
+              new_column: edp_review_hour
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
               column: rating
-              new_column: quant_pct_deviation_rating
+              new_column: edp_pct_deviation_rating
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
               column: review_length
-              new_column: quant_pct_deviation_review_length
+              new_column: edp_pct_deviation_review_length
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
-              column: quant_sentiment_score
-              new_column: quant_pct_deviation_sentiment
+              column: edp_sentiment
+              new_column: edp_pct_deviation_sentiment
           - class_name: ComputePercentDeviationTask
             module: discover.flow.data_prep.quant.task
             params:
               by: category
               column: tqa_score
-              new_column: quant_pct_deviation_tqa_score
+              new_column: edp_pct_deviation_tqa_score
       agg:
         stage_name: agg
         source_config:
           asset_type: dataset
           phase: dataprep
-          stage: quant
+          stage: edp
           name: review
           nlp: False
           distributed: True

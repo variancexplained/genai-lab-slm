@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Tuesday November 12th 2024 04:43:55 am                                              #
+# Modified   : Wednesday November 13th 2024 06:28:56 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,17 +44,14 @@ noise_cols = [
     "tqd_excess_special_chars",
     "tqd_elongation",
     "tqd_non_ascii_chars",
+    "tqd_non_english_app_name",
+    "tqd_non_english_text",
 ]
 
 privacy_cols = [
     "tqd_url",
     "tqd_email",
     "tqd_phone",
-]
-
-interpretability_cols = [
-    "tqd_non_english_app_name",
-    "tqd_non_english_text",
 ]
 
 
@@ -73,7 +70,7 @@ class DQA(Analysis):
         asset_id = AssetIDGen().get_asset_id(
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
-            stage=DataPrepStageDef.QUANT,
+            stage=DataPrepStageDef.TQA,
             name=name,
         )
         # Load the dataset
@@ -86,7 +83,6 @@ class DQA(Analysis):
         self._balance = None
         self._accuracy = None
         self._privacy = None
-        self._interpretability = None
         self._text_quality = None
         self._scores = None
 
@@ -130,12 +126,6 @@ class DQA(Analysis):
         return self._privacy
 
     @property
-    def interpretability(self) -> float:
-        if not self._interpretability:
-            self._interpretability = self._compute_interpretability()
-        return self._interpretability
-
-    @property
     def text_quality(self) -> float:
         if not self._text_quality:
             self._text_quality = self._compute_text_quality()
@@ -160,7 +150,6 @@ class DQA(Analysis):
                 "Balance",
                 "Accuracy",
                 "Data Privacy",
-                "Interpretability",
                 "Text Quality",
             ],
             "Score": [
@@ -170,7 +159,6 @@ class DQA(Analysis):
                 self.balance,
                 self.accuracy,
                 self.privacy,
-                self.interpretability,
                 self.text_quality,
             ],
         }
@@ -200,10 +188,10 @@ class DQA(Analysis):
     def plot_balance(self) -> pd.DataFrame:
         viz.countplot(
             data=self._df,
-            x="quant_sentiment_class",
-            title="Distribution of Sentiment Classification",
+            x="dqp_sentiment",
+            title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.balance,2)}",
         )
-        return self._df["quant_sentiment_score"].describe().to_frame().T
+        return self._df["dqp_sentiment"].describe().to_frame().T
 
     def plot_privacy(self) -> None:
         privacy = self.summarize_privacy()
@@ -226,10 +214,13 @@ class DQA(Analysis):
         viz.barplot(data=noise, y="Defect", x="%", title="Noise Density")
 
     def get_defects(
-        self, defect: str, n: int = 10, random_state: int = None
+        self,
+        defect: str,
+        n: int = 10,
+        random_state: int = None,
     ) -> pd.DataFrame:
         col = self._get_column_name(substring=defect)
-        df = self._df.loc[self._df[col]][[col, "content"]]
+        df = self._df.loc[self._df[col]]
         n = min(n, len(df))
         return df.sample(n=n, random_state=random_state)
 
@@ -278,8 +269,8 @@ class DQA(Analysis):
         )
 
     def _compute_balance(self) -> float:
-        sentiments = self._df["quant_sentiment_score"].values
-        N = len(sentiments)
+        N = self._df.shape[0]
+        sentiments = self._df["dqp_sentiment"].value_counts()
         mean_sentiment = np.mean(sentiments)
         balance = 1 - (np.sum(np.abs(sentiments - mean_sentiment)) / N)
         return balance
@@ -292,10 +283,6 @@ class DQA(Analysis):
         N = self._df.shape[0]
         return 1 - (self._df[privacy_cols].any(axis=1).sum() / N)
 
-    def _compute_interpretability(self) -> float:
-        N = self._df.shape[0]
-        return 1 - (self._df[interpretability_cols].any(axis=1).sum() / N)
-
     def _compute_text_quality(self) -> float:
         return self._df["tqa_score"].mean()
 
@@ -307,7 +294,6 @@ class DQA(Analysis):
             + self.balance * self._config.balance_weight
             + self.accuracy * self._config.accuracy_weight
             + self.privacy * self._config.privacy_weight
-            + self.interpretability * self._config.interpretability_weight
             + self.text_quality * self._config.text_quality_weight
         )
 

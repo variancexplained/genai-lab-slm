@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Monday November 11th 2024 09:24:03 pm                                               #
+# Modified   : Tuesday November 12th 2024 11:07:18 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,7 @@ from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
 
 # ------------------------------------------------------------------------------------------------ #
-pandarallel.initialize(progress_bar=False, nb_workers=12, verbose=0)
+pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -261,5 +261,7 @@ class AddReviewLengthTask(Task):
         Returns:
             pd.DataFrame: The modified DataFrame with the new column containing the lengths of the text.
         """
-        data[self._new_column] = data[self._column].str.len()
+        data[self._new_column] = data[self._column].parallel_apply(
+            lambda x: len(x.split())
+        )
         return data

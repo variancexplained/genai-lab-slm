@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Monday November 11th 2024 03:24:22 am                                               #
+# Modified   : Tuesday November 12th 2024 11:14:51 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -69,19 +69,25 @@ class EDA:
         p = self._df.shape[1]
         n_auth = self._df["author"].nunique()
         n_auth_inf = self._df.loc[self._df["vote_count"] > 0]["author"].nunique()
-        n_repeat_auth = (self._df["author"].value_counts() > 1).sum()
+        p_auth_inf = round(n_auth_inf / n_auth * 100, 2)
+        n_repeat_auth = int((self._df["author"].value_counts() > 1).sum())
+        p_repeat_auth = round(n_repeat_auth / n_auth * 100, 2)
         n_apps = self._df["app_id"].nunique()
         n_categories = self._df["category"].nunique()
+        ave_review_len = round(self._df["review_length"].mean(), 2)
+        ave_reviews_per_app = round(n / n_apps, 2)
         mem = self._df.memory_usage(deep=True).sum().sum()
         dt_first = self._df["date"].min()
         dt_last = self._df["date"].max()
         d = {
             "Number of Reviews": n,
             "Number of Reviewers": n_auth,
-            "Number of Repeat Reviewers": n_repeat_auth,
-            "Number of Influential Reviewers": n_auth_inf,
+            "Number of Repeat Reviewers": f"{n_repeat_auth:,} ({p_repeat_auth:.1f}%)",
+            "Number of Influential Reviewers": f"{n_auth_inf:,} ({p_auth_inf:.1f}%)",
             "Number of Apps": n_apps,
             "Number of Categories": n_categories,
+            "Average Review Length": f"{ave_review_len:.1f}",
+            "Average Reviews per App": f"{ave_reviews_per_app:.1f}",
             "Features": p,
             "Memory Size (Mb)": round(mem / (1024 * 1024), 2),
             "Date of First Review": dt_first,
