@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Monday November 11th 2024 03:39:12 am                                               #
+# Modified   : Friday November 15th 2024 12:13:36 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -86,19 +86,6 @@ class DataPrepStage(Stage):
         Saves the processed dataset to the repository using the destination asset ID.
     _endpoint_exists(asset_id: str) -> bool
         Checks if the dataset endpoint already exists in the repository.
-
-    Examples
-    --------
-    >>> source_config = {'phase': 'preprocessing', 'stage': 'normalization', 'name': 'raw_data'}
-    >>> destination_config = {'phase': 'preprocessing', 'stage': 'normalized', 'name': 'cleaned_data'}
-    >>> tasks = [Task1(), Task2()]
-    >>> data_prep_stage = DataPrepStage(
-    ...     source_config=source_config,
-    ...     destination_config=destination_config,
-    ...     tasks=tasks,
-    ...     force=True
-    ... )
-    >>> data_prep_stage.run()
 
     Notes
     -----

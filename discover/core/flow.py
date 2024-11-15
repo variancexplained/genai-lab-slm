@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Tuesday November 12th 2024 07:38:24 pm                                              #
+# Modified   : Friday November 15th 2024 12:43:49 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -40,11 +40,10 @@ class DataPrepStageDef(StageDef):
 
     INGEST = ("ingest", "01_ingest", "Data Ingestion Stage")
     SENTIMENT = ("sentiment", "02_sentiment", "Sentiment Classification Stage")
-    TQD = ("tqd", "03_tqd", "Text Quality Detection Stage")
-    TQA = ("tqa", "04_tqa", "Text Quality Analysis Stage")
-    CLEAN = ("clean", "05_clean", "Data Cleaning Stage")
-    EDP = ("edp", "06_edp", "Exploratory Data Preparation Stage")
-    AGG = ("agg", "07_agg", "Aggregation Stage")
+    PERPLEXITY = ("perplexity", "03_perplexity", "Perplexity Analysis Stage")
+    TQD = ("tqd", "04_tqd", "Text Quality Detection Stage")
+    TQA = ("tqa", "05_tqa", "Text Quality Analysis Stage")
+    CLEAN = ("clean", "06_clean", "Data Cleaning Stage")
 
     def __new__(cls, name: str, directory: str, description: str):
         obj = object.__new__(cls)

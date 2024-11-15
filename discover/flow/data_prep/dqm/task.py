@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday November 12th 2024 01:29:23 am                                              #
+# Modified   : Thursday November 14th 2024 10:08:31 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -61,18 +61,21 @@ class DQMTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairTask(Task):
     """
-    A PySpark task class that performs detection or repair operations on a DataFrame
-    based on a specified regular expression pattern.
+    A task for detecting or repairing patterns in text data using specified thresholds.
+
+    This class allows for detection or repair of repeated patterns in text data,
+    based on a regular expression pattern and various thresholds. The mode of operation
+    can be set to 'detect' or 'repair', depending on the desired functionality.
 
     Attributes:
-        _pattern (str): The regular expression pattern to use for detection or repair.
-        _column (str): The name of the column in the DataFrame to apply the operation.
-        _mode (str): The mode of operation, either 'detect' or 'repair'.
-        _new_column (Optional[str]): The name of the new column for detection results.
-        _threshold (Optional[float]): The threshold for detection; if set, counts above
-            this value will return True.
-        _replacement (Optional[str]): The replacement string for repair mode.
-        _logger (logging.Logger): The logger used to log messages and errors.
+        column (str): The name of the column to process.
+        mode (str): The operation mode, either 'detect' or 'repair'.
+        pattern (Optional[str]): The regular expression pattern used for detection.
+        new_column (Optional[str]): The name of the new column for detection results.
+        threshold (Optional[int]): The raw count threshold for detection.
+        threshold_word_prop (Optional[float]): The proportion of words threshold for detection.
+        threshold_char_prop (Optional[float]): The proportion of characters threshold for detection.
+        replacement (Optional[str]): The replacement text used in 'repair' mode.
     """
 
     def __init__(
@@ -81,7 +84,9 @@ class DetectOrRepairTask(Task):
         mode: str = "detect",
         pattern: Optional[str] = None,
         new_column: Optional[str] = None,
-        threshold: Optional[float] = None,
+        threshold: Optional[int] = None,
+        threshold_word_prop: Optional[float] = None,
+        threshold_char_prop: Optional[float] = None,
         replacement: Optional[str] = None,
     ):
         super().__init__()
@@ -90,6 +95,8 @@ class DetectOrRepairTask(Task):
         self._mode = mode
         self._new_column = new_column
         self._threshold = threshold
+        self._threshold_word_prop = threshold_word_prop
+        self._threshold_char_prop = threshold_char_prop
         self._replacement = replacement
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -121,16 +128,27 @@ class DetectOrRepairTask(Task):
 
     def detect(self, data: DataFrame) -> DataFrame:
         """
-        Detects occurrences of the pattern in the specified column and adds a binary
-        column indicating whether the count of matches meets the threshold.
+        Detects patterns in the text data based on the specified thresholds.
 
         Args:
             data (DataFrame): The input PySpark DataFrame.
 
         Returns:
-            DataFrame: The DataFrame with the new binary column indicating matches.
+            DataFrame: The DataFrame with a new column indicating the presence
+                       of patterns based on the chosen threshold.
         """
         if self._threshold:
+            # Handling raw count threshold
+            data = data.withColumn(
+                self._new_column,
+                (
+                    F.regexp_count(F.col(self._column), F.lit(self._pattern))
+                    > self._threshold
+                ).cast("boolean"),
+            )
+
+        elif self._threshold_word_prop:
+            # Handling proportion of words threshold
             data = data.withColumn(
                 self._new_column,
                 (
@@ -138,9 +156,23 @@ class DetectOrRepairTask(Task):
                         F.regexp_count(F.col(self._column), F.lit(self._pattern))
                         / F.size(F.split(F.col(self._column), " "))
                     )
-                    > self._threshold
+                    > self._threshold_word_prop
                 ).cast("boolean"),
             )
+
+        elif self._threshold_char_prop:
+            # Handling proportion of characters threshold
+            data = data.withColumn(
+                self._new_column,
+                (
+                    (
+                        F.regexp_count(F.col(self._column), F.lit(self._pattern))
+                        / F.length(F.col(self._column))
+                    )
+                    > self._threshold_char_prop
+                ).cast("boolean"),
+            )
+
         else:
             data = data.withColumn(
                 self._new_column,
@@ -161,17 +193,22 @@ class DetectOrRepairTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrReplaceTask(DetectOrRepairTask):
     """
-    A PySpark task class for detecting or replacing text patterns in a DataFrame column.
-    This class provides functionality to either flag the presence of a specified pattern
-    or replace occurrences of the pattern with a specified replacement string.
+    A task for detecting or replacing patterns in text data.
+
+    This class extends `DetectOrRepairTask` to provide functionality for either
+    detecting the presence of patterns or replacing them with specified text.
+    It uses regular expressions and specified thresholds to perform detection
+    or replacement operations on the text data.
 
     Attributes:
-        _pattern (str): The regular expression pattern to detect or replace.
-        _column (str): The name of the column to check for the pattern (default is "content").
-        _mode (str): The mode of operation, either 'detect' to flag patterns or 'repair' to replace them.
-        _new_column (Optional[str]): The name of the new column for detection flags (optional).
-        _threshold (Optional[float]): An optional threshold for detection logic (default is None).
-        _replacement (Optional[str]): The string to replace matched patterns with in 'repair' mode (optional).
+        column (str): The name of the column to process.
+        mode (str): The operation mode, either 'detect' for flagging patterns or 'replace' to substitute them.
+        pattern (Optional[str]): The regular expression pattern used for detection or replacement.
+        new_column (Optional[str]): The name of the new column for storing detection results.
+        threshold (Optional[int]): The raw count threshold for detection or replacement.
+        threshold_word_prop (Optional[float]): The proportion of words threshold for detection or replacement.
+        threshold_char_prop (Optional[float]): The proportion of characters threshold for detection or replacement.
+        replacement (Optional[str]): The text used to replace detected patterns when in 'replace' mode.
     """
 
     def __init__(
@@ -180,7 +217,9 @@ class DetectOrReplaceTask(DetectOrRepairTask):
         mode: str = "detect",
         pattern: Optional[str] = None,
         new_column: Optional[str] = None,
-        threshold: Optional[float] = None,
+        threshold: Optional[int] = None,
+        threshold_word_prop: Optional[float] = None,
+        threshold_char_prop: Optional[float] = None,
         replacement: Optional[str] = None,
     ):
         super().__init__(
@@ -190,6 +229,8 @@ class DetectOrReplaceTask(DetectOrRepairTask):
             replacement=replacement,
             mode=mode,
             threshold=threshold,
+            threshold_word_prop=threshold_word_prop,
+            threshold_char_prop=threshold_char_prop,
         )
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -213,16 +254,20 @@ class DetectOrReplaceTask(DetectOrRepairTask):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRemoveTask(DetectOrRepairTask):
     """
-    A PySpark task class for detecting or removing rows in a DataFrame based on a specified pattern.
-    This class provides functionality to either flag the presence of a pattern or remove rows
-    where the pattern is detected.
+    A task for detecting or removing patterns in text data.
+
+    This class extends `DetectOrRepairTask` to provide functionality for either
+    detecting the presence of patterns or removing them from text data. It uses
+    specified thresholds to determine whether a pattern should be flagged or removed.
 
     Attributes:
-        _pattern (str): The regular expression pattern to detect.
-        _column (str): The name of the column to check for the pattern (default is "content").
-        _mode (str): The mode of operation, either 'detect' to flag patterns or 'repair' to remove rows.
-        _new_column (Optional[str]): The name of the new column for detection flags (optional).
-        _threshold (Optional[float]): An optional threshold for detection logic (default is None).
+        column (str): The name of the column to process.
+        mode (str): The operation mode, either 'detect' for flagging patterns or 'remove' to eliminate them.
+        pattern (Optional[str]): The regular expression pattern used for detection or removal.
+        new_column (Optional[str]): The name of the new column for storing detection results.
+        threshold (Optional[int]): The raw count threshold for detection or removal.
+        threshold_word_prop (Optional[float]): The proportion of words threshold for detection or removal.
+        threshold_char_prop (Optional[float]): The proportion of characters threshold for detection or removal.
     """
 
     def __init__(
@@ -231,7 +276,9 @@ class DetectOrRemoveTask(DetectOrRepairTask):
         mode: str = "detect",
         pattern: Optional[str] = None,
         new_column: Optional[str] = None,
-        threshold: Optional[float] = None,
+        threshold: Optional[int] = None,
+        threshold_word_prop: Optional[float] = None,
+        threshold_char_prop: Optional[float] = None,
     ):
         super().__init__(
             pattern=pattern,
@@ -239,6 +286,8 @@ class DetectOrRemoveTask(DetectOrRepairTask):
             new_column=new_column,
             mode=mode,
             threshold=threshold,
+            threshold_word_prop=threshold_word_prop,
+            threshold_char_prop=threshold_char_prop,
         )
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -344,7 +393,6 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
         _column (str): The name of the column to check for URLs (default is "content").
         _new_column (str): The name of the new column for URL detection flags (default is "tqd_has_url").
         _replacement (str): The string to replace URLs with in 'repair' mode (default is "[URL]").
-        _threshold (float): An optional threshold for detection logic (default is None).
         _mode (str): The mode of operation, either 'detect' to flag URLs or 'repair' to replace them.
     """
 
@@ -353,7 +401,6 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
         column: str = "content",
         new_column: str = "tqd_has_url",
         replacement: str = "[URL]",
-        threshold: float = None,
         mode: str = "detect",
     ) -> None:
         """
@@ -373,7 +420,6 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
             new_column=new_column,
             replacement=replacement,
             mode=mode,
-            threshold=threshold,
         )
 
 
@@ -390,7 +436,6 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
         _column (str): The name of the column to check for email addresses (default is "content").
         _new_column (str): The name of the new column for email detection flags (default is "tqd_has_email").
         _replacement (str): The string to replace email addresses with in 'repair' mode (default is "[EMAIL]").
-        _threshold (float): An optional threshold for detection logic (default is None).
         _mode (str): The mode of operation, either 'detect' to flag email addresses or 'repair' to replace them.
     """
 
@@ -399,7 +444,6 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
         column: str = "content",
         new_column: str = "tqd_has_email",
         replacement: str = "[EMAIL]",
-        threshold: float = None,
         mode: str = "detect",
     ) -> None:
         pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
@@ -409,7 +453,6 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
             new_column=new_column,
             replacement=replacement,
             mode=mode,
-            threshold=threshold,
         )
 
 
@@ -426,7 +469,6 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
         _column (str): The name of the column to check for phone numbers (default is "content").
         _new_column (str): The name of the new column for phone number detection flags (default is "tqd_has_phone").
         _replacement (str): The string to replace phone numbers with in 'repair' mode (default is "[PHONE]").
-        _threshold (float): An optional threshold for detection logic (default is None).
         _mode (str): The mode of operation, either 'detect' to flag phone numbers or 'repair' to replace them.
     """
 
@@ -435,7 +477,6 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
         column: str = "content",
         new_column: str = "tqd_has_phone",
         replacement: str = "[PHONE]",
-        threshold: float = None,
         mode: str = "detect",
     ) -> None:
         pattern = r"(\+?\d{1,3})?[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}"
@@ -445,7 +486,6 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
             new_column=new_column,
             replacement=replacement,
             mode=mode,
-            threshold=threshold,
         )
 
 
@@ -454,22 +494,26 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
     """
-    A PySpark task class for detecting or removing rows with excessive special characters in a DataFrame column.
-    The class provides functionality to either flag rows that have more special characters than a specified threshold
-    or remove those rows from the DataFrame.
+    A task for detecting or repairing excessive special characters in text data.
+
+    This class extends `DetectOrReplaceTask` and focuses on identifying or replacing
+    excessive occurrences of specific special characters. The task uses a regular
+    expression to detect characters like `#`, `<`, `>`, and `~` and applies a
+    character proportion threshold to determine if the text should be flagged.
 
     Attributes:
-        _column (str): The name of the column to check for excessive special characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_excess_special_chars").
-        _threshold (float): The threshold for the number of special characters required to trigger detection (default is None).
-        _mode (str): The mode of operation, either 'detect' to flag rows or 'repair' to remove them.
+        column (str): The name of the column to process.
+        new_column (str): The name of the new column for storing detection results.
+        threshold_char_prop (float): The proportion of characters threshold for detecting excessive special characters.
+        mode (str): The operation mode, either 'detect' for flagging or 'repair' to replace the characters.
+        replacement (str): The text used to replace detected special characters when in 'repair' mode.
     """
 
     def __init__(
         self,
         column: str = "content",
         new_column: str = "tqd_has_excess_special_chars",
-        threshold: float = None,
+        threshold_char_prop: float = 0.3,
         mode: str = "detect",
         replacement: str = " ",
     ) -> None:
@@ -479,23 +523,28 @@ class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
             column=column,
             new_column=new_column,
             mode=mode,
-            threshold=threshold,
+            threshold_char_prop=threshold_char_prop,
             replacement=replacement,
         )
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                         DETECT OR REPAIR UNICODE TEXT TASK                                           #
+#                         DETECT OR REPAIR NON ASCII CHARS TASK                                    #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairNonASCIITextTask(DetectOrReplaceTask):
+class DetectOrRepairNonASCIICharsTask(DetectOrReplaceTask):
     """
-    A PySpark task class for detecting or repairing text with Unicode characters in a DataFrame column.
-    The class provides functionality to either flag rows with non-ASCII (Unicode) characters or
-    replace them by normalizing the text to remove these characters.
+    A task for detecting or repairing non-ASCII characters in text data.
+
+    This class extends `DetectOrReplaceTask` to provide functionality for either
+    detecting or repairing text that contains non-ASCII (Unicode) characters. In
+    'detect' mode, it flags text with non-ASCII characters. In 'repair' mode, it
+    attempts to normalize the text by removing non-ASCII characters and converting
+    it to an ASCII-only format.
 
     Attributes:
-        _column (str): The name of the column to check for Unicode characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_unicode_chars").
+        column (str): The name of the column to process.
+        new_column (str): The name of the new column for storing detection results.
+        mode (str): The operation mode, either 'detect' to flag non-ASCII characters or 'repair' to normalize the text.
     """
 
     def __init__(
@@ -504,13 +553,6 @@ class DetectOrRepairNonASCIITextTask(DetectOrReplaceTask):
         new_column: str = "tqd_non_ascii_chars",
         mode: str = "detect",
     ) -> None:
-        """
-        Initializes the DetectOrRepairUnicodeTextTask with the specified column names.
-
-        Args:
-            column (str): The name of the column to check for Unicode characters.
-            new_column (str): The name of the new column for detection flags.
-        """
         pattern = (
             r"[^\x00-\x7F]"  # Regex pattern to match non-ASCII (Unicode) characters
         )
@@ -554,6 +596,44 @@ class DetectOrRepairNonASCIITextTask(DetectOrReplaceTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                          DETECT OR NON-ASCII TEXT TASK                                           #
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairNonASCIITextTask(DetectOrRemoveTask):
+    """
+    A task for detecting or removing rows with excessive non-ASCII characters in text data.
+
+    This class extends `DetectOrRemoveTask` to identify or remove rows where the proportion
+    of non-ASCII (Unicode) characters exceeds a specified threshold. In 'detect' mode, it
+    flags rows with excessive non-ASCII characters. In 'remove' mode, it filters out such rows
+    from the DataFrame.
+
+    Attributes:
+        column (str): The name of the column to process.
+        new_column (str): The name of the new column for storing detection results.
+        threshold_char_prop (float): The proportion of non-ASCII characters required to flag or remove a row.
+        mode (str): The operation mode, either 'detect' to flag excessive non-ASCII characters or 'remove' to filter out rows.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        new_column: str = "tqd_excessive_non_ascii_chars",
+        threshold_char_prop: float = 0.2,
+        mode: str = "detect",
+    ) -> None:
+        pattern = (
+            r"[^\x00-\x7F]"  # Regex pattern to match non-ASCII (Unicode) characters
+        )
+        super().__init__(
+            pattern=pattern,
+            column=column,
+            new_column=new_column,
+            threshold_char_prop=threshold_char_prop,
+            mode=mode,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                        DETECT OR REPAIR CONTROL CHARS TASK                                       #
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
@@ -573,7 +653,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
         self,
         column: str = "content",
         new_column: str = "tqd_has_ctrl_chars",
-        replacement: str = "",
+        replacement: str = " ",
         mode: str = "detect",
     ) -> None:
         """
@@ -898,6 +978,85 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                           DETECT OR REPAIR REPEATED PATTERNS                                     #
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairRepeatedPatternsTask(DetectOrReplaceTask):
+    """
+    A task for detecting or repairing excessive repeated patterns in text.
+
+    This class inherits from `DetectOrRemoveTask` and uses a regular expression
+    to identify repeated patterns within the specified text column. The task can
+    be configured to either detect or repair these patterns.
+
+    Attributes:
+        column (str): The name of the column to analyze for repeated patterns.
+        threshold (int): The number of repeated patterns required to flag text
+            as having excessive repetition.
+        new_column (str): The name of the new column that will store the result
+            of the detection (e.g., a boolean indicating excessive repetition).
+        mode (str): The mode of operation, either "detect" for flagging repeated
+            patterns or "repair" to remove them.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        threshold: int = 2,
+        new_column: str = "tqd_has_excessive_repeated_patterns",
+        mode: str = "detect",
+    ) -> None:
+        pattern = (
+            rf"(.{{2,}})\1{{{threshold},}}"  # Use an f-string to insert the threshold
+        )
+        replacement = r"\1"
+        super().__init__(
+            pattern=pattern,
+            column=column,
+            new_column=new_column,
+            replacement=replacement,
+            mode=mode,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                           DETECT OR REPAIR REPEATED WORDS                                        #
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairRepeatedWordsTask(DetectOrReplaceTask):
+    """
+    A task for detecting or repairing excessive repeated words in text.
+
+    This class inherits from `DetectOrRemoveTask` and uses a regular expression
+    to identify repeated words within the specified text column. The task can
+    be configured to either detect or repair these words
+
+    Attributes:
+        column (str): The name of the column to analyze for repeated words.
+        threshold (int): The number of repeated words required to flag text
+            as having excessive repetition.
+        new_column (str): The name of the new column that will store the result
+            of the detection (e.g., a boolean indicating excessive repetition).
+        mode (str): The mode of operation, either "detect" for flagging repeated
+            words or "repair" to remove them.
+    """
+
+    def __init__(
+        self,
+        column: str = "content",
+        new_column: str = "tqd_has_repeated_words",
+        mode: str = "detect",
+    ) -> None:
+        pattern = r"\b(\w+)\b(?:\s+\1\b)+"
+        replacement = r"\1"
+        super().__init__(
+            pattern=pattern,
+            column=column,
+            new_column=new_column,
+            replacement=replacement,
+            mode=mode,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                           DETECT OR REPAIR OUTLIERS                                              #
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairOutliersTask(DetectOrRemoveTask):
@@ -915,6 +1074,7 @@ class DetectOrRepairOutliersTask(DetectOrRemoveTask):
     def __init__(
         self,
         column: str = "review_length",
+        iqr_threshold: int = 3,
         new_column: str = "tqd_outlier_review_length",
         mode: str = "detect",
     ) -> None:
@@ -922,6 +1082,54 @@ class DetectOrRepairOutliersTask(DetectOrRemoveTask):
         super().__init__(
             pattern=pattern, column=column, mode=mode, new_column=new_column
         )
+        self._iqr_threshold = iqr_threshold
+
+    def detect(self, data: DataFrame) -> DataFrame:
+        """
+        Detects outliers in the specified column using the Interquartile Range (IQR) method.
+
+        Args:
+            data (DataFrame): A PySpark DataFrame containing the data to be processed.
+
+        Returns:
+            DataFrame: A PySpark DataFrame with an additional boolean column indicating
+            whether each row is an outlier.
+        """
+        # Compute Q1, Q3, and IQR
+        quantiles = data.approxQuantile(self._column, [0.25, 0.75], 0.01)
+        q1, q3 = quantiles[0], quantiles[1]
+        iqr = q3 - q1
+        lower_bound = q1 - self._iqr_threshold * iqr
+        upper_bound = q3 + self._iqr_threshold * iqr
+
+        # Define outlier detection logic
+        is_outlier = F.when(
+            (F.col(self._column) < lower_bound) | (F.col(self._column) > upper_bound),
+            F.lit(True),
+        ).otherwise(F.lit(False))
+
+        # Add the outlier indicator column
+        data = data.withColumn(self._new_column, is_outlier)
+
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                           DETECT OR REPAIR OUTLIERS                                              #
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairGibberishTask(DetectOrRemoveTask):
+    def __init__(
+        self,
+        column: str = "dqp_perplexity",
+        new_column: str = "tqd_gibberish",
+        mode: str = "detect",
+        ppl_filepath: str = "models/perplexity/perplexity_dev.csv",
+    ) -> None:
+        pattern = None
+        super().__init__(
+            pattern=pattern, column=column, mode=mode, new_column=new_column
+        )
+        self._ppl_filepath = ppl_filepath
 
     def detect(self, data: DataFrame) -> DataFrame:
         """
@@ -954,44 +1162,5 @@ class DetectOrRepairOutliersTask(DetectOrRemoveTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                           DETECT OR REPAIR OUTLIERS                                              #
+#                           DETECT OR REPAIR GIBBERISH                                             #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRemoveShortReviewsTask(DetectOrRemoveTask):
-    """
-    A PySpark task class for detecting or removing outliers in a DataFrame column.
-    The class provides functionality to either flag outliers based on the Interquartile Range (IQR) method
-    or remove rows containing outliers.
-
-    Attributes:
-        _column (str): The name of the column to check for outliers (default is "vote_count").
-        _mode (str): The mode of operation, either 'detect' to flag outliers or 'remove' to delete such rows.
-        _new_column (str): The name of the new column for outlier detection flags, dynamically generated based on the column name.
-    """
-
-    def __init__(
-        self,
-        column: str = "review_length",
-        mode: str = "detect",
-        threshold: int = 3,
-        new_column: str = "tqd_short_review",
-    ) -> None:
-        super().__init__(
-            column=column, mode=mode, new_column=new_column, threshold=threshold
-        )
-
-    def detect(self, data: DataFrame) -> DataFrame:
-        """
-        Detects outliers in the specified column using the Interquartile Range (IQR) method.
-
-        Args:
-            data (DataFrame): A PySpark DataFrame containing the data to be processed.
-
-        Returns:
-            DataFrame: A PySpark DataFrame with an additional boolean column indicating
-            whether each row is an outlier.
-        """
-        data = data.withColumn(
-            self._new_column, (F.col(self._column) < self._threshold).cast("boolean")
-        )
-
-        return data

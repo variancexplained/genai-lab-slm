@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Wednesday November 13th 2024 02:25:29 am                                            #
+# Modified   : Friday November 15th 2024 06:02:39 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -66,35 +66,12 @@ phases:
             module: discover.flow.data_prep.ingest.task
             params:
               column: content
-      sentiment:
-        stage_name: sentiment
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: ingest
-          name: review
-          nlp: False
-          distributed: False
-        destination_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: sentiment
-          name: review
-          nlp: False
-          distributed: False
-        tasks:
-          - class_name: MergeSentimentsTask
-            module: discover.flow.data_prep.sentiment.task
-            params:
-              new_column: dqp_sentiment
-              location: models/sentiment/inference
-              file_prefix: sentiments_
       tqd:
         stage_name: tqd
         source_config:
           asset_type: dataset
           phase: dataprep
-          stage: sentiment
+          stage: perplexity
           name: review
           nlp: True
           distributed: True
@@ -165,7 +142,7 @@ phases:
             params:
               column: content
               new_column: tqd_excess_special_chars
-              threshold: 0.3
+              threshold_char_prop: 0.3
               mode: detect
           - class_name: DetectOrRepairDuplicateReviewIdTask
             module: discover.flow.data_prep.dqm.task
@@ -180,18 +157,46 @@ phases:
               threshold: 4
               new_column: tqd_elongation
               mode: detect
-          - class_name: DetectOrRepairNonASCIITextTask
+          - class_name: DetectOrRepairNonASCIICharsTask
             module: discover.flow.data_prep.dqm.task
             params:
               column: content
               new_column: tqd_non_ascii_chars
               mode: detect
+          - class_name: DetectOrRepairNonASCIITextTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              threshold_char_prop: 0.2
+              new_column: tqd_excessive_non_ascii_chars
+              mode: detect
+          - class_name: DetectOrRepairRepeatedPatternsTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              threshold: 2
+              new_column: tqd_excessive_repeated_patterns
+              mode: detect
+          - class_name: DetectOrRepairRepeatedWordsTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: content
+              new_column: tqd_repeated_words
+              mode: detect
           - class_name: DetectOrRepairOutliersTask
             module: discover.flow.data_prep.dqm.task
             params:
               column: review_length
+              iqr_threshold: 3
               mode: detect
               new_column: tqd_review_length_outlier
+          - class_name: DetectOrRepairOutliersTask
+            module: discover.flow.data_prep.dqm.task
+            params:
+              column: dqp_perplexity
+              iqr_threshold: 3
+              mode: detect
+              new_column: tqd_perplexity_outlier
       tqa:
         stage_name: tqa
         source_config:
@@ -206,42 +211,44 @@ phases:
           phase: dataprep
           stage: tqa
           name: review
-          nlp: False
+          nlp: True
           distributed: True
         tasks:
         - class_name: NLPTask
           module: discover.flow.data_prep.tqa.task
           params:
             column: content
-        - class_name: ComputePOSStatsTask
+        - class_name: ComputeSyntacticStatsTask
           module: discover.flow.data_prep.tqa.task
           params:
             column: content
-        - class_name: ComputeBasicStatsTask
+        - class_name: ComputeLexicalStatsTask
           module: discover.flow.data_prep.tqa.task
           params:
             column: content
-        - class_name: ComputeTQAFiltersTask
+        - class_name: ComputeSyntacticLexicalScoresTask
+          module: discover.flow.data_prep.tqa.task
+          params:
+            column: content
+            new_column: tqa_syntactic_lexical_score
+            pos_diversity_weight: 0.3
+            pos_density_weight: 0.3
+            lexical_complexity_weight: 0.4
+        - class_name: ComputePerplexityFiltersTask
           module: discover.flow.data_prep.tqa.task
           params: {}
-        - class_name: TQATask1
+        - class_name: ComputePerplexityWeights
           module: discover.flow.data_prep.tqa.task
           params:
-            column: content
-            new_column: tqa_syntactic_score
-            pos_count_weight: 0.4
-            pos_diversity_weight: 0.2
-            pos_intensity_weight: 0.1
-            structural_complexity_weight: 0.2
-            tqa_check_weight: 0.1
-        - class_name: TQATask2
+            pp_filepath: models/tqa/pp_weights.csv
+            column: dqp_perplexity
+            pp_filter_prefix: tqf_
+        - class_name: ComputeCoherenceScoreTask
           module: discover.flow.data_prep.tqa.task
           params:
-            column: content
-            new_column: tqa_perplexity_score
-            ppl_filepath: models/tqa/tqa_ppl.csv
-            ppl_full: 4.673929214477539
-        - class_name: TQATask3
+            new_column: tqa_coherence_score
+            pp_filepath: models/tqa/pp_weights.csv
+        - class_name: ComputeTextQualityScore
           module: discover.flow.data_prep.tqa.task
           params:
             tqa_syntactic_weight: 0.4

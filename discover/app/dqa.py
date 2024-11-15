@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Wednesday November 13th 2024 06:28:56 am                                            #
+# Modified   : Friday November 15th 2024 02:07:57 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -43,16 +43,23 @@ noise_cols = [
     "tqd_excess_whitespace",
     "tqd_excess_special_chars",
     "tqd_elongation",
-    "tqd_non_ascii_chars",
+    "tqd_excessive_non_ascii_chars",
+    "tqd_excessive_repeated_patterns",
+    "tqd_repeated_words",
     "tqd_non_english_app_name",
     "tqd_non_english_text",
 ]
+
+validity_cols = ["tqd_review_length_outlier", "tqd_perplexity_outlier"]
 
 privacy_cols = [
     "tqd_url",
     "tqd_email",
     "tqd_phone",
 ]
+
+uniqueness_cols = ["tqd_duplicate_review_id"]
+base_cols = ["id", "app_name", "content"]
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -180,9 +187,14 @@ class DQA(Analysis):
             title=f"AppVoCAI Dataset Quality Analysis\nQuality Score: {round(self.quality,3)}",
         )
 
-    def plot_validity(self) -> pd.DataFrame:
+    def plot_review_length_validity(self) -> pd.DataFrame:
         outliers = self._df.loc[self._df["tqd_review_length_outlier"]]["review_length"]
         viz.violinplot(x=outliers, title="Distribution of Review Length Outliers")
+        return outliers.describe().to_frame().T
+
+    def plot_perplexity_validity(self) -> pd.DataFrame:
+        outliers = self._df.loc[self._df["tqd_perplexity_outlier"]]["dqp_perplexity"]
+        viz.violinplot(x=outliers, title="Distribution of Perplexity Outliers")
         return outliers.describe().to_frame().T
 
     def plot_balance(self) -> pd.DataFrame:
@@ -217,12 +229,18 @@ class DQA(Analysis):
         self,
         defect: str,
         n: int = 10,
+        sort_by: str = None,
+        ascending: bool = False,
         random_state: int = None,
     ) -> pd.DataFrame:
         col = self._get_column_name(substring=defect)
+        cols = base_cols.extend(col)
         df = self._df.loc[self._df[col]]
         n = min(n, len(df))
-        return df.sample(n=n, random_state=random_state)
+        defects = df.sample(n=n, random_state=random_state)
+        if sort_by:
+            defects = defects.sort_values(by=sort_by, ascending=ascending)
+        return defects[cols]
 
     def subset_df(self, n: int = 10, random_state: int = None) -> pd.DataFrame:
         n = min(n, len(self._df))
@@ -255,9 +273,18 @@ class DQA(Analysis):
                 )
             ].shape[0]
         )
-        non_outliers = N - self._df["tqd_review_length_outlier"].sum()
-        return ((valid_ratings / N) * self._config.rating_validity_weight) + (
-            (non_outliers / N) * self._config.outlier_validity_weight
+        review_length_non_outliers = N - (self._df["tqd_review_length_outlier"].sum())
+        perplexity_non_outliers = N - (+self._df["tqd_perplexity_outlier"].sum())
+        return (
+            ((valid_ratings / N) * self._config.rating_validity_weight)
+            + (
+                (review_length_non_outliers / N)
+                * self._config.review_length_outlier_validity_weight
+            )
+            + (
+                (perplexity_non_outliers / N)
+                * self._config.perplexity_outlier_validity_weight
+            )
         )
 
     def _compute_uniqueness(self) -> float:

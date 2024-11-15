@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday November 4th 2024 11:13:03 pm                                                #
+# Modified   : Friday November 15th 2024 04:26:36 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -142,7 +142,7 @@ class NLPTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE POS STATS                                             #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePOSStatsTask(Task):
+class ComputeSyntacticStatsTask(Task):
     """
     A task to compute Part-of-Speech (POS) statistics for a specified column in a PySpark DataFrame.
 
@@ -173,7 +173,7 @@ class ComputePOSStatsTask(Task):
 
     def __init__(self, column: str = "content") -> None:
         """
-        Initializes the ComputePOSStatsTask with the specified text or POS column.
+        Initializes the ComputeSyntacticStatsTask with the specified text or POS column.
 
         Args:
             column (str): The name of the column containing the POS data. Defaults to "content".
@@ -259,7 +259,7 @@ class ComputePOSStatsTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE BASIC STATS                                           #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeBasicStatsTask(Task):
+class ComputeLexicalStatsTask(Task):
     """
     A task to compute basic text statistics for a specified column in a PySpark DataFrame.
 
@@ -292,7 +292,7 @@ class ComputeBasicStatsTask(Task):
 
     def __init__(self, column: str = "content") -> None:
         """
-        Initializes the ComputeBasicStatsTask with the specified text column.
+        Initializes the ComputeLexicalStatsTask with the specified text column.
 
         Args:
             column (str): The name of the column containing the text data to analyze. Defaults to "content".
@@ -566,7 +566,7 @@ class ComputeReadabilityTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA STATS TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeTQAFiltersTask(Task):
+class ComputePerplexityFiltersTask(Task):
     """
     A task to compute Text Quality Assessment (TQA) statistics for reviews in a PySpark DataFrame.
 

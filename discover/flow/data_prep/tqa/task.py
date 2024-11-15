@@ -11,16 +11,16 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Monday November 11th 2024 07:40:20 pm                                               #
+# Modified   : Friday November 15th 2024 06:49:13 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Ingest Module"""
+"""Text Quality Analysis Module"""
 import math
 import os
 
-import matplotlib.pyplot as plt
+import pandas as pd
 import pyspark.pandas as ps
 import seaborn as sns
 from pyspark.ml import Pipeline
@@ -143,7 +143,7 @@ class NLPTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE POS STATS                                             #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePOSStatsTask(Task):
+class ComputeSyntacticStatsTask(Task):
     """
     A task to compute Part-of-Speech (POS) statistics for a specified column in a PySpark DataFrame.
 
@@ -174,7 +174,7 @@ class ComputePOSStatsTask(Task):
 
     def __init__(self, column: str = "content") -> None:
         """
-        Initializes the ComputePOSStatsTask with the specified text or POS column.
+        Initializes the ComputeSyntacticStatsTask with the specified text or POS column.
 
         Args:
             column (str): The name of the column containing the POS data. Defaults to "content".
@@ -215,6 +215,7 @@ class ComputePOSStatsTask(Task):
         data = data.withColumn(
             "pos_n_adverbs", F.expr("size(filter(tp_pos, x -> x = 'ADV'))")
         )
+
         data = data.withColumn(
             "pos_n_determiners", F.expr("size(filter(tp_pos, x -> x = 'DET'))")
         )
@@ -260,7 +261,7 @@ class ComputePOSStatsTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE BASIC STATS                                           #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeBasicStatsTask(Task):
+class ComputeLexicalStatsTask(Task):
     """
     A task to compute basic text statistics for a specified column in a PySpark DataFrame.
 
@@ -293,7 +294,7 @@ class ComputeBasicStatsTask(Task):
 
     def __init__(self, column: str = "content") -> None:
         """
-        Initializes the ComputeBasicStatsTask with the specified text column.
+        Initializes the ComputeLexicalStatsTask with the specified text column.
 
         Args:
             column (str): The name of the column containing the text data to analyze. Defaults to "content".
@@ -335,7 +336,6 @@ class ComputeBasicStatsTask(Task):
                 F.col("stats_special_chars_count") / F.col("stats_char_count"),
             ).otherwise(0),
         )
-
         # 6. Punctuation count
         data = data.withColumn(
             "stats_punctuation_count", F.expr("regexp_count(content, '[.,!?;:]')")
@@ -417,9 +417,192 @@ class ComputeBasicStatsTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                 COMPUTE TQA STATS TASK                                           #
+#                                 COMPUTE TQA SCORE 1 TASK                                         #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeTQAFiltersTask(Task):
+class ComputeSyntacticLexicalScoresTask(Task):
+    """
+    A task to compute a Text Quality Assessment (TQA) score based on various components
+    such as POS count, POS diversity, lexical complexity, POS intensity, and TQA quality checks.
+
+    Attributes:
+        pos_diversity_weight (float): The weight assigned to the POS diversity component.
+        pos_density_weight (float): The weight assigned to the POS intensity component.
+        lexical_complexity_weight (float): The weight assigned to the lexical complexity component.
+        column (str): Column containing review text.
+        new_column (str): The name of the output column to store the computed TQA score.
+    """
+
+    def __init__(
+        self,
+        pos_diversity_weight: float,
+        pos_density_weight: float,
+        lexical_complexity_weight: float,
+        column: str = "content",
+        new_column: str = "tqa_syntactic_lexical_score",
+    ) -> None:
+        """
+        Initializes the ComputeSyntacticLexicalScoresTask with specified weights and output column name.
+
+        Args:
+            pos_diversity_weight (float): Weight for the POS diversity component.
+            pos_density_weight (float): Weight for the POS intensity component.
+            lexical_complexity_weight (float): Weight for the lexical complexity component.
+            new_column (str): Name of the output column for the TQA score. Defaults to "enrichment_tqa_score1".
+        """
+        super().__init__()
+        self._pos_diversity_weight = pos_diversity_weight
+        self._pos_density_weight = pos_density_weight
+        self._lexical_complexity_weight = lexical_complexity_weight
+        self._column = column
+        self._new_column = new_column
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        """
+        Executes the TQA score computation by applying several components as UDFs.
+
+        Args:
+            data (DataFrame): The input PySpark DataFrame containing text data and related features.
+
+        Returns:
+            DataFrame: The input DataFrame with additional columns for each component score
+            and the final TQA score.
+        """
+
+        # Define UDFs for each computation
+
+        @F.udf("float")
+        def compute_pos_diversity_score(
+            content, pos_p_nouns, pos_p_verbs, pos_p_adjectives, pos_p_adverbs
+        ):
+            """
+            Computes the POS diversity score using an entropy-based calculation.
+
+            Args:
+                content (str): The text content of the review.
+                pos_p_nouns (float): Proportion of nouns in the content.
+                pos_p_verbs (float): Proportion of verbs in the content.
+                pos_p_adjectives (float): Proportion of adjectives in the content.
+                pos_p_adverbs (float): Proportion of adverbs in the content.
+
+            Returns:
+                float: The computed POS diversity score.
+            """
+            if len(content) > 2:
+                pos_tags = [pos_p_nouns, pos_p_verbs, pos_p_adjectives, pos_p_adverbs]
+                pos_diversity = -sum(p * math.log(p) for p in pos_tags if p > 0)
+                return float(pos_diversity * self._pos_diversity_weight)
+            return 0.0
+
+        @F.udf("float")
+        def compute_pos_density_score(
+            content,
+            pos_n_nouns,
+            pos_n_verbs,
+            pos_n_adjectives,
+            pos_n_adverbs,
+            stats_word_count,
+        ):
+            """
+            Computes the POS intensity score based on the number of POS tags relative
+            to the word count.
+
+            Args:
+                content (str): The text content of the review.
+                pos_n_nouns (int): Number of nouns in the content.
+                pos_n_verbs (int): Number of verbs in the content.
+                pos_n_adjectives (int): Number of adjectives in the content.
+                pos_n_adverbs (int): Number of adverbs in the content.
+                stats_word_count (int): Total word count in the content.
+
+            Returns:
+                float: The computed POS intensity score.
+            """
+            if len(content) > 2 and stats_word_count > 0:
+                pos_density = (
+                    pos_n_nouns + pos_n_verbs + pos_n_adjectives + pos_n_adverbs
+                ) / stats_word_count
+                return float(pos_density * self._pos_density_weight)
+            return 0.0
+
+        @F.udf("float")
+        def compute_lexical_complexity_score(
+            content,
+            stats_unique_word_proportion,
+            stats_special_chars_proportion,
+            stats_word_length_std,
+        ):
+            """
+            Computes the lexical complexity score based on unique word proportion,
+            special character proportion, and word length standard deviation.
+
+            Args:
+                content (str): The text content of the review.
+                stats_unique_word_proportion (float): Proportion of unique words in the content.
+                stats_special_chars_proportion (float): Proportion of special characters in the content.
+                stats_word_length_std (float): Standard deviation of word lengths in the content.
+
+            Returns:
+                float: The computed lexical complexity score.
+            """
+            if len(content) > 2:
+                lexical_complexity = (
+                    0.4 * stats_unique_word_proportion
+                    + 0.3 * stats_special_chars_proportion
+                    + 0.3 * stats_word_length_std
+                )
+                return float(lexical_complexity * self._lexical_complexity_weight)
+            return 0.0
+
+        # Apply UDFs to create new columns
+        data = data.withColumn(
+            "tqm_pos_diversity_score",
+            compute_pos_diversity_score(
+                F.col(self._column),
+                F.col("pos_p_nouns"),
+                F.col("pos_p_verbs"),
+                F.col("pos_p_adjectives"),
+                F.col("pos_p_adverbs"),
+            ),
+        )
+
+        data = data.withColumn(
+            "tqm_pos_density_score",
+            compute_pos_density_score(
+                F.col(self._column),
+                F.col("pos_n_nouns"),
+                F.col("pos_n_verbs"),
+                F.col("pos_n_adjectives"),
+                F.col("pos_n_adverbs"),
+                F.col("stats_word_count"),
+            ),
+        )
+
+        data = data.withColumn(
+            "tqm_lexical_complexity_score",
+            compute_lexical_complexity_score(
+                F.col(self._column),
+                F.col("stats_unique_word_proportion"),
+                F.col("stats_special_chars_proportion"),
+                F.col("stats_word_length_std"),
+            ),
+        )
+
+        # Calculate the TQA score as a weighted combination of components
+        data = data.withColumn(
+            self._new_column,
+            F.col("tqm_pos_diversity_score")
+            + F.col("tqm_lexical_complexity_score")
+            + F.col("tqm_pos_density_score"),
+        )
+
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                               COMPUTE PERPLEXITY FILTERS  TASK                                   #
+# ------------------------------------------------------------------------------------------------ #
+class ComputePerplexityFiltersTask(Task):
     """
     A task to compute Text Quality Assessment (TQA) statistics for reviews in a PySpark DataFrame.
 
@@ -531,276 +714,78 @@ class ComputeTQAFiltersTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                 COMPUTE TQA SCORE 1 TASK                                         #
+#                               COMPUTE PERPLEXITY FILTERS  TASK                                   #
 # ------------------------------------------------------------------------------------------------ #
-class TQATask1(Task):
+class ComputePerplexityWeights(Task):
     """
-    A task to compute a Text Quality Assessment (TQA) score based on various components
-    such as POS count, POS diversity, structural complexity, POS intensity, and TQA quality checks.
+    A class to compute and save perplexity weights for various filters in a PySpark DataFrame.
+
+    This task calculates the overall average perplexity and the average perplexity for each
+    filter column that starts with a specified prefix. It then computes weights for each filter
+    and writes the results to a specified file.
 
     Attributes:
-        pos_count_weight (float): The weight assigned to the POS count component.
-        pos_diversity_weight (float): The weight assigned to the POS diversity component.
-        pos_intensity_weight (float): The weight assigned to the POS intensity component.
-        structural_complexity_weight (float): The weight assigned to the structural complexity component.
-        tqa_check_weight (float): The weight assigned to the TQA quality check component.
-        column (str): Column containing review text.
-        new_column (str): The name of the output column to store the computed TQA score.
+        _column (str): The name of the column containing perplexity values.
+        _pp_filepath (str): The file path to save the perplexity weights.
+        _pp_filter_prefix (str): The prefix used to identify filter columns.
     """
 
     def __init__(
         self,
-        pos_count_weight: float,
-        pos_diversity_weight: float,
-        pos_intensity_weight: float,
-        structural_complexity_weight: float,
-        tqa_check_weight: float,
-        column: str = "content",
-        new_column: str = "tqa_syntactic_score",
+        column: str = "dqp_perplexity",
+        pp_filepath: str = "models/tqa/pp_weights.csv",
+        pp_filter_prefix: str = "tqf_",
     ) -> None:
         """
-        Initializes the TQATask1 with specified weights and output column name.
+        Initializes the ComputePerplexityWeights class with the specified parameters.
 
         Args:
-            pos_count_weight (float): Weight for the POS count component.
-            pos_diversity_weight (float): Weight for the POS diversity component.
-            pos_intensity_weight (float): Weight for the POS intensity component.
-            structural_complexity_weight (float): Weight for the structural complexity component.
-            tqa_check_weight (float): Weight for the TQA quality check component.
-            new_column (str): Name of the output column for the TQA score. Defaults to "enrichment_tqa_score1".
+            column (str): The name of the column containing perplexity values. Defaults to 'dqp_perplexity'.
+            pp_filepath (str): The file path to save the perplexity weights. Defaults to 'models/tqa/ppl_weights.csv'.
+            pp_filter_prefix (str): The prefix used to identify filter columns. Defaults to 'tqf_'.
         """
-        super().__init__()
-        self._pos_count_weight = pos_count_weight
-        self._pos_diversity_weight = pos_diversity_weight
-        self._pos_intensity_weight = pos_intensity_weight
-        self._structural_complexity_weight = structural_complexity_weight
-        self._tqa_check_weight = tqa_check_weight
         self._column = column
-        self._new_column = new_column
+        self._pp_filepath = pp_filepath
+        self._pp_filter_prefix = pp_filter_prefix
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
         """
-        Executes the TQA score computation by applying several components as UDFs.
+        Computes and saves perplexity weights for filter columns in the DataFrame.
+
+        The method calculates the overall average perplexity and the average perplexity
+        for each filter column. It then computes a weight for each filter based on the
+        difference between the overall and individual perplexity values, and saves the
+        weights to a specified file.
 
         Args:
-            data (DataFrame): The input PySpark DataFrame containing text data and related features.
+            data (DataFrame): The input PySpark DataFrame containing the perplexity values and filter columns.
 
         Returns:
-            DataFrame: The input DataFrame with additional columns for each component score
-            and the final TQA score.
+            DataFrame: The input DataFrame (unmodified).
         """
+        if not os.path.exists(self._pp_filepath):
+            # Calculate the overall average perplexity
+            pp_all = data.agg(F.avg(self._column)).first()[0]
+            w_i = {}
 
-        # Define UDFs for each computation
-        @F.udf("float")
-        def compute_pos_count_score(
-            content, pos_n_nouns, pos_n_verbs, pos_n_adjectives, pos_n_adverbs
-        ):
-            """
-            Computes the POS count score based on the provided content and POS counts.
+            # Get all columns that start with the filter prefix and sort them
+            filters = [
+                col for col in data.columns if col.startswith(self._pp_filter_prefix)
+            ]
+            filters = sorted(filters)
 
-            Args:
-                content (str): The text content of the review.
-                pos_n_nouns (int): Number of nouns in the content.
-                pos_n_verbs (int): Number of verbs in the content.
-                pos_n_adjectives (int): Number of adjectives in the content.
-                pos_n_adverbs (int): Number of adverbs in the content.
+            # Compute the average perplexity and the weights for each filter
+            for filter in filters:
+                filtered_data = data.filter(F.col(filter) == True)  # noqa
+                avg_perplexity_i = filtered_data.agg(F.avg(self._column)).first()[0]
+                w_i[filter] = (pp_all - avg_perplexity_i) / pp_all
 
-            Returns:
-                float: The computed POS count score.
-            """
-            if len(content) > 2:
-                pos_count = pos_n_nouns + pos_n_verbs + pos_n_adjectives + pos_n_adverbs
-                return float(pos_count * self._pos_count_weight)
-            return 0.0
-
-        @F.udf("float")
-        def compute_pos_diversity_score(
-            content, pos_p_nouns, pos_p_verbs, pos_p_adjectives, pos_p_adverbs
-        ):
-            """
-            Computes the POS diversity score using an entropy-based calculation.
-
-            Args:
-                content (str): The text content of the review.
-                pos_p_nouns (float): Proportion of nouns in the content.
-                pos_p_verbs (float): Proportion of verbs in the content.
-                pos_p_adjectives (float): Proportion of adjectives in the content.
-                pos_p_adverbs (float): Proportion of adverbs in the content.
-
-            Returns:
-                float: The computed POS diversity score.
-            """
-            if len(content) > 2:
-                pos_tags = [pos_p_nouns, pos_p_verbs, pos_p_adjectives, pos_p_adverbs]
-                pos_diversity = -sum(p * math.log(p) for p in pos_tags if p > 0)
-                return float(pos_diversity * self._pos_diversity_weight)
-            return 0.0
-
-        @F.udf("float")
-        def compute_structural_complexity_score(
-            content,
-            stats_unique_word_proportion,
-            stats_special_chars_proportion,
-            stats_word_length_std,
-        ):
-            """
-            Computes the structural complexity score based on unique word proportion,
-            special character proportion, and word length standard deviation.
-
-            Args:
-                content (str): The text content of the review.
-                stats_unique_word_proportion (float): Proportion of unique words in the content.
-                stats_special_chars_proportion (float): Proportion of special characters in the content.
-                stats_word_length_std (float): Standard deviation of word lengths in the content.
-
-            Returns:
-                float: The computed structural complexity score.
-            """
-            if len(content) > 2:
-                structural_complexity = (
-                    0.4 * stats_unique_word_proportion
-                    + 0.3 * stats_special_chars_proportion
-                    + 0.3 * stats_word_length_std
-                )
-                return float(structural_complexity * self._structural_complexity_weight)
-            return 0.0
-
-        @F.udf("float")
-        def compute_pos_intensity_score(
-            content,
-            pos_n_nouns,
-            pos_n_verbs,
-            pos_n_adjectives,
-            pos_n_adverbs,
-            stats_word_count,
-        ):
-            """
-            Computes the POS intensity score based on the number of POS tags relative
-            to the word count.
-
-            Args:
-                content (str): The text content of the review.
-                pos_n_nouns (int): Number of nouns in the content.
-                pos_n_verbs (int): Number of verbs in the content.
-                pos_n_adjectives (int): Number of adjectives in the content.
-                pos_n_adverbs (int): Number of adverbs in the content.
-                stats_word_count (int): Total word count in the content.
-
-            Returns:
-                float: The computed POS intensity score.
-            """
-            if len(content) > 2 and stats_word_count > 0:
-                pos_intensity = (
-                    pos_n_nouns + pos_n_verbs + pos_n_adjectives + pos_n_adverbs
-                ) / stats_word_count
-                return float(pos_intensity * self._pos_intensity_weight)
-            return 0.0
-
-        @F.udf("float")
-        def compute_tqa_check_score(
-            content,
-            stats_digits_proportion,
-            stats_special_chars_proportion,
-            tqf_has_terminal_punctuation,
-        ):
-            """
-            Computes the TQA check score based on digit and special character proportions
-            and the presence of terminal punctuation.
-
-            Args:
-                content (str): The text content of the review.
-                stats_digits_proportion (float): Proportion of digits in the content.
-                stats_special_chars_proportion (float): Proportion of special characters in the content.
-                tqf_has_terminal_punctuation (float): Indicator of whether the content has terminal punctuation.
-
-            Returns:
-                float: The computed TQA check score.
-            """
-            if len(content) > 2:
-                tqa_check = (
-                    0.3 * (1 - stats_digits_proportion)
-                    + 0.3 * (1 - stats_special_chars_proportion)
-                    + 0.4 * tqf_has_terminal_punctuation
-                )
-                return float(tqa_check * self._tqa_check_weight)
-            return 0.0
-
-        # Apply UDFs to create new columns
-        data = data.withColumn(
-            "tqm_pos_count_score",
-            compute_pos_count_score(
-                F.col(self._column),
-                F.col("pos_n_nouns"),
-                F.col("pos_n_verbs"),
-                F.col("pos_n_adjectives"),
-                F.col("pos_n_adverbs"),
-            ),
-        )
-
-        # Min-max normalization for pos_count_score
-        min_pos_count, max_pos_count = data.select(
-            F.min("tqm_pos_count_score"), F.max("tqm_pos_count_score")
-        ).first()
-        data = data.withColumn(
-            "tqm_pos_count_score",
-            (F.col("tqm_pos_count_score") - min_pos_count)
-            / (max_pos_count - min_pos_count),
-        )
-
-        # Apply other UDFs
-        data = data.withColumn(
-            "tqm_pos_diversity_score",
-            compute_pos_diversity_score(
-                F.col(self._column),
-                F.col("pos_p_nouns"),
-                F.col("pos_p_verbs"),
-                F.col("pos_p_adjectives"),
-                F.col("pos_p_adverbs"),
-            ),
-        )
-
-        data = data.withColumn(
-            "tqm_structural_complexity_score",
-            compute_structural_complexity_score(
-                F.col(self._column),
-                F.col("stats_unique_word_proportion"),
-                F.col("stats_special_chars_proportion"),
-                F.col("stats_word_length_std"),
-            ),
-        )
-
-        data = data.withColumn(
-            "tqm_pos_intensity_score",
-            compute_pos_intensity_score(
-                F.col(self._column),
-                F.col("pos_n_nouns"),
-                F.col("pos_n_verbs"),
-                F.col("pos_n_adjectives"),
-                F.col("pos_n_adverbs"),
-                F.col("stats_word_count"),
-            ),
-        )
-
-        data = data.withColumn(
-            "tqm_tqa_check_score",
-            compute_tqa_check_score(
-                F.col(self._column),
-                F.col("stats_digits_proportion"),
-                F.col("stats_special_chars_proportion"),
-                F.col("tqf_has_terminal_punctuation"),
-            ),
-        )
-
-        # Calculate the TQA score as a weighted combination of components
-        data = data.withColumn(
-            self._new_column,
-            F.col("tqm_pos_count_score")
-            + F.col("tqm_pos_diversity_score")
-            + F.col("tqm_structural_complexity_score")
-            + F.col("tqm_pos_intensity_score")
-            + F.col("tqm_tqa_check_score"),
-        )
+            # Convert the weights dictionary to a DataFrame and write to file
+            weights = pd.DataFrame.from_dict(
+                w_i, orient="index", columns=["weight"]
+            ).reset_index(names="filter")
+            IOService.write(data=weights, filepath=self._pp_filepath)
 
         return data
 
@@ -808,24 +793,11 @@ class TQATask1(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE 2 TASK                                         #
 # ------------------------------------------------------------------------------------------------ #
-class TQATask2(Task):
-    """
-    A task to compute a second Text Quality Assessment (TQA) score based on a weighted sum of binary indicators
-    and weights derived from perplexity values.
-
-    Attributes:
-        ppl_full (float): The perplexity value for normalization.
-        column (str): The name of the column in the DataFrame containing text data. Defaults to "content".
-        new_column (str): The name of the output column for the computed TQA score. Defaults to "enrichment_tqa_score2".
-        ppl_filepath (str): Path to file containing filtered perplexity scores. Defaults to "models/tqa/tqa_ppl.csv".
-    """
-
+class ComputeCoherenceScoreTask(Task):
     def __init__(
         self,
-        ppl_full: float,
-        column: str = "content",
-        new_column: str = "tqa_perplexity_score",
-        ppl_filepath: str = "models/tqa/tqa_ppl.csv",
+        new_column: str = "tqa_coherence_score",
+        pp_filepath: str = "models/tqa/pp_weights.csv",
     ):
         """
         Initializes the TQATask2 with specified parameters and loads weights for computation.
@@ -837,13 +809,8 @@ class TQATask2(Task):
             ppl_filepath (str): Path to file containing filtered perplexity scores. Defaults to "models/tqa/tqa_ppl.csv".
         """
         super().__init__()
-        self._ppl_full = ppl_full
-        self._column = column
         self._new_column = new_column
-        self._ppl_filepath = ppl_filepath
-        # Load perplexity scores
-        self._ppl_pandas_df = IOService.read(self._ppl_filepath)
-        self._ppl_pandas_df = self._ppl_pandas_df.reset_index(drop=True)
+        self._pp_filepath = pp_filepath
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -856,43 +823,37 @@ class TQATask2(Task):
         Returns:
             DataFrame: The input DataFrame with an additional column for the computed TQA score.
         """
-
+        # Load perplexity weights
+        self._weights_pandas = IOService.read(self._pp_filepath).reset_index(drop=True)
         # Convert to spark DataFrame
-        ppl_spark_df = ps.DataFrame(self._ppl_pandas_df).to_spark()
-        # Compute the weights as a list of scalar values
-        weights = [
-            {
-                "Filter": row["Filter"],
-                "Weight": max(
-                    0.0, (self._ppl_full - row["Perplexity"]) / self._ppl_full
-                ),
-            }
-            for row in ppl_spark_df.collect()
-        ]
+        weights_spark = ps.DataFrame(self._weights_pandas).to_spark()
+
+        # Collect weights into a list of dictionaries
+        weights_list = weights_spark.collect()
+
+        # Compute the total sum of the weights
+        total_weight = sum(item["weight"] for item in weights_list)
 
         # Compute the weighted sum of filter indicators
         filter_sum_expr = sum(
-            [F.col(item["Filter"]).cast("double") * item["Weight"] for item in weights]
-        )
+            [
+                F.col(item["filter"]).cast("double") * F.lit(item["weight"])
+                for item in weights_list
+            ]
+        ) / F.lit(
+            total_weight
+        )  # Normalize by the total sum of the weights
 
         # Add the computed TQA score as a new column
         data = data.withColumn(self._new_column, filter_sum_expr)
 
         return data
 
-    def plot_weights(self) -> None:
-        fig, ax = plt.subplots(figsize=(12, 4))
-        # Filter 0 value weights
-        df = self._ppl_pandas_df.loc[self._ppl_pandas_df["Weight"] > 0]
-        sns.barplot(data=df, y="Filter", x="Weight", ax=ax)
-        ax.set_title("Perplexity-Based Text Quality Heuristics and Weights")
-        plt.tight_layout()
-
 
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
-class TQATask3(Task):
+class ComputeTextQualityScore(Task):
     """
     A task to compute a final Text Quality Assessment (TQA) score by normalizing and combining two TQA scores
     using specified weights.
@@ -911,7 +872,7 @@ class TQATask3(Task):
         tqa_perplexity_weight: float = 0.6,
     ):
         """
-        Initializes the TQATask3 with specified weights for combining the two TQA scores.
+        Initializes the ComputeTextQualityScore with specified weights for combining the two TQA scores.
 
         Args:
             tqa_syntactic_weight (float): Weight for the first TQA score. Defaults to 0.4.
@@ -937,36 +898,36 @@ class TQATask3(Task):
         """
         # Normalize both scores to [0, 1]
         min_max_enrichment_tqa_score1 = data.select(
-            F.min("tqa_syntactic_score"), F.max("tqa_syntactic_score")
+            F.min("tqa_syntactic_lexical_score"), F.max("tqa_syntactic_lexical_score")
         ).first()
         min_enrichment_tqa_score1, max_enrichment_tqa_score1 = (
             min_max_enrichment_tqa_score1
         )
 
         min_max_enrichment_tqa_score2 = data.select(
-            F.min("tqa_perplexity_score"), F.max("tqa_perplexity_score")
+            F.min("tqa_coherence_score"), F.max("tqa_coherence_score")
         ).first()
         min_enrichment_tqa_score2, max_enrichment_tqa_score2 = (
             min_max_enrichment_tqa_score2
         )
 
         data = data.withColumn(
-            "tqa_syntactic_score",
-            (F.col("tqa_syntactic_score") - min_enrichment_tqa_score1)
+            "tqa_syntactic_lexical_score",
+            (F.col("tqa_syntactic_lexical_score") - min_enrichment_tqa_score1)
             / (max_enrichment_tqa_score1 - min_enrichment_tqa_score1),
         )
 
         data = data.withColumn(
-            "tqa_perplexity_score",
-            (F.col("tqa_perplexity_score") - min_enrichment_tqa_score2)
+            "tqa_coherence_score",
+            (F.col("tqa_coherence_score") - min_enrichment_tqa_score2)
             / (max_enrichment_tqa_score2 - min_enrichment_tqa_score2),
         )
 
         # Combine scores using weights
         data = data.withColumn(
             self._new_column,
-            self._tqa_syntactic_weight * F.col("tqa_syntactic_score")
-            + self._tqa_perplexity_weight * F.col("tqa_perplexity_score"),
+            self._tqa_syntactic_weight * F.col("tqa_syntactic_lexical_score")
+            + self._tqa_perplexity_weight * F.col("tqa_coherence_score"),
         )
 
         # Compute min and max of the new column

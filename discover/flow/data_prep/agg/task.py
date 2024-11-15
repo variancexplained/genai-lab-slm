@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Tuesday November 12th 2024 07:42:20 pm                                              #
+# Modified   : Friday November 15th 2024 03:57:59 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -117,10 +117,10 @@ class AppAggregationTask(Task):
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
             F.avg("edp_sentiment_score").alias("average_sentiment"),
-            F.avg("tqa_syntactic_score").alias("average_tqa_score_1"),
+            F.avg("tqa_syntactic_lexical_score").alias("average_tqa_score_1"),
             F.avg("tqa_perplexity_score").alias("average_tqa_score_2"),
             F.avg("tqa_score").alias("average_tqa_score_final"),
-            F.max("tqa_syntactic_score").alias("max_tqa_score_1"),
+            F.max("tqa_syntactic_lexical_score").alias("max_tqa_score_1"),
             F.max("tqa_perplexity_score").alias("max_tqa_score_2"),
             F.max("tqa_score").alias("max_tqa_score_final"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
@@ -234,10 +234,10 @@ class CategoryAggregationTask(Task):
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
             F.avg("edp_sentiment_score").alias("average_sentiment"),
-            F.avg("tqa_syntactic_score").alias("average_tqa_score_1"),
+            F.avg("tqa_syntactic_lexical_score").alias("average_tqa_score_1"),
             F.avg("tqa_perplexity_score").alias("average_tqa_score_2"),
             F.avg("tqa_score").alias("average_tqa_score_final"),
-            F.max("tqa_syntactic_score").alias("max_tqa_score_1"),
+            F.max("tqa_syntactic_lexical_score").alias("max_tqa_score_1"),
             F.max("tqa_perplexity_score").alias("max_tqa_score_2"),
             F.max("tqa_score").alias("max_tqa_score_final"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
