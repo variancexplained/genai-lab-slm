@@ -11,13 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Tuesday November 5th 2024 05:36:34 pm                                               #
+# Modified   : Saturday November 16th 2024 04:27:59 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repository Module"""
 import logging
+from datetime import datetime
 from typing import Callable, Optional, Union
 
 import pandas as pd
@@ -173,57 +174,13 @@ class DatasetRepo(Repo):
             raise DatasetCreationError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
-    def _validate_add(self, dataset: Dataset) -> None:
-        """Ensures dataset object and file doesn't already exist"""
-        if self.exists(asset_id=dataset.asset_id):
-            msg = f"Unable to add dataset {dataset.asset_id} as it already exists."
-            self._logger.error(msg)
-            raise DatasetExistsError(msg)
-
-    # -------------------------------------------------------------------------------------------- #
-    def _write_file(self, dataset: Dataset) -> None:
-        """
-        Writes a dataset's content.
-
-        Args:
-            dataset (Dataset): The dataset to write.
-        """
-        if dataset.distributed:
-            self._write_distributed_file(dataset=dataset)
-        else:
-            self._write_centralized_file(dataset=dataset)
-
-    # -------------------------------------------------------------------------------------------- #
-    def _write_centralized_file(self, dataset: Dataset) -> None:
-        """
-        Writes a dataset's content to a centralized file system.
-
-        Args:
-            dataset (Dataset): The dataset to write.
-        """
-        self._fao_cfs._write(
-            filepath=dataset.storage_location,
-            data=dataset.content,
-        )
-
-    # -------------------------------------------------------------------------------------------- #
-    def _write_distributed_file(self, dataset: Dataset) -> None:
-        """
-        Writes a dataset's content to a distributed file system.
-
-        Args:
-            dataset (Dataset): The dataset to write.
-        """
-        self._fao_dfs._write(
-            filepath=dataset.storage_location,
-            data=dataset.content,
-        )
-
-    # -------------------------------------------------------------------------------------------- #
     #                             DATASET RETRIEVAL METHODS                                        #
     # -------------------------------------------------------------------------------------------- #
     def get(
-        self, asset_id: str, distributed: Optional[bool] = None, nlp: bool = False
+        self,
+        asset_id: str,
+        distributed: Optional[bool] = None,
+        nlp: bool = False,
     ) -> Optional[Dataset]:
         """
         Retrieves a dataset by its ID.
@@ -300,9 +257,9 @@ class DatasetRepo(Repo):
         return df[condition]
 
     # -------------------------------------------------------------------------------------------- #
-    def get_metadata(self, asset_id: str) -> Optional[Dataset]:
+    def get_dataset_metadata(self, asset_id: str) -> Optional[Dataset]:
         """
-        Retrieves a dataset metadata by its ID.
+        Retrieves a dataset with metadata only.
 
         Args:
             asset_id (str): The id of the dataset to retrieve.
@@ -324,6 +281,55 @@ class DatasetRepo(Repo):
             msg = f"Exception occurred while reading the dataset {asset_id} object."
             self._logger.exception(msg)
             raise DatasetIOError(msg, e) from e
+
+    # -------------------------------------------------------------------------------------------- #
+    def update_dataset_metadata(self, dataset: Dataset) -> None:
+        """
+        Updates the metadata for a dataset.
+
+        Args:
+            asset_id (str): The id of the dataset to retrieve.
+
+        Returns:
+            Optional[Dataset]: The dataset object containing just metadata if found; otherwise, None.
+
+        Raises:
+            FileNotFoundError: If an error occurs while reading the dataset.
+        """
+        # Step 1: Obtain the dataset object containing metadata and config.
+        try:
+            return self._dataset_dao.update(dataset=dataset)
+        except Exception as e:
+            msg = f"Metadata for dataset {dataset.asset_id} could not be updated.\n{e}"
+            self._logger.exception(msg)
+            raise DatasetIOError(msg, e) from e
+
+    # -------------------------------------------------------------------------------------------- #
+    def is_consumed(self, asset_id: str) -> bool:
+        """Returns the True if the dataset has been marked as consumed, False otherwise.
+
+        Args:
+            asset_id (str): The dataset asset identifier.
+
+        Returns:
+            bool: True if the Dataset has been created, but not yet consumed.
+        """
+        dataset = self.get_dataset_metadata(asset_id=asset_id)
+        return dataset.consumed
+
+    # -------------------------------------------------------------------------------------------- #
+    def consumed(self, asset_id: str, consumer: str = None) -> None:
+        """Marks the dataset as having been consumed.
+
+        Args:
+            asset_id (str): The identifier for the dataset asset.
+            consumer (str): The name of the Task that consumed the dataset.
+        """
+        dataset = self.get_dataset_metadata(asset_id=asset_id)
+        dataset.consumed = True
+        dataset.dt_consumed = datetime.now()
+        dataset.consumed_by = consumer
+        self.update_dataset_metadata(dataset=dataset)
 
     # -------------------------------------------------------------------------------------------- #
     def _read_file(
@@ -469,3 +475,52 @@ class DatasetRepo(Repo):
             bool: True if the dataset exists, False otherwise.
         """
         return self._dataset_dao.exists(asset_id=asset_id)
+
+    # -------------------------------------------------------------------------------------------- #
+    def _validate_add(self, dataset: Dataset) -> None:
+        """Ensures dataset object and file doesn't already exist"""
+        if self.exists(asset_id=dataset.asset_id):
+            msg = f"Unable to add dataset {dataset.asset_id} as it already exists."
+            self._logger.error(msg)
+            raise DatasetExistsError(msg)
+
+    # -------------------------------------------------------------------------------------------- #
+    #                             DATASET WRITE METHODS                                            #
+    # -------------------------------------------------------------------------------------------- #
+    def _write_file(self, dataset: Dataset) -> None:
+        """
+        Writes a dataset's content.
+
+        Args:
+            dataset (Dataset): The dataset to write.
+        """
+        if dataset.distributed:
+            self._write_distributed_file(dataset=dataset)
+        else:
+            self._write_centralized_file(dataset=dataset)
+
+    # -------------------------------------------------------------------------------------------- #
+    def _write_centralized_file(self, dataset: Dataset) -> None:
+        """
+        Writes a dataset's content to a centralized file system.
+
+        Args:
+            dataset (Dataset): The dataset to write.
+        """
+        self._fao_cfs._write(
+            filepath=dataset.storage_location,
+            data=dataset.content,
+        )
+
+    # -------------------------------------------------------------------------------------------- #
+    def _write_distributed_file(self, dataset: Dataset) -> None:
+        """
+        Writes a dataset's content to a distributed file system.
+
+        Args:
+            dataset (Dataset): The dataset to write.
+        """
+        self._fao_dfs._write(
+            filepath=dataset.storage_location,
+            data=dataset.content,
+        )

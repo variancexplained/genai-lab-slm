@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Tuesday November 5th 2024 05:29:31 pm                                               #
+# Modified   : Saturday November 16th 2024 04:23:37 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,9 +20,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Optional
 
 import pandas as pd
+from pyspark.sql import DataFrame
 
 from discover.assets.base import Asset
 
@@ -45,6 +47,9 @@ class Dataset(Asset):
         nrows (int): The number of rows in the dataset. Defaults to 0.
         ncols (int): The number of columns in the dataset. Defaults to 0.
         size (float): The size of the dataset in bytes. Defaults to 0.
+        consumed (bool): Indicates wether the dataset has been consumed by a Task
+        consumed_by (Optional[str]): The name of the Task that consumed the dataset.
+        dt_consumed (Optional[datetime]): The datetime the dataset was consumed.
 
     Methods:
         __post_init__() -> None:
@@ -65,6 +70,9 @@ class Dataset(Asset):
     nrows: int = 0
     ncols: int = 0
     size: float = 0
+    consumed: bool = False
+    consumed_by: str = None
+    dt_consumed: Optional[datetime] = None
 
     def __post_init__(self) -> None:
         """
@@ -84,11 +92,12 @@ class Dataset(Asset):
             for row count, column count, or size calculation.
         """
         super().__post_init__()
+        # Update dataframe metadata if content is available.
         if isinstance(self.content, (pd.DataFrame, pd.core.frame.DataFrame)):
             self.nrows = self.content.shape[0]
             self.ncols = self.content.shape[1]
             self.size = self.content.memory_usage(deep=True).sum()
-        else:
+        elif isinstance(self.content, DataFrame):
             self.nrows = self.content.count()
             self.ncols = len(self.content.columns)
             self.size = self.content.count()

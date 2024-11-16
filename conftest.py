@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday October 21st 2024 12:06:19 am                                                #
+# Modified   : Saturday November 16th 2024 03:35:20 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,7 +35,13 @@ from discover.infra.utils.file.io import IOService
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = []
+collect_ignore_glob = [
+    "tests/test_infra/test_config/**/*py",
+    "tests/test_infra/test_dal/**/*py",
+    "tests/test_infra/test_operations/**/*py",
+    "tests/test_infra/test_storage/**/*py",
+    "tests/test_orchestration/**/*py",
+]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -51,7 +57,7 @@ def container() -> DiscoverContainer:
     container.wire(
         modules=[
             "discover.flow.data_prep.stage",
-            "discover.flow.data_prep.dqa",
+            "discover.flow.data_prep.dqm",
         ],
     )
 
@@ -150,7 +156,7 @@ def centralized_ds(pandas_df, container):
         nlp=False,
         distributed=False,
         phase=PhaseDef.DATAPREP,
-        stage=DataPrepStageDef.DQA,
+        stage=DataPrepStageDef.TQA,
         content=pandas_df,
     )
     repo = container.repo.dataset_repo()
@@ -167,7 +173,7 @@ def distributed_ds(spark_df, container):
         nlp=False,
         distributed=True,
         phase=PhaseDef.DATAPREP,
-        stage=DataPrepStageDef.DQA,
+        stage=DataPrepStageDef.TQA,
         content=spark_df,
     )
     repo = container.repo.dataset_repo()
@@ -184,7 +190,7 @@ def distributed_ds_nlp(spark_df, container):
         nlp=True,
         distributed=True,
         phase=PhaseDef.DATAPREP,
-        stage=DataPrepStageDef.DQA,
+        stage=DataPrepStageDef.TQA,
         content=spark_df,
     )
     repo = container.repo.dataset_repo()

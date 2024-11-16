@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Thursday October 17th 2024 12:17:18 am                                              #
+# Modified   : Saturday November 16th 2024 04:06:40 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -53,7 +53,7 @@ def validate_dataset(dataset):
     assert isinstance(
         dataset.content, (pd.DataFrame, pd.core.frame.DataFrame, pyspark.sql.DataFrame)
     )
-    assert isinstance(dataset.created, datetime)
+    assert isinstance(dataset.dt_created, datetime)
     assert os.path.exists(dataset.storage_location)
 
 
@@ -88,9 +88,9 @@ class TestDatasetRepoAdd:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
 
         repo = container.repo.dataset_repo()
-        ds = repo.add(dataset=dataset)
+        repo.add(dataset=dataset)
         assert repo.exists(dataset.asset_id)
-        validate_dataset(ds)
+        validate_dataset(dataset)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -159,7 +159,10 @@ class TestDatasetRepoGet:  # pragma: no cover
         assert dataset == ds2
         assert ds2.phase == dataset.phase
         assert ds2.stage == dataset.stage
+        logger.info(f"Dataset Content:\n{dataset.content.head()}")
+        logger.info(f"DS2 Content:\n{ds2.content.head()}")
         if isinstance(ds2.content, (pd.DataFrame, pd.core.frame.DataFrame)):
+            dataset.content = dataset.content.reset_index(drop=True)
             assert ds2.content.equals(dataset.content)
         else:
             assertDataFrameEqual(ds2.content, dataset.content)
@@ -214,10 +217,10 @@ class TestDatasetRepoGet:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
 
         repo = container.repo.dataset_repo()
-        ds = repo.add(dataset=dataset)
-        remove_dataset_file(ds)
+        repo.add(dataset=dataset)
+        remove_dataset_file(dataset)
         with pytest.raises(DatasetIntegrityError):
-            repo.get(asset_id=ds.asset_id)
+            repo.get(asset_id=dataset.asset_id)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -279,6 +282,35 @@ class TestDatasetRepoRemove:  # pragma: no cover
         # Should not raise exception
         repo.remove(asset_id="bogus", ignore_errors=True)
 
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.mark.dataset
+@pytest.mark.repo
+@pytest.mark.consumed
+class TestDatasetConsumed:  # pragma: no cover
+    # ============================================================================================ #
+    def test_dataset_is_consumed(self, centralized_ds, container, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        dataset = centralized_ds
+        repo = container.repo.dataset_repo()
+        repo.add(dataset=dataset)
+        assert not repo.is_consumed(asset_id=dataset.asset_id)
+        repo.consumed(asset_id=dataset.asset_id)
+        assert repo.is_consumed(asset_id=dataset.asset_id)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)

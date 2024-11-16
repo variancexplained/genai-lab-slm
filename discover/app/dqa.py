@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Saturday November 16th 2024 01:00:42 pm                                             #
+# Modified   : Saturday November 16th 2024 01:20:08 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
+from pandarallel import pandarallel
 
 from discover.app.base import Analysis
 from discover.assets.idgen import AssetIDGen
@@ -33,6 +34,7 @@ from discover.infra.config.app import AppConfigReader
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
 # ------------------------------------------------------------------------------------------------ #
+pandarallel.initialize(nb_workers=18, verbose=False)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -224,9 +226,9 @@ class DQA(Analysis):
         random_state: int = None,
     ) -> pd.DataFrame:
         # Obtain the defect indicator column
-        col = self._get_column_name(substring=defect)
+        defect_cols = self._get_columns(substring=defect)
         # Apply the filter
-        df = self._df.loc[self._df[col]]
+        df = self._df.loc[self._df[defect_cols[0]]]
         # Update n for filtered data
         n = min(n, len(df))
         # Sample if sort_by is None. Rationale is that sorting implies all data, rather than a sample
@@ -240,7 +242,7 @@ class DQA(Analysis):
             if isinstance(cols, list):
                 return df[cols]
             elif isinstance(cols, str):
-                cols = [col for col in df.columns if col.startswith(cols)]
+                cols = self._get_columns(cols)
                 if cols:
                     base_cols = self._base_cols
                     base_cols.extend(cols)
@@ -257,23 +259,6 @@ class DQA(Analysis):
     def subset_df(self, n: int = 10, random_state: int = None) -> pd.DataFrame:
         n = min(n, len(self._df))
         return self._df.sample(n=n, random_state=random_state)
-
-    def _get_column_name(self, substring) -> Optional[str]:
-        return [col for col in self._cols if substring in col][0]
-
-    def _convert_labels(self, txt) -> str:
-        """Converts column names to Title case labels."""
-        txt = txt.replace("tqd_", "")
-        txt = txt.replace("_", " ")
-        txt = txt.title()
-        txt = "Contains " + txt
-        return txt
-
-    def _compute_completeness(self) -> float:
-        complete_rows = self._df.dropna().shape[0]
-        total_rows = self._df.shape[0]
-        completeness = complete_rows / total_rows
-        return completeness
 
     def _compute_validity(self) -> float:
         N = self._df.shape[0]
@@ -352,3 +337,20 @@ class DQA(Analysis):
         # Select and order columns
         df = df[["Defect", "n", "%"]]
         return df.sort_values(by="n", ascending=False).reset_index(drop=True)
+
+    def _get_columns(self, substring) -> Optional[str]:
+        return [col for col in self._cols if substring in col]
+
+    def _convert_labels(self, txt) -> str:
+        """Converts column names to Title case labels."""
+        txt = txt.replace("tqd_", "")
+        txt = txt.replace("_", " ")
+        txt = txt.title()
+        txt = "Contains " + txt
+        return txt
+
+    def _compute_completeness(self) -> float:
+        complete_rows = self._df.dropna().shape[0]
+        total_rows = self._df.shape[0]
+        completeness = complete_rows / total_rows
+        return completeness

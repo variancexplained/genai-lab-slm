@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Friday October 18th 2024 07:17:44 am                                                #
+# Modified   : Saturday November 16th 2024 03:16:28 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -161,6 +161,14 @@ class DatasetDAO(DAO):
             pd.DataFrame: A DataFrame containing datasets that match the specified phase.
         """
         return self._read_by_attribute("phase", phase)
+
+    def update(self, dataset: Dataset) -> None:
+        """Updates the Dataset in the object database
+
+        Args:
+            dataset (Dataset): Dataset object
+        """
+        self.create(dataset=dataset)
 
     def exists(self, asset_id: str) -> bool:
         """

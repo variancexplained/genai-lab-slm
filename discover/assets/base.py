@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Saturday November 16th 2024 02:50:32 am                                             #
+# Modified   : Saturday November 16th 2024 02:57:44 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,7 +44,7 @@ class Asset(DataClass):
     properties for generating unique IDs and descriptions.
 
     Attributes:
-        asset_id (str): Uniquely identifies an asset.
+        asset_id (Optional[str]): Uniquely identifies an asset.
         phase (PhaseDef): The phase to which the asset belongs.
         stage (StageDef): The stage within the phase.
         name (str): The name of the asset.
@@ -57,7 +57,7 @@ class Asset(DataClass):
     stage: StageDef
     name: str
     content: Any
-    created: Optional[datetime] = None
+    dt_created: Optional[datetime] = None
     asset_id: Optional[str] = None
 
     def __post_init__(self) -> None:
@@ -67,13 +67,15 @@ class Asset(DataClass):
         This ensures that the asset's creation time is recorded upon instantiation,
         providing a timestamp for when the asset was initialized.
         """
-        self.created = self.created or datetime.now()
-        self.asset_id = AssetIDGen.get_asset_id(
-            asset_type=self.__class__.__name__.lower(),
-            phase=self.phase,
-            stage=self.stage,
-            name=self.name,
-        )
+        self.dt_created = self.dt_created or datetime.now()
+
+        if self.asset_id is None:
+            self.asset_id = AssetIDGen.get_asset_id(
+                asset_type=self.__class__.__name__.lower(),
+                phase=self.phase,
+                stage=self.stage,
+                name=self.name,
+            )
 
     def __getstate__(self):
         """
