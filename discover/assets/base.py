@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Saturday November 16th 2024 12:51:43 am                                             #
+# Modified   : Saturday November 16th 2024 02:50:32 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -53,12 +53,12 @@ class Asset(DataClass):
             If not provided, it is set to the current datetime during initialization.
     """
 
-    asset_id: str
     phase: PhaseDef
     stage: StageDef
     name: str
     content: Any
     created: Optional[datetime] = None
+    asset_id: Optional[str] = None
 
     def __post_init__(self) -> None:
         """

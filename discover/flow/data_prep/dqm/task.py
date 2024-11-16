@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Thursday November 14th 2024 10:08:31 pm                                             #
+# Modified   : Saturday November 16th 2024 12:47:48 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -617,7 +617,7 @@ class DetectOrRepairNonASCIITextTask(DetectOrRemoveTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_excessive_non_ascii_chars",
+        new_column: str = "tqd_excess_non_ascii_chars",
         threshold_char_prop: float = 0.2,
         mode: str = "detect",
     ) -> None:
@@ -962,7 +962,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
         self,
         column: str = "content",
         threshold: int = 4,
-        new_column: str = "tqd_has_elongation",
+        new_column: str = "tqd_elongation",
         max_elongation: int = 3,
         mode: str = "detect",
     ) -> None:
@@ -980,9 +980,9 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
 # ------------------------------------------------------------------------------------------------ #
 #                           DETECT OR REPAIR REPEATED PATTERNS                                     #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedPatternsTask(DetectOrReplaceTask):
+class DetectOrRepairRepeatedSequenceTask(DetectOrReplaceTask):
     """
-    A task for detecting or repairing excessive repeated patterns in text.
+    A task for detecting or repairing excessive sequence repetition in text.
 
     This class inherits from `DetectOrRemoveTask` and uses a regular expression
     to identify repeated patterns within the specified text column. The task can
@@ -990,7 +990,7 @@ class DetectOrRepairRepeatedPatternsTask(DetectOrReplaceTask):
 
     Attributes:
         column (str): The name of the column to analyze for repeated patterns.
-        threshold (int): The number of repeated patterns required to flag text
+        threshold_word_prop (float): The proportion of the words required to flag text
             as having excessive repetition.
         new_column (str): The name of the new column that will store the result
             of the detection (e.g., a boolean indicating excessive repetition).
@@ -1001,17 +1001,18 @@ class DetectOrRepairRepeatedPatternsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        threshold: int = 2,
-        new_column: str = "tqd_has_excessive_repeated_patterns",
+        length_of_sequence: int = 3,
+        min_repetitions: int = 3,
+        threshold: int = 3,
+        new_column: str = "tqd_excess_sequence_repetition",
         mode: str = "detect",
     ) -> None:
-        pattern = (
-            rf"(.{{2,}})\1{{{threshold},}}"  # Use an f-string to insert the threshold
-        )
+        pattern = rf"(.{{{length_of_sequence},}})\1{{{min_repetitions - 1}}}"
         replacement = r"\1"
         super().__init__(
             pattern=pattern,
             column=column,
+            threshold=threshold,
             new_column=new_column,
             replacement=replacement,
             mode=mode,
@@ -1021,37 +1022,39 @@ class DetectOrRepairRepeatedPatternsTask(DetectOrReplaceTask):
 # ------------------------------------------------------------------------------------------------ #
 #                           DETECT OR REPAIR REPEATED WORDS                                        #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedWordsTask(DetectOrReplaceTask):
+class DetectOrRepairRepeatedWordPhrasesTask(DetectOrReplaceTask):
     """
-    A task for detecting or repairing excessive repeated words in text.
+    A task for detecting or repairing excessive repeated phrases in text.
 
     This class inherits from `DetectOrRemoveTask` and uses a regular expression
-    to identify repeated words within the specified text column. The task can
-    be configured to either detect or repair these words
+    to identify repeated phrases within the specified text column. The task can
+    be configured to either detect or repair these phrases
 
     Attributes:
-        column (str): The name of the column to analyze for repeated words.
-        threshold (int): The number of repeated words required to flag text
+        column (str): The name of the column to analyze for repeated phrases.
+        threshold (int): The number of repeated phrases required to flag text
             as having excessive repetition.
         new_column (str): The name of the new column that will store the result
             of the detection (e.g., a boolean indicating excessive repetition).
         mode (str): The mode of operation, either "detect" for flagging repeated
-            words or "repair" to remove them.
+            phrases or "repair" to remove them.
     """
 
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_repeated_words",
+        new_column: str = "tqd_excess_word_phrase_repetition",
+        min_repetitions: int = 3,
+        threshold: int = 3,
         mode: str = "detect",
     ) -> None:
-        pattern = r"\b(\w+)\b(?:\s+\1\b)+"
-        replacement = r"\1"
+        pattern = rf"(\b\w+\b(?: \b\w+\b)*)\s*(?:\1\s*){{{min_repetitions},}}"
+
         super().__init__(
             pattern=pattern,
             column=column,
             new_column=new_column,
-            replacement=replacement,
+            threshold=threshold,
             mode=mode,
         )
 

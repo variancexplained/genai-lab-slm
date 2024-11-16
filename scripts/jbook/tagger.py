@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : Deep Learning for Breast Cancer Detection                                           #
+# Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.12                                                                             #
 # Filename   : /scripts/jbook/tagger.py                                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
-# URL        : https://github.com/john-james-ai/BreastCancerDetection                              #
+# URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday November 20th 2023 04:36:24 pm                                               #
-# Modified   : Monday November 20th 2023 04:37:08 pm                                               #
+# Modified   : Saturday November 16th 2024 03:03:55 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -20,18 +20,21 @@ from glob import glob
 
 import nbformat as nbf
 
+print("Running Jupyter Cell Tagger")
 # Collect a list of all notebooks in the content folder
-notebooks = glob("./content/**/*.ipynb", recursive=True)
+notebooks = glob("./notebooks/content/**/*.ipynb", recursive=True)
 
 # Text to look for in adding tags
 text_search_dict = {
-    "# HIDDEN": "remove-cell",  # Remove the whole cell
+    "# REMOVE": "remove-cell",  # Remove the whole cell
     "# NO CODE": "remove-input",  # Remove only the input
     "# HIDE CODE": "hide-input",  # Hide the input w/ a button to show
+    "# %load ": "hide-cell",  # Hide the cell w/ a button to show
 }
 
 # Search through each notebook and look for the text, add a tag if necessary
 for ipath in notebooks:
+    print(f"Searching {ipath}...")
     ntbk = nbf.read(ipath, nbf.NO_CONVERT)
 
     for cell in ntbk.cells:

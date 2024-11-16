@@ -11,20 +11,19 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Friday November 15th 2024 02:07:57 am                                               #
+# Modified   : Saturday November 16th 2024 01:00:42 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
 
-from typing import Optional
+from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
-from pandarallel import pandarallel
 
 from discover.app.base import Analysis
 from discover.assets.idgen import AssetIDGen
@@ -32,34 +31,8 @@ from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
-pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
-# ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
 # ------------------------------------------------------------------------------------------------ #
-noise_cols = [
-    "tqd_ctrl_chars",
-    "tqd_accents",
-    "tqd_html_chars",
-    "tqd_excess_whitespace",
-    "tqd_excess_special_chars",
-    "tqd_elongation",
-    "tqd_excessive_non_ascii_chars",
-    "tqd_excessive_repeated_patterns",
-    "tqd_repeated_words",
-    "tqd_non_english_app_name",
-    "tqd_non_english_text",
-]
-
-validity_cols = ["tqd_review_length_outlier", "tqd_perplexity_outlier"]
-
-privacy_cols = [
-    "tqd_url",
-    "tqd_email",
-    "tqd_phone",
-]
-
-uniqueness_cols = ["tqd_duplicate_review_id"]
-base_cols = ["id", "app_name", "content"]
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -94,7 +67,23 @@ class DQA(Analysis):
         self._scores = None
 
         # Extract the columns containing the binary indicators of defects
+        self._base_cols = ["id", "app_name", "content"]
         self._cols = [col for col in self._df.columns if col.startswith("tqd")]
+        self._noise_cols = [
+            col
+            for col in self._df.columns
+            if (
+                col.startswith("tqd_")
+                and "email" not in col
+                and "url" not in col
+                and "phone" not in col
+            )
+        ]
+        self._privacy_cols = [
+            col
+            for col in self._df.columns
+            if ("email" in col or "url" in col or "phone" in col)
+        ]
 
     @property
     def completeness(self) -> float:
@@ -173,10 +162,10 @@ class DQA(Analysis):
         return self._scores
 
     def summarize_noise(self) -> pd.DataFrame:
-        return self._compute_frequency_distribution(cols=noise_cols)
+        return self._compute_frequency_distribution(cols=self._noise_cols)
 
     def summarize_privacy(self) -> pd.DataFrame:
-        return self._compute_frequency_distribution(cols=privacy_cols)
+        return self._compute_frequency_distribution(cols=self._privacy_cols)
 
     def plot_quality(self) -> None:
         viz.barplot(
@@ -230,17 +219,40 @@ class DQA(Analysis):
         defect: str,
         n: int = 10,
         sort_by: str = None,
+        cols: Optional[Union[list, str]] = None,
         ascending: bool = False,
         random_state: int = None,
     ) -> pd.DataFrame:
+        # Obtain the defect indicator column
         col = self._get_column_name(substring=defect)
-        cols = base_cols.extend(col)
+        # Apply the filter
         df = self._df.loc[self._df[col]]
+        # Update n for filtered data
         n = min(n, len(df))
-        defects = df.sample(n=n, random_state=random_state)
-        if sort_by:
-            defects = defects.sort_values(by=sort_by, ascending=ascending)
-        return defects[cols]
+        # Sample if sort_by is None. Rationale is that sorting implies all data, rather than a sample
+        if not sort_by:
+            df = df.sample(n=n, random_state=random_state)
+        # Sort data if requested
+        else:
+            df = df.sort_values(by=sort_by, ascending=ascending)
+        # If no columns were specified, return base columns
+        if cols:
+            if isinstance(cols, list):
+                return df[cols]
+            elif isinstance(cols, str):
+                cols = [col for col in df.columns if col.startswith(cols)]
+                if cols:
+                    base_cols = self._base_cols
+                    base_cols.extend(cols)
+                    return df[base_cols]
+                else:
+                    return df
+            else:
+                raise TypeError(
+                    f"Invalid cols value in get_defect. Expected str or list, encountered {type(cols)} "
+                )
+        else:
+            return df
 
     def subset_df(self, n: int = 10, random_state: int = None) -> pd.DataFrame:
         n = min(n, len(self._df))
@@ -304,11 +316,11 @@ class DQA(Analysis):
 
     def _compute_accuracy(self) -> float:
         N = self._df.shape[0]
-        return 1 - (self._df[noise_cols].any(axis=1).sum() / N)
+        return 1 - (self._df[self._noise_cols].any(axis=1).sum() / N)
 
     def _compute_privacy(self) -> float:
         N = self._df.shape[0]
-        return 1 - (self._df[privacy_cols].any(axis=1).sum() / N)
+        return 1 - (self._df[self._privacy_cols].any(axis=1).sum() / N)
 
     def _compute_text_quality(self) -> float:
         return self._df["tqa_score"].mean()
