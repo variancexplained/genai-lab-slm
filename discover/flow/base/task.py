@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/orchestration/base/task.py                                                #
+# Filename   : /discover/flow/base/task.py                                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Thursday October 17th 2024 08:08:20 pm                                              #
+# Modified   : Saturday November 16th 2024 02:31:40 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,48 +23,6 @@ import importlib
 import logging
 from abc import ABC, abstractmethod
 from typing import Any
-
-# ------------------------------------------------------------------------------------------------ #
-
-
-def instantiate_class(module: str, class_name: str, params: dict):
-    """
-    Dynamically imports a module and instantiates a class with the given parameters.
-
-    Parameters
-    ----------
-    module : str
-        The name of the module from which to import the class (e.g., 'mypackage.mymodule').
-    class_name : str
-        The name of the class to instantiate from the module.
-    params : dict
-        A dictionary of additional parameters to pass to the class constructor.
-
-    Returns
-    -------
-    object
-        An instance of the specified class with the provided parameters.
-
-    Raises
-    ------
-    ModuleNotFoundError
-        If the specified module cannot be found.
-    AttributeError
-        If the specified class does not exist in the module.
-    TypeError
-        If the class constructor does not accept the provided parameters.
-
-    Examples
-    --------
-    >>> obj = instantiate_class(
-    ...     module='mypackage.mymodule',
-    ...     class_name='Normalizer',
-    ...     params={'param1': value1, 'param2': value2}
-    ... )
-    """
-    module = importlib.import_module(module)
-    cls = getattr(module, class_name)
-    return cls(**params)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -123,6 +81,47 @@ class Task(ABC):
             The output of the task, as defined by the subclass implementation.
         """
         pass
+
+
+# ------------------------------------------------------------------------------------------------ #
+def instantiate_class(module: str, class_name: str, params: dict):
+    """
+    Dynamically imports a module and instantiates a class with the given parameters.
+
+    Parameters
+    ----------
+    module : str
+        The name of the module from which to import the class (e.g., 'mypackage.mymodule').
+    class_name : str
+        The name of the class to instantiate from the module.
+    params : dict
+        A dictionary of additional parameters to pass to the class constructor.
+
+    Returns
+    -------
+    object
+        An instance of the specified class with the provided parameters.
+
+    Raises
+    ------
+    ModuleNotFoundError
+        If the specified module cannot be found.
+    AttributeError
+        If the specified class does not exist in the module.
+    TypeError
+        If the class constructor does not accept the provided parameters.
+
+    Examples
+    --------
+    >>> obj = instantiate_class(
+    ...     module='mypackage.mymodule',
+    ...     class_name='Normalizer',
+    ...     params={'param1': value1, 'param2': value2}
+    ... )
+    """
+    module = importlib.import_module(module)
+    cls = getattr(module, class_name)
+    return cls(**params)
 
 
 # ------------------------------------------------------------------------------------------------ #

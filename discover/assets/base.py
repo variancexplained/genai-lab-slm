@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Tuesday November 5th 2024 05:32:25 pm                                               #
+# Modified   : Saturday November 16th 2024 12:51:43 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,6 +44,7 @@ class Asset(DataClass):
     properties for generating unique IDs and descriptions.
 
     Attributes:
+        asset_id (str): Uniquely identifies an asset.
         phase (PhaseDef): The phase to which the asset belongs.
         stage (StageDef): The stage within the phase.
         name (str): The name of the asset.
@@ -52,6 +53,7 @@ class Asset(DataClass):
             If not provided, it is set to the current datetime during initialization.
     """
 
+    asset_id: str
     phase: PhaseDef
     stage: StageDef
     name: str
@@ -66,6 +68,12 @@ class Asset(DataClass):
         providing a timestamp for when the asset was initialized.
         """
         self.created = self.created or datetime.now()
+        self.asset_id = AssetIDGen.get_asset_id(
+            asset_type=self.__class__.__name__.lower(),
+            phase=self.phase,
+            stage=self.stage,
+            name=self.name,
+        )
 
     def __getstate__(self):
         """
@@ -93,24 +101,6 @@ class Asset(DataClass):
         """
         for key, value in state.items():
             setattr(self, key, value)
-
-    @property
-    def asset_id(self) -> str:
-        """
-        Generates a unique identifier for the asset based on its asset_type type, phase, stage, and name.
-
-        The identifier combines the values of the phase, stage, and name attributes,
-        forming a string that serves as a unique reference for the asset.
-
-        Returns:
-            str: A string combining the phase, stage, and name values, acting as a unique ID.
-        """
-        return AssetIDGen.get_asset_id(
-            asset_type=self.__class__.__name__.lower(),
-            phase=self.phase,
-            stage=self.stage,
-            name=self.name,
-        )
 
     @property
     def description(self) -> str:
