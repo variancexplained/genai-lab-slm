@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/ingest/task.py                                             #
+# Filename   : /discover/flow/data_processing/data_prep/ingest/task.py                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Tuesday November 12th 2024 11:07:18 pm                                              #
+# Modified   : Sunday November 17th 2024 01:04:04 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,6 +37,7 @@ class FilterTask(Task):
     A task that filters a DataFrame based on a date threshold and then samples a fraction of the remaining rows.
 
     Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): Column containing the review date.
         date (int): The year to filter the DataFrame by. Only rows with dates after this year will be included.
         frac (float): The fraction of the DataFrame to sample, where 0 < frac <= 1.
@@ -51,15 +52,6 @@ class FilterTask(Task):
         date: Optional[int] = None,
         random_state: int = None,
     ) -> None:
-        """
-        Initializes the FilterTask with a date threshold and a sampling fraction.
-
-        Args:
-            column (str): Column containing the review date.
-            date (int): The year to filter the DataFrame by.
-            frac (float): The fraction of rows to sample, where 0 < frac <= 1.
-            random_state (int, optional): Random seed for reproducibility. Defaults to None.
-        """
         super().__init__()
         self._column = column
         self._date = date
@@ -72,6 +64,7 @@ class FilterTask(Task):
         Filters the DataFrame based on the date threshold and then samples a fraction of the remaining rows.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             data (pd.DataFrame): The input DataFrame containing a "date" column.
 
         Returns:
@@ -92,6 +85,7 @@ class VerifyEncodingTask(Task):
     A task that verifies and fixes UTF-8 encoding issues in a specified text column of a pandas DataFrame.
 
     Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column in the DataFrame that contains text data.
         encoding_sample (float): The fraction of rows to sample for checking encoding issues, where 0 < encoding_sample <= 1.
         random_state (int, optional): Random seed for reproducibility of the sample. Defaults to None.
@@ -106,12 +100,6 @@ class VerifyEncodingTask(Task):
     """
 
     def __init__(self, column: str) -> None:
-        """
-        Initializes the VerifyEncodingTask with the text column and sample fraction for encoding verification.
-
-        Args:
-            column (str): The column in the DataFrame that contains text data.
-        """
         super().__init__()
         self._column = column
 
@@ -121,6 +109,7 @@ class VerifyEncodingTask(Task):
         Verifies the UTF-8 encoding of a sample of the text column and re-encodes the entire column if issues are found.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             data (pd.DataFrame): The input DataFrame containing the text data.
 
         Returns:
@@ -139,6 +128,7 @@ class RemoveNewlinesTask(Task):
     A task that removes newlines from a specified text column in a pandas DataFrame.
 
     Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column in the DataFrame that contains text data.
 
     Attributes:
@@ -149,12 +139,6 @@ class RemoveNewlinesTask(Task):
     """
 
     def __init__(self, column: str) -> None:
-        """
-        Initializes the RemoveNewlinesTask with the specified column name.
-
-        Args:
-            column (str): The name of the column in the DataFrame that contains text data.
-        """
         super().__init__()
         self._column = column
 
@@ -164,6 +148,7 @@ class RemoveNewlinesTask(Task):
         Removes newlines from the specified text column in the provided DataFrame.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             data (pd.DataFrame): The input DataFrame containing the text data.
             **kwargs: Additional keyword arguments (not used in this implementation).
 
@@ -181,6 +166,7 @@ class CastDataTypeTask(Task):
     A task that casts the data types of specified columns in a pandas DataFrame.
 
     Args:
+        stage_id (str): Id for the stage to which the task belongs.
         datatypes (dict): A dictionary where the keys are column names and the values are the desired data types for each column.
 
     Attributes:
@@ -191,12 +177,6 @@ class CastDataTypeTask(Task):
     """
 
     def __init__(self, datatypes: dict) -> None:
-        """
-        Initializes the CastDataTypeTask with a dictionary of column names and their corresponding data types.
-
-        Args:
-            datatypes (dict): A dictionary where keys are column names and values are the target data types (e.g., 'float', 'int', 'str').
-        """
         super().__init__()
         self._datatypes = datatypes
 
@@ -206,6 +186,7 @@ class CastDataTypeTask(Task):
         Casts the data types of the specified columns in the DataFrame.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             data (pd.DataFrame): The input DataFrame in which columns will be cast to new data types.
 
         Returns:
@@ -256,6 +237,7 @@ class AddReviewLengthTask(Task):
         Adds a new column to the DataFrame with the length of the text in the specified column.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             data (pd.DataFrame): The input pandas DataFrame containing the data to be processed.
 
         Returns:

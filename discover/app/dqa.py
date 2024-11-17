@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Saturday November 16th 2024 07:36:52 pm                                             #
+# Modified   : Saturday November 16th 2024 10:29:57 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -56,7 +56,8 @@ class DQA(Analysis):
             name=name,
         )
         # Load the dataset
-        self._df = self.load_data(asset_id=asset_id).content
+        self._dataset = self.load_data(asset_id=asset_id)
+        self._df = self._dataset.content
 
         # Measures
         self._completeness = None
@@ -179,12 +180,12 @@ class DQA(Analysis):
         )
 
     def plot_review_length_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["ing_review_length_outlier"]]["review_length"]
+        outliers = self._df.loc[self._df["tqd_review_length_outlier"]]["review_length"]
         viz.violinplot(x=outliers, title="Distribution of Review Length Outliers")
         return outliers.describe().to_frame().T
 
     def plot_perplexity_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["an_perplexity_outlier"]]["an_perplexity"]
+        outliers = self._df.loc[self._df["tqd_perplexity_outlier"]]["an_perplexity"]
         viz.violinplot(x=outliers, title="Distribution of Perplexity Outliers")
         return outliers.describe().to_frame().T
 
@@ -270,8 +271,8 @@ class DQA(Analysis):
                 )
             ].shape[0]
         )
-        review_length_non_outliers = N - (self._df["ing_review_length_outlier"].sum())
-        perplexity_non_outliers = N - (+self._df["an_perplexity_outlier"].sum())
+        review_length_non_outliers = N - (self._df["tqd_review_length_outlier"].sum())
+        perplexity_non_outliers = N - (+self._df["tqd_perplexity_outlier"].sum())
         return (
             ((valid_ratings / N) * self._config.rating_validity_weight)
             + (

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Saturday November 16th 2024 07:18:21 pm                                             #
+# Modified   : Sunday November 17th 2024 12:38:49 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,86 +19,72 @@
 """Stage Base Class  Module"""
 from __future__ import annotations
 
+# ------------------------------------------------------------------------------------------------ #
+#                                        STAGE                                                     #
+# ------------------------------------------------------------------------------------------------ #
 from abc import ABC, abstractmethod
-from typing import List
 
 from discover.core.flow import PhaseDef, StageDef
 from discover.core.namespace import NestedNamespace
 from discover.flow.base.task import Task, TaskBuilder
 
 
-# ------------------------------------------------------------------------------------------------ #
-#                                        STAGE                                                     #
-# ------------------------------------------------------------------------------------------------ #
 class Stage(ABC):
-    """Abstract base class for pipeline stages.
+    """
+    Abstract base class representing a stage in a data processing pipeline.
 
-    This class provides the foundation for creating and executing stages in a data pipeline.
-    A stage typically involves loading source data, applying a series of tasks to the data,
-    and saving the processed data to a destination. The stage is configurable with source
-    and destination settings and a list of tasks to be executed.
+    This class defines the core properties and methods that must be implemented
+    by all specific stage types. It manages tasks associated with the stage and
+    provides functionality to execute those tasks and produce an asset.
 
-    Attributes:
-        _source_config (NestedNamespace): Configuration dictionary for the source dataset.
-        _destination_config (NestedNamespace): Configuration dictionary for the destination dataset.
-        _task_builder (Type[TaskBuilder]): The builder class responsible for constructing tasks.
-        _tasks (List[Task]): A list of tasks to be executed in this stage.
-        _force (bool): Whether to force execution even if the destination dataset exists.
-
-    Methods:
+    Args:
         phase (PhaseDef): The phase of the pipeline.
-        stage (StageDef): The specific stage of the pipeline.
-        run() -> str: Executes the pipeline stage.
-        build(stage_config: dict, force: bool = False) -> Stage: Creates and returns a new stage instance.
+        stage (StageDef): The specific stage within the pipeline.
+        source_config (dict): Configuration for the data source.
+        destination_config (dict): Configuration for the data destination.
+        force (bool): Whether to force execution, even if the output already exists.
     """
 
     _task_builder = TaskBuilder
 
     def __init__(
         self,
+        phase: PhaseDef,
+        stage: StageDef,
         source_config: dict,
         destination_config: dict,
-        tasks: List[Task],
         force: bool = False,
     ) -> None:
-        """Initializes the Stage pipeline with the provided configuration and tasks.
-
-        Args:
-            source_config (dict): Configuration for the source dataset.
-            destination_config (dict): Configuration for the destination dataset.
-            tasks (List[Task]): List of tasks to be applied in the pipeline stage.
-            task_builder (Type[TaskBuilder], optional): The task builder class to use for constructing tasks.
-                Defaults to `TaskBuilder`.
-            force (bool, optional): Whether to force execution even if the destination dataset exists.
-                Defaults to `False`.
-
-        Raises:
-            ValueError: If source_config or destination_config are invalid or incomplete.
-            RuntimeError: For other initialization errors.
-        """
-
+        self._phase = phase
+        self._stage = stage
         self._source_config = NestedNamespace(source_config)
         self._destination_config = NestedNamespace(destination_config)
-        self._tasks = tasks
         self._force = force
+        self._tasks = []
 
     @property
-    @abstractmethod
     def phase(self) -> PhaseDef:
-        """Returns the phase of the pipeline.
-
-        This property is meant to categorize the stage within the larger pipeline process.
-        """
-        pass
+        """Returns the phase of the pipeline."""
+        return self._phase
 
     @property
-    @abstractmethod
     def stage(self) -> StageDef:
-        """Returns the specific stage within the pipeline.
+        """Returns the specific stage within the pipeline."""
+        return self._stage
 
-        This property helps identify which stage of the pipeline is being executed.
+    def add_task(self, task: Task) -> None:
+        """Adds a task to the stage and assigns the stage identifier to the task.
+
+        Args:
+            task (Task): The task to be added to the stage.
+
+        Raises:
+            TypeError: If the task is not an instance of the expected Task class.
         """
-        pass
+        if not isinstance(task, Task):
+            raise TypeError("Expected an instance of Task.")
+        task.stage_id = self._stage.id
+        self._tasks.append(task)
 
     @abstractmethod
     def run(self) -> str:
@@ -121,7 +107,7 @@ class Stage(ABC):
 
         Args:
             stage_config (dict): The configuration dictionary containing source, destination, and tasks details.
-            force (bool, optional): Whether to force execution even if the destination dataset exists. Defaults to `False`.
+            force (bool, optional): Whether to force execution even if the destination dataset exists. Defaults to False.
 
         Returns:
             Stage: A new instance of the Stage class, configured with the provided settings.
@@ -132,16 +118,27 @@ class Stage(ABC):
             RuntimeError: If there is an error creating the stage.
         """
         try:
-            tasks = [
-                cls._task_builder.build(task_config, stage_id=stage_config["stage_id"])
-                for task_config in stage_config["tasks"]
-            ]
-            return cls(
+            # Instantiate the Stage object
+            stage = cls(
+                phase=PhaseDef.from_value(stage_config["phase"]),
+                stage=StageDef.from_value(stage_config["stage"]),
                 source_config=stage_config["source_config"],
                 destination_config=stage_config["destination_config"],
-                tasks=tasks,
                 force=force,
             )
+
+            # Construct the Stage's Task objects
+            tasks = [
+                cls._task_builder.build(task_config=task_config)
+                for task_config in stage_config["tasks"]
+            ]
+
+            # Add Tasks to the Stage object
+            for task in tasks:
+                stage.add_task(task)
+
+            return stage
+
         except KeyError as e:
             raise ValueError(
                 f"Missing required configuration key in stage_config: {str(e)}"
@@ -152,13 +149,13 @@ class Stage(ABC):
             ) from e
 
     def _get_asset_id(self, config: NestedNamespace) -> str:
-        """Returns the asset id given an asset configuration
+        """Returns the asset id given an asset configuration.
 
         Args:
-            config (NestedNamespace): an asset configuration
+            config (NestedNamespace): An asset configuration.
 
         Returns:
-            str: The asset_id for the asset
+            str: The asset_id for the asset.
         """
         return self._asset_idgen.get_asset_id(
             asset_type=config.asset_type,

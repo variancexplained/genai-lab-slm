@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Saturday November 16th 2024 07:19:41 pm                                             #
+# Modified   : Sunday November 17th 2024 12:17:33 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,6 +23,8 @@ import importlib
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Optional
+
+from discover.core.flow import StageDef
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -45,7 +47,10 @@ class Task(ABC):
         and outputs.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+    ):
+        self._stage = None
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -61,18 +66,18 @@ class Task(ABC):
         return self.__class__.__name__
 
     @property
-    def stage_id(self) -> str:
+    def stage(self) -> StageDef:
         """Returns the id for the stage to which the Task belongs"""
-        return self._stage_id
+        return self._stage
 
-    @stage_id.setter
-    def stage_id(self, stage_id: str) -> None:
-        """Setter for stage_id property
+    @stage.setter
+    def stage(self, stage: StageDef) -> None:
+        """Sets the stage to which the task belongs.
 
         Args:
-            stage_id (str): Identifier for the stage to which the task belongs.
+            stage (StageDef): A Stage ENUM defining its id, value, directory, and description
         """
-        self._stage_id = stage_id
+        self._stage = stage
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
@@ -98,7 +103,11 @@ class Task(ABC):
 
 
 # ------------------------------------------------------------------------------------------------ #
-def instantiate_class(module: str, class_name: str, params: dict):
+def instantiate_class(
+    module: str,
+    class_name: str,
+    params: dict,
+):
     """
     Dynamically imports a module and instantiates a class with the given parameters.
 
@@ -110,6 +119,7 @@ def instantiate_class(module: str, class_name: str, params: dict):
         The name of the class to instantiate from the module.
     params : dict
         A dictionary of additional parameters to pass to the class constructor.
+    stage_id (str): Identifier for the stage to which the task belongs.
 
     Returns
     -------
@@ -135,7 +145,9 @@ def instantiate_class(module: str, class_name: str, params: dict):
     """
     module = importlib.import_module(module)
     cls = getattr(module, class_name)
-    return cls(**params)
+    return cls(
+        **params,
+    )
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -165,7 +177,7 @@ class TaskBuilder:
     """
 
     @staticmethod
-    def build(task_config, stage_id: Optional[str] = None):
+    def build(task_config: dict, stage_id: Optional[str] = None):
         """
         Builds and returns an instance of a task class based on the provided configuration.
 
@@ -206,11 +218,8 @@ class TaskBuilder:
         module = task_config["module"]
         class_name = task_config["class_name"]
         params = task_config["params"]
-        task = instantiate_class(
+        return instantiate_class(
             module=module,
             class_name=class_name,
             params=params,
         )
-        if stage_id:
-            task.stage_id = stage_id
-        return task

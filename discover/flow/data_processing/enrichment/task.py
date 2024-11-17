@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 10:15:01 pm                                              #
-# Modified   : Saturday November 16th 2024 07:43:06 pm                                             #
+# Modified   : Sunday November 17th 2024 12:14:51 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -46,7 +46,7 @@ class ComputeReviewAgeTask(Task):
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "nrch_review_age"
+        self, , column: str = "date", new_column: str = "nrch_review_age"
     ) -> None:
         super().__init__()
         self._column = column
@@ -95,7 +95,7 @@ class ComputeReviewMonthTask(Task):
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "nrch_review_month"
+        self, , column: str = "date", new_column: str = "nrch_review_month"
     ) -> None:
         super().__init__()
         self._column = column
@@ -136,6 +136,7 @@ class ComputeReviewDayofWeekTask(Task):
 
     def __init__(
         self,
+        ,
         column: str = "date",
         new_column: str = "nrch_review_day_of_week",
     ) -> None:
@@ -179,6 +180,7 @@ class ComputeReviewHourTask(Task):
 
     def __init__(
         self,
+        ,
         column: str = "date",
         new_column: str = "nrch_review_hour",
     ) -> None:
@@ -216,7 +218,9 @@ class ComputePercentDeviationTask(Task):
         by (str): The level by which the average is computed for the deviation calculation.
     """
 
-    def __init__(self, column: str, new_column: str, by: str = "category") -> None:
+    def __init__(
+        self, , column: str, new_column: str, by: str = "category"
+    ) -> None:
         super().__init__()
         self._column = column
         self._new_column = new_column

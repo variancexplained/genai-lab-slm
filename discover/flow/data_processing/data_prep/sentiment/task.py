@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Saturday November 16th 2024 07:41:34 pm                                             #
+# Modified   : Sunday November 17th 2024 12:14:51 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -50,17 +50,21 @@ class SentimentAnalysisTask(Task):
     This class is designed to handle sentiment analysis efficiently by using parallel processing
     to score and label text data. It requires subclasses to implement the `analyze` method.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column containing the text data for sentiment analysis.
         new_column (str): The prefix for the new columns that will store the sentiment score and label.
     """
 
     def __init__(
         self,
+        ,
         column: str = "content",
         new_column: str = "an_sentiment",
     ) -> None:
-        super().__init__()
+        super().__init__(
+            ,
+        )
         self._column = column
         self._new_column = new_column
 
@@ -98,6 +102,7 @@ class SentimentAnalysisTask(Task):
         This method should be implemented by subclasses to define the sentiment analysis logic.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             text (str): The input text to analyze.
 
         Returns:
@@ -112,7 +117,8 @@ class SentimentScoreTask(Task):
     """
     A base class for performing sentiment analysis on a pandas DataFrame.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column containing text data for sentiment analysis.
         new_column (str): The prefix for the new columns that store the sentiment score and label.
         min_score (float): The minimum possible sentiment score.
@@ -121,12 +127,15 @@ class SentimentScoreTask(Task):
 
     def __init__(
         self,
+        ,
         column: str = "content",
         new_column: str = "an_sentiment",
         min_score: float = -1.0,
         max_score: float = 1.0,
     ) -> None:
-        super().__init__()
+        super().__init__(
+            ,
+        )
         self._column = column
         self._new_column = new_column
         self._min_score = min_score
@@ -156,6 +165,7 @@ class SentimentScoreTask(Task):
         Abstract method to calculate the sentiment score for a given text.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             text: The input text for which the sentiment score is calculated.
 
         Returns:
@@ -168,6 +178,7 @@ class SentimentScoreTask(Task):
         Classifies a sentiment score into one of the predefined sentiment labels.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             score (float): The sentiment score to classify.
 
         Returns:
@@ -203,7 +214,8 @@ class SentimentLabelTask(Task):
     their own sentiment classification logic. It uses parallel processing to efficiently classify
     large datasets.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column containing the text data for classification.
         new_column (str): The prefix for the new column that will store the sentiment label.
         min_score (float): The minimum sentiment score (for reference, even if not directly used).
@@ -212,10 +224,13 @@ class SentimentLabelTask(Task):
 
     def __init__(
         self,
+        ,
         column: str = "content",
         new_column: str = "an_sentiment",
     ) -> None:
-        super().__init__()
+        super().__init__(
+            ,
+        )
         self._column = column
         self._new_column = new_column
 
@@ -243,6 +258,7 @@ class SentimentLabelTask(Task):
         sentiment classification.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             text (str): The input text to classify.
 
         Returns:
@@ -260,7 +276,8 @@ class SpacySentimentAnalysisTask(SentimentScoreTask):
     to classify the sentiment of text data. The `classify` method calculates
     sentiment based on the vectors and sentiment attributes of tokens.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column containing the text data to be classified.
         new_column (str): The name of the column where the sentiment results will be stored.
         pipeline (str): The name of the spaCy model pipeline to load for NLP tasks.
@@ -268,6 +285,7 @@ class SpacySentimentAnalysisTask(SentimentScoreTask):
 
     def __init__(
         self,
+        ,
         column="content",
         new_column="an_sentiment",
         pipeline: str = "en_core_web_sm",
@@ -275,6 +293,7 @@ class SpacySentimentAnalysisTask(SentimentScoreTask):
         max_score: float = 1.0,
     ):
         super().__init__(
+            ,
             column=column,
             new_column=new_column,
             min_score=min_score,
@@ -291,7 +310,7 @@ class SpacySentimentAnalysisTask(SentimentScoreTask):
         Classifies the sentiment of the given text using the spaCy NLP pipeline.
 
         Args:
-            row: The row to classify.
+            text: Text to classify.
 
         Returns:
             float: The accumulated sentiment score of the text based on token vectors.
@@ -308,19 +327,22 @@ class TextBlobSentimentAnalysisTask(SentimentScoreTask):
     the sentiment of text data. The `classify` method returns the polarity score
     provided by TextBlob's sentiment analysis.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column containing the text data to be classified.
         new_column (str): The name of the column where the sentiment results will be stored.
     """
 
     def __init__(
         self,
+        ,
         column="content",
         new_column="an_sentiment",
         min_score: float = -1.0,
         max_score: float = 1.0,
     ):
         super().__init__(
+            ,
             column=column,
             new_column=new_column,
             min_score=min_score,
@@ -349,7 +371,8 @@ class VaderSentimentAnalysisTask(SentimentAnalysisTask):
     This class uses the VADER SentimentIntensityAnalyzer to analyze the sentiment
     of text data and compute sentiment scores, adding the results to the DataFrame.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the DataFrame column containing the text to be analyzed.
         _analyzer (SentimentIntensityAnalyzer): An instance of VADER's SentimentIntensityAnalyzer.
     """
@@ -386,7 +409,8 @@ class MergeSentimentsTask(Task):
     """
     A task to merge sentiment analysis results with the main dataset.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         location (str): The file location of the sentiment data.
         file_prefix (str): The prefix used for the sentiment data files.
         config_reader_cls (type): The class used to read configuration settings.
@@ -395,22 +419,16 @@ class MergeSentimentsTask(Task):
 
     def __init__(
         self,
+        ,
         new_column: str = "an_sentiment",
         location: str = "models/sentiment/inference",
         file_prefix: str = "sentiments_",
         config_reader_cls: Type[AppConfigReader] = AppConfigReader,
         io_cls: Type[IOService] = IOService,
     ) -> None:
-        """
-        Initializes the MergeSentimentsTask with the specified parameters.
-
-        Args:
-            location (str): The directory where sentiment data files are stored. Defaults to "models/sentiment/inference".
-            file_prefix (str): The prefix for sentiment data files. Defaults to "sentiments_".
-            config_reader_cls (type): The class used for reading configuration settings. Defaults to AppConfigReader.
-            io_cls (type): The class used for I/O operations. Defaults to IOService.
-        """
-        super().__init__()
+        super().__init__(
+            ,
+        )
         self._new_column = new_column
         self._location = location
         self._file_prefix = file_prefix
@@ -423,6 +441,7 @@ class MergeSentimentsTask(Task):
         Merges sentiment analysis data with the main dataset.
 
         Args:
+        stage_id (str): Id for the stage to which the task belongs.
             data (pd.DataFrame): The main dataset to which sentiment data will be merged.
 
         Returns:
@@ -474,18 +493,21 @@ class DistilBERTSentimentClassifier(SentimentLabelTask):
     to classify the sentiment of text data. The `classify` method calculates
     sentiment based on the vectors and sentiment attributes of tokens.
 
-    Attributes:
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
         column (str): The name of the column containing the text data to be classified.
         new_column (str): The name of the column where the sentiment results will be stored.
     """
 
     def __init__(
         self,
+        ,
         column="content",
         new_column="an_sentiment",
         model_name: str = "tabularisai/robust-sentiment-analysis",
     ):
         super().__init__(
+            ,
             column=column,
             new_column=new_column,
         )
@@ -516,7 +538,7 @@ class DistilBERTSentimentClassifier(SentimentLabelTask):
         Classifies the sentiment of the given text using the spaCy NLP pipeline.
 
         Args:
-            row: The row to classify.
+            text: The text to classify.
 
         Returns:
             float: The accumulated sentiment score of the text based on token vectors.

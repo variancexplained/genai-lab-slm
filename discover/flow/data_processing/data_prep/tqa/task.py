@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Saturday November 16th 2024 07:32:52 pm                                             #
+# Modified   : Sunday November 17th 2024 01:12:54 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -64,6 +64,7 @@ class TQATask(Task):
     """
 
     def __init__(self, new_column: str = None) -> None:
+        super().__init__()
         self._new_column = f"{self.stage_id}_{new_column}"
 
 
@@ -761,7 +762,9 @@ class ComputePerplexityFiltersTask(TQATask):
         tqf_word_count_range (bool): True if the word count is between 3 and 256.
     """
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+    ) -> None:
         super().__init__()
 
     @task_logger
@@ -1083,16 +1086,16 @@ class ComputeTextQualityScore(TQATask):
 
     Attributes:
         new_column (str): Column containing the final text quality score.
-        tqa_syntactic_weight (float): The weight assigned to the first TQA score. Defaults to 0.4.
-        tqa_perplexity_weight (float): The weight assigned to the second TQA score. Defaults to 0.6.
+        syntactic_weight (float): The weight assigned to the first TQA score. Defaults to 0.4.
+        perplexity_weight (float): The weight assigned to the second TQA score. Defaults to 0.6.
         _data (DataFrame): The DataFrame holding the data after computation.
     """
 
     def __init__(
         self,
         new_column: str = "score",
-        tqa_syntactic_weight: float = 0.4,
-        tqa_perplexity_weight: float = 0.6,
+        syntactic_weight: float = 0.4,
+        perplexity_weight: float = 0.6,
     ):
         """
         Initializes the ComputeTextQualityScore with specified weights for combining the two TQA scores.
@@ -1103,8 +1106,8 @@ class ComputeTextQualityScore(TQATask):
             tqa_perplexity_weight (float): Weight for the second TQA score. Defaults to 0.6.
         """
         super().__init__(new_column=new_column)
-        self._tqa_syntactic_weight = tqa_syntactic_weight
-        self._tqa_perplexity_weight = tqa_perplexity_weight
+        self._syntactic_weight = syntactic_weight
+        self._perplexity_weight = perplexity_weight
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -1122,8 +1125,8 @@ class ComputeTextQualityScore(TQATask):
         try:
             # Normalize both scores to [0, 1]
             min_max_enrichment_tqa_score1 = data.select(
-                F.min("tqa_syntactic_lexical_score"),
-                F.max("tqa_syntactic_lexical_score"),
+                F.min(f"{self.stage_id}_syntactic_lexical_score"),
+                F.max(f"{self.stage_id}_syntactic_lexical_score"),
             ).first()
 
             if min_max_enrichment_tqa_score1[1] == min_max_enrichment_tqa_score1[0]:
@@ -1136,7 +1139,8 @@ class ComputeTextQualityScore(TQATask):
             )
 
             min_max_enrichment_tqa_score2 = data.select(
-                F.min("tqa_coherence_score"), F.max("tqa_coherence_score")
+                F.min(f"{self.stage_id}_coherence_score"),
+                F.max(f"{self.stage_id}_coherence_score"),
             ).first()
 
             if min_max_enrichment_tqa_score2[1] == min_max_enrichment_tqa_score2[0]:
@@ -1148,22 +1152,26 @@ class ComputeTextQualityScore(TQATask):
 
             # Apply Min-Max normalization to both scores
             data = data.withColumn(
-                "tqa_syntactic_lexical_score",
-                (F.col("tqa_syntactic_lexical_score") - min_enrichment_tqa_score1)
+                f"{self.stage_id}_syntactic_lexical_score",
+                (
+                    F.col(f"{self.stage_id}_syntactic_lexical_score")
+                    - min_enrichment_tqa_score1
+                )
                 / (max_enrichment_tqa_score1 - min_enrichment_tqa_score1),
             )
 
             data = data.withColumn(
-                "tqa_coherence_score",
-                (F.col("tqa_coherence_score") - min_enrichment_tqa_score2)
+                f"{self.stage_id}_coherence_score",
+                (F.col(f"{self.stage_id}_coherence_score") - min_enrichment_tqa_score2)
                 / (max_enrichment_tqa_score2 - min_enrichment_tqa_score2),
             )
 
             # Combine scores using weights
             data = data.withColumn(
                 self._new_column,
-                self._tqa_syntactic_weight * F.col("tqa_syntactic_lexical_score")
-                + self._tqa_perplexity_weight * F.col("tqa_coherence_score"),
+                self._syntactic_weight
+                * F.col(f"{self.stage_id}_syntactic_lexical_score")
+                + self._perplexity_weight * F.col(f"{self.stage_id}_coherence_score"),
             )
 
             # Compute min and max of the new column

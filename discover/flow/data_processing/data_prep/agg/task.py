@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Saturday November 16th 2024 07:43:06 pm                                             #
+# Modified   : Sunday November 17th 2024 12:14:51 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,15 +35,19 @@ class AppAggregationTask(Task):
     the data to produce a comprehensive overview of reviews for each app, including
     identifying reviews with the highest vote sum, the highest TQA score, and the longest review.
 
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
+        dataset_name (str): Name of the dataset created
+
     Methods:
         run(data: DataFrame) -> DataFrame:
             Aggregates the input DataFrame at the app level and returns the aggregated results.
     """
 
-    def __init__(self, dataset_name: str) -> None:
-        """
-        Initializes the AppAggregationTask.
-        """
+    def __init__(
+        self,
+        dataset_name: str,
+    ) -> None:
         super().__init__()
         self._dataset_name = dataset_name
 
@@ -152,12 +156,19 @@ class CategoryAggregationTask(Task):
     the data to produce a comprehensive overview of reviews for each category, including
     identifying reviews with the highest vote sum, the highest TQA score, and the longest review.
 
+    Args:
+        stage_id (str): Id for the stage to which the task belongs.
+        dataset_name (str): Name of the dataset created
+
     Methods:
         run(data: DataFrame) -> DataFrame:
             Aggregates the input DataFrame at the category level and returns the aggregated results.
     """
 
-    def __init__(self, dataset_name: str) -> None:
+    def __init__(
+        self,
+        dataset_name: str,
+    ) -> None:
         """
         Initializes the AppAggregationTask.
         """

@@ -11,14 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Saturday November 16th 2024 04:27:59 pm                                             #
+# Modified   : Sunday November 17th 2024 12:51:51 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repository Module"""
 import logging
-from datetime import datetime
 from typing import Callable, Optional, Union
 
 import pandas as pd
@@ -303,33 +302,6 @@ class DatasetRepo(Repo):
             msg = f"Metadata for dataset {dataset.asset_id} could not be updated.\n{e}"
             self._logger.exception(msg)
             raise DatasetIOError(msg, e) from e
-
-    # -------------------------------------------------------------------------------------------- #
-    def is_consumed(self, asset_id: str) -> bool:
-        """Returns the True if the dataset has been marked as consumed, False otherwise.
-
-        Args:
-            asset_id (str): The dataset asset identifier.
-
-        Returns:
-            bool: True if the Dataset has been created, but not yet consumed.
-        """
-        dataset = self.get_dataset_metadata(asset_id=asset_id)
-        return dataset.consumed
-
-    # -------------------------------------------------------------------------------------------- #
-    def consumed(self, asset_id: str, consumer: str = None) -> None:
-        """Marks the dataset as having been consumed.
-
-        Args:
-            asset_id (str): The identifier for the dataset asset.
-            consumer (str): The name of the Task that consumed the dataset.
-        """
-        dataset = self.get_dataset_metadata(asset_id=asset_id)
-        dataset.consumed = True
-        dataset.dt_consumed = datetime.now()
-        dataset.consumed_by = consumer
-        self.update_dataset_metadata(dataset=dataset)
 
     # -------------------------------------------------------------------------------------------- #
     def _read_file(

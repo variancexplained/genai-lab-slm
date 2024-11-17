@@ -11,73 +11,47 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 07:01:12 pm                                              #
-# Modified   : Saturday November 16th 2024 05:46:59 pm                                             #
+# Modified   : Sunday November 17th 2024 01:06:03 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-import logging
-from typing import List
 
-from discover.assets.idgen import AssetIDGen
 from discover.core.flow import PhaseDef, StageDef
-from discover.flow.base.task import Task
-from discover.flow.data_processing.data_prep.stage import DataPrepStage
+from discover.flow.data_processing.data_prep.base.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
 class SentimentClassificationStage(DataPrepStage):
     """
-    A class that represents a stage in the data processing pipeline dedicated to
-    classifying sentiment in textual data.
+    Stage for sentiment classification in the data preparation pipeline.
 
-    This stage is responsible for loading the source data, applying sentiment classification
-    tasks, and saving the processed data to the specified destination. It also generates a
-    unique asset ID for the destination using the provided configuration details.
+    This class applies sentiment classification to the input data as part of the
+    data preparation process. It inherits from `DataPrepStage` and is responsible
+    for configuring and running tasks related to sentiment analysis, ultimately
+    saving the processed data to the destination.
 
-    Attributes:
-        source_config (dict): Configuration details for loading the source data asset.
-        destination_config (dict): Configuration details for saving the classified data asset.
-        tasks (List[Task]): A list of tasks to be executed for sentiment classification.
-        force (bool): Whether to force the execution of the stage, overriding existing assets.
-        **kwargs: Additional keyword arguments for customization and flexibility.
-
-    Methods:
-        _load_source_data() -> pd.DataFrame:
-            Loads the source dataset from the repository using the source asset ID.
+    Args:
+        phase (PhaseDef): The phase of the data pipeline.
+        stage (StageDef): The specific stage within the data pipeline.
+        source_config (dict): Configuration for the data source.
+        destination_config (dict): Configuration for the data destination.
+        force (bool, optional): Whether to force execution, even if the output already
+            exists. Defaults to False.
     """
 
     def __init__(
         self,
+        phase: PhaseDef,
+        stage: StageDef,
         source_config: dict,
         destination_config: dict,
-        tasks: List[Task],
         force: bool = False,
-        **kwargs,
     ) -> None:
-        """
-        Initializes the MetadataEnrichmentStage with source and destination configurations,
-        a list of tasks for metadata enrichment, and an optional force flag.
-
-        Args:
-            source_config (dict): Configuration details for the source data asset.
-            destination_config (dict): Configuration details for the destination data asset.
-            tasks (List[Task]): A list of tasks to execute during the metadata enrichment stage.
-            force (bool): If True, forces the execution of the stage, even if the destination asset exists.
-            **kwargs: Additional keyword arguments for flexibility and customization.
-        """
         super().__init__(
+            phase=phase,
+            stage=stage,
             source_config=source_config,
             destination_config=destination_config,
-            tasks=tasks,
             force=force,
         )
-
-        self._destination_asset_id = AssetIDGen.get_asset_id(
-            asset_type=self._destination_config.asset_type,
-            phase=PhaseDef.from_value(value=self._destination_config.phase),
-            stage=StageDef.from_value(value=self._destination_config.stage),
-            name=self._destination_config.name,
-        )
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
