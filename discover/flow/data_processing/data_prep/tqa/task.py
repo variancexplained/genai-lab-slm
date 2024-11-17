@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Sunday November 17th 2024 01:12:54 am                                               #
+# Modified   : Sunday November 17th 2024 02:21:51 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,36 +42,9 @@ os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                       TQA TASK                                                   #
-# ------------------------------------------------------------------------------------------------ #
-class TQATask(Task):
-    """
-    Base class for all Text Quality Analysis (TQA) tasks.
-
-    This class provides a foundation for TQA tasks, automatically prefixing the specified
-    new column name with the stage ID to ensure consistency in naming.
-
-    Attributes
-    ----------
-    new_column : str
-        The name of the new column to be added, prefixed with the stage ID.
-
-    Parameters
-    ----------
-    new_column : str, optional
-        The base name of the new column. The full column name will be prefixed
-        with the stage ID to create a unique, stage-specific identifier.
-    """
-
-    def __init__(self, new_column: str = None) -> None:
-        super().__init__()
-        self._new_column = f"{self.stage_id}_{new_column}"
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                       NLP TASK                                                   #
 # ------------------------------------------------------------------------------------------------ #
-class NLPTask(TQATask):
+class NLPTask(Task):
     """
     A class to perform NLP preprocessing on a specified content column in a Spark DataFrame.
     This task includes tokenization, POS tagging, and formatting of the output as plain lists.
@@ -120,6 +93,7 @@ class NLPTask(TQATask):
             A transformed Spark DataFrame with new columns: 'tokens' and 'pos', containing lists
             of tokens and POS tags, respectively.
         """
+
         pipeline = self._build_pipeline()
         return pipeline.fit(data).transform(data)
 
@@ -171,7 +145,7 @@ class NLPTask(TQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE POS STATS                                             #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeSyntacticStatsTask(TQATask):
+class ComputeSyntacticStatsTask(Task):
     """
     A task to compute Part-of-Speech (POS) statistics for a specified column in a PySpark DataFrame.
 
@@ -270,7 +244,7 @@ class ComputeSyntacticStatsTask(TQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                              COMPUTE LEXICAL STATS                                               #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeLexicalStatsTask(TQATask):
+class ComputeLexicalStatsTask(Task):
     """
     A task to compute basic text statistics for a specified column in a PySpark DataFrame.
 
@@ -500,7 +474,7 @@ class ComputeLexicalStatsTask(TQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE 1 TASK                                         #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeSyntacticLexicalScoresTask(TQATask):
+class ComputeSyntacticLexicalScoresTask(Task):
     """
     A task to compute a Text Quality Assessment (TQA) score based on various components
     such as POS count, POS diversity, lexical complexity, POS intensity, and TQA quality checks.
@@ -530,7 +504,8 @@ class ComputeSyntacticLexicalScoresTask(TQATask):
             lexical_complexity_weight (float): Weight for the lexical complexity component.
             new_column (str): Name of the output column for the TQA score. Defaults to "enrichment_tqa_score1".
         """
-        super().__init__(new_column=new_column)
+        super().__init__()
+        self._new_column = new_column
         self._pos_diversity_weight = pos_diversity_weight
         self._pos_density_weight = pos_density_weight
         self._lexical_complexity_weight = lexical_complexity_weight
@@ -553,6 +528,8 @@ class ComputeSyntacticLexicalScoresTask(TQATask):
             DataFrame: The input DataFrame with additional columns for each component score and the final TQA score.
         """
         try:
+            # Update the new column to be prefixed by the stage id assigned at runtime.
+            self._new_column = f"{self.stage.id}_{self._new_column}"
             # Ensure the required text column exists
             if self._column not in data.columns:
                 raise AnalysisException(
@@ -737,7 +714,7 @@ class ComputeSyntacticLexicalScoresTask(TQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                               COMPUTE PERPLEXITY FILTERS  TASK                                   #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePerplexityFiltersTask(TQATask):
+class ComputePerplexityFiltersTask(Task):
     """
     A task to compute Text Quality Assessment (TQA) statistics for reviews in a PySpark DataFrame.
 
@@ -884,7 +861,7 @@ class ComputePerplexityFiltersTask(TQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                               COMPUTE PERPLEXITY WEIGHTS TASK                                    #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePerplexityWeights(TQATask):
+class ComputePerplexityWeights(Task):
     """
     A class to compute and save perplexity weights for various filters in a PySpark DataFrame.
 
@@ -992,7 +969,7 @@ class ComputePerplexityWeights(TQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE 2 TASK                                         #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeCoherenceScoreTask(TQATask):
+class ComputeCoherenceScoreTask(Task):
     """
     A task to compute a Text Quality Assessment (TQA) coherence score based on binary filter indicators
     and pre-computed perplexity weights.
@@ -1010,7 +987,8 @@ class ComputeCoherenceScoreTask(TQATask):
         new_column: str = "coherence_score",
         pp_filepath: str = "models/tqa/pp_weights.csv",
     ):
-        super().__init__(new_column=new_column)
+        super().__init__()
+        self._new_column = new_column
         self._pp_filepath = pp_filepath
 
     @task_logger
@@ -1033,6 +1011,8 @@ class ComputeCoherenceScoreTask(TQATask):
             RuntimeError: If an unexpected error occurs during TQA score computation.
         """
         try:
+            # Update the new column to be prefixed by the stage id assigned at runtime.
+            self._new_column = f"{self.stage.id}_{self._new_column}"
             # Load perplexity weights from the specified file
             try:
                 self._weights_pandas = IOService.read(self._pp_filepath).reset_index(
@@ -1079,7 +1059,7 @@ class ComputeCoherenceScoreTask(TQATask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeTextQualityScore(TQATask):
+class ComputeTextQualityScore(Task):
     """
     A task to compute a final Text Quality Assessment (TQA) score by normalizing and combining two TQA scores
     using specified weights.
@@ -1105,7 +1085,8 @@ class ComputeTextQualityScore(TQATask):
             tqa_syntactic_weight (float): Weight for the first TQA score. Defaults to 0.4.
             tqa_perplexity_weight (float): Weight for the second TQA score. Defaults to 0.6.
         """
-        super().__init__(new_column=new_column)
+        super().__init__()
+        self._new_column = new_column
         self._syntactic_weight = syntactic_weight
         self._perplexity_weight = perplexity_weight
 
@@ -1123,10 +1104,13 @@ class ComputeTextQualityScore(TQATask):
             DataFrame: The PySpark DataFrame with normalized scores and the final combined TQA score.
         """
         try:
+            # Update the new column to be prefixed by the stage id assigned at runtime.
+            self._new_column = f"{self.stage.id}_{self._new_column}"
+
             # Normalize both scores to [0, 1]
             min_max_enrichment_tqa_score1 = data.select(
-                F.min(f"{self.stage_id}_syntactic_lexical_score"),
-                F.max(f"{self.stage_id}_syntactic_lexical_score"),
+                F.min(f"{self.stage.id}_syntactic_lexical_score"),
+                F.max(f"{self.stage.id}_syntactic_lexical_score"),
             ).first()
 
             if min_max_enrichment_tqa_score1[1] == min_max_enrichment_tqa_score1[0]:
@@ -1139,8 +1123,8 @@ class ComputeTextQualityScore(TQATask):
             )
 
             min_max_enrichment_tqa_score2 = data.select(
-                F.min(f"{self.stage_id}_coherence_score"),
-                F.max(f"{self.stage_id}_coherence_score"),
+                F.min(f"{self.stage.id}_coherence_score"),
+                F.max(f"{self.stage.id}_coherence_score"),
             ).first()
 
             if min_max_enrichment_tqa_score2[1] == min_max_enrichment_tqa_score2[0]:
@@ -1152,17 +1136,17 @@ class ComputeTextQualityScore(TQATask):
 
             # Apply Min-Max normalization to both scores
             data = data.withColumn(
-                f"{self.stage_id}_syntactic_lexical_score",
+                f"{self.stage.id}_syntactic_lexical_score",
                 (
-                    F.col(f"{self.stage_id}_syntactic_lexical_score")
+                    F.col(f"{self.stage.id}_syntactic_lexical_score")
                     - min_enrichment_tqa_score1
                 )
                 / (max_enrichment_tqa_score1 - min_enrichment_tqa_score1),
             )
 
             data = data.withColumn(
-                f"{self.stage_id}_coherence_score",
-                (F.col(f"{self.stage_id}_coherence_score") - min_enrichment_tqa_score2)
+                f"{self.stage.id}_coherence_score",
+                (F.col(f"{self.stage.id}_coherence_score") - min_enrichment_tqa_score2)
                 / (max_enrichment_tqa_score2 - min_enrichment_tqa_score2),
             )
 
@@ -1170,8 +1154,8 @@ class ComputeTextQualityScore(TQATask):
             data = data.withColumn(
                 self._new_column,
                 self._syntactic_weight
-                * F.col(f"{self.stage_id}_syntactic_lexical_score")
-                + self._perplexity_weight * F.col(f"{self.stage_id}_coherence_score"),
+                * F.col(f"{self.stage.id}_syntactic_lexical_score")
+                + self._perplexity_weight * F.col(f"{self.stage.id}_coherence_score"),
             )
 
             # Compute min and max of the new column

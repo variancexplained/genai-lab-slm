@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Sunday November 17th 2024 12:55:12 am                                               #
+# Modified   : Sunday November 17th 2024 03:51:14 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Union
+
+import pandas as pd
+from pyspark.sql import DataFrame
 
 from discover.assets.dataset import Dataset
 from discover.core.flow import PhaseDef, StageDef
@@ -32,12 +36,12 @@ from discover.infra.service.logging.stage import stage_logger
 # ------------------------------------------------------------------------------------------------ #
 class DataPrepStage(DataProcessingStage):
     """
-    Stage for preparing data in the data pipeline.
+    Stage for preparing data in the data processing pipeline.
 
-    This class performs data preparation tasks, updating endpoints with changes
-    in the source data or running tasks as needed. It inherits from DataProcessingStage
-    and implements the `run` method, which handles the logic for preparing and updating
-    datasets.
+    This class orchestrates the data preparation process, running a series of tasks
+    on the source data, updating endpoints if necessary, and saving the processed
+    data to the destination. It includes methods for merging data, executing tasks,
+    and managing dataset metadata to ensure data integrity and proper lineage tracking.
 
     Args:
         phase (PhaseDef): The phase of the data pipeline.
@@ -113,17 +117,98 @@ class DataPrepStage(DataProcessingStage):
         destination_dataset = self._load_dataset(
             asset_id=destination_asset_id, config=self._destination_config
         )
-        tqd_cols = [
+        result_cols = [
             col
             for col in destination_dataset.content.columns
             if col.startswith(self.stage.id) or col == "id"
         ]
-        destination_dataset.content = source_dataset.content.merge(
-            destination_dataset.content[tqd_cols], how="left", on="id"
+        df = self._merge_dataframes(
+            source=source_dataset.content,
+            destination=destination_dataset.content,
+            result_cols=result_cols,
         )
-        self._save_dataset(dataset=destination_dataset)
+
+        # Create the new destination dataset
+        destination_dataset_updated = self._create_dataset(
+            destination_asset_id, config=self._destination_config, data=df
+        )
+        # Remove the prior version of the dataset
+        self._remove_dataset(asset_id=destination_asset_id)
+        # Save the updated dataset
+        self._save_dataset(dataset=destination_dataset_updated)
+        # Mark the source dataset as having been consumed.
         source_dataset = self._mark_consumed(dataset=source_dataset)
+        # Persist the source dataset metadata
         self._save_dataset_metadata(dataset=source_dataset)
+
+    def _merge_dataframes(
+        self,
+        source: Union[pd.DataFrame, DataFrame],
+        destination: Union[pd.DataFrame, DataFrame],
+        result_cols: list,
+    ) -> Union[pd.DataFrame, DataFrame]:
+        """Merges the source and destination dataframes.
+
+        Args:
+            source (Union[pd.DataFrame, DataFrame]): The source dataframe.
+            destination (Union[pd.DataFrame, DataFrame]): The destination dataframe.
+            result_cols (list): The columns from the destination dataframe to include
+                in the merge.
+
+        Returns:
+            Union[pd.DataFrame, DataFrame]: The merged dataframe.
+
+        Raises:
+            TypeError: If the source and destination datasets have incompatible types.
+        """
+        if isinstance(source, pd.DataFrame) and isinstance(destination, pd.DataFrame):
+            return self._merge_pandas_df(
+                source=source,
+                destination=destination,
+                result_cols=result_cols,
+            )
+        elif isinstance(source, DataFrame) and isinstance(destination, DataFrame):
+            return self._merge_spark_df(
+                source=source,
+                destination=destination,
+                result_cols=result_cols,
+            )
+        else:
+            msg = f"Source and destination datasets have incompatible types: Source: {type(source)}\tDestination: {type(destination)}"
+            raise TypeError(msg)
+
+    def _merge_pandas_df(
+        self, source: pd.DataFrame, destination: pd.DataFrame, result_cols: list
+    ) -> pd.DataFrame:
+        """Merges two Pandas dataframes.
+
+        Args:
+            source (pd.DataFrame): The source dataframe.
+            destination (pd.DataFrame): The destination dataframe.
+            result_cols (list): The columns from the destination dataframe to include
+                in the merge.
+
+        Returns:
+            pd.DataFrame: The merged dataframe.
+        """
+        return source.merge(destination[result_cols], how="left", on="id")
+
+    def _merge_spark_df(
+        self, source: DataFrame, destination: DataFrame, result_cols: list
+    ) -> DataFrame:
+        """Merges two Spark dataframes.
+
+        Args:
+            source (DataFrame): The source dataframe.
+            destination (DataFrame): The destination dataframe.
+            result_cols (list): The columns from the destination dataframe to include
+                in the join.
+
+        Returns:
+            DataFrame: The merged dataframe.
+        """
+        destination_subset = destination.select(*result_cols)
+        return source.join(destination_subset, on="id", how="left")
 
     def _run_task(self, source_asset_id: str, destination_asset_id: str) -> None:
         """Performs the core logic of the stage, executing tasks in sequence.

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday November 16th 2024 05:37:04 pm                                             #
-# Modified   : Sunday November 17th 2024 12:54:02 am                                               #
+# Modified   : Sunday November 17th 2024 02:10:20 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -159,7 +159,7 @@ class DataProcessingStage(Stage):
                 dataset.content = dataset.content.withColumnRenamed(
                     "__index_level_0__", "pandas_index"
                 )
-            return dataset.content
+            return dataset
         except FileNotFoundError as e1:
             msg = f"Dataset {asset_id} not found in the repository.\n{e1}"
             self._logger.error(msg)

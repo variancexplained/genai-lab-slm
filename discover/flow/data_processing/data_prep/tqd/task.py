@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Sunday November 17th 2024 01:08:56 am                                               #
+# Modified   : Sunday November 17th 2024 02:41:53 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -59,7 +59,7 @@ class DetectOrRepairTask(Task):
     can be set to 'detect' or 'repair', depending on the desired functionality.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to process.
         mode (str): The operation mode, either 'detect' or 'repair'.
         pattern (Optional[str]): The regular expression pattern used for detection.
@@ -85,7 +85,7 @@ class DetectOrRepairTask(Task):
         self._pattern = pattern
         self._column = column
         self._mode = mode
-        self._new_column = f"{self.stage_id}_{new_column}"
+        self._new_column = new_column
         self._threshold = threshold
         self._threshold_word_prop = threshold_word_prop
         self._threshold_char_prop = threshold_char_prop
@@ -107,6 +107,10 @@ class DetectOrRepairTask(Task):
         Raises:
             ValueError: If the mode is invalid (not 'detect' or 'repair').
         """
+        # Update the new column to be prefixed by the stage id assigned at runtime.
+        self._new_column = f"{self.stage.id}_{self._new_column}"
+
+        # Execution mode
         if self._mode == "detect":
             return self.detect(data=data)
         elif self._mode == "repair":
@@ -135,7 +139,7 @@ class DetectOrRepairTask(Task):
                 self._new_column,
                 (
                     F.regexp_count(F.col(self._column), F.lit(self._pattern))
-                    > self._threshold
+                    >= self._threshold
                 ).cast("boolean"),
             )
 
@@ -193,7 +197,7 @@ class DetectOrReplaceTask(DetectOrRepairTask):
     or replacement operations on the text data.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to process.
         mode (str): The operation mode, either 'detect' for flagging patterns or 'replace' to substitute them.
         pattern (Optional[str]): The regular expression pattern used for detection or replacement.
@@ -214,7 +218,6 @@ class DetectOrReplaceTask(DetectOrRepairTask):
         threshold_word_prop: Optional[float] = None,
         threshold_char_prop: Optional[float] = None,
         replacement: Optional[str] = None,
-        **kwargs,
     ):
         super().__init__(
             pattern=pattern,
@@ -255,7 +258,7 @@ class DetectOrRemoveTask(DetectOrRepairTask):
     specified thresholds to determine whether a pattern should be flagged or removed.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to process.
         mode (str): The operation mode, either 'detect' for flagging patterns or 'remove' to eliminate them.
         pattern (Optional[str]): The regular expression pattern used for detection or removal.
@@ -308,7 +311,7 @@ class DetectOrRepairDuplicateReviewIdTask(DetectOrRepairTask):
     remove duplicate rows based on the specified ID column.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         mode (str): The mode of operation, either 'detect' or 'repair'.
         column (str): The name of the column to check for duplicates (default is "id").
         new_column (str): The name of the new column for detecting duplicates
@@ -386,7 +389,7 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
     column or replace URLs with a specified replacement string.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to check for URLs.
         new_column (str): The name of the new column for URL detection flags.
         replacement (str): The string to replace URLs with in 'repair' mode.
@@ -401,11 +404,6 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
         replacement: str = "[URL]",
         mode: str = "detect",
     ) -> None:
-        """
-        Initializes the DetectOrRepairURLTask with the specified parameters.
-
-
-        """
         pattern = r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*"
         super().__init__(
             pattern=pattern,
@@ -426,7 +424,7 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
     new column or replace email addresses with a specified replacement string.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for email addresses (default is "content").
         _new_column (str): The name of the new column for email detection flags (default is "email").
         _replacement (str): The string to replace email addresses with in 'repair' mode (default is "[EMAIL]").
@@ -460,7 +458,7 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
     new column or replace phone numbers with a specified replacement string.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for phone numbers (default is "content").
         _new_column (str): The name of the new column for phone number detection flags (default is "phone").
         _replacement (str): The string to replace phone numbers with in 'repair' mode (default is "[PHONE]").
@@ -497,7 +495,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
     character proportion threshold to determine if the text should be flagged.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to process.
         new_column (str): The name of the new column for storing detection results.
         threshold_char_prop (float): The proportion of characters threshold for detecting excessive special characters.
@@ -538,7 +536,7 @@ class DetectOrRepairNonASCIICharsTask(DetectOrReplaceTask):
     it to an ASCII-only format.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to process.
         new_column (str): The name of the new column for storing detection results.
         mode (str): The operation mode, either 'detect' to flag non-ASCII characters or 'repair' to normalize the text.
@@ -605,7 +603,7 @@ class DetectOrRepairNonASCIITextTask(DetectOrRemoveTask):
     from the DataFrame.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to process.
         new_column (str): The name of the new column for storing detection results.
         threshold_char_prop (float): The proportion of non-ASCII characters required to flag or remove a row.
@@ -641,7 +639,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
     remove/replace them with a specified replacement string.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for control characters (default is "content").
         _new_column (str): The name of the new column for detection flags (default is "ctrl_chars").
         _replacement (str): The string to replace control characters with in 'repair' mode (default is an empty string).
@@ -684,7 +682,7 @@ class DetectOrRepairHTMLCharsTask(DetectOrReplaceTask):
     or remove/replace them with a specified replacement string.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for HTML character entities (default is "content").
         _new_column (str): The name of the new column for detection flags (default is "html_chars").
         _mode (str): The mode of operation, either 'detect' to flag HTML character entities or 'repair' to replace them.
@@ -718,7 +716,7 @@ class DetectOrRepairExcessiveWhitespaceTask(DetectOrReplaceTask):
     replace multiple whitespace characters with a single space.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for excessive whitespace (default is "content").
         _new_column (str): The name of the new column for detection flags (default is "excess_whitespace").
         _mode (str): The mode of operation, either 'detect' to flag excessive whitespace or 'repair' to replace it.
@@ -752,7 +750,7 @@ class DetectOrRepairAccentedCharsTask(DetectOrReplaceTask):
     normalize text by removing accents and diacritics.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for accented characters (default is "content").
         _new_column (str): The name of the new column for detection flags (default is "accented_chars").
         _mode (str): The mode of operation, either 'detect' to flag accented characters or 'repair' to remove them.
@@ -871,7 +869,7 @@ class DetectOrRepairNonEnglishTask(DetectOrRemoveTask):
     language detection libraries or remove rows where the text is non-English.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for non-English text (default is "content").
         _new_column (str): The name of the new column for detection flags (default is "non_english").
         _mode (str): The mode of operation, either 'detect' to flag non-English text or 'remove' to delete such rows.
@@ -956,7 +954,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
     or replace them by limiting the repetition of characters to a specified maximum.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for character elongation (default is "content").
         _threshold (int): The minimum number of consecutive repeating characters to be considered elongation (default is 4).
         _new_column (str): The name of the new column for detection flags (default is "elongation").
@@ -995,7 +993,7 @@ class DetectOrRepairRepeatedSequenceTask(DetectOrReplaceTask):
     be configured to either detect or repair these patterns.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to analyze for repeated patterns.
         threshold_word_prop (float): The proportion of the words required to flag text
             as having excessive repetition.
@@ -1038,7 +1036,7 @@ class DetectOrRepairRepeatedWordsTask(DetectOrReplaceTask):
     be configured to either detect or repair these words
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to analyze for repeated words.
         threshold (int): The number of repeated words required to flag text
             as having excessive repetition.
@@ -1057,12 +1055,13 @@ class DetectOrRepairRepeatedWordsTask(DetectOrReplaceTask):
         mode: str = "detect",
     ) -> None:
         pattern = rf"(\b\w+\b)\s*(?:\1\s*){{{min_repetitions - 1},}}"
-
+        replacement = r"\1"
         super().__init__(
             pattern=pattern,
             column=column,
             new_column=new_column,
             threshold=threshold,
+            replacement=replacement,
             mode=mode,
         )
 
@@ -1079,7 +1078,7 @@ class DetectOrRepairRepeatedPhrasesTask(DetectOrReplaceTask):
     be configured to either detect or repair these phrases
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         column (str): The name of the column to analyze for repeated phrases.
         threshold (int): The number of repeated phrases required to flag text
             as having excessive repetition.
@@ -1098,12 +1097,13 @@ class DetectOrRepairRepeatedPhrasesTask(DetectOrReplaceTask):
         mode: str = "detect",
     ) -> None:
         pattern = rf"(\b\w+\b(?: \b\w+\b)*)\s*(?:\1\s*){{{min_repetitions},}}"
-
+        replacement = r"\1"
         super().__init__(
             pattern=pattern,
             column=column,
             new_column=new_column,
             threshold=threshold,
+            replacement=replacement,
             mode=mode,
         )
 
@@ -1118,7 +1118,7 @@ class DetectOrRepairOutliersTask(DetectOrRemoveTask):
     or remove rows containing outliers.
 
     Args:
-        stage_id (str): Id for the stage to which the task belongs.
+
         _column (str): The name of the column to check for outliers (default is "review_length").
         _mode (str): The mode of operation, either 'detect' to flag outliers or 'remove' to delete such rows.
         _new_column (str): The name of the new column for outlier detection flags, dynamically generated based on the column name.

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Saturday November 16th 2024 04:23:37 pm                                             #
+# Modified   : Sunday November 17th 2024 03:26:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -92,6 +92,10 @@ class Dataset(Asset):
             for row count, column count, or size calculation.
         """
         super().__post_init__()
+        # Confirm consumed attributes are set properly for new datasets.
+        self.consumed = False
+        self.consumed_by = None
+        self.dt_consumed = None
         # Update dataframe metadata if content is available.
         if isinstance(self.content, (pd.DataFrame, pd.core.frame.DataFrame)):
             self.nrows = self.content.shape[0]

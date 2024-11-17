@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Sunday November 17th 2024 12:38:49 am                                               #
+# Modified   : Sunday November 17th 2024 01:47:52 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -83,7 +83,7 @@ class Stage(ABC):
         """
         if not isinstance(task, Task):
             raise TypeError("Expected an instance of Task.")
-        task.stage_id = self._stage.id
+        task.stage = self.stage
         self._tasks.append(task)
 
     @abstractmethod
