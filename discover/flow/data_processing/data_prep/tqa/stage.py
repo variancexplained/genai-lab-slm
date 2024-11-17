@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/tqa/stage.py                                               #
+# Filename   : /discover/flow/data_processing/data_prep/tqa/stage.py                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:01:19 pm                                              #
-# Modified   : Saturday November 16th 2024 01:35:39 pm                                             #
+# Modified   : Saturday November 16th 2024 05:46:59 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ from __future__ import annotations
 from typing import List
 
 from discover.flow.base.task import Task
-from discover.flow.data_prep.stage import DataPrepStage
+from discover.flow.data_processing.data_prep.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #

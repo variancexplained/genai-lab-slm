@@ -4,34 +4,48 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/ingest/stage.py                                            #
+# Filename   : /discover/flow/data_processing/data_prep/sentiment/stage.py                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Monday October 21st 2024 12:06:20 am                                                #
+# Created    : Thursday November 7th 2024 07:01:12 pm                                              #
+# Modified   : Saturday November 16th 2024 05:46:59 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Ingest Stage Module"""
-
 import logging
 from typing import List
 
-import pandas as pd
-
 from discover.assets.idgen import AssetIDGen
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
-from discover.flow.data_prep.stage import DataPrepStage
-from discover.infra.utils.file.io import IOService
+from discover.flow.data_processing.data_prep.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class IngestStage(DataPrepStage):
+class SentimentClassificationStage(DataPrepStage):
+    """
+    A class that represents a stage in the data processing pipeline dedicated to
+    classifying sentiment in textual data.
+
+    This stage is responsible for loading the source data, applying sentiment classification
+    tasks, and saving the processed data to the specified destination. It also generates a
+    unique asset ID for the destination using the provided configuration details.
+
+    Attributes:
+        source_config (dict): Configuration details for loading the source data asset.
+        destination_config (dict): Configuration details for saving the classified data asset.
+        tasks (List[Task]): A list of tasks to be executed for sentiment classification.
+        force (bool): Whether to force the execution of the stage, overriding existing assets.
+        **kwargs: Additional keyword arguments for customization and flexibility.
+
+    Methods:
+        _load_source_data() -> pd.DataFrame:
+            Loads the source dataset from the repository using the source asset ID.
+    """
 
     def __init__(
         self,
@@ -41,6 +55,17 @@ class IngestStage(DataPrepStage):
         force: bool = False,
         **kwargs,
     ) -> None:
+        """
+        Initializes the MetadataEnrichmentStage with source and destination configurations,
+        a list of tasks for metadata enrichment, and an optional force flag.
+
+        Args:
+            source_config (dict): Configuration details for the source data asset.
+            destination_config (dict): Configuration details for the destination data asset.
+            tasks (List[Task]): A list of tasks to execute during the metadata enrichment stage.
+            force (bool): If True, forces the execution of the stage, even if the destination asset exists.
+            **kwargs: Additional keyword arguments for flexibility and customization.
+        """
         super().__init__(
             source_config=source_config,
             destination_config=destination_config,
@@ -51,12 +76,8 @@ class IngestStage(DataPrepStage):
         self._destination_asset_id = AssetIDGen.get_asset_id(
             asset_type=self._destination_config.asset_type,
             phase=PhaseDef.from_value(value=self._destination_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._destination_config.stage),
+            stage=StageDef.from_value(value=self._destination_config.stage),
             name=self._destination_config.name,
         )
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    def _load_source_data(self) -> pd.DataFrame:
-        """Obtains source data from file."""
-        return IOService.read(filepath=self._source_config.filepath)

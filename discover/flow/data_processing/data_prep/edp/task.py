@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/edp/task.py                                                #
+# Filename   : /discover/flow/data_processing/data_prep/edp/task.py                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 10:15:01 pm                                              #
-# Modified   : Tuesday November 12th 2024 07:42:19 pm                                              #
+# Modified   : Saturday November 16th 2024 07:43:06 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,16 +37,16 @@ class ComputeReviewAgeTask(Task):
 
     Attributes:
         column (str): The name of the date column to calculate review age from. Defaults to "date".
-        new_column (str): The name of the new column to store the review age. Default is 'edp_review_age'.
+        new_column (str): The name of the new column to store the review age. Default is 'nrch_review_age'.
 
     Methods:
         run(data: DataFrame) -> DataFrame:
             Calculates the review age for each row in the specified date column and returns the DataFrame
-            with the new "edp_review_age" column.
+            with the new "nrch_review_age" column.
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "edp_review_age"
+        self, column: str = "date", new_column: str = "nrch_review_age"
     ) -> None:
         super().__init__()
         self._column = column
@@ -58,13 +58,13 @@ class ComputeReviewAgeTask(Task):
         Executes the review age calculation on the specified date column.
 
         The function first identifies the maximum date within the column and then calculates the number of days
-        between each review date and this maximum date, storing the result in a new "edp_review_age" column.
+        between each review date and this maximum date, storing the result in a new "nrch_review_age" column.
 
         Args:
             data (DataFrame): The input PySpark DataFrame containing the specified date column.
 
         Returns:
-            DataFrame: The input DataFrame with an additional "edp_review_age" column representing the
+            DataFrame: The input DataFrame with an additional "nrch_review_age" column representing the
             review age in days.
         """
         # Step 1: Find the maximum date in the specified column
@@ -91,11 +91,11 @@ class ComputeReviewMonthTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted month.
-            Defaults to "edp_review_month".
+            Defaults to "nrch_review_month".
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "edp_review_month"
+        self, column: str = "date", new_column: str = "nrch_review_month"
     ) -> None:
         super().__init__()
         self._column = column
@@ -131,13 +131,13 @@ class ComputeReviewDayofWeekTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted day of the week.
-            Defaults to "edp_review_day_of_week".
+            Defaults to "nrch_review_day_of_week".
     """
 
     def __init__(
         self,
         column: str = "date",
-        new_column: str = "edp_review_day_of_week",
+        new_column: str = "nrch_review_day_of_week",
     ) -> None:
         super().__init__()
         self._column = column
@@ -174,13 +174,13 @@ class ComputeReviewHourTask(Task):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted hour.
-            Defaults to "edp_review_hour".
+            Defaults to "nrch_review_hour".
     """
 
     def __init__(
         self,
         column: str = "date",
-        new_column: str = "edp_review_hour",
+        new_column: str = "nrch_review_hour",
     ) -> None:
         super().__init__()
         self._column = column

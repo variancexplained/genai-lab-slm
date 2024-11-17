@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/stage.py                                                   #
+# Filename   : /discover/flow/data_processing/data_prep/base/stage.py                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Saturday November 16th 2024 02:43:59 pm                                             #
+# Modified   : Saturday November 16th 2024 07:12:01 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,30 +19,25 @@
 """Data preparation stage class module."""
 from __future__ import annotations
 
-import logging
 from abc import abstractmethod
+from datetime import datetime
 from typing import List, Type, Union
 
 import pandas as pd
-import pyspark
-from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
 from discover.assets.dataset import Dataset
 from discover.assets.idgen import AssetIDGen
-from discover.container import DiscoverContainer
-from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.core.namespace import NestedNamespace
-from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task
-from discover.infra.persistence.repo.dataset import DatasetRepo
+from discover.flow.data_processing.base.stage import DataProcessingStage
 from discover.infra.service.logging.stage import stage_logger
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                    DATA PREP STAGE                                               #
 # ------------------------------------------------------------------------------------------------ #
-class DataPrepStage(Stage):
+class DataPrepStage(DataProcessingStage):
     """
     A stage class for preparing datasets, handling loading, processing, and saving of data.
 
@@ -94,14 +89,12 @@ class DataPrepStage(Stage):
     It ensures that datasets are properly loaded and saved based on the specified configurations.
     """
 
-    @inject
     def __init__(
         self,
         source_config: dict,
         destination_config: dict,
         tasks: List[Task],
         asset_idgen: Type[AssetIDGen] = AssetIDGen,
-        repo: DatasetRepo = Provide[DiscoverContainer.repo.dataset_repo],
         force: bool = False,
         **kwargs,
     ) -> None:
@@ -121,20 +114,11 @@ class DataPrepStage(Stage):
             tasks=tasks,
             force=force,
         )
-        self._asset_idgen = asset_idgen
-        self._repo = repo
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
-    def phase(self) -> PhaseDef:
-        """Returns the phase of the destination dataset."""
-        return PhaseDef.from_value(value=self._destination_config.phase)
-
-    @property
-    def stage(self) -> PhaseDef:
-        """Returns the stage of the destination dataset."""
-        return DataPrepStageDef.from_value(value=self._destination_config.stage)
+    @abstractmethod
+    def stage_prefix(self) -> str:
+        """Returns the stage prefix, a prefix for each column created by tasks in this stage."""
 
     @stage_logger
     def run(self) -> str:
@@ -165,14 +149,15 @@ class DataPrepStage(Stage):
                 source_asset_id=source_asset_id,
                 destination_asset_id=destination_asset_id,
             )
-        elif endpoint_exists:
-            # Check if the source data has changed.
-            if self._is_fresh_data(asset_id=source_asset_id):
+        elif endpoint_exists:  # and not forcing execution
+            # Check if the source data has already been consumed
+            if not self._is_consumed(asset_id=source_asset_id):
                 # Updated endpoint with fresh data.
                 self._update_endpoint(
                     source_asset_id=source_asset_id,
                     destination_asset_id=destination_asset_id,
-                )
+                )  # Stage specific
+
         else:
             self._run_task(
                 source_asset_id=source_asset_id,
@@ -180,8 +165,7 @@ class DataPrepStage(Stage):
             )
         return destination_asset_id
 
-    @abstractmethod
-    def _update_endpoint(self, source_asset_id: str, destination_asset_id: str) -> None:
+    def _update_endpoint(self, source_asset_id, destination_asset_id):
         """Updates the endpoint dataset with changes in the source dataset.
 
         Args:
@@ -189,29 +173,50 @@ class DataPrepStage(Stage):
             destination_asset_id (str): The asset identifier for the output dataset.
         """
 
+        # Obtain the source and destination datasets
+        source_dataset = self._load_dataset(asset_id=source_asset_id)
+        destination_dataset = self._load_dataset(asset_id=destination_asset_id)
+        # Extract the id column and columns created by this process and added to the destination dataset
+        # prefixed by the stage that created the column.
+        tqd_cols = [
+            col
+            for col in destination_dataset.content.columns
+            if col.startswith(self.stage_prefix) or col == "id"
+        ]
+        # Update the destination dataset with updated source dataset content
+        destination_dataset.content = source_dataset.content.merge(
+            destination_dataset.content[tqd_cols], how="left", on="id"
+        )
+        # Save the destination dataset.
+        self._save_dataset(dataset=destination_dataset)
+        # Mark the source dataset metadata as consumed.
+        source_dataset = self._consumed(dataset=source_dataset)
+        # Save the source dataset metadata
+        self._save_dataset_metadata(dataset=source_dataset)
+
     def _run_task(self, source_asset_id: str, destination_asset_id: str) -> None:
         """Performs the core logic of the Stage, executing tasks in sequence"""
-        data = self._load_data(asset_id=source_asset_id)
+        # Obtain the source dataset
+        source_dataset = self._load_dataset(asset_id=source_asset_id)
+        # Extract the payload
+        data = source_dataset.content
         # Iterate through tasks. Default behavior is that task output is input for subsequent task
         for task in self._tasks:
             data = task.run(data=data)
 
         # Create the destination dataset
-        dataset = self._create_dataset(
+        destination_dataset = self._create_dataset(
             asset_id=destination_asset_id, config=self._destination_config, data=data
         )
-        self._save_dataset(dataset=dataset)
+        self._save_dataset(dataset=destination_dataset)
 
-    def _dataset_exists(self, asset_id: str) -> bool:
-        """Checks if the dataset exists in the repository."""
-        try:
-            return self._repo.exists(asset_id=asset_id)
-        except Exception as e:
-            msg = f"Error checking dataset {asset_id} existence.\n{str(e)}"
-            self._logger.error(msg)
-            raise RuntimeError(msg)
+        # Mark the source dataset as having been consumed.
+        source_dataset = self._consumed(dataset=source_dataset)
+        # Save the source dataset metadata only. We can do this without integrity errors as
+        # the dataset content is immutable.
+        self._save_dataset_metadata(dataset=source_dataset)
 
-    def _is_fresh_data(self, asset_id: str) -> bool:
+    def _is_consumed(self, asset_id: str) -> bool:
         """Returns a boolean indicating whether the data for the given asset_id is fresh.
 
         Args:
@@ -221,13 +226,20 @@ class DataPrepStage(Stage):
             bool: True if the dataset is fresh.
         """
         try:
-            return self._repo.is_fresh_data(asset_id=asset_id)
+            return self._repo.is_consumed(asset_id=asset_id)
         except Exception as e:
             msg = f"Error checking dataset {asset_id} freshness: {str(e)}"
             self._logger.error(msg)
             raise RuntimeError(msg)
 
-    def _load_data(
+    def _consumed(self, dataset: Dataset) -> Dataset:
+        """Marks the dataset as having been consumed"""
+        dataset.consumed = True
+        dataset.dt_consumed = datetime.now()
+        dataset.consumed_by = self.__class__.__name__
+        return dataset
+
+    def _load_dataset(
         self, asset_id: str, config: NestedNamespace
     ) -> Union[pd.DataFrame, DataFrame]:
         """
@@ -264,7 +276,7 @@ class DataPrepStage(Stage):
                     dataset.content = dataset.content.withColumnRenamed(
                         "__index_level_0__", "pandas_index"
                     )
-            return dataset.content
+            return dataset
         except FileNotFoundError as e1:
             msg = f"Dataset {asset_id} not found in the repository.\n{e1}"
             self._logger.error(msg)
@@ -274,35 +286,9 @@ class DataPrepStage(Stage):
             self._logger.error(msg)
             raise RuntimeError(msg)
 
-    def _create_dataset(
-        self,
-        asset_id: str,
-        config: NestedNamespace,
-        data: Union[pd.DataFrame, pyspark.sql.DataFrame],
-    ) -> Dataset:
+    def _save_dataset_metadata(self, dataset: Dataset) -> None:
         """
-        Creates a dataset.
-
-        Args:
-            asset_id (str): The identifier for the asset.
-            config (NestedNamespace): Configuration for the dataset.
-            data (Union[pd.DataFrame, pyspark.sql.DataFrame]): The dataset payload.
-
-        Returns:
-            Dataset: The created dataset.
-        """
-        return Dataset(
-            phase=PhaseDef.from_value(config.phase),
-            stage=DataPrepStageDef.from_value(config.stage),
-            name=config.name,
-            content=data,
-            nlp=config.nlp,
-            distributed=config.distributed,
-        )
-
-    def _save_dataset(self, dataset: Dataset) -> None:
-        """
-        Saves a dataset to the repository.
+        Saves a dataset metadata to the repository.
 
         Args:
             dataset (Dataset): The dataset to be saved.
@@ -311,39 +297,6 @@ class DataPrepStage(Stage):
             RuntimeError: If saving the dataset fails.
         """
         try:
-            self._repo.add(dataset=dataset)
+            self._repo.update_dataset_metadata(dataset=dataset)
         except Exception as e:
-            raise RuntimeError(f"Failed to save dataset\n{dataset} {str(e)}")
-
-    def _remove_dataset(self, asset_id: str) -> None:
-        """
-        Removes the dataset with the specified asset_id from the repository.
-
-        Args:
-            asset_id (str): The asset id for the dataset to be removed.
-
-        Raises:
-            DatasetNotFoundError: If the destination dataset cannot be found.
-        """
-        try:
-            self._repo.remove(asset_id=asset_id)
-        except Exception as e:
-            raise RuntimeError(
-                f"Failed to remove dataset with asset_id: {asset_id}\n {str(e)}"
-            )
-
-    def _get_asset_id(self, config: NestedNamespace) -> str:
-        """Returns the asset id given an asset configuration
-
-        Args:
-            config (NestedNamespace): an asset configuration
-
-        Returns:
-            str: The asset_id for the asset
-        """
-        return self._asset_idgen.get_asset_id(
-            asset_type=config.asset_type,
-            phase=PhaseDef.from_value(config.phase),
-            stage=DataPrepStageDef.from_value(config.stage),
-            name=config.name,
-        )
+            raise RuntimeError(f"Failed to save dataset metadata\n{dataset}\n{str(e)}")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 15th 2024 12:07:41 am                                               #
-# Modified   : Friday November 15th 2024 01:08:52 am                                               #
+# Modified   : Saturday November 16th 2024 06:32:02 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -92,4 +92,4 @@ class SentimentAnalysisDataManager(DataManager):
             )
             raise ValueError(msg)
         sentiments["id"] = sentiments["id"].astype("string")
-        return df.merge(sentiments[["id", "dqp_sentiment"]], how="left", on="id")
+        return df.merge(sentiments[["id", "an_sentiment"]], how="left", on="id")

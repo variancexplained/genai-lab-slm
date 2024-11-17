@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Saturday November 16th 2024 01:20:08 pm                                             #
+# Modified   : Saturday November 16th 2024 07:36:52 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,7 @@ from pandarallel import pandarallel
 
 from discover.app.base import Analysis
 from discover.assets.idgen import AssetIDGen
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
@@ -52,7 +52,7 @@ class DQA(Analysis):
         asset_id = AssetIDGen().get_asset_id(
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
-            stage=DataPrepStageDef.TQA,
+            stage=StageDef.TQA,
             name=name,
         )
         # Load the dataset
@@ -179,22 +179,22 @@ class DQA(Analysis):
         )
 
     def plot_review_length_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["tqd_review_length_outlier"]]["review_length"]
+        outliers = self._df.loc[self._df["ing_review_length_outlier"]]["review_length"]
         viz.violinplot(x=outliers, title="Distribution of Review Length Outliers")
         return outliers.describe().to_frame().T
 
     def plot_perplexity_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["tqd_perplexity_outlier"]]["dqp_perplexity"]
+        outliers = self._df.loc[self._df["an_perplexity_outlier"]]["an_perplexity"]
         viz.violinplot(x=outliers, title="Distribution of Perplexity Outliers")
         return outliers.describe().to_frame().T
 
     def plot_balance(self) -> pd.DataFrame:
         viz.countplot(
             data=self._df,
-            x="dqp_sentiment",
+            x="an_sentiment",
             title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.balance,2)}",
         )
-        return self._df["dqp_sentiment"].describe().to_frame().T
+        return self._df["an_sentiment"].describe().to_frame().T
 
     def plot_privacy(self) -> None:
         privacy = self.summarize_privacy()
@@ -270,8 +270,8 @@ class DQA(Analysis):
                 )
             ].shape[0]
         )
-        review_length_non_outliers = N - (self._df["tqd_review_length_outlier"].sum())
-        perplexity_non_outliers = N - (+self._df["tqd_perplexity_outlier"].sum())
+        review_length_non_outliers = N - (self._df["ing_review_length_outlier"].sum())
+        perplexity_non_outliers = N - (+self._df["an_perplexity_outlier"].sum())
         return (
             ((valid_ratings / N) * self._config.rating_validity_weight)
             + (
@@ -294,7 +294,7 @@ class DQA(Analysis):
 
     def _compute_balance(self) -> float:
         N = self._df.shape[0]
-        sentiments = self._df["dqp_sentiment"].value_counts()
+        sentiments = self._df["an_sentiment"].value_counts()
         mean_sentiment = np.mean(sentiments)
         balance = 1 - (np.sum(np.abs(sentiments - mean_sentiment)) / N)
         return balance

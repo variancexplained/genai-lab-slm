@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/dynamics/observability/profile.py                                         #
+# Filename   : /discover/infra/service/performance/profile.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Sunday September 22nd 2024 08:18:41 pm                                              #
+# Modified   : Saturday November 16th 2024 05:18:05 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,12 +25,12 @@ from typing import Optional, Union
 
 from discover.core.data_class import DataClass
 from discover.core.flow import (
-    DataPrepStageDef,
     EDAStageDef,
     ModelingStageDef,
     OpportunityStageDef,
     PhaseDef,
     SentimentStageDef,
+    StageDef,
 )
 
 
@@ -39,7 +39,7 @@ from discover.core.flow import (
 class Profile(DataClass):
     phase: PhaseDef  # PhaseDef i.e. DataPrep, Analysis
     stage: Union[
-        DataPrepStageDef,
+        StageDef,
         PhaseDef,
         EDAStageDef,
         ModelingStageDef,

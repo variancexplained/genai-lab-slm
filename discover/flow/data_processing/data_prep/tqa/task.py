@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/tqa/task.py                                                #
+# Filename   : /discover/flow/data_processing/data_prep/tqa/task.py                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Friday November 15th 2024 05:26:31 pm                                               #
+# Modified   : Saturday November 16th 2024 07:32:52 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,9 +42,35 @@ os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                                       TQA TASK                                                   #
+# ------------------------------------------------------------------------------------------------ #
+class TQATask(Task):
+    """
+    Base class for all Text Quality Analysis (TQA) tasks.
+
+    This class provides a foundation for TQA tasks, automatically prefixing the specified
+    new column name with the stage ID to ensure consistency in naming.
+
+    Attributes
+    ----------
+    new_column : str
+        The name of the new column to be added, prefixed with the stage ID.
+
+    Parameters
+    ----------
+    new_column : str, optional
+        The base name of the new column. The full column name will be prefixed
+        with the stage ID to create a unique, stage-specific identifier.
+    """
+
+    def __init__(self, new_column: str = None) -> None:
+        self._new_column = f"{self.stage_id}_{new_column}"
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                                       NLP TASK                                                   #
 # ------------------------------------------------------------------------------------------------ #
-class NLPTask(Task):
+class NLPTask(TQATask):
     """
     A class to perform NLP preprocessing on a specified content column in a Spark DataFrame.
     This task includes tokenization, POS tagging, and formatting of the output as plain lists.
@@ -144,7 +170,7 @@ class NLPTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE POS STATS                                             #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeSyntacticStatsTask(Task):
+class ComputeSyntacticStatsTask(TQATask):
     """
     A task to compute Part-of-Speech (POS) statistics for a specified column in a PySpark DataFrame.
 
@@ -243,7 +269,7 @@ class ComputeSyntacticStatsTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                              COMPUTE LEXICAL STATS                                               #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeLexicalStatsTask(Task):
+class ComputeLexicalStatsTask(TQATask):
     """
     A task to compute basic text statistics for a specified column in a PySpark DataFrame.
 
@@ -473,7 +499,7 @@ class ComputeLexicalStatsTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE 1 TASK                                         #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeSyntacticLexicalScoresTask(Task):
+class ComputeSyntacticLexicalScoresTask(TQATask):
     """
     A task to compute a Text Quality Assessment (TQA) score based on various components
     such as POS count, POS diversity, lexical complexity, POS intensity, and TQA quality checks.
@@ -492,7 +518,7 @@ class ComputeSyntacticLexicalScoresTask(Task):
         pos_density_weight: float,
         lexical_complexity_weight: float,
         column: str = "content",
-        new_column: str = "tqa_syntactic_lexical_score",
+        new_column: str = "syntactic_lexical_score",
     ) -> None:
         """
         Initializes the ComputeSyntacticLexicalScoresTask with specified weights and output column name.
@@ -503,12 +529,11 @@ class ComputeSyntacticLexicalScoresTask(Task):
             lexical_complexity_weight (float): Weight for the lexical complexity component.
             new_column (str): Name of the output column for the TQA score. Defaults to "enrichment_tqa_score1".
         """
-        super().__init__()
+        super().__init__(new_column=new_column)
         self._pos_diversity_weight = pos_diversity_weight
         self._pos_density_weight = pos_density_weight
         self._lexical_complexity_weight = lexical_complexity_weight
         self._column = column
-        self._new_column = new_column
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -711,7 +736,7 @@ class ComputeSyntacticLexicalScoresTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                               COMPUTE PERPLEXITY FILTERS  TASK                                   #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePerplexityFiltersTask(Task):
+class ComputePerplexityFiltersTask(TQATask):
     """
     A task to compute Text Quality Assessment (TQA) statistics for reviews in a PySpark DataFrame.
 
@@ -856,7 +881,7 @@ class ComputePerplexityFiltersTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                               COMPUTE PERPLEXITY WEIGHTS TASK                                    #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePerplexityWeights(Task):
+class ComputePerplexityWeights(TQATask):
     """
     A class to compute and save perplexity weights for various filters in a PySpark DataFrame.
 
@@ -872,7 +897,7 @@ class ComputePerplexityWeights(Task):
 
     def __init__(
         self,
-        column: str = "dqp_perplexity",
+        column: str = "an_perplexity",
         pp_filepath: str = "models/tqa/pp_weights.csv",
         pp_filter_prefix: str = "tqf_",
     ) -> None:
@@ -880,7 +905,7 @@ class ComputePerplexityWeights(Task):
         Initializes the ComputePerplexityWeights class with the specified parameters.
 
         Args:
-            column (str): The name of the column containing perplexity values. Defaults to 'dqp_perplexity'.
+            column (str): The name of the column containing perplexity values. Defaults to 'an_perplexity'.
             pp_filepath (str): The file path to save the perplexity weights. Defaults to 'models/tqa/pp_weights.csv'.
             pp_filter_prefix (str): The prefix used to identify filter columns. Defaults to 'tqf_'.
         """
@@ -964,7 +989,7 @@ class ComputePerplexityWeights(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE 2 TASK                                         #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeCoherenceScoreTask(Task):
+class ComputeCoherenceScoreTask(TQATask):
     """
     A task to compute a Text Quality Assessment (TQA) coherence score based on binary filter indicators
     and pre-computed perplexity weights.
@@ -979,11 +1004,10 @@ class ComputeCoherenceScoreTask(Task):
 
     def __init__(
         self,
-        new_column: str = "tqa_coherence_score",
+        new_column: str = "coherence_score",
         pp_filepath: str = "models/tqa/pp_weights.csv",
     ):
-        super().__init__()
-        self._new_column = new_column
+        super().__init__(new_column=new_column)
         self._pp_filepath = pp_filepath
 
     @task_logger
@@ -1052,7 +1076,7 @@ class ComputeCoherenceScoreTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                 COMPUTE TQA SCORE TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeTextQualityScore(Task):
+class ComputeTextQualityScore(TQATask):
     """
     A task to compute a final Text Quality Assessment (TQA) score by normalizing and combining two TQA scores
     using specified weights.
@@ -1066,7 +1090,7 @@ class ComputeTextQualityScore(Task):
 
     def __init__(
         self,
-        new_column: str = "tqa_score",
+        new_column: str = "score",
         tqa_syntactic_weight: float = 0.4,
         tqa_perplexity_weight: float = 0.6,
     ):
@@ -1078,8 +1102,7 @@ class ComputeTextQualityScore(Task):
             tqa_syntactic_weight (float): Weight for the first TQA score. Defaults to 0.4.
             tqa_perplexity_weight (float): Weight for the second TQA score. Defaults to 0.6.
         """
-        super().__init__()
-        self._new_column = new_column
+        super().__init__(new_column=new_column)
         self._tqa_syntactic_weight = tqa_syntactic_weight
         self._tqa_perplexity_weight = tqa_perplexity_weight
 

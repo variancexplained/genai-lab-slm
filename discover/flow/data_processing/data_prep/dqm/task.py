@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/dqm/task.py                                                #
+# Filename   : /discover/flow/data_processing/data_prep/dqm/task.py                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Saturday November 16th 2024 12:47:48 pm                                             #
+# Modified   : Saturday November 16th 2024 07:45:44 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -93,7 +93,7 @@ class DetectOrRepairTask(Task):
         self._pattern = pattern
         self._column = column
         self._mode = mode
-        self._new_column = new_column
+        self._new_column = f"{self.stage_id}_{new_column}"
         self._threshold = threshold
         self._threshold_word_prop = threshold_word_prop
         self._threshold_char_prop = threshold_char_prop
@@ -316,14 +316,14 @@ class DetectOrRepairDuplicateReviewIdTask(DetectOrRepairTask):
         _mode (str): The mode of operation, either 'detect' or 'repair'.
         _column (str): The name of the column to check for duplicates (default is "id").
         _new_column (str): The name of the new column for detecting duplicates
-            (default is "tqd_duplicate_review_id").
+            (default is "duplicate_review_id").
     """
 
     def __init__(
         self,
         mode: str = "detect",
         column: str = "id",
-        new_column: str = "tqd_duplicate_review_id",
+        new_column: str = "duplicate_review_id",
     ):
         """
         Initializes the DetectOrRepairDuplicateReviewIdTask class.
@@ -391,7 +391,7 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for URLs (default is "content").
-        _new_column (str): The name of the new column for URL detection flags (default is "tqd_has_url").
+        _new_column (str): The name of the new column for URL detection flags (default is "url").
         _replacement (str): The string to replace URLs with in 'repair' mode (default is "[URL]").
         _mode (str): The mode of operation, either 'detect' to flag URLs or 'repair' to replace them.
     """
@@ -399,7 +399,7 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_url",
+        new_column: str = "has_url",
         replacement: str = "[URL]",
         mode: str = "detect",
     ) -> None:
@@ -434,7 +434,7 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for email addresses (default is "content").
-        _new_column (str): The name of the new column for email detection flags (default is "tqd_has_email").
+        _new_column (str): The name of the new column for email detection flags (default is "email").
         _replacement (str): The string to replace email addresses with in 'repair' mode (default is "[EMAIL]").
         _mode (str): The mode of operation, either 'detect' to flag email addresses or 'repair' to replace them.
     """
@@ -442,7 +442,7 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_email",
+        new_column: str = "has_email",
         replacement: str = "[EMAIL]",
         mode: str = "detect",
     ) -> None:
@@ -467,7 +467,7 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for phone numbers (default is "content").
-        _new_column (str): The name of the new column for phone number detection flags (default is "tqd_has_phone").
+        _new_column (str): The name of the new column for phone number detection flags (default is "phone").
         _replacement (str): The string to replace phone numbers with in 'repair' mode (default is "[PHONE]").
         _mode (str): The mode of operation, either 'detect' to flag phone numbers or 'repair' to replace them.
     """
@@ -475,7 +475,7 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_phone",
+        new_column: str = "has_phone",
         replacement: str = "[PHONE]",
         mode: str = "detect",
     ) -> None:
@@ -512,7 +512,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_excess_special_chars",
+        new_column: str = "has_excess_special_chars",
         threshold_char_prop: float = 0.3,
         mode: str = "detect",
         replacement: str = " ",
@@ -550,7 +550,7 @@ class DetectOrRepairNonASCIICharsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_non_ascii_chars",
+        new_column: str = "non_ascii_chars",
         mode: str = "detect",
     ) -> None:
         pattern = (
@@ -617,7 +617,7 @@ class DetectOrRepairNonASCIITextTask(DetectOrRemoveTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_excess_non_ascii_chars",
+        new_column: str = "excess_non_ascii_chars",
         threshold_char_prop: float = 0.2,
         mode: str = "detect",
     ) -> None:
@@ -644,7 +644,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for control characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_ctrl_chars").
+        _new_column (str): The name of the new column for detection flags (default is "ctrl_chars").
         _replacement (str): The string to replace control characters with in 'repair' mode (default is an empty string).
         _mode (str): The mode of operation, either 'detect' to flag control characters or 'repair' to replace them.
     """
@@ -652,7 +652,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_ctrl_chars",
+        new_column: str = "has_ctrl_chars",
         replacement: str = " ",
         mode: str = "detect",
     ) -> None:
@@ -686,7 +686,7 @@ class DetectOrRepairHTMLCharsTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for HTML character entities (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_html_chars").
+        _new_column (str): The name of the new column for detection flags (default is "html_chars").
         _mode (str): The mode of operation, either 'detect' to flag HTML character entities or 'repair' to replace them.
         _replacement (str): The string to replace HTML character entities with in 'repair' mode (default is an empty string).
     """
@@ -694,7 +694,7 @@ class DetectOrRepairHTMLCharsTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_html_chars",
+        new_column: str = "has_html_chars",
         mode: str = "detect",
         replacement: str = "",
     ) -> None:
@@ -719,7 +719,7 @@ class DetectOrRepairExcessiveWhitespaceTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for excessive whitespace (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_excess_whitespace").
+        _new_column (str): The name of the new column for detection flags (default is "excess_whitespace").
         _mode (str): The mode of operation, either 'detect' to flag excessive whitespace or 'repair' to replace it.
         _replacement (str): The string to replace excessive whitespace with in 'repair' mode (default is a single space).
     """
@@ -727,7 +727,7 @@ class DetectOrRepairExcessiveWhitespaceTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_excess_whitespace",
+        new_column: str = "has_excess_whitespace",
         mode: str = "detect",
         replacement: str = " ",
     ) -> None:
@@ -752,14 +752,14 @@ class DetectOrRepairAccentedCharsTask(DetectOrReplaceTask):
 
     Attributes:
         _column (str): The name of the column to check for accented characters (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_accented_chars").
+        _new_column (str): The name of the new column for detection flags (default is "accented_chars").
         _mode (str): The mode of operation, either 'detect' to flag accented characters or 'repair' to remove them.
     """
 
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_accented_chars",
+        new_column: str = "has_accented_chars",
         mode: str = "detect",
     ) -> None:
         # Regex pattern for accented and diacritic characters
@@ -867,14 +867,14 @@ class DetectOrRepairNonEnglishTask(DetectOrRemoveTask):
 
     Attributes:
         _column (str): The name of the column to check for non-English text (default is "content").
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_non_english").
+        _new_column (str): The name of the new column for detection flags (default is "non_english").
         _mode (str): The mode of operation, either 'detect' to flag non-English text or 'remove' to delete such rows.
     """
 
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_has_non_english",
+        new_column: str = "has_non_english",
         mode: str = "detect",
     ) -> None:
         super().__init__()
@@ -953,7 +953,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
     Attributes:
         _column (str): The name of the column to check for character elongation (default is "content").
         _threshold (int): The minimum number of consecutive repeating characters to be considered elongation (default is 4).
-        _new_column (str): The name of the new column for detection flags (default is "tqd_has_elongation").
+        _new_column (str): The name of the new column for detection flags (default is "elongation").
         _max_elongation (int): The maximum allowed repetition of characters when repairing (default is 3).
         _mode (str): The mode of operation, either 'detect' to flag elongation or 'repair' to limit character repetition.
     """
@@ -962,7 +962,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
         self,
         column: str = "content",
         threshold: int = 4,
-        new_column: str = "tqd_elongation",
+        new_column: str = "elongation",
         max_elongation: int = 3,
         mode: str = "detect",
     ) -> None:
@@ -1004,7 +1004,7 @@ class DetectOrRepairRepeatedSequenceTask(DetectOrReplaceTask):
         length_of_sequence: int = 3,
         min_repetitions: int = 3,
         threshold: int = 3,
-        new_column: str = "tqd_excess_sequence_repetition",
+        new_column: str = "excess_sequence_repetition",
         mode: str = "detect",
     ) -> None:
         pattern = rf"(.{{{length_of_sequence},}})\1{{{min_repetitions - 1}}}"
@@ -1043,7 +1043,7 @@ class DetectOrRepairRepeatedWordPhrasesTask(DetectOrReplaceTask):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "tqd_excess_word_phrase_repetition",
+        new_column: str = "excess_word_phrase_repetition",
         min_repetitions: int = 3,
         threshold: int = 3,
         mode: str = "detect",
@@ -1078,7 +1078,7 @@ class DetectOrRepairOutliersTask(DetectOrRemoveTask):
         self,
         column: str = "review_length",
         iqr_threshold: int = 3,
-        new_column: str = "tqd_outlier_review_length",
+        new_column: str = "outlier_review_length",
         mode: str = "detect",
     ) -> None:
         pattern = None
@@ -1123,8 +1123,8 @@ class DetectOrRepairOutliersTask(DetectOrRemoveTask):
 class DetectOrRepairGibberishTask(DetectOrRemoveTask):
     def __init__(
         self,
-        column: str = "dqp_perplexity",
-        new_column: str = "tqd_gibberish",
+        column: str = "an_perplexity",
+        new_column: str = "gibberish",
         mode: str = "detect",
         ppl_filepath: str = "models/perplexity/perplexity_dev.csv",
     ) -> None:
@@ -1162,8 +1162,3 @@ class DetectOrRepairGibberishTask(DetectOrRemoveTask):
         data = data.withColumn(self._new_column, is_outlier)
 
         return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                           DETECT OR REPAIR GIBBERISH                                             #
-# ------------------------------------------------------------------------------------------------ #

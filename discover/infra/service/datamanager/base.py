@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 14th 2024 11:59:29 pm                                             #
-# Modified   : Friday November 15th 2024 12:21:42 am                                               #
+# Modified   : Saturday November 16th 2024 05:18:04 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from dependency_injector.wiring import Provide, inject
 from discover.assets.dataset import Dataset
 from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persistence.repo.dataset import DatasetRepo
 
@@ -87,7 +87,7 @@ class DataManager(ABC):
         """
         dataset = Dataset(
             phase=PhaseDef.DATAPREP,
-            stage=DataPrepStageDef.from_value(value=stage),
+            stage=StageDef.from_value(value=stage),
             name="review",
             content=df,
             nlp=False,
@@ -121,6 +121,6 @@ class DataManager(ABC):
         return AssetIDGen().get_asset_id(
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
-            stage=DataPrepStageDef.from_value(value=stage),
+            stage=StageDef.from_value(value=stage),
             name=name,
         )

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/sentiment/task.py                                          #
+# Filename   : /discover/flow/data_processing/data_prep/sentiment/task.py                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Wednesday November 13th 2024 12:00:41 am                                            #
+# Modified   : Saturday November 16th 2024 07:41:34 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -58,7 +58,7 @@ class SentimentAnalysisTask(Task):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "edp_sentiment",
+        new_column: str = "an_sentiment",
     ) -> None:
         super().__init__()
         self._column = column
@@ -122,7 +122,7 @@ class SentimentScoreTask(Task):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "edp_sentiment",
+        new_column: str = "an_sentiment",
         min_score: float = -1.0,
         max_score: float = 1.0,
     ) -> None:
@@ -213,7 +213,7 @@ class SentimentLabelTask(Task):
     def __init__(
         self,
         column: str = "content",
-        new_column: str = "edp_sentiment",
+        new_column: str = "an_sentiment",
     ) -> None:
         super().__init__()
         self._column = column
@@ -269,7 +269,7 @@ class SpacySentimentAnalysisTask(SentimentScoreTask):
     def __init__(
         self,
         column="content",
-        new_column="edp_sentiment",
+        new_column="an_sentiment",
         pipeline: str = "en_core_web_sm",
         min_score: float = -1.0,
         max_score: float = 1.0,
@@ -316,7 +316,7 @@ class TextBlobSentimentAnalysisTask(SentimentScoreTask):
     def __init__(
         self,
         column="content",
-        new_column="edp_sentiment",
+        new_column="an_sentiment",
         min_score: float = -1.0,
         max_score: float = 1.0,
     ):
@@ -395,7 +395,7 @@ class MergeSentimentsTask(Task):
 
     def __init__(
         self,
-        new_column: str = "dqp_sentiment",
+        new_column: str = "an_sentiment",
         location: str = "models/sentiment/inference",
         file_prefix: str = "sentiments_",
         config_reader_cls: Type[AppConfigReader] = AppConfigReader,
@@ -482,7 +482,7 @@ class DistilBERTSentimentClassifier(SentimentLabelTask):
     def __init__(
         self,
         column="content",
-        new_column="edp_sentiment",
+        new_column="an_sentiment",
         model_name: str = "tabularisai/robust-sentiment-analysis",
     ):
         super().__init__(

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/tqa/stage.py                                               #
+# Filename   : /discover/incubator/flow/data_prep/tqa/stage.py                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:59:20 pm                                              #
-# Modified   : Wednesday October 23rd 2024 06:53:03 pm                                             #
+# Modified   : Saturday November 16th 2024 05:46:59 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,9 +22,9 @@ from typing import List
 import pandas as pd
 
 from discover.assets.idgen import AssetIDGen
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
-from discover.flow.data_prep.stage import DataPrepStage
+from discover.flow.data_processing.data_prep.stage import DataPrepStage
 from discover.infra.service.logging.stage import stage_logger
 
 # ------------------------------------------------------------------------------------------------ #
@@ -51,7 +51,7 @@ class TQAStage(DataPrepStage):
         self._destination_asset_id = AssetIDGen.get_asset_id(
             asset_type=self._destination_config.asset_type,
             phase=PhaseDef.from_value(value=self._destination_config.phase),
-            stage=DataPrepStageDef.from_value(value=self._destination_config.stage),
+            stage=StageDef.from_value(value=self._destination_config.stage),
             name=self._destination_config.name,
         )
 

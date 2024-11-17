@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Saturday November 16th 2024 02:40:17 am                                             #
+# Modified   : Saturday November 16th 2024 07:18:21 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -133,7 +133,7 @@ class Stage(ABC):
         """
         try:
             tasks = [
-                cls._task_builder.build(task_config)
+                cls._task_builder.build(task_config, stage_id=stage_config["stage_id"])
                 for task_config in stage_config["tasks"]
             ]
             return cls(
@@ -150,3 +150,19 @@ class Stage(ABC):
             raise RuntimeError(
                 f"Failed to build stage from configuration: {str(e)}"
             ) from e
+
+    def _get_asset_id(self, config: NestedNamespace) -> str:
+        """Returns the asset id given an asset configuration
+
+        Args:
+            config (NestedNamespace): an asset configuration
+
+        Returns:
+            str: The asset_id for the asset
+        """
+        return self._asset_idgen.get_asset_id(
+            asset_type=config.asset_type,
+            phase=PhaseDef.from_value(config.phase),
+            stage=StageDef.from_value(config.stage),
+            name=config.name,
+        )

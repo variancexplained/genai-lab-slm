@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 15th 2024 12:07:41 am                                               #
-# Modified   : Friday November 15th 2024 01:13:03 am                                               #
+# Modified   : Saturday November 16th 2024 06:31:03 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -89,4 +89,4 @@ class PerplexityAnalysisDataManager(DataManager):
             )
             raise ValueError(msg)
         perplexity["id"] = perplexity["id"].astype("string")
-        return df.merge(perplexity[["id", "dqp_perplexity"]], how="left", on="id")
+        return df.merge(perplexity[["id", "an_perplexity"]], how="left", on="id")

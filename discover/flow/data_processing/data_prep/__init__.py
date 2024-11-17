@@ -4,38 +4,15 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /config/test/flow.yaml                                                              #
+# Filename   : /discover/orchestration/data_prep/__init__.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Saturday November 16th 2024 05:46:56 pm                                             #
+# Created    : Friday September 20th 2024 07:18:29 pm                                              #
+# Modified   : Friday October 18th 2024 01:35:23 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-# ------------------------------------------------------------------------------------------------ #
-#                                        PHASES                                                    #
-# ------------------------------------------------------------------------------------------------ #
-phases:
-  dataprep:
-    stages:
-      ingest:
-        source_config:
-          filepath: data/raw/reviews
-        destination_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: ingest
-          name: review
-          nlp: False
-          distributed: False
-        tasks:
-          - class_name: FilterTask
-            module: discover.flow.data_processing.data_prep.ingest.task
-            params:
-              column: date
-              frac: 0.01
-              date: 2020

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Saturday November 16th 2024 02:30:42 pm                                             #
+# Modified   : Saturday November 16th 2024 07:19:41 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from __future__ import annotations
 import importlib
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -59,6 +59,20 @@ class Task(ABC):
             The name of the task.
         """
         return self.__class__.__name__
+
+    @property
+    def stage_id(self) -> str:
+        """Returns the id for the stage to which the Task belongs"""
+        return self._stage_id
+
+    @stage_id.setter
+    def stage_id(self, stage_id: str) -> None:
+        """Setter for stage_id property
+
+        Args:
+            stage_id (str): Identifier for the stage to which the task belongs.
+        """
+        self._stage_id = stage_id
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
@@ -151,7 +165,7 @@ class TaskBuilder:
     """
 
     @staticmethod
-    def build(task_config):
+    def build(task_config, stage_id: Optional[str] = None):
         """
         Builds and returns an instance of a task class based on the provided configuration.
 
@@ -159,11 +173,11 @@ class TaskBuilder:
         ----------
         task_config : dict
             A dictionary containing task configuration with the following keys:
-                - 'phase' (str): The phase associated with the task (e.g., 'preprocessing').
-                - 'stage' (str): The stage within the phase (e.g., 'normalization').
                 - 'module_name' (str): The name of the module containing the task class.
                 - 'class_name' (str): The name of the task class to instantiate.
                 - 'params' (dict): Additional parameters to pass to the task's constructor.
+        stage_id : Optional[str]
+            An optional identifier for the stage to which the task belongs.
 
         Returns
         -------
@@ -188,11 +202,15 @@ class TaskBuilder:
         ... }
         >>> task_instance = TaskBuilder.build(task_config)
         """
+
         module = task_config["module"]
         class_name = task_config["class_name"]
         params = task_config["params"]
-        return instantiate_class(
+        task = instantiate_class(
             module=module,
             class_name=class_name,
             params=params,
         )
+        if stage_id:
+            task.stage_id = stage_id
+        return task

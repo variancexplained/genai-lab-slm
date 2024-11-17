@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 08:29:47 pm                                                #
-# Modified   : Wednesday October 16th 2024 10:42:24 pm                                             #
+# Modified   : Saturday November 16th 2024 05:18:05 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.persistence.dal.dao.dataset import DatasetDAO
 
 # ------------------------------------------------------------------------------------------------ #
@@ -355,7 +355,7 @@ class TestDAOReading:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         dao = DatasetDAO()
-        logger.info(dao.read_by_stage(stage=DataPrepStageDef.RAW))
+        logger.info(dao.read_by_stage(stage=StageDef.RAW))
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

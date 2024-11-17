@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday November 16th 2024 03:35:20 pm                                             #
+# Modified   : Saturday November 16th 2024 05:46:59 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,8 @@ from pyspark.sql import SparkSession
 
 from discover.assets.dataset import Dataset
 from discover.container import DiscoverContainer
-from discover.core.flow import DataPrepStageDef, PhaseDef
-from discover.flow.data_prep.stage import DataPrepStage
+from discover.core.flow import PhaseDef, StageDef
+from discover.flow.data_processing.data_prep.stage import DataPrepStage
 from discover.infra.config.app import AppConfigReader
 from discover.infra.config.flow import FlowConfigReader
 from discover.infra.persistence.cloud.aws import S3Handler
@@ -56,8 +56,8 @@ def container() -> DiscoverContainer:
     container.init_resources()
     container.wire(
         modules=[
-            "discover.flow.data_prep.stage",
-            "discover.flow.data_prep.dqm",
+            "discover.flow.data_processing.data_prep.stage",
+            "discover.flow.data_processing.data_prep.dqm",
         ],
     )
 
@@ -156,7 +156,7 @@ def centralized_ds(pandas_df, container):
         nlp=False,
         distributed=False,
         phase=PhaseDef.DATAPREP,
-        stage=DataPrepStageDef.TQA,
+        stage=StageDef.TQA,
         content=pandas_df,
     )
     repo = container.repo.dataset_repo()
@@ -173,7 +173,7 @@ def distributed_ds(spark_df, container):
         nlp=False,
         distributed=True,
         phase=PhaseDef.DATAPREP,
-        stage=DataPrepStageDef.TQA,
+        stage=StageDef.TQA,
         content=spark_df,
     )
     repo = container.repo.dataset_repo()
@@ -190,7 +190,7 @@ def distributed_ds_nlp(spark_df, container):
         nlp=True,
         distributed=True,
         phase=PhaseDef.DATAPREP,
-        stage=DataPrepStageDef.TQA,
+        stage=StageDef.TQA,
         content=spark_df,
     )
     repo = container.repo.dataset_repo()

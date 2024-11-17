@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/aggregation/stage.py                                       #
+# Filename   : /discover/flow/data_processing/data_prep/agg/stage.py                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:59:53 pm                                              #
-# Modified   : Monday November 11th 2024 10:33:00 pm                                               #
+# Modified   : Saturday November 16th 2024 05:46:59 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,9 +25,9 @@ import pyspark
 
 from discover.assets.dataset import Dataset
 from discover.assets.idgen import AssetIDGen
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
-from discover.flow.data_prep.stage import DataPrepStage
+from discover.flow.data_processing.data_prep.stage import DataPrepStage
 from discover.infra.service.logging.stage import stage_logger
 
 
@@ -76,7 +76,7 @@ class AggregationStage(DataPrepStage):
             asset_id = AssetIDGen.get_asset_id(
                 asset_type="dataset",
                 phase=PhaseDef.DATAPREP,
-                stage=DataPrepStageDef.AGG,
+                stage=StageDef.AGG,
                 name=task.dataset_name,
             )
             if self._endpoint_exists(asset_id=asset_id) and not self._force:
@@ -102,7 +102,7 @@ class AggregationStage(DataPrepStage):
         """Creates the destination dataset with the processed data and configuration details."""
         return Dataset(
             phase=PhaseDef.from_value(self._destination_config.phase),
-            stage=DataPrepStageDef.from_value(self._destination_config.stage),
+            stage=StageDef.from_value(self._destination_config.stage),
             name=dataset_name,
             content=data,
             nlp=self._destination_config.nlp,

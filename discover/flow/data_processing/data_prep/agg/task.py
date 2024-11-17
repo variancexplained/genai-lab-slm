@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/agg/task.py                                                #
+# Filename   : /discover/flow/data_processing/data_prep/agg/task.py                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Friday November 15th 2024 03:57:59 am                                               #
+# Modified   : Saturday November 16th 2024 07:43:06 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -60,7 +60,7 @@ class AppAggregationTask(Task):
         Args:
             data (DataFrame): The input PySpark DataFrame with columns:
                 app_id, app_name, category_id, category, author, rating, content, vote_sum,
-                vote_count, date, edp_review_length, edp_review_age,
+                vote_count, date, nrch_review_length, nrch_review_age,
                 enrichment_tqa_score1, enrichment_tqa_score2, enrichment_tqa_score_final.
 
         Returns:
@@ -110,13 +110,13 @@ class AppAggregationTask(Task):
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
             F.avg("review_length").alias("average_review_length"),
-            F.avg("edp_review_age").alias("average_review_age"),
+            F.avg("nrch_review_age").alias("average_review_age"),
             F.sum("vote_sum").alias("total_vote_sum"),
             F.sum("vote_count").alias("total_vote_count"),
             F.min("date").alias("first_review_date"),
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
-            F.avg("edp_sentiment_score").alias("average_sentiment"),
+            F.avg("an_sentiment_score").alias("average_sentiment"),
             F.avg("tqa_syntactic_lexical_score").alias("average_tqa_score_1"),
             F.avg("tqa_perplexity_score").alias("average_tqa_score_2"),
             F.avg("tqa_score").alias("average_tqa_score_final"),
@@ -177,7 +177,7 @@ class CategoryAggregationTask(Task):
         Args:
             data (DataFrame): The input PySpark DataFrame with columns:
                 category_id, category, author, rating, content, vote_sum, vote_count, date,
-                edp_review_length, edp_review_age, enrichment_tqa_score1,
+                nrch_review_length, nrch_review_age, enrichment_tqa_score1,
                 enrichment_tqa_score2, enrichment_tqa_score_final.
 
         Returns:
@@ -227,13 +227,13 @@ class CategoryAggregationTask(Task):
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
             F.avg("review_length").alias("average_review_length"),
-            F.avg("edp_review_age").alias("average_review_age"),
+            F.avg("nrch_review_age").alias("average_review_age"),
             F.sum("vote_sum").alias("total_vote_sum"),
             F.sum("vote_count").alias("total_vote_count"),
             F.min("date").alias("first_review_date"),
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
-            F.avg("edp_sentiment_score").alias("average_sentiment"),
+            F.avg("an_sentiment_score").alias("average_sentiment"),
             F.avg("tqa_syntactic_lexical_score").alias("average_tqa_score_1"),
             F.avg("tqa_perplexity_score").alias("average_tqa_score_2"),
             F.avg("tqa_score").alias("average_tqa_score_final"),
