@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Saturday November 16th 2024 10:29:57 pm                                             #
+# Modified   : Monday November 18th 2024 01:40:43 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
 
-from typing import Optional, Union
+from typing import Callable, Optional, Type, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,6 +30,7 @@ from discover.app.base import Analysis
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
+from discover.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
@@ -45,9 +46,11 @@ class DQA(Analysis):
         self,
         name: str = "review",
         config_reader_cls: type[AppConfigReader] = AppConfigReader,
+        printer_cls: Type[Printer] = Printer,
     ) -> None:
         super().__init__()
         self._config = config_reader_cls().get_config(section="dqa", namespace=True)
+        self._printer = Printer()
         # Obtain the dataset asset id
         asset_id = AssetIDGen().get_asset_id(
             asset_type="dataset",
@@ -257,9 +260,43 @@ class DQA(Analysis):
         else:
             return df
 
-    def subset_df(self, n: int = 10, random_state: int = None) -> pd.DataFrame:
+    def show_review(self, review_id: str) -> None:
+        df = self._df.loc[self._df["id"] == review_id]
+        self._printer.print_dataframe_as_dict(
+            df=df, title=df["app_name"].values[0], text_col="content"
+        )
+
+    def select(
+        self,
+        n: int = 10,
+        x: str = None,
+        exclude: str = None,
+        condition: Callable = None,
+        sort_by: str = None,
+        cols: list = None,
+        ascending: bool = False,
+    ) -> pd.DataFrame:
+        df = self._df
+        if exclude:
+            df = df.loc[~df[exclude]]
+        if x and condition:
+            df = df.loc[df[x].apply(condition)]
+        if sort_by:
+            df = df.sort_values(sort_by, ascending=ascending)
+        if cols:
+            df = df[cols]
+        if n:
+            df = df.head(n=n)
+        return df.reset_index()
+
+    def sample(
+        self, n: int = 10, cols: list = None, random_state: int = None
+    ) -> pd.DataFrame:
         n = min(n, len(self._df))
-        return self._df.sample(n=n, random_state=random_state)
+        df = self._df.sample(n=n, random_state=random_state)
+        if cols:
+            df = df[cols]
+        return df
 
     def _compute_validity(self) -> float:
         N = self._df.shape[0]
