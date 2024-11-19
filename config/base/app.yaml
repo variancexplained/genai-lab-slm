@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Friday November 15th 2024 02:03:44 am                                               #
+# Modified   : Tuesday November 19th 2024 03:02:40 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -103,20 +103,7 @@ spark:
 # ------------------------------------------------------------------------------------------------ #
 #                                         DQA                                                      #
 # ------------------------------------------------------------------------------------------------ #
-dqa:
-  rating_validity_weight: 0.5
-  review_length_outlier_validity_weight: 0.2
-  perplexity_outlier_validity_weight: 0.3
-  review_uniqueness_weight: 0.3
-  id_uniqueness_weight: 0.7
-  completeness_weight: 0.1
-  validity_weight: 0.15
-  uniqueness_weight: 0.1
-  balance_weight: 0.1
-  accuracy_weight: 0.15
-  privacy_weight: 0.05
-  interpretability_weight: 0.05
-  text_quality_weight: 0.3
+
 
 
 

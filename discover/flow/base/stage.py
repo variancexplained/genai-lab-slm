@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Sunday November 17th 2024 01:47:52 am                                               #
+# Modified   : Tuesday November 19th 2024 12:26:34 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -54,6 +54,7 @@ class Stage(ABC):
         source_config: dict,
         destination_config: dict,
         force: bool = False,
+        **kwargs,
     ) -> None:
         self._phase = phase
         self._stage = stage
@@ -102,7 +103,7 @@ class Stage(ABC):
         pass
 
     @classmethod
-    def build(cls, stage_config: dict, force: bool = False) -> Stage:
+    def build(cls, stage_config: dict, force: bool = False, **kwargs) -> Stage:
         """Creates and returns a new stage instance from the provided configuration.
 
         Args:
@@ -125,6 +126,7 @@ class Stage(ABC):
                 source_config=stage_config["source_config"],
                 destination_config=stage_config["destination_config"],
                 force=force,
+                **kwargs,
             )
 
             # Construct the Stage's Task objects

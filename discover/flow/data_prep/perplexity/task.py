@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday November 19th 2024 02:14:27 am                                              #
+# Modified   : Tuesday November 19th 2024 04:35:41 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -57,10 +57,9 @@ class PerplexityAnalysisTask(Task):
         model_name: str = "distilbert/distilgpt2",
         stride: int = 512,
     ):
-        super().__init__(
-            column=column,
-            new_column=new_column,
-        )
+        self._column = column
+        self._new_column = new_column
+        self._model_name = model_name
 
         self._model_name = model_name
         self._stride = stride

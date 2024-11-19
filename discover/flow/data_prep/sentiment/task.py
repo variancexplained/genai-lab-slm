@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday November 19th 2024 12:52:18 am                                              #
+# Modified   : Tuesday November 19th 2024 04:35:26 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,6 @@
 """Sentiment Analysis Module"""
 import os
 import warnings
-from typing import Type
 
 import pandas as pd
 import torch
@@ -27,7 +26,6 @@ from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 from discover.flow.base.task import Task
-from discover.infra.config.flow import FlowConfigReader
 from discover.infra.service.logging.task import task_logger
 
 # ------------------------------------------------------------------------------------------------ #
@@ -40,44 +38,30 @@ tqdm.pandas()
 class SentimentAnalysisTask(Task):
     """Task for performing sentiment analysis on text data.
 
-    This class uses a pre-trained transformer model to predict the sentiment
-    of text data in a specified column, and appends the results to a new column.
+    This class uses a pre-trained transformer model to analyze the sentiment
+    of text in a specified column and appends the predicted sentiment labels
+    to a new column in the DataFrame.
+
+    Args:
+        column (str): The name of the column containing the text data. Defaults to "content".
+        new_column (str): The name of the column to store sentiment predictions. Defaults to "sentiment".
+        model_name (str): The name of the pre-trained sentiment analysis model. Defaults to "tabularisai/robust-sentiment-analysis".
     """
 
     def __init__(
         self,
         column="content",
         new_column="sentiment",
-        cache: str = "models/sentiment/inference/sentiments",
         model_name: str = "tabularisai/robust-sentiment-analysis",
-        config_reader_cls: Type[FlowConfigReader] = FlowConfigReader,
     ):
-        """Initializes the SentimentAnalysisTask with configuration details.
-
-        Args:
-            column (str): The name of the column containing the text data. Defaults to "content".
-            new_column (str): The name of the column to store sentiment predictions. Defaults to "sentiment".
-            cache (str): The path to the cache file for saving sentiment analysis results. Defaults to "models/sentiment/inference/sentiments".
-            model_name (str): The name of the pre-trained sentiment analysis model. Defaults to "tabularisai/robust-sentiment-analysis".
-            config_reader_cls (Type[FlowConfigReader]): The class used to read environment-specific configuration. Defaults to FlowConfigReader.
-        """
-        super().__init__(
-            column=column,
-            new_column=new_column,
-        )
-        # Load environment-specific settings and construct the cache file path
-        env = config_reader_cls().get_environment()
-        self._cache = f"{cache}_{env}.csv"
+        self._column = column
+        self._new_column = new_column
         self._model_name = model_name
 
         # Model, tokenizer, and device are initialized as None and will be loaded later
         self._model = None
         self._tokenizer = None
         self._device = None
-
-    @property
-    def cache(self) -> str:
-        return self._cache
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:

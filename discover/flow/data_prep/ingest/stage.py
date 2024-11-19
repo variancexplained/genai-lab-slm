@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Monday November 18th 2024 04:07:11 pm                                               #
+# Modified   : Tuesday November 19th 2024 04:11:09 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,7 @@ from discover.infra.utils.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
-class IngestStage(DataProcessingStage):
+class IngestionStage(DataProcessingStage):
     """
     Stage for data ingestion in the data processing pipeline.
 

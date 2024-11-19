@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/tqd/stage.py                                               #
+# Filename   : /discover/flow/data_prep/dqd/stage.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Monday November 18th 2024 04:03:10 pm                                               #
+# Modified   : Tuesday November 19th 2024 09:44:06 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from discover.flow.data_prep.base.stage import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class TextQualityDetectionStage(DataPrepStage):
+class DataQualityDetectionStage(DataPrepStage):
     """
     Stage for detecting text quality issues in the data preparation pipeline.
 

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_processing/data_prep/tqa/task.py                                #
+# Filename   : /discover/flow/data_prep/tqa/task.py                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Monday November 18th 2024 03:32:05 pm                                               #
+# Modified   : Tuesday November 19th 2024 01:27:01 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ import os
 
 import seaborn as sns
 from pyspark.ml import Pipeline
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 from pyspark.sql.utils import AnalysisException
 from sparknlp.annotator import PerceptronModel, Tokenizer
@@ -243,7 +243,28 @@ class ComputeTextQualityTask(Task):
                 ),
             )
 
-            # Step 8: Clean up intermediate columns
+            # Step 8: Set quality of non-english reviews to 0
+            data = data.withColumn(
+                "tqa_score",
+                F.when(F.col("dqd_non_english_text") == True, 0).otherwise(  # noqa
+                    F.col("tqa_score")
+                ),
+            )
+
+            # Step 9: Scale the values to [0,100]
+            data = data.withColumn(
+                "tqa_score",
+                (
+                    (F.col("tqa_score") - F.min("tqa_score").over(Window.partitionBy()))
+                    / (
+                        F.max("tqa_score").over(Window.partitionBy())
+                        - F.min("tqa_score").over(Window.partitionBy())
+                    )
+                    * 100
+                ),
+            )
+
+            # Step 10: Clean up intermediate columns
             for label in pos_labels:
                 data = data.drop(f"pos_n_{label}", f"pos_p_{label}")
 

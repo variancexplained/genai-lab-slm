@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Monday November 18th 2024 04:45:22 pm                                               #
+# Modified   : Tuesday November 19th 2024 06:37:48 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
 
-from typing import Callable, Optional, Type, Union
+from typing import Optional, Type, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -173,53 +173,6 @@ class DQA(Analysis):
     def summarize_privacy(self) -> pd.DataFrame:
         return self._compute_frequency_distribution(cols=self._privacy_cols)
 
-    def plot_quality(self) -> None:
-        viz.barplot(
-            data=self.quality_scores,
-            x="Dimension",
-            y="Score",
-            palette="Blues_r",
-            title=f"AppVoCAI Dataset Quality Analysis\nQuality Score: {round(self.quality,3)}",
-        )
-
-    def plot_review_length_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["dqa_review_length_outlier"]]["review_length"]
-        viz.violinplot(x=outliers, title="Distribution of Review Length Outliers")
-        return outliers.describe().to_frame().T
-
-    def plot_perplexity_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["dqa_perplexity_outlier"]]["an_perplexity"]
-        viz.violinplot(x=outliers, title="Distribution of Perplexity Outliers")
-        return outliers.describe().to_frame().T
-
-    def plot_balance(self) -> pd.DataFrame:
-        viz.countplot(
-            data=self._df,
-            x="voc_sentiment",
-            title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.balance,2)}",
-        )
-        return self._df["voc_sentiment"].describe().to_frame().T
-
-    def plot_privacy(self) -> None:
-        privacy = self.summarize_privacy()
-        viz.barplot(
-            data=privacy,
-            y="Defect",
-            x="%",
-            title="Personally Identifiable Information (PII)",
-        )
-
-    def plot_text_quality(self) -> pd.DataFrame:
-        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 4))
-        viz.kdeplot(data=self._df, x="tqa_score", ax=axes[0])
-        viz.violinplot(data=self._df, x="tqa_score", ax=axes[1])
-        fig.suptitle("Distribution of Text Quality Scores")
-        return self._df["tqa_score"].describe().to_frame().T
-
-    def plot_noise(self) -> None:
-        noise = self.summarize_noise()
-        viz.barplot(data=noise, y="Defect", x="%", title="Noise Density")
-
     def get_defects(
         self,
         defect: str,
@@ -260,67 +213,51 @@ class DQA(Analysis):
         else:
             return df
 
-    def show_review(self, review_id: str) -> None:
-        df = self._df.loc[self._df["id"] == review_id]
-        self._printer.print_dataframe_as_dict(
-            df=df, title=df["app_name"].values[0], text_col="content"
+    def plot_quality(self) -> None:
+        viz.barplot(
+            data=self.quality_scores,
+            x="Dimension",
+            y="Score",
+            palette="Blues_r",
+            title=f"AppVoCAI Dataset Quality Analysis\nQuality Score: {round(self.quality,3)}",
         )
 
-    def select(
-        self,
-        n: int = 10,
-        x: str = None,
-        exclude: str = None,
-        condition: Callable = None,
-        sort_by: str = None,
-        cols: list = None,
-        ascending: bool = False,
-    ) -> pd.DataFrame:
-        df = self._df
-        if exclude:
-            df = df.loc[~df[exclude]]
-        if x and condition:
-            df = df.loc[df[x].apply(condition)]
-        if sort_by:
-            df = df.sort_values(sort_by, ascending=ascending)
-        if cols:
-            df = df[cols]
-        if n:
-            df = df.head(n=n)
-        return df.reset_index()
+    def plot_perplexity_validity(self) -> pd.DataFrame:
+        outliers = self._df.loc[self._df["dqa_perplexity_outlier"]]["an_perplexity"]
+        viz.violinplot(x=outliers, title="Distribution of Perplexity Outliers")
+        return outliers.describe().to_frame().T
 
-    def sample(
-        self, n: int = 10, cols: list = None, random_state: int = None
-    ) -> pd.DataFrame:
-        n = min(n, len(self._df))
-        df = self._df.sample(n=n, random_state=random_state)
-        if cols:
-            df = df[cols]
-        return df
+    def plot_balance(self) -> pd.DataFrame:
+        viz.countplot(
+            data=self._df,
+            x="voc_sentiment",
+            title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.balance,2)}",
+        )
+        return self._df["voc_sentiment"].describe().to_frame().T
+
+    def plot_privacy(self) -> None:
+        privacy = self.summarize_privacy()
+        viz.barplot(
+            data=privacy,
+            y="Defect",
+            x="%",
+            title="Personally Identifiable Information (PII)",
+        )
+
+    def plot_text_quality(self) -> pd.DataFrame:
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 4))
+        viz.kdeplot(data=self._df, x="tqa_score", ax=axes[0])
+        viz.violinplot(data=self._df, x="tqa_score", ax=axes[1])
+        fig.suptitle("Distribution of Text Quality Scores")
+        return self._df["tqa_score"].describe().to_frame().T
+
+    def plot_noise(self) -> None:
+        noise = self.summarize_noise()
+        viz.barplot(data=noise, y="Defect", x="%", title="Noise Density")
 
     def _compute_validity(self) -> float:
-        N = self._df.shape[0]
-        valid_ratings = (
-            N
-            - self._df[
-                ~self._df["rating"].parallel_apply(
-                    lambda x: isinstance(x, int) and 1 <= x <= 5
-                )
-            ].shape[0]
-        )
-        review_length_non_outliers = N - (self._df["dqa_review_length_outlier"].sum())
-        perplexity_non_outliers = N - (+self._df["dqa_perplexity_outlier"].sum())
-        return (
-            ((valid_ratings / N) * self._config.rating_validity_weight)
-            + (
-                (review_length_non_outliers / N)
-                * self._config.review_length_outlier_validity_weight
-            )
-            + (
-                (perplexity_non_outliers / N)
-                * self._config.perplexity_outlier_validity_weight
-            )
-        )
+        pass
+        # TODO: Rewrite
 
     def _compute_uniqueness(self) -> float:
         N = self._df.shape[0]

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 29th 2024 08:20:00 pm                                               #
-# Modified   : Saturday November 9th 2024 07:53:16 pm                                              #
+# Modified   : Tuesday November 19th 2024 01:07:06 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,13 +24,15 @@ import pandas as pd
 import seaborn as sns
 from scipy.stats import ks_2samp
 
+from discover.app.base import Analysis
+
 # ------------------------------------------------------------------------------------------------ #
-sns.set_style("white")
-sns.set_palette("vlag")
+sns.set_style("whitegrid")
+sns.set_palette("Blues_r")
 
 
 # ------------------------------------------------------------------------------------------------ #
-class TextQualityAnalysis:
+class TextQualityAnalysis(Analysis):
     def __init__(self, df: pd.DataFrame) -> None:
         self._df = df
 

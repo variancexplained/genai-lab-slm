@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_processing/data_prep/ingest/task.py                             #
+# Filename   : /discover/flow/data_prep/ingest/task.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Sunday November 17th 2024 01:04:04 am                                               #
+# Modified   : Tuesday November 19th 2024 03:25:20 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -231,7 +231,6 @@ class AddReviewLengthTask(Task):
         self._column = column
         self._new_column = new_column
 
-    @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Adds a new column to the DataFrame with the length of the text in the specified column.

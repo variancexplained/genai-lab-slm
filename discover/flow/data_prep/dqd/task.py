@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/dqa/task.py                                                #
+# Filename   : /discover/flow/data_prep/dqd/task.py                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday November 18th 2024 07:26:11 pm                                               #
+# Modified   : Tuesday November 19th 2024 09:00:33 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -67,6 +67,7 @@ class DetectOrRepairTask(Task):
         threshold (Optional[int]): The raw count threshold for detection.
         threshold_word_prop (Optional[float]): The proportion of words threshold for detection.
         threshold_char_prop (Optional[float]): The proportion of characters threshold for detection.
+        threshold_percentile (Optional[float]): The percentile threshold for identifying low-quality text. Defaults to None.
         replacement (Optional[str]): The replacement text used in 'repair' mode.
     """
 
@@ -79,6 +80,7 @@ class DetectOrRepairTask(Task):
         threshold: Optional[int] = None,
         threshold_word_prop: Optional[float] = None,
         threshold_char_prop: Optional[float] = None,
+        threshold_percentile: Optional[float] = None,
         replacement: Optional[str] = None,
     ):
         super().__init__()
@@ -89,6 +91,7 @@ class DetectOrRepairTask(Task):
         self._threshold = threshold
         self._threshold_word_prop = threshold_word_prop
         self._threshold_char_prop = threshold_char_prop
+        self._threshold_percentile = threshold_percentile
         self._replacement = replacement
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -168,6 +171,19 @@ class DetectOrRepairTask(Task):
                     > self._threshold_char_prop
                 ).cast("boolean"),
             )
+        elif self._threshold_percentile:
+            # Calculate the percentile value for perplexity
+            percentile_value = data.approxQuantile(
+                self._column,
+                [self._threshold_percentile],
+                self._percentile_relative_error,
+            )[0]
+
+            # Handling perplexity threshold
+            data = data.withColumn(
+                self._new_column,
+                (F.col(self._column) < percentile_value).cast("boolean"),
+            )
 
         else:
             data = data.withColumn(
@@ -188,24 +204,24 @@ class DetectOrRepairTask(Task):
 #                                DETECT OR REPLACE TASK                                            #
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrReplaceTask(DetectOrRepairTask):
-    """
-    A task for detecting or replacing patterns in text data.
+    """Class for detecting or replacing problematic text data.
 
-    This class extends `DetectOrRepairTask` to provide functionality for either
-    detecting the presence of patterns or replacing them with specified text.
-    It uses regular expressions and specified thresholds to perform detection
-    or replacement operations on the text data.
+    This class is designed to detect or replace text entries based on specified
+    criteria, such as matching a regex pattern, exceeding word or character
+    proportion thresholds, or falling below a percentile threshold. The behavior
+    is controlled by the mode parameter, which determines whether to detect and flag
+    the issues or replace the problematic text.
 
     Args:
-
-        column (str): The name of the column to process.
-        mode (str): The operation mode, either 'detect' for flagging patterns or 'replace' to substitute them.
-        pattern (Optional[str]): The regular expression pattern used for detection or replacement.
-        new_column (Optional[str]): The name of the new column for storing detection results.
-        threshold (Optional[int]): The raw count threshold for detection or replacement.
-        threshold_word_prop (Optional[float]): The proportion of words threshold for detection or replacement.
-        threshold_char_prop (Optional[float]): The proportion of characters threshold for detection or replacement.
-        replacement (Optional[str]): The text used to replace detected patterns when in 'replace' mode.
+        column (str): The name of the column to analyze. Defaults to "content".
+        mode (str): Operation mode, either "detect" to flag issues or "replace" to modify text. Defaults to "detect".
+        pattern (Optional[str]): The regex pattern used to identify issues. Defaults to None.
+        new_column (Optional[str]): The name of the column to store detection results. If None, results are not stored. Defaults to None.
+        threshold (Optional[int]): The numeric threshold for issue detection. Specific use depends on the context. Defaults to None.
+        threshold_word_prop (Optional[float]): The proportion threshold for word-based analysis. Defaults to None.
+        threshold_char_prop (Optional[float]): The proportion threshold for character-based analysis. Defaults to None.
+        threshold_percentile (Optional[float]): The percentile threshold for identifying low-quality text. Defaults to None.
+        replacement (Optional[str]): The string used to replace identified issues in "replace" mode. Defaults to None.
     """
 
     def __init__(
@@ -217,6 +233,7 @@ class DetectOrReplaceTask(DetectOrRepairTask):
         threshold: Optional[int] = None,
         threshold_word_prop: Optional[float] = None,
         threshold_char_prop: Optional[float] = None,
+        threshold_percentile: Optional[float] = None,
         replacement: Optional[str] = None,
     ):
         super().__init__(
@@ -228,6 +245,7 @@ class DetectOrReplaceTask(DetectOrRepairTask):
             threshold=threshold,
             threshold_word_prop=threshold_word_prop,
             threshold_char_prop=threshold_char_prop,
+            threshold_percentile=threshold_percentile,
         )
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -250,22 +268,22 @@ class DetectOrReplaceTask(DetectOrRepairTask):
 #                                DETECT OR REMOVE TASK                                             #
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRemoveTask(DetectOrRepairTask):
-    """
-    A task for detecting or removing patterns in text data.
+    """Base class for detecting or removing problematic text data.
 
-    This class extends `DetectOrRepairTask` to provide functionality for either
-    detecting the presence of patterns or removing them from text data. It uses
-    specified thresholds to determine whether a pattern should be flagged or removed.
+    This class provides mechanisms for detecting or removing text entries based
+    on various criteria, such as matching a specific pattern, exceeding character
+    or word proportion thresholds, or falling below a percentile threshold.
 
     Args:
-
-        column (str): The name of the column to process.
-        mode (str): The operation mode, either 'detect' for flagging patterns or 'remove' to eliminate them.
-        pattern (Optional[str]): The regular expression pattern used for detection or removal.
-        new_column (Optional[str]): The name of the new column for storing detection results.
-        threshold (Optional[int]): The raw count threshold for detection or removal.
-        threshold_word_prop (Optional[float]): The proportion of words threshold for detection or removal.
-        threshold_char_prop (Optional[float]): The proportion of characters threshold for detection or removal.
+        column (str): The name of the column to analyze. Defaults to "content".
+        mode (str): Operation mode, either "detect" to flag entries or "remove" to filter them. Defaults to "detect".
+        pattern (Optional[str]): The regex pattern to match within the text. Defaults to None.
+        new_column (Optional[str]): The name of the column to store detection results. If None, results are not stored. Defaults to None.
+        threshold (Optional[int]): The threshold value for detecting issues. Specific use depends on the context. Defaults to None.
+        threshold_word_prop (Optional[float]): The proportion threshold for word-based analysis. Defaults to None.
+        threshold_char_prop (Optional[float]): The proportion threshold for character-based analysis. Defaults to None.
+        threshold_percentile (Optional[float]): The percentile threshold for detecting low-quality text. Defaults to None.
+        replacement (Optional[str]): The string used to replace detected issues in "repair" mode. Defaults to None.
     """
 
     def __init__(
@@ -277,15 +295,19 @@ class DetectOrRemoveTask(DetectOrRepairTask):
         threshold: Optional[int] = None,
         threshold_word_prop: Optional[float] = None,
         threshold_char_prop: Optional[float] = None,
+        threshold_percentile: Optional[float] = None,
+        replacement: Optional[str] = None,
     ):
         super().__init__(
             pattern=pattern,
             column=column,
             new_column=new_column,
+            replacement=replacement,
             mode=mode,
             threshold=threshold,
             threshold_word_prop=threshold_word_prop,
             threshold_char_prop=threshold_char_prop,
+            threshold_percentile=threshold_percentile,
         )
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -347,7 +369,6 @@ class DetectOrRepairDuplicateReviewIdTask(DetectOrRepairTask):
         # Define a Window spec
         window_spec = Window.partitionBy("id").orderBy(
             F.col("date").desc(),  # Latest review date first
-            F.col("review_length").desc(),  # Largest review length first
             F.col("vote_count").desc(),  # Highest vote count first
         )
         # Add a row number column based on the ordering
@@ -593,11 +614,11 @@ class DetectOrRepairNonASCIICharsTask(DetectOrReplaceTask):
 # ------------------------------------------------------------------------------------------------ #
 #                          DETECT OR NON-ASCII TEXT TASK                                           #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairNonASCIITextTask(DetectOrRemoveTask):
+class DetectOrRepairExcessNonASCIITextTask(DetectOrReplaceTask):
     """
     A task for detecting or removing rows with excessive non-ASCII characters in text data.
 
-    This class extends `DetectOrRemoveTask` to identify or remove rows where the proportion
+    This class extends `DetectOrRemoveTask` to identify or replace non where the proportion
     of non-ASCII (Unicode) characters exceeds a specified threshold. In 'detect' mode, it
     flags rows with excessive non-ASCII characters. In 'remove' mode, it filters out such rows
     from the DataFrame.
@@ -1121,7 +1142,7 @@ class DetectOrRepairMinimumValueTask(DetectOrRemoveTask):
 
     Attributes:
         column (str): The name of the column to check. Defaults to "review_length".
-        min_value (int): The minimum acceptable value. Defaults to 3.
+        threshold (int): The minimum acceptable value. Defaults to 3.
         new_column (str): The suffix used to name the new indicator column. Defaults to "below_min_value".
         mode (str): The mode of operation, either "detect" or "repair". Defaults to "detect".
     """
@@ -1129,13 +1150,13 @@ class DetectOrRepairMinimumValueTask(DetectOrRemoveTask):
     def __init__(
         self,
         column: str = "review_length",
-        min_value: int = 3,
+        threshold: int = 3,
         new_column: str = "below_min_value",
         mode: str = "detect",
     ) -> None:
         pattern = None
         new_column = f"{column}_{new_column}"
-        self._min_value = min_value
+        self._threshold = threshold
         super().__init__(
             pattern=pattern,
             column=column,
@@ -1154,57 +1175,35 @@ class DetectOrRepairMinimumValueTask(DetectOrRemoveTask):
             whether the values in `self._column` are below `self._min_value`.
         """
         return data.withColumn(
-            self._new_column, (F.col(self._column) < self._min_value)
+            self._new_column, (F.col(self._column) < self._threshold)
         )
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                           DETECT OR REPAIR MIN VALUE                                             #
+#                           DETECT OR REPAIR LOW PERPLEXITY                                        #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairMinimumPercentileTask(DetectOrRemoveTask):
+class DetectOrRepairLowPerplexity(DetectOrRemoveTask):
+    """Detects or repairs text data with low perplexity scores.
+
+    This class identifies or repairs text entries that have low perplexity values,
+    based on a specified percentile threshold. It operates in two modes: "detect"
+    mode, which flags low perplexity entries, or "remove" mode, which filters them out.
+
+    Args:
+        column (str): The name of the column containing perplexity scores. Defaults to "pa_perplexity".
+        new_column (str): The name of the column to store boolean flags indicating low perplexity. Defaults to "low_perplexity".
+        mode (str): Operation mode, either "detect" to flag entries or "remove" to filter them. Defaults to "detect".
+        threshold_percentile (float): The percentile threshold used to define low perplexity. Values below this percentile are considered low. Defaults to 0.5.
+        percentile_relative_error (float): The relative error allowed when computing the percentile value. Defaults to 0.001.
+    """
 
     def __init__(
         self,
-        column: str = "review_length",
-        min_value: int = 3,
-        new_column: str = "below_min_value",
+        column: str = "pa_perplexity",
+        new_column: str = "low_perplexity",
         mode: str = "detect",
-    ) -> None:
-        pattern = None
-        new_column = f"{column}_{new_column}"
-        self._min_value = min_value
-        super().__init__(
-            pattern=pattern,
-            column=column,
-            mode=mode,
-            new_column=new_column,
-        )
-
-    def detect(self, data: DataFrame) -> DataFrame:
-        """Sets a boolean indicator for values below the specified minimum.
-
-        Args:
-            data (DataFrame): The input PySpark DataFrame.
-
-        Returns:
-            DataFrame: The DataFrame with an added boolean column indicating
-            whether the values in `self._column` are below `self._min_value`.
-        """
-        return data.withColumn(
-            self._new_column, (F.col(self._column) < self._min_value)
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                           DETECT OR REPAIR OUTLIERS                                              #
-# ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairGibberishTask(DetectOrRemoveTask):
-    def __init__(
-        self,
-        column: str = "an_perplexity",
-        new_column: str = "gibberish",
-        mode: str = "detect",
-        ppl_filepath: str = "models/perplexity/perplexity_dev.csv",
+        threshold_percentile: float = 0.5,
+        percentile_relative_error: float = 0.001,
     ) -> None:
         pattern = None
         super().__init__(
@@ -1212,34 +1211,6 @@ class DetectOrRepairGibberishTask(DetectOrRemoveTask):
             column=column,
             mode=mode,
             new_column=new_column,
+            threshold_percentile=threshold_percentile,
         )
-        self._ppl_filepath = ppl_filepath
-
-    def detect(self, data: DataFrame) -> DataFrame:
-        """
-        Detects outliers in the specified column using the Interquartile Range (IQR) method.
-
-        Args:
-            data (DataFrame): A PySpark DataFrame containing the data to be processed.
-
-        Returns:
-            DataFrame: A PySpark DataFrame with an additional boolean column indicating
-            whether each row is an outlier.
-        """
-        # Compute Q1, Q3, and IQR
-        quantiles = data.approxQuantile(self._column, [0.25, 0.75], 0.01)
-        q1, q3 = quantiles[0], quantiles[1]
-        iqr = q3 - q1
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-
-        # Define outlier detection logic
-        is_outlier = F.when(
-            (F.col(self._column) < lower_bound) | (F.col(self._column) > upper_bound),
-            F.lit(True),
-        ).otherwise(F.lit(False))
-
-        # Add the outlier indicator column
-        data = data.withColumn(self._new_column, is_outlier)
-
-        return data
+        self._percentile_relative_error = percentile_relative_error
