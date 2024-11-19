@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday November 16th 2024 08:35:21 pm                                             #
+# Modified   : Monday November 18th 2024 04:03:09 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from pyspark.sql import SparkSession
 from discover.assets.dataset import Dataset
 from discover.container import DiscoverContainer
 from discover.core.flow import PhaseDef, StageDef
-from discover.flow.data_processing.data_prep.base.stage import DataPrepStage
+from discover.flow.data_prep.base.stage import DataPrepStage
 from discover.infra.config.app import AppConfigReader
 from discover.infra.config.flow import FlowConfigReader
 from discover.infra.persistence.cloud.aws import S3Handler
@@ -56,8 +56,8 @@ def container() -> DiscoverContainer:
     container.init_resources()
     container.wire(
         modules=[
-            "discover.flow.data_processing.data_prep.base.stage",
-            "discover.flow.data_processing.data_prep.dqm",
+            "discover.flow.data_prep.base.stage",
+            "discover.flow.data_prep.dqm",
         ],
     )
 

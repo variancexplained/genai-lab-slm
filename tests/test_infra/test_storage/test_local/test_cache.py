@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 17th 2024 08:52:38 pm                                             #
-# Modified   : Saturday November 16th 2024 05:18:06 pm                                             #
+# Modified   : Monday November 18th 2024 08:25:52 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -56,7 +56,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(stage=StageDef.DQA)
+        cache = DiscoverCache(stage=StageDef.DQD)
         cache.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -75,7 +75,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(stage=StageDef.DQA)
+        cache = DiscoverCache(stage=StageDef.DQD)
         cache.add_item(
             key=KEY1,
             data=pandas_df,
@@ -85,7 +85,7 @@ class TestCache:  # pragma: no cover
         registry = cache.get_registration(key=KEY1)
         assert isinstance(registry, CacheRegistration)
         assert registry.key == "somekey1"
-        assert registry.stage == StageDef.DQA
+        assert registry.stage == StageDef.DQD
         assert os.path.exists(registry.filepath)
         assert isinstance(registry.dt_added, datetime)
         assert isinstance(registry.dt_accessed, datetime)
@@ -119,7 +119,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(stage=StageDef.DQA)
+        cache = DiscoverCache(stage=StageDef.DQD)
         with pytest.raises(KeyError):
             cache.get_item(key=KEY2)
 
@@ -145,7 +145,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(stage=StageDef.DQA)
+        cache = DiscoverCache(stage=StageDef.DQD)
         assert cache.exists(key=KEY1)
         assert not cache.exists(key=KEY2)
         # ---------------------------------------------------------------------------------------- #
@@ -165,7 +165,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(stage=StageDef.DQA)
+        cache = DiscoverCache(stage=StageDef.DQD)
         cache.check_expiry()
         reg = cache.get_registration(key=KEY1)
         assert reg.state == CacheState.EXPIRED
@@ -187,7 +187,7 @@ class TestCache:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        cache = DiscoverCache(stage=StageDef.DQA)
+        cache = DiscoverCache(stage=StageDef.DQD)
         cache.add_item(key=KEY2, data=pandas_df)
         cache.evict(key=KEY2)
 

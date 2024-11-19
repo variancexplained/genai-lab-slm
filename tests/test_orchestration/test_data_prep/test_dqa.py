@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 01:27:37 am                                                #
-# Modified   : Saturday November 16th 2024 08:35:24 pm                                             #
+# Modified   : Monday November 18th 2024 08:25:52 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ import pytest
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import PhaseDef, StageDef
-from discover.flow.data_processing.data_prep.base.stage import DataPrepStage
+from discover.flow.data_prep.base.stage import DataPrepStage
 from discover.infra.config.flow import FlowConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
@@ -54,7 +54,7 @@ class TestDQA:  # pragma: no cover
             name="review",
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
-            stage=StageDef.DQA,
+            stage=StageDef.DQD,
         )
 
         repo = container.repo.dataset_repo()

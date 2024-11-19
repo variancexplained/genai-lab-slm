@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Monday November 18th 2024 01:40:43 am                                               #
+# Modified   : Monday November 18th 2024 04:45:22 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -79,7 +79,7 @@ class DQA(Analysis):
             col
             for col in self._df.columns
             if (
-                col.startswith("tqd_")
+                col.startswith("dqa_")
                 and "email" not in col
                 and "url" not in col
                 and "phone" not in col
@@ -183,22 +183,22 @@ class DQA(Analysis):
         )
 
     def plot_review_length_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["tqd_review_length_outlier"]]["review_length"]
+        outliers = self._df.loc[self._df["dqa_review_length_outlier"]]["review_length"]
         viz.violinplot(x=outliers, title="Distribution of Review Length Outliers")
         return outliers.describe().to_frame().T
 
     def plot_perplexity_validity(self) -> pd.DataFrame:
-        outliers = self._df.loc[self._df["tqd_perplexity_outlier"]]["an_perplexity"]
+        outliers = self._df.loc[self._df["dqa_perplexity_outlier"]]["an_perplexity"]
         viz.violinplot(x=outliers, title="Distribution of Perplexity Outliers")
         return outliers.describe().to_frame().T
 
     def plot_balance(self) -> pd.DataFrame:
         viz.countplot(
             data=self._df,
-            x="an_sentiment",
+            x="voc_sentiment",
             title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.balance,2)}",
         )
-        return self._df["an_sentiment"].describe().to_frame().T
+        return self._df["voc_sentiment"].describe().to_frame().T
 
     def plot_privacy(self) -> None:
         privacy = self.summarize_privacy()
@@ -308,8 +308,8 @@ class DQA(Analysis):
                 )
             ].shape[0]
         )
-        review_length_non_outliers = N - (self._df["tqd_review_length_outlier"].sum())
-        perplexity_non_outliers = N - (+self._df["tqd_perplexity_outlier"].sum())
+        review_length_non_outliers = N - (self._df["dqa_review_length_outlier"].sum())
+        perplexity_non_outliers = N - (+self._df["dqa_perplexity_outlier"].sum())
         return (
             ((valid_ratings / N) * self._config.rating_validity_weight)
             + (
@@ -332,9 +332,9 @@ class DQA(Analysis):
 
     def _compute_balance(self) -> float:
         N = self._df.shape[0]
-        sentiments = self._df["an_sentiment"].value_counts()
-        mean_sentiment = np.mean(sentiments)
-        balance = 1 - (np.sum(np.abs(sentiments - mean_sentiment)) / N)
+        sentiments = self._df["voc_sentiment"].value_counts()
+        mevoc_sentiment = np.mean(sentiments)
+        balance = 1 - (np.sum(np.abs(sentiments - mevoc_sentiment)) / N)
         return balance
 
     def _compute_accuracy(self) -> float:
@@ -381,7 +381,7 @@ class DQA(Analysis):
 
     def _convert_labels(self, txt) -> str:
         """Converts column names to Title case labels."""
-        txt = txt.replace("tqd_", "")
+        txt = txt.replace("dqa_", "")
         txt = txt.replace("_", " ")
         txt = txt.title()
         txt = "Contains " + txt
