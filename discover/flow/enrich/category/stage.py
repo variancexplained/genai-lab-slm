@@ -4,41 +4,44 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/feature/tqa/stage.py                                                 #
+# Filename   : /discover/flow/enrich/category/stage.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Thursday November 7th 2024 11:01:19 pm                                              #
+# Created    : Tuesday November 19th 2024 03:08:02 am                                              #
 # Modified   : Wednesday November 20th 2024 03:49:42 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from __future__ import annotations
-
+"""Category Enrichment Stage Module"""
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.stage.data_prep.base import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class TQAStage(DataPrepStage):
-    """
-    Stage for text quality assessment (TQA) in the data preparation pipeline.
+class CategoryEnrichmentStage(DataPrepStage):
+    """Stage for aggregating metrics at the category level.
 
-    This class is responsible for evaluating the quality of text data, performing
-    tasks related to text quality assessment as part of data preparation. It inherits
-    from `DataPrepStage` and manages the configuration and execution of TQA tasks,
-    ensuring the processed data is saved appropriately to the destination.
+    This class aggregates various metrics at the category level, including
+    the number of apps, average ratings, rating statistics, review length
+    statistics, sentiment distributions, and perplexity scores. These
+    aggregated metrics provide insights at a higher level, useful for
+    comparative analysis and category-wide assessments.
 
     Args:
-        phase (PhaseDef): The phase of the data pipeline.
-        stage (StageDef): The specific stage within the data pipeline.
-        source_config (dict): Configuration for the data source.
-        destination_config (dict): Configuration for the data destination.
-        force (bool, optional): Whether to force execution, even if the output already
-            exists. Defaults to False.
+        phase (PhaseDef): The phase definition indicating where this stage
+            fits within the overall data processing workflow.
+        stage (StageDef): The stage definition providing details on the
+            configuration and behavior of this stage.
+        source_config (dict): Configuration for the data source, including
+            connection parameters and data retrieval settings.
+        destination_config (dict): Configuration for the data destination,
+            specifying where to store the aggregated metrics.
+        force (bool): Whether to force the execution of this stage, even if
+            it has been previously completed. Defaults to False.
     """
 
     def __init__(
@@ -48,13 +51,11 @@ class TQAStage(DataPrepStage):
         source_config: dict,
         destination_config: dict,
         force: bool = False,
-        return_dataset: bool = False,
     ) -> None:
         super().__init__(
             phase=phase,
             stage=stage,
             source_config=source_config,
             destination_config=destination_config,
-            return_dataset=return_dataset,
             force=force,
         )

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 12:41:52 pm                                              #
-# Modified   : Monday November 18th 2024 04:03:10 pm                                               #
+# Modified   : Wednesday November 20th 2024 03:49:42 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ import pytest
 
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import PhaseDef, StageDef
-from discover.flow.data_prep.base.stage import DataPrepStage
+from discover.flow.stage.data_prep.base import DataPrepStage
 from discover.infra.config.flow import FlowConfigReader
 
 # ------------------------------------------------------------------------------------------------ #

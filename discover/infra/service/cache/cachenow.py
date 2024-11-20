@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 08:23:12 pm                                            #
-# Modified   : Thursday October 24th 2024 03:10:56 am                                              #
+# Modified   : Wednesday November 20th 2024 03:49:43 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from typing import Optional, Union
 import pandas as pd
 import pyspark
 
-from discover.flow.base.task import Task
+from discover.flow.task.base import Task
 from discover.infra.config.app import AppConfigReader
 from discover.infra.service.cache.cache import DiscoverCache
 from discover.infra.utils.data.dataframe import find_dataframe
