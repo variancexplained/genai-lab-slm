@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Tuesday November 19th 2024 08:01:54 pm                                              #
+# Modified   : Wednesday November 20th 2024 07:28:53 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,9 +20,9 @@
 from __future__ import annotations
 
 import logging
-import os
 from abc import abstractmethod
 from datetime import datetime
+from enum import Enum
 from typing import Type, Union
 
 import pandas as pd
@@ -39,7 +39,6 @@ from discover.core.namespace import NestedNamespace
 from discover.flow.base.stage import Stage
 from discover.infra.persistence.repo.dataset import DatasetRepo
 from discover.infra.service.logging.stage import stage_logger
-from discover.infra.utils.file.io import IOService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -197,7 +196,7 @@ class DataProcessingStage(Stage):
             self._logger.error(msg)
             raise RuntimeError(msg)
 
-    def _save_dataset(self, dataset: Dataset) -> None:
+    def _save_dataset(self, dataset: Dataset, replace_if_exists: bool = False) -> None:
         """Saves a dataset to the repository.
 
         Args:
@@ -207,6 +206,8 @@ class DataProcessingStage(Stage):
             RuntimeError: If saving the dataset fails.
         """
         try:
+            if self._repo.exists(asset_id=dataset.asset_id) and replace_if_exists:
+                self._repo.remove(asset_id=dataset.asset_id)
             self._repo.add(dataset=dataset)
         except Exception as e:
             raise RuntimeError(f"Failed to save dataset\n{dataset} {str(e)}")
@@ -267,6 +268,15 @@ class DataProcessingStage(Stage):
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                                     EXECUTION PATH                                               #
+# ------------------------------------------------------------------------------------------------ #
+class DataPrepExecutionPath(Enum):
+    RUN = "run"
+    UPDATE_ENDPOINT = "update_endpoint"
+    GET_RETURN_VALUE = "get_return_value"
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                                    DATA PREP STAGE                                               #
 # ------------------------------------------------------------------------------------------------ #
 class DataPrepStage(DataProcessingStage):
@@ -303,14 +313,8 @@ class DataPrepStage(DataProcessingStage):
             source_config=source_config,
             destination_config=destination_config,
             force=force,
+            return_dataset=return_dataset,
         )
-        self._return_dataset = return_dataset
-        self._cache = destination_config.get("cache", None)
-
-    @property
-    def cache(self) -> str:
-        """Returns the filepath to cache, if it exists."""
-        return self._cache
 
     @stage_logger
     def run(self) -> Dataset:
@@ -325,52 +329,94 @@ class DataPrepStage(DataProcessingStage):
         """
         source_asset_id = self._get_asset_id(config=self._source_config)
         destination_asset_id = self._get_asset_id(config=self._destination_config)
-        endpoint_exists = self._dataset_exists(asset_id=destination_asset_id)
 
-        if self._force:
-            if endpoint_exists:
-                self._remove_dataset(asset_id=destination_asset_id)
+        # Determine execution path
+        execution_path = self._get_execution_path(
+            source_asset_id=source_asset_id, destination_asset_id=destination_asset_id
+        )
+
+        # Direct the process
+        if execution_path == DataPrepExecutionPath.RUN:
+            self._logger.debug("Data prep execution path: RUN")
             dataset = self._run(
                 source_asset_id=source_asset_id,
                 destination_asset_id=destination_asset_id,
             )
             return self._get_return_value(dataset=dataset)
-        elif endpoint_exists:
-            dataset_meta = self._load_dataset_metadata(asset_id=source_asset_id)
-            if not dataset_meta.consumed:
-                dataset = self._update_endpoint(
-                    source_asset_id=source_asset_id,
-                    destination_asset_id=destination_asset_id,
-                )
-                return self._get_return_value(dataset=dataset)
-            else:
-                return self._get_return_value(
-                    asset_id=destination_asset_id, config=self._destination_config
-                )
+
+        elif execution_path == DataPrepExecutionPath.UPDATE_ENDPOINT:
+            self._logger.debug("Data prep execution path: UPDATE ENDPOINT")
+            dataset = self._update_endpoint(
+                source_asset_id=source_asset_id,
+                destination_asset_id=destination_asset_id,
+            )
+            return self._get_return_value(dataset=dataset)
+
         else:
-            if self.cache:
-                if os.path.exists(self.cache):
-                    dataset = self._run_from_cache(
-                        source_asset_id=source_asset_id,
-                        destination_asset_id=destination_asset_id,
-                    )
-                    self._save_dataset(dataset=dataset)
-                    return self._get_return_value(dataset=dataset)
-                else:
-                    dataset = self._run(
-                        source_asset_id=source_asset_id,
-                        destination_asset_id=destination_asset_id,
-                    )
-                    self._save_dataset(dataset=dataset)
-                    self._cache_results(dataset=dataset)
-                    return self._get_return_value(dataset=dataset)
-            else:
-                dataset = self._run(
-                    source_asset_id=source_asset_id,
-                    destination_asset_id=destination_asset_id,
-                )
-                self._save_dataset(dataset=dataset)
-                return self._get_return_value(dataset=dataset)
+            self._logger.debug("Data prep execution path: RETURN")
+            return self._get_return_value(
+                asset_id=destination_asset_id, config=self._destination_config
+            )
+
+    def _get_execution_path(
+        self, source_asset_id: str, destination_asset_id: str
+    ) -> DataPrepExecutionPath:
+        """Determines the data prep execution path
+
+        There are thee binary variables creating 2^8 possible conditions that resolve to
+        one of three actions:
+            1. Run The pipeline and return
+            2. Update the existing endpoint with new source data and return
+            3. Get the return value requested. No action required.
+
+        Option 1 executes if Force is true or the endpoint doesn't exist.
+        Option 2 executes if not forcing, the endpoint exists, but there is new source data.
+        Option 3 executes if not forcing, the endpoint exists and the source  has
+            been consumed.
+
+        Args:
+            source_asset_id (str): Asset identifier for source dataset
+            destination_asset_id (str): Asset identifier for destination dataset
+
+        Note: Force must be set to True if the source code has changed or the output changes with
+        the input, and the input has changed.
+        """
+        # Obtain current state
+        endpoint_exists = self._dataset_exists(asset_id=destination_asset_id)
+        source_consumed = self._source_consumed(asset_id=source_asset_id)
+
+        # Easy case first
+        if not self._force and source_consumed and endpoint_exists:
+            return DataPrepExecutionPath.GET_RETURN_VALUE
+        # Update endpoint if the soure has changed
+        elif not self._force and not source_consumed and endpoint_exists:
+            return DataPrepExecutionPath.UPDATE_ENDPOINT
+        # Otherwise run
+        else:
+            return DataPrepExecutionPath.RUN
+
+    def _run(self, source_asset_id: str, destination_asset_id: str) -> Dataset:
+        """Performs the core logic of the stage, executing tasks in sequence.
+
+        Args:
+            source_asset_id (str): The asset identifier for the source dataset.
+            destination_asset_id (str): The asset identifier for the destination dataset.
+        """
+        source_dataset = self._load_dataset(
+            asset_id=source_asset_id, config=self._source_config
+        )
+        data = source_dataset.content
+        for task in self._tasks:
+            data = task.run(data=data)
+
+        destination_dataset = self._create_dataset(
+            asset_id=destination_asset_id, config=self._destination_config, data=data
+        )
+
+        self._save_dataset(dataset=destination_dataset, replace_if_exists=True)
+        self._mark_source_consumed(asset_id=source_asset_id)
+
+        return destination_dataset
 
     def _update_endpoint(self, source_asset_id, destination_asset_id) -> Dataset:
         """Updates the endpoint dataset with changes in the source dataset.
@@ -403,15 +449,34 @@ class DataPrepStage(DataProcessingStage):
         destination_dataset_updated = self._create_dataset(
             destination_asset_id, config=self._destination_config, data=df
         )
-        # Remove the prior version of the dataset
-        self._remove_dataset(asset_id=destination_asset_id)
         # Save the updated dataset
-        self._save_dataset(dataset=destination_dataset_updated)
+        self._save_dataset(dataset=destination_dataset_updated, replace_if_exists=True)
         # Mark the source dataset as having been consumed.
-        source_dataset = self._mark_consumed(dataset=source_dataset)
+        source_dataset = self._mark_source_consumed(dataset=source_dataset)
         # Persist the source dataset metadata
         self._save_dataset_metadata(dataset=source_dataset)
         return destination_dataset_updated
+
+    def _source_consumed(self, asset_id: str) -> bool:
+        """Returns True of the source has been consumed"""
+        dataset_meta = self._load_dataset_metadata(asset_id=asset_id)
+        return dataset_meta.consumed
+
+    def _mark_source_consumed(self, asset_id: str) -> None:
+        """Marks the dataset as having been consumed.
+
+        Args:
+            dataset (Dataset): The dataset to mark as consumed.
+
+        Returns:
+            Dataset: The updated dataset marked as consumed.
+        """
+        dataset = self._load_dataset_metadata(asset_id=asset_id)
+        dataset.consumed = True
+        dataset.dt_consumed = datetime.now()
+        dataset.consumed_by = self.__class__.__name__
+        self._save_dataset_metadata(dataset=dataset)
+        return dataset
 
     def _merge_dataframes(
         self,
@@ -419,7 +484,7 @@ class DataPrepStage(DataProcessingStage):
         destination: Union[pd.DataFrame, DataFrame],
         result_cols: list,
     ) -> Union[pd.DataFrame, DataFrame]:
-        """Merges the source and destination dataframes.
+        """Merges two DataFrames of the same type.
 
         Args:
             source (Union[pd.DataFrame, DataFrame]): The source dataframe.
@@ -483,113 +548,3 @@ class DataPrepStage(DataProcessingStage):
         """
         destination_subset = destination.select(*result_cols)
         return source.join(destination_subset, on="id", how="left")
-
-    def _run(self, source_asset_id: str, destination_asset_id: str) -> Dataset:
-        """Performs the core logic of the stage, executing tasks in sequence.
-
-        Args:
-            source_asset_id (str): The asset identifier for the source dataset.
-            destination_asset_id (str): The asset identifier for the destination dataset.
-        """
-        source_dataset = self._load_dataset(
-            asset_id=source_asset_id, config=self._source_config
-        )
-        data = source_dataset.content
-        for task in self._tasks:
-            data = task.run(data=data)
-
-        destination_dataset = self._create_dataset(
-            asset_id=destination_asset_id, config=self._destination_config, data=data
-        )
-        source_dataset = self._mark_consumed(dataset=source_dataset)
-        self._save_dataset_metadata(dataset=source_dataset)
-        return destination_dataset
-
-    def _run_from_cache(
-        self, source_asset_id: str, destination_asset_id: str
-    ) -> Dataset:
-        """Loads data from cache and merges it with the source dataset.
-
-        This method reads cached data from the destination configuration, merges it
-        with the source dataset, and saves the combined data to a new destination
-        dataset. The source dataset is then marked as consumed, and metadata is updated.
-
-        Args:
-            source_asset_id (str): The unique identifier of the source asset.
-            destination_asset_id (str): The unique identifier of the destination asset.
-
-        Returns:
-            Dataset: The newly created destination dataset containing the merged data.
-        """
-
-        # Obtain data from cache
-        cache = IOService.read(filepath=self.cache, lineterminator="\n")
-        # Extract column(s) of interest from cache data
-        destination_cols = [
-            col for col in cache.columns if col.startswith(self.stage.id)
-        ]
-        # If no columns start with the stage id, there is a comflict between the stage.id and
-        # the column names in the current version of the cache. Update the column prefix
-        # to match the stage.id.
-        if len(destination_cols) == 0:
-            msg = f"No columns in the cache file start with stage_id {self.stage.id}. Check columns in the cache file."
-            raise RuntimeError(msg)
-
-        # Add 'id to destination columns as key for merging.
-        destination_cols.append("id")
-
-        # Load source dataset
-        source_dataset = self._load_dataset(
-            asset_id=source_asset_id, config=self._source_config
-        )
-        # Merge source dataset, with data from cache
-        data = self._merge_dataframes(
-            source=source_dataset.content,
-            destination=cache,
-            result_cols=destination_cols,
-        )
-        # Create the destination dataset object.
-        destination_dataset = self._create_dataset(
-            asset_id=destination_asset_id, config=self._destination_config, data=data
-        )
-        # Mark the source dataset as consumed, to avoid computationally expensive reruns.
-        source_dataset = self._mark_consumed(dataset=source_dataset)
-        self._save_dataset_metadata(dataset=source_dataset)
-        return destination_dataset
-
-    def _mark_consumed(self, dataset: Dataset) -> Dataset:
-        """Marks the dataset as having been consumed.
-
-        Args:
-            dataset (Dataset): The dataset to mark as consumed.
-
-        Returns:
-            Dataset: The updated dataset marked as consumed.
-        """
-        dataset.consumed = True
-        dataset.dt_consumed = datetime.now()
-        dataset.consumed_by = self.__class__.__name__
-        return dataset
-
-    def _cache_results(self, dataset: Dataset) -> None:
-        """Caches specified columns from the dataset to a file.
-
-        This method extracts relevant columns from the dataset, including the "id"
-        and "content" columns, as well as columns prefixed with the stage ID.
-        The selected data is then written to a cache file for future use.
-
-        Args:
-            dataset (Dataset): The dataset containing the content to be cached.
-
-        Returns:
-            None
-        """
-        cache_cols = ["id", "content"]
-        # Extract columns created by this stage and append to list
-        destination_cols = [
-            col for col in dataset.content.columns if col.startswith(self.stage.id)
-        ]
-        cache_cols.extend(destination_cols)
-
-        df = dataset.content[cache_cols]
-        IOService.write(filepath=self.cache, data=df)

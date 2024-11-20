@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday November 19th 2024 07:22:04 pm                                              #
+# Modified   : Wednesday November 20th 2024 07:49:02 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,7 +31,7 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import udf
 from pyspark.sql.types import BooleanType
 
-from discover.flow.base.task import Task
+from discover.flow.data_prep.base.task import DataEnhancerTask
 from discover.infra.service.logging.task import task_logger
 
 # ------------------------------------------------------------------------------------------------ #
@@ -50,7 +50,7 @@ fasttext_model = fasttext.load_model("models/language_detection/lid.176.bin")
 # ------------------------------------------------------------------------------------------------ #
 #                       DETECT OR REPAIR OR REPAIR BASE CLASS                                      #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairTask(Task):
+class DetectOrRepairTask(DataEnhancerTask):
     """
     A task for detecting or repairing patterns in text data using specified thresholds.
 
@@ -82,12 +82,12 @@ class DetectOrRepairTask(Task):
         threshold_char_prop: Optional[float] = None,
         threshold_percentile: Optional[float] = None,
         replacement: Optional[str] = None,
+        **kwargs,
     ):
-        super().__init__()
+        super().__init__(**kwargs, new_column=new_column)
         self._pattern = pattern
         self._column = column
         self._mode = mode
-        self._new_column = new_column
         self._threshold = threshold
         self._threshold_word_prop = threshold_word_prop
         self._threshold_char_prop = threshold_char_prop
@@ -110,8 +110,6 @@ class DetectOrRepairTask(Task):
         Raises:
             ValueError: If the mode is invalid (not 'detect' or 'repair').
         """
-        # Update the new column to be prefixed by the stage id assigned at runtime.
-        self._new_column = f"{self.stage.id}_{self._new_column}"
 
         # Execution mode
         if self._mode == "detect":
@@ -235,6 +233,7 @@ class DetectOrReplaceTask(DetectOrRepairTask):
         threshold_char_prop: Optional[float] = None,
         threshold_percentile: Optional[float] = None,
         replacement: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__(
             pattern=pattern,
@@ -246,6 +245,7 @@ class DetectOrReplaceTask(DetectOrRepairTask):
             threshold_word_prop=threshold_word_prop,
             threshold_char_prop=threshold_char_prop,
             threshold_percentile=threshold_percentile,
+            **kwargs,
         )
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -297,6 +297,7 @@ class DetectOrRemoveTask(DetectOrRepairTask):
         threshold_char_prop: Optional[float] = None,
         threshold_percentile: Optional[float] = None,
         replacement: Optional[str] = None,
+        **kwargs,
     ):
         super().__init__(
             pattern=pattern,
@@ -308,6 +309,7 @@ class DetectOrRemoveTask(DetectOrRepairTask):
             threshold_word_prop=threshold_word_prop,
             threshold_char_prop=threshold_char_prop,
             threshold_percentile=threshold_percentile,
+            **kwargs,
         )
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -345,6 +347,7 @@ class DetectOrRepairDuplicateReviewIdTask(DetectOrRepairTask):
         mode: str = "detect",
         column: str = "id",
         new_column: str = "duplicate_review_id",
+        **kwargs,
     ):
         """
         Initializes the DetectOrRepairDuplicateReviewIdTask class.
@@ -354,7 +357,7 @@ class DetectOrRepairDuplicateReviewIdTask(DetectOrRepairTask):
             column (str): The name of the column to check for duplicates.
             new_column (str): The name of the new column for detecting duplicates.
         """
-        super().__init__(column=column, mode=mode, new_column=new_column)
+        super().__init__(column=column, mode=mode, new_column=new_column, **kwargs)
 
     def repair(self, data: DataFrame) -> DataFrame:
         """
@@ -424,6 +427,7 @@ class DetectOrRepairURLTask(DetectOrReplaceTask):
         new_column: str = "url",
         replacement: str = "[URL]",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*"
         super().__init__(
@@ -458,6 +462,7 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
         new_column: str = "has_email",
         replacement: str = "[EMAIL]",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
         super().__init__(
@@ -466,6 +471,7 @@ class DetectOrRepairEmailAddressTask(DetectOrReplaceTask):
             new_column=new_column,
             replacement=replacement,
             mode=mode,
+            **kwargs,
         )
 
 
@@ -492,6 +498,7 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
         new_column: str = "has_phone",
         replacement: str = "[PHONE]",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = r"(\+?\d{1,3})?[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}"
         super().__init__(
@@ -500,6 +507,7 @@ class DetectOrRepairPhoneNumberTask(DetectOrReplaceTask):
             new_column=new_column,
             replacement=replacement,
             mode=mode,
+            **kwargs,
         )
 
 
@@ -531,6 +539,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
         threshold_char_prop: float = 0.3,
         mode: str = "detect",
         replacement: str = " ",
+        **kwargs,
     ) -> None:
         pattern = r"[#<>~]"
         super().__init__(
@@ -540,6 +549,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(DetectOrReplaceTask):
             mode=mode,
             threshold_char_prop=threshold_char_prop,
             replacement=replacement,
+            **kwargs,
         )
 
 
@@ -568,15 +578,13 @@ class DetectOrRepairNonASCIICharsTask(DetectOrReplaceTask):
         column: str = "content",
         new_column: str = "non_ascii_chars",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = (
             r"[^\x00-\x7F]"  # Regex pattern to match non-ASCII (Unicode) characters
         )
         super().__init__(
-            pattern=pattern,
-            column=column,
-            new_column=new_column,
-            mode=mode,
+            pattern=pattern, column=column, new_column=new_column, mode=mode, **kwargs
         )
 
     @staticmethod
@@ -637,6 +645,7 @@ class DetectOrRepairExcessNonASCIITextTask(DetectOrReplaceTask):
         new_column: str = "excess_non_ascii_chars",
         threshold_char_prop: float = 0.2,
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = (
             r"[^\x00-\x7F]"  # Regex pattern to match non-ASCII (Unicode) characters
@@ -647,6 +656,7 @@ class DetectOrRepairExcessNonASCIITextTask(DetectOrReplaceTask):
             new_column=new_column,
             threshold_char_prop=threshold_char_prop,
             mode=mode,
+            **kwargs,
         )
 
 
@@ -673,6 +683,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
         new_column: str = "has_ctrl_chars",
         replacement: str = " ",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         """
         Initializes the DetectOrRepairControlCharsTask with the specified parameters.
@@ -690,6 +701,7 @@ class DetectOrRepairControlCharsTask(DetectOrReplaceTask):
             mode=mode,
             replacement=replacement,
             new_column=new_column,
+            **kwargs,
         )
 
 
@@ -716,6 +728,7 @@ class DetectOrRepairHTMLCharsTask(DetectOrReplaceTask):
         new_column: str = "has_html_chars",
         mode: str = "detect",
         replacement: str = "",
+        **kwargs,
     ) -> None:
         pattern = r"&[#A-Za-z0-9]+;"  # Regex pattern to match HTML character entities
         super().__init__(
@@ -724,6 +737,7 @@ class DetectOrRepairHTMLCharsTask(DetectOrReplaceTask):
             mode=mode,
             replacement=replacement,
             new_column=new_column,
+            **kwargs,
         )
 
 
@@ -750,6 +764,7 @@ class DetectOrRepairExcessiveWhitespaceTask(DetectOrReplaceTask):
         new_column: str = "has_excess_whitespace",
         mode: str = "detect",
         replacement: str = " ",
+        **kwargs,
     ) -> None:
         pattern = r"\s{2,}"  # Regex pattern to match two or more consecutive whitespace characters
         super().__init__(
@@ -758,6 +773,7 @@ class DetectOrRepairExcessiveWhitespaceTask(DetectOrReplaceTask):
             new_column=new_column,
             mode=mode,
             replacement=replacement,
+            **kwargs,
         )
 
 
@@ -782,14 +798,12 @@ class DetectOrRepairAccentedCharsTask(DetectOrReplaceTask):
         column: str = "content",
         new_column: str = "has_accented_chars",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         # Regex pattern for accented and diacritic characters
         pattern = r"[\u00C0-\u024F]"
         super().__init__(
-            pattern=pattern,
-            column=column,
-            new_column=new_column,
-            mode=mode,
+            pattern=pattern, column=column, new_column=new_column, mode=mode, **kwargs
         )
 
     @staticmethod
@@ -901,8 +915,9 @@ class DetectOrRepairNonEnglishTask(DetectOrRemoveTask):
         column: str = "content",
         new_column: str = "non_english",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
-        super().__init__(new_column=new_column)
+        super().__init__(new_column=new_column, **kwargs)
         self._column = column
 
     def _run_fasttext(self, text: str) -> bool:
@@ -990,6 +1005,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
         new_column: str = "elongation",
         max_elongation: int = 3,
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = rf"(.)\1{{{threshold - 1},}}"  # Regex to detect elongated characters
         replacement = r"\1" * max_elongation  # Replacement pattern to limit elongation
@@ -999,6 +1015,7 @@ class DetectOrRepairElongationTask(DetectOrReplaceTask):
             column=column,
             new_column=new_column,
             mode=mode,
+            **kwargs,
         )
 
 
@@ -1032,6 +1049,7 @@ class DetectOrRepairRepeatedSequenceTask(DetectOrReplaceTask):
         threshold: int = 3,
         new_column: str = "excess_sequence_repetition",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = rf"(.{{{length_of_sequence},}})\1{{{min_repetitions - 1}}}"
         replacement = r"\1"
@@ -1042,6 +1060,7 @@ class DetectOrRepairRepeatedSequenceTask(DetectOrReplaceTask):
             new_column=new_column,
             replacement=replacement,
             mode=mode,
+            **kwargs,
         )
 
 
@@ -1074,6 +1093,7 @@ class DetectOrRepairRepeatedWordsTask(DetectOrReplaceTask):
         min_repetitions: int = 3,
         threshold: int = 1,
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = rf"(\b\w+\b)\s*(?:\1\s*){{{min_repetitions - 1},}}"
         replacement = r"\1"
@@ -1084,6 +1104,7 @@ class DetectOrRepairRepeatedWordsTask(DetectOrReplaceTask):
             threshold=threshold,
             replacement=replacement,
             mode=mode,
+            **kwargs,
         )
 
 
@@ -1116,6 +1137,7 @@ class DetectOrRepairRepeatedPhrasesTask(DetectOrReplaceTask):
         min_repetitions: int = 3,
         threshold: int = 3,
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = rf"(\b\w+\b(?: \b\w+\b)*)\s*(?:\1\s*){{{min_repetitions},}}"
         replacement = r"\1"
@@ -1126,6 +1148,7 @@ class DetectOrRepairRepeatedPhrasesTask(DetectOrReplaceTask):
             threshold=threshold,
             replacement=replacement,
             mode=mode,
+            **kwargs,
         )
 
 
@@ -1153,15 +1176,13 @@ class DetectOrRepairMinimumValueTask(DetectOrRemoveTask):
         threshold: int = 3,
         new_column: str = "below_min_value",
         mode: str = "detect",
+        **kwargs,
     ) -> None:
         pattern = None
         new_column = f"{column}_{new_column}"
         self._threshold = threshold
         super().__init__(
-            pattern=pattern,
-            column=column,
-            mode=mode,
-            new_column=new_column,
+            pattern=pattern, column=column, mode=mode, new_column=new_column, **kwargs
         )
 
     def detect(self, data: DataFrame) -> DataFrame:
@@ -1205,13 +1226,11 @@ class DetectOrRepairPercentile(DetectOrRemoveTask):
         threshold_percentile: float = 0.5,
         relative_error: float = 0.001,
         detect_or_repair_less_than_threshold: bool = True,
+        **kwargs,
     ) -> None:
         pattern = None
         super().__init__(
-            pattern=pattern,
-            column=column,
-            mode=mode,
-            new_column=new_column,
+            pattern=pattern, column=column, mode=mode, new_column=new_column, **kwargs
         )
         self._relative_error = relative_error
         self._threshold_percentile = threshold_percentile
@@ -1219,36 +1238,28 @@ class DetectOrRepairPercentile(DetectOrRemoveTask):
             detect_or_repair_less_than_threshold
         )
 
-    @task_logger
-    def run(self, data: DataFrame) -> DataFrame:
-        try:
-            # Compute the percentile threshold with a smaller relative error for better precision
-            threshold = data.approxQuantile(
-                self._column, [self._threshold_percentile], self._relative_error
-            )[0]
+    def detect(self, data: DataFrame) -> DataFrame:
 
-            # Check for potential null threshold and raise an error if necessary
-            if threshold is None:
-                raise ValueError(
-                    "Computed percentile threshold is null. Consider adjusting the relative error or data quality."
-                )
+        # Compute the percentile threshold with a smaller relative error for better precision
+        threshold = data.approxQuantile(
+            self._column, [self._threshold_percentile], self._relative_error
+        )[0]
 
-            # Apply the threshold logic to the DataFrame
-            if self._detect_or_repair_less_than_threshold:
-                data = data.withColumn(
-                    self._new_column,
-                    F.when(F.col(self._column) < F.lit(threshold), True).otherwise(
-                        False
-                    ),
-                )
-            else:
-                data = data.withColumn(
-                    self._new_column,
-                    F.when(F.col(self._column) > F.lit(threshold), True).otherwise(
-                        False
-                    ),
-                )
-            return data
-        except Exception as e:
-            msg = f"Exception occurred in {self.__class__.__name__}.\n{e}"
-            raise RuntimeError(msg)
+        # Check for potential null threshold and raise an error if necessary
+        if threshold is None:
+            raise ValueError(
+                "Computed percentile threshold is null. Consider adjusting the relative error or data quality."
+            )
+
+        # Apply the threshold logic to the DataFrame
+        if self._detect_or_repair_less_than_threshold:
+            data = data.withColumn(
+                self._new_column,
+                F.when(F.col(self._column) < F.lit(threshold), True).otherwise(False),
+            )
+        else:
+            data = data.withColumn(
+                self._new_column,
+                F.when(F.col(self._column) > F.lit(threshold), True).otherwise(False),
+            )
+        return data

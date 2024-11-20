@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Tuesday November 19th 2024 06:37:48 am                                              #
+# Modified   : Wednesday November 20th 2024 07:58:59 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -48,19 +48,20 @@ class DQA(Analysis):
         config_reader_cls: type[AppConfigReader] = AppConfigReader,
         printer_cls: Type[Printer] = Printer,
     ) -> None:
-        super().__init__()
-        self._config = config_reader_cls().get_config(section="dqa", namespace=True)
+
+        self._config = config_reader_cls().get_config(section="dqd", namespace=True)
         self._printer = Printer()
         # Obtain the dataset asset id
         asset_id = AssetIDGen().get_asset_id(
             asset_type="dataset",
             phase=PhaseDef.DATAPREP,
-            stage=StageDef.TQA,
+            stage=StageDef.DQD,
             name=name,
         )
         # Load the dataset
         self._dataset = self.load_data(asset_id=asset_id)
         self._df = self._dataset.content
+        super().__init__(df=self._df)
 
         # Measures
         self._completeness = None

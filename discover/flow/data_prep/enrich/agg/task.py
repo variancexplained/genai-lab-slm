@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/agg/task.py                                                #
+# Filename   : /discover/flow/data_prep/enrich/agg/task.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Monday November 18th 2024 03:58:25 pm                                               #
+# Modified   : Wednesday November 20th 2024 05:36:23 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,12 +21,12 @@
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
 
-from discover.flow.base.task import Task
+from discover.flow.data_prep.base.task import DataEnhancerTask
 from discover.infra.service.logging.task import task_logger
 
 
 # ------------------------------------------------------------------------------------------------ #
-class AppAggregationTask(Task):
+class AppAggregationTask(DataEnhancerTask):
     """
     A task that aggregates review data at the app level, computing various summary statistics
     and metrics such as review counts, average ratings, and highest scores.
@@ -47,8 +47,9 @@ class AppAggregationTask(Task):
     def __init__(
         self,
         dataset_name: str,
-    ) -> None:
-        super().__init__()
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
         self._dataset_name = dataset_name
 
     @property
@@ -147,7 +148,7 @@ class AppAggregationTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class CategoryAggregationTask(Task):
+class CategoryAggregationTask(DataEnhancerTask):
     """
     A task that aggregates review data at the category level, computing various summary statistics
     and metrics such as review counts, average ratings, and highest scores.

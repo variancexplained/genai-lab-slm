@@ -322,7 +322,7 @@
 											"top": 228,
 											"width": 213.11962890625,
 											"height": 13,
-											"text": "+add_task(task)",
+											"text": "+add_task(Task)",
 											"horizontalAlignment": 0
 										},
 										{

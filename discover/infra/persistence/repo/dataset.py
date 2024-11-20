@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Sunday November 17th 2024 12:51:51 am                                               #
+# Modified   : Tuesday November 19th 2024 10:35:26 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -256,7 +256,7 @@ class DatasetRepo(Repo):
         return df[condition]
 
     # -------------------------------------------------------------------------------------------- #
-    def get_dataset_metadata(self, asset_id: str) -> Optional[Dataset]:
+    def get_dataset_metadata(self, asset_id: str) -> Dataset:
         """
         Retrieves a dataset with metadata only.
 

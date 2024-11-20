@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday November 19th 2024 04:35:26 am                                              #
+# Modified   : Wednesday November 20th 2024 07:46:57 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,9 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from discover.flow.base.task import Task
+from discover.flow.data_prep.base.task import DataEnhancerTask
 from discover.infra.service.logging.task import task_logger
+from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
@@ -35,28 +36,51 @@ tqdm.pandas()
 
 
 # ------------------------------------------------------------------------------------------------ #
-class SentimentAnalysisTask(Task):
-    """Task for performing sentiment analysis on text data.
+class SentimentAnalysisTask(DataEnhancerTask):
+    """
+    Task for performing sentiment analysis on text data in a specified column of a Pandas DataFrame.
 
-    This class uses a pre-trained transformer model to analyze the sentiment
-    of text in a specified column and appends the predicted sentiment labels
-    to a new column in the DataFrame.
+    This task uses a pre-trained model to predict sentiment for text in the specified column and
+    stores the sentiment predictions in a new column. Results are cached to a file to avoid reprocessing.
+    It supports execution on GPUs or local devices depending on the configuration.
 
     Args:
-        column (str): The name of the column containing the text data. Defaults to "content".
+        cache_filepath (str): Path to the cache file for storing or loading sentiment predictions.
+        column (str): The name of the column in the DataFrame containing text data for sentiment analysis.
+            Defaults to "content".
         new_column (str): The name of the column to store sentiment predictions. Defaults to "sentiment".
-        model_name (str): The name of the pre-trained sentiment analysis model. Defaults to "tabularisai/robust-sentiment-analysis".
+        model_name (str): The name of the pre-trained model to use for sentiment analysis. Defaults to
+            "tabularisai/robust-sentiment-analysis".
+        device_local (bool): Indicates whether to execute the task on local devices. Defaults to False.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Executes the sentiment analysis task, using a cache if available. If not, it predicts sentiment
+            for the text column and caches the results.
+        predict_sentiment(text: str) -> str:
+            Predicts sentiment for a given text string.
+        _load_model_tokenizer_to_device() -> None:
+            Loads the model, tokenizer, and device for performing sentiment analysis.
+        _run(data: pd.DataFrame) -> pd.DataFrame:
+            Executes the model inference for sentiment prediction and writes the results to the cache.
     """
 
     def __init__(
         self,
+        cache_filepath: str,
         column="content",
         new_column="sentiment",
         model_name: str = "tabularisai/robust-sentiment-analysis",
+        device_local: bool = False,
+        io_cls: type[IOService] = IOService,
+        **kwargs,
     ):
+        super().__init__(new_column=new_column, **kwargs)
         self._column = column
-        self._new_column = new_column
         self._model_name = model_name
+        self._cache_filepath = cache_filepath
+        self._device_local = device_local
+        self._io = io_cls()
 
         # Model, tokenizer, and device are initialized as None and will be loaded later
         self._model = None
@@ -65,37 +89,89 @@ class SentimentAnalysisTask(Task):
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Executes sentiment analysis on the given DataFrame.
+        """
+        Executes the sentiment analysis task on the input DataFrame.
+
+        This method first attempts to read sentiment predictions from a cache file. If the cache
+        is not available or not valid, it performs sentiment analysis using the pre-trained model
+        and writes the results to the cache. Sentiment predictions are stored in the specified
+        `new_column` of the DataFrame.
 
         Args:
-            data (pd.DataFrame): The input DataFrame containing text data.
+            data (pd.DataFrame): The input DataFrame containing the text data.
 
         Returns:
-            pd.DataFrame: The DataFrame with a new column containing sentiment predictions.
+            pd.DataFrame: The DataFrame with sentiment predictions added to the specified column.
+
+        Raises:
+            FileNotFoundError: If the cache is not found or the task is run locally without a GPU.
+            Exception: For any other unexpected errors.
         """
-        # Clear CUDA memory to ensure enough space is available for the model
-        torch.cuda.empty_cache()
+        try:
+            cache = self._io.read(filepath=self._cache_filepath, lineterminator="\n")
+            cache["id"] = cache["id"].astype("string")
+            data = data.merge(cache[["id", self._new_column]], how="left", on="id")
+            return data
+        except (FileNotFoundError, TypeError):
+            if self._device_local:
+                return self._run(data=data)
+            else:
+                msg = (
+                    f"Cache not found or not available. {self.__class__.__name__} is not "
+                    "supported on local devices. Try running on Kaggle, Colab, or AWS."
+                )
+                self._logger.error(msg)
+                raise FileNotFoundError(msg)
+        except Exception as e:
+            msg = f"Unknown exception encountered.\n{e}"
+            self._logger.exception(msg)
+            raise
+
+    def _run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Executes model inference for sentiment analysis and writes results to the cache.
+
+        This method processes the input DataFrame by applying sentiment predictions for each entry
+        in the specified text column. It uses parallel processing for efficient computation and
+        writes the results to the cache file.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with sentiment predictions added to the specified column.
+        """
+        torch.cuda.empty_cache()  # Clear CUDA memory to ensure sufficient space
 
         # Load the device, model, and tokenizer
         self._load_model_tokenizer_to_device()
 
-        # Apply sentiment prediction to each text entry in the specified column
+        # Apply sentiment prediction to each text entry
         data[self._new_column] = data[self._column].progress_apply(
             self.predict_sentiment
         )
+
+        # Write results to the cache file
+        self._write_file(
+            filepath=self._cache_filepath, data=data[["id", self._new_column]]
+        )
+
         return data
 
-    def predict_sentiment(self, text):
-        """Predicts the sentiment of a given text using the loaded model.
+    def predict_sentiment(self, text: str) -> str:
+        """
+        Predicts the sentiment of a given text string.
+
+        This method uses the loaded model and tokenizer to predict the sentiment of the input
+        text. It maps the model's output to a sentiment label.
 
         Args:
-            text (str): The input text for sentiment analysis.
+            text (str): The input text string.
 
         Returns:
-            str: The predicted sentiment label.
+            str: The predicted sentiment label, e.g., "Positive", "Negative", or "Neutral".
         """
         with torch.no_grad():
-            # Tokenize and prepare the input text for the model
             inputs = self._tokenizer(
                 text.lower(),
                 return_tensors="pt",
@@ -103,16 +179,11 @@ class SentimentAnalysisTask(Task):
                 padding=True,
                 max_length=512,
             )
-            # Move inputs to the appropriate device (CPU or GPU)
             inputs = {key: value.to(self._device) for key, value in inputs.items()}
-            # Get model outputs and calculate probabilities
             outputs = self._model(**inputs)
             probabilities = torch.nn.functional.softmax(outputs.logits, dim=-1)
-
-            # Determine the predicted class
             predicted_class = torch.argmax(probabilities, dim=-1).item()
 
-        # Map the predicted class index to a sentiment label
         sentiment_map = {
             0: "Very Negative",
             1: "Negative",
@@ -123,14 +194,15 @@ class SentimentAnalysisTask(Task):
         return sentiment_map[predicted_class]
 
     def _load_model_tokenizer_to_device(self) -> None:
-        """Loads the device, tokenizer, and model for sentiment analysis."""
-        # Select GPU if available, otherwise use CPU
-        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        """
+        Loads the pre-trained model, tokenizer, and device for sentiment analysis.
 
-        # Load the tokenizer and model from the pre-trained model name
+        This method selects the appropriate device (GPU or CPU), loads the tokenizer and model
+        based on the specified model name, and moves the model to the selected device.
+        """
+        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._tokenizer = AutoTokenizer.from_pretrained(self._model_name)
         self._model = AutoModelForSequenceClassification.from_pretrained(
             self._model_name
         )
-        # Move the model to the selected device
         self._model.to(self._device)

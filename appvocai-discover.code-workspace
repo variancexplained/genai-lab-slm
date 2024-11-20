@@ -153,7 +153,8 @@
 				"file:///home/john/projects/appvocai-discover/config/base/flow.yaml",
 				"file:///home/john/projects/appvocai-discover/config/dev/flow.yaml",
 				"file:///home/john/projects/appvocai-discover/config/test/flow.yaml",
-				"file:///home/john/projects/appvocai-discover/config/flow.yaml"
+				"file:///home/john/projects/appvocai-discover/config/flow.yaml",
+				"file:///home/john/projects/appvocai-discover/config/prod/flow.yaml"
 			]
 		},
 		"notebook.output.textLineLimit": 50

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Sunday November 17th 2024 12:17:33 am                                               #
+# Modified   : Wednesday November 20th 2024 07:12:45 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -47,10 +47,8 @@ class Task(ABC):
         and outputs.
     """
 
-    def __init__(
-        self,
-    ):
-        self._stage = None
+    def __init__(self, stage: Optional[StageDef] = None, **kwargs):
+        self._stage = stage
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -69,15 +67,6 @@ class Task(ABC):
     def stage(self) -> StageDef:
         """Returns the id for the stage to which the Task belongs"""
         return self._stage
-
-    @stage.setter
-    def stage(self, stage: StageDef) -> None:
-        """Sets the stage to which the task belongs.
-
-        Args:
-            stage (StageDef): A Stage ENUM defining its id, value, directory, and description
-        """
-        self._stage = stage
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
@@ -109,39 +98,25 @@ def instantiate_class(
     params: dict,
 ):
     """
-    Dynamically imports a module and instantiates a class with the given parameters.
+    Dynamically imports and instantiates a class with the given parameters.
 
-    Parameters
-    ----------
-    module : str
-        The name of the module from which to import the class (e.g., 'mypackage.mymodule').
-    class_name : str
-        The name of the class to instantiate from the module.
-    params : dict
-        A dictionary of additional parameters to pass to the class constructor.
-    stage_id (str): Identifier for the stage to which the task belongs.
+    This function loads a module, retrieves the specified class, and creates an
+    instance of the class by passing the provided parameters and stage definition.
 
-    Returns
-    -------
-    object
-        An instance of the specified class with the provided parameters.
+    Args:
+        module (str): The name of the module containing the class to be instantiated.
+        class_name (str): The name of the class to instantiate.
+        params (dict): A dictionary of keyword arguments to pass to the class constructor.
+        stage (StageDef): The stage definition to be passed as the first argument
+                          to the class constructor.
 
-    Raises
-    ------
-    ModuleNotFoundError
-        If the specified module cannot be found.
-    AttributeError
-        If the specified class does not exist in the module.
-    TypeError
-        If the class constructor does not accept the provided parameters.
+    Returns:
+        Any: An instance of the specified class.
 
-    Examples
-    --------
-    >>> obj = instantiate_class(
-    ...     module='mypackage.mymodule',
-    ...     class_name='Normalizer',
-    ...     params={'param1': value1, 'param2': value2}
-    ... )
+    Raises:
+        ImportError: If the specified module cannot be imported.
+        AttributeError: If the specified class is not found in the module.
+        TypeError: If the class cannot be instantiated with the provided arguments.
     """
     module = importlib.import_module(module)
     cls = getattr(module, class_name)
@@ -155,69 +130,43 @@ def instantiate_class(
 # ------------------------------------------------------------------------------------------------ #
 class TaskBuilder:
     """
-    A builder class for constructing task instances from configuration data.
+    A utility class for constructing task instances dynamically.
 
-    The `TaskBuilder` class provides a static method, `build`, which reads task configuration
-    data and dynamically creates an instance of the specified task class using the provided
-    parameters. This allows for flexible and dynamic task instantiation based on configuration.
-
-    Methods
-    -------
-    build(task_config: dict) -> object
-        Constructs and returns an instance of a task class using the specified configuration.
-
-    Examples
-    --------
-    >>> task_config = {
-    ...     'module_name': 'mypackage.mymodule',
-    ...     'class_name': 'NormalizationTask',
-    ...     'params': {'param1': value1, 'param2': value2}
-    ... }
-    >>> task_instance = TaskBuilder.build(task_config)
+    This class provides functionality to create task instances based on a configuration
+    dictionary, enabling dynamic task instantiation within a data pipeline. It uses
+    module and class names specified in the configuration to instantiate the appropriate
+    task class.
     """
 
     @staticmethod
-    def build(task_config: dict, stage_id: Optional[str] = None):
+    def build(task_config: dict, stage: StageDef):
         """
-        Builds and returns an instance of a task class based on the provided configuration.
+        Constructs a task instance based on the given configuration.
 
-        Parameters
-        ----------
-        task_config : dict
-            A dictionary containing task configuration with the following keys:
-                - 'module_name' (str): The name of the module containing the task class.
-                - 'class_name' (str): The name of the task class to instantiate.
-                - 'params' (dict): Additional parameters to pass to the task's constructor.
-        stage_id : Optional[str]
-            An optional identifier for the stage to which the task belongs.
+        This method dynamically loads the specified module and class, then instantiates
+        the class with the provided parameters and stage definition.
 
-        Returns
-        -------
-        object
-            An instance of the specified task class initialized with the provided parameters.
+        Args:
+            task_config (dict): A dictionary containing the task configuration.
+                It must include the following keys:
+                - "module" (str): The module containing the task class.
+                - "class_name" (str): The name of the task class to instantiate.
+                - "params" (dict): A dictionary of parameters to pass to the task's constructor.
+            stage (StageDef): The stage definition that the task belongs to.
 
-        Raises
-        ------
-        ModuleNotFoundError
-            If the specified module cannot be found.
-        AttributeError
-            If the specified class does not exist in the module.
-        TypeError
-            If the class constructor does not accept the provided parameters.
+        Returns:
+            Any: An instance of the specified task class.
 
-        Examples
-        --------
-        >>> task_config = {
-        ...     'module_name': 'mypackage.mymodule',
-        ...     'class_name': 'NormalizationTask',
-        ...     'params': {'param1': value1, 'param2': value2}
-        ... }
-        >>> task_instance = TaskBuilder.build(task_config)
+        Raises:
+            KeyError: If the required keys ("module", "class_name", or "params") are missing
+                      from the task_config dictionary.
+            ImportError: If the specified module cannot be imported.
+            AttributeError: If the specified class is not found in the module.
         """
-
         module = task_config["module"]
         class_name = task_config["class_name"]
         params = task_config["params"]
+        params["stage"] = stage
         return instantiate_class(
             module=module,
             class_name=class_name,

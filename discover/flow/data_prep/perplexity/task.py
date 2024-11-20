@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday November 19th 2024 04:35:41 am                                              #
+# Modified   : Wednesday November 20th 2024 07:41:24 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,8 +25,9 @@ import torch
 from tqdm import tqdm
 from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
-from discover.flow.base.task import Task
+from discover.flow.data_prep.base.task import DataEnhancerTask
 from discover.infra.service.logging.task import task_logger
+from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 warnings.filterwarnings("ignore")
@@ -35,7 +36,7 @@ tqdm.pandas()
 
 
 # ------------------------------------------------------------------------------------------------ #
-class PerplexityAnalysisTask(Task):
+class PerplexityAnalysisTask(DataEnhancerTask):
     """Task for performing perplexity analysis on text data.
 
     This class uses a pre-trained language model to calculate the perplexity
@@ -44,6 +45,9 @@ class PerplexityAnalysisTask(Task):
     complexity.
 
     Attributes:
+        cache_filepath (str): Path to file containing perplexities computed in the cloud.
+        device_local (bool): Whether to run locally, if cache isn't available. Default is False.
+            If cache is not available, an exceptoin will be raised.
         column (str): The name of the column containing the text data. Defaults to "content".
         new_column (str): The name of the column to store perplexity scores. Defaults to "perplexity".
         model_name (str): The name of the pre-trained language model. Defaults to "distilbert/distilgpt2".
@@ -52,14 +56,21 @@ class PerplexityAnalysisTask(Task):
 
     def __init__(
         self,
+        cache_filepath: str,
         column="content",
         new_column="perplexity",
         model_name: str = "distilbert/distilgpt2",
         stride: int = 512,
+        device_local: bool = False,
+        io_cls: type[IOService] = IOService,
+        **kwargs,
     ):
-        self._column = column
-        self._new_column = new_column
+        super().__init__(new_column=new_column, **kwargs)
         self._model_name = model_name
+        self._cache_filepath = cache_filepath
+        self._device_local = device_local
+
+        self._io = io_cls()
 
         self._model_name = model_name
         self._stride = stride
@@ -72,6 +83,32 @@ class PerplexityAnalysisTask(Task):
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Executes perplexity on the given DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing text data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with a new column containing perplexity.
+        """
+        try:
+            cache = self._io.read(filepath=self._cache_filepath, lineterminator="\n")
+            cache["id"] = cache["id"].astype("string")
+            data = data.merge(cache[["id", self._new_column]], how="left", on="id")
+            return data
+        except (FileNotFoundError, TypeError):
+            if self._device_local:
+                return self._run(data=data)
+            else:
+                msg = f"Cache not found or not available. {self.__class__.__name__} is not supported on local devices. Try running on Kaggle, Colab or AWS."
+                self._logger.error(msg)
+                raise FileNotFoundError(msg)
+        except Exception as e:
+            msg = f"Unknown exception encountered.\n{e}"
+            self._logger.exception(msg)
+            raise
+
+    def _run(self, data: pd.DataFrame) -> pd.DataFrame:
         """Executes perplexity analysis on the given DataFrame.
 
         Args:
@@ -90,6 +127,11 @@ class PerplexityAnalysisTask(Task):
         data[self._new_column] = data[self._column].progress_apply(
             self.predict_perplexity
         )
+        # Write results to cache
+        self._write_file(
+            filepath=self._cache_filepath, data=data["id", self._new_column]
+        )
+
         return data
 
     def predict_perplexity(self, text):

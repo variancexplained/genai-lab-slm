@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 11:58:28 am                                              #
-# Modified   : Sunday October 20th 2024 11:55:56 pm                                                #
+# Modified   : Tuesday November 19th 2024 09:54:06 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,6 +22,7 @@ from datetime import datetime
 
 import pytest
 
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.config.flow import FlowConfigReader
 
@@ -46,7 +47,7 @@ class TestConfig:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        reader = AppConfigReader()
+        reader = AppConfigReader(list_override=True)
         config = reader.get_config("repository", namespace=False)
         assert isinstance(config, dict)
         assert "dataset" in config.keys()
@@ -69,10 +70,9 @@ class TestConfig:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        reader = FlowConfigReader()
-        config = reader.get_config("phases", namespace=False)
+        reader = FlowConfigReader(list_override=True)
+        config = reader.get_stage_config(phase=PhaseDef.DATAPREP, stage=StageDef.DQD)
         assert isinstance(config, dict)
-        assert "dataprep" in config.keys()
         logger.debug(config)
 
         # ---------------------------------------------------------------------------------------- #

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday November 18th 2024 04:03:09 pm                                               #
+# Modified   : Tuesday November 19th 2024 09:53:48 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,7 +36,6 @@ from discover.infra.utils.file.io import IOService
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
 collect_ignore_glob = [
-    "tests/test_infra/test_config/**/*py",
     "tests/test_infra/test_dal/**/*py",
     "tests/test_infra/test_operations/**/*py",
     "tests/test_infra/test_storage/**/*py",
@@ -57,7 +56,6 @@ def container() -> DiscoverContainer:
     container.wire(
         modules=[
             "discover.flow.data_prep.base.stage",
-            "discover.flow.data_prep.dqm",
         ],
     )
 

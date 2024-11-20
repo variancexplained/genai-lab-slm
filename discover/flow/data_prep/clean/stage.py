@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Tuesday November 19th 2024 08:06:03 pm                                              #
+# Modified   : Wednesday November 20th 2024 04:17:05 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -50,6 +50,7 @@ class DataCleaningStage(DataProcessingStage):
         destination_config: dict,
         force: bool = False,
         return_dataset: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__(
             phase=phase,
@@ -58,4 +59,5 @@ class DataCleaningStage(DataProcessingStage):
             destination_config=destination_config,
             force=force,
             return_dataset=return_dataset,
+            **kwargs,
         )

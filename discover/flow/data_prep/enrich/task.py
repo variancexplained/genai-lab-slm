@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_processing/data_prep/edp/task.py                                #
+# Filename   : /discover/flow/data_prep/enrich/task.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 10:15:01 pm                                              #
-# Modified   : Sunday November 17th 2024 12:14:51 am                                               #
+# Modified   : Wednesday November 20th 2024 05:36:23 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,14 +21,14 @@
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.flow.base.task import Task
+from discover.flow.data_prep.base.task import DataEnhancerTask
 from discover.infra.service.logging.task import task_logger
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE REVIEW AGE                                            #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewAgeTask(Task):
+class ComputeReviewAgeTask(DataEnhancerTask):
     """
     A task to compute the "review age" of each entry in a specified date column of a PySpark DataFrame.
 
@@ -46,7 +46,7 @@ class ComputeReviewAgeTask(Task):
     """
 
     def __init__(
-        self, , column: str = "date", new_column: str = "nrch_review_age"
+        self, column: str = "date", new_column: str = "nrch_review_age"
     ) -> None:
         super().__init__()
         self._column = column
@@ -81,7 +81,7 @@ class ComputeReviewAgeTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                     REVIEW MONTH                                                 #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewMonthTask(Task):
+class ComputeReviewMonthTask(DataEnhancerTask):
     """
     Task to compute the month from a review date and add it as a new column in the DataFrame.
 
@@ -95,7 +95,7 @@ class ComputeReviewMonthTask(Task):
     """
 
     def __init__(
-        self, , column: str = "date", new_column: str = "nrch_review_month"
+        self, column: str = "date", new_column: str = "nrch_review_month"
     ) -> None:
         super().__init__()
         self._column = column
@@ -120,7 +120,7 @@ class ComputeReviewMonthTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                 REVIEW DAY OF WEEK                                               #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewDayofWeekTask(Task):
+class ComputeReviewDayofWeekTask(DataEnhancerTask):
     """
     Task to compute the day of the week from a review date and add it as a new column in the DataFrame.
 
@@ -136,7 +136,6 @@ class ComputeReviewDayofWeekTask(Task):
 
     def __init__(
         self,
-        ,
         column: str = "date",
         new_column: str = "nrch_review_day_of_week",
     ) -> None:
@@ -164,7 +163,7 @@ class ComputeReviewDayofWeekTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                                 REVIEW HOUR OF DAY                                               #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewHourTask(Task):
+class ComputeReviewHourTask(DataEnhancerTask):
     """
     Task to compute the hour from a review date and add it as a new column in the DataFrame.
 
@@ -180,7 +179,6 @@ class ComputeReviewHourTask(Task):
 
     def __init__(
         self,
-        ,
         column: str = "date",
         new_column: str = "nrch_review_hour",
     ) -> None:
@@ -207,7 +205,7 @@ class ComputeReviewHourTask(Task):
 # ------------------------------------------------------------------------------------------------ #
 #                               COMPUTE PCT DEVIATION                                              #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePercentDeviationTask(Task):
+class ComputePercentDeviationTask(DataEnhancerTask):
     """
     A task to compute the percent deviation of a specified column from the average
     grouped by a given level and store the result in a new column.
@@ -218,9 +216,7 @@ class ComputePercentDeviationTask(Task):
         by (str): The level by which the average is computed for the deviation calculation.
     """
 
-    def __init__(
-        self, , column: str, new_column: str, by: str = "category"
-    ) -> None:
+    def __init__(self, column: str, new_column: str, by: str = "category") -> None:
         super().__init__()
         self._column = column
         self._new_column = new_column

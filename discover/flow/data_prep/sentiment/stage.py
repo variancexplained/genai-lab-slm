@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 07:01:12 pm                                              #
-# Modified   : Tuesday November 19th 2024 08:06:36 pm                                              #
+# Modified   : Wednesday November 20th 2024 12:34:52 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,6 @@
 """Sentiment Analysis Stage Module"""
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.data_prep.base.stage import DataPrepStage
-from discover.infra.config.app import AppConfigReader
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -59,18 +58,3 @@ class SentimentAnalysisStage(DataPrepStage):
             force=force,
             return_dataset=return_dataset,
         )
-
-        env = AppConfigReader().get_environment()
-        self._cache = f"{self._cache}_{env}.csv"
-
-    def _run(self, source_asset_id: str, destination_asset_id: str) -> None:
-        """Performs the core logic of the stage, executing tasks in sequence.
-
-        Args:
-            source_asset_id (str): The asset identifier for the source dataset.
-            destination_asset_id (str): The asset identifier for the destination dataset.
-
-        Raises:
-            RuntimeError: Running on local machine is not supported.
-        """
-        raise RuntimeError("Sentiment Analysis is not supported on local machine.")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Friday October 18th 2024 02:04:15 pm                                                #
+# Modified   : Tuesday November 19th 2024 09:48:24 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -89,7 +89,7 @@ class AppConfigReader(ConfigReader):
         Converts a configuration dictionary to a `NestedNamespace` object, allowing dot-access notation for settings.
     """
 
-    def __init__(self, env_file_path: str = ".env"):
+    def __init__(self, env_file_path: str = ".env", list_override: bool = True):
         """
         Initializes the Config class with the path to the `.env` file.
 
@@ -98,7 +98,7 @@ class AppConfigReader(ConfigReader):
         env_file_path : str
             The file path to the `.env` file that holds environment variables.
         """
-        super().__init__(env_file_path=env_file_path)
+        super().__init__(env_file_path=env_file_path, list_override=list_override)
 
     def _load_base_config(self) -> Dict[str, Any]:
         """

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Tuesday November 19th 2024 12:26:34 pm                                              #
+# Modified   : Wednesday November 20th 2024 07:35:55 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,9 +19,6 @@
 """Stage Base Class  Module"""
 from __future__ import annotations
 
-# ------------------------------------------------------------------------------------------------ #
-#                                        STAGE                                                     #
-# ------------------------------------------------------------------------------------------------ #
 from abc import ABC, abstractmethod
 
 from discover.core.flow import PhaseDef, StageDef
@@ -29,6 +26,9 @@ from discover.core.namespace import NestedNamespace
 from discover.flow.base.task import Task, TaskBuilder
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                        STAGE                                                     #
+# ------------------------------------------------------------------------------------------------ #
 class Stage(ABC):
     """
     Abstract base class representing a stage in a data processing pipeline.
@@ -77,14 +77,15 @@ class Stage(ABC):
         """Adds a task to the stage and assigns the stage identifier to the task.
 
         Args:
-            task (Task): The task to be added to the stage.
+            task (DataEnhancerTask): The task to be added to the stage.
 
         Raises:
             TypeError: If the task is not an instance of the expected Task class.
         """
         if not isinstance(task, Task):
-            raise TypeError("Expected an instance of Task.")
-        task.stage = self.stage
+            raise TypeError(
+                f"Expected an instance or subclass of Task. Received type {type(task)}"
+            )
         self._tasks.append(task)
 
     @abstractmethod
@@ -131,7 +132,10 @@ class Stage(ABC):
 
             # Construct the Stage's Task objects
             tasks = [
-                cls._task_builder.build(task_config=task_config)
+                cls._task_builder.build(
+                    task_config=task_config,
+                    stage=StageDef.from_value(stage_config["stage"]),
+                )
                 for task_config in stage_config["tasks"]
             ]
 

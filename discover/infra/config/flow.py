@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Tuesday November 5th 2024 05:47:34 pm                                               #
+# Modified   : Tuesday November 19th 2024 09:45:38 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,71 +36,23 @@ load_dotenv()
 
 class FlowConfigReader(ConfigReader):
     """
-    A class for managing configuration and environment variables.
+    A configuration reader for loading and merging orchestration configurations.
 
-    This class provides methods to load and manage configuration files in YAML format
-    and environment variables from `.env` files. It also supports retrieving specific
-    configuration sections, converting configuration dictionaries into dot-accessible
-    namespaces, and managing AWS-related configuration settings.
+    This class extends `ConfigReader` to handle the loading and merging of
+    base and environment-specific configuration files. It provides an option to
+    control how lists are merged or overridden when merging configurations.
 
     Attributes:
-    -----------
-    _env_file_path : str
-        The file path to the `.env` file that holds environment variables.
-    _current_environment : str
-        The current environment (e.g., "dev", "prod"), which is loaded from the `.env` file.
-    _config : dict
-        The combined configuration loaded from both the base and environment-specific YAML files.
-
-    Methods:
-    --------
-    get_config(section: Optional[str] = None, namespace: bool = True) -> Union[Dict[str, Any], NestedNamespace, str]:
-        Retrieves the entire configuration or a specific section as a dictionary or `NestedNamespace` object.
-
-    aws() -> NestedNamespace:
-        Returns AWS credentials and region as a `NestedNamespace` object.
-
-    current_environment() -> str:
-        Returns the current environment value loaded from the `.env` file.
-
-    change_environment(new_value: str) -> None:
-        Updates the current environment variable in both the `.env` file and the current process environment.
-
-    get_environment() -> str:
-        Retrieves the current environment from the environment variables or defaults to "dev" if not set.
-
-    load_environment() -> None:
-        Loads environment variables from the `.env` file, overriding any existing environment variables.
-
-    get_env_var(key: str) -> Optional[str]:
-        Retrieves the value of a specific environment variable.
-
-    load_config() -> Dict[str, Any]:
-        Loads and merges the base configuration and environment-specific configuration files.
-
-    _load_base_config() -> Dict[str, Any]:
-        Loads the base configuration from a YAML file.
-
-    _load_env_config() -> Dict[str, Any]:
-        Loads the environment-specific configuration from a YAML file based on the current environment.
-
-    read_yaml(filepath: str, content: str) -> Dict[str, Any]:
-        Reads a YAML file and returns its contents as a dictionary, logging errors if the file is not found or invalid.
-
-    to_namespace(config: Dict[str, Any]) -> NestedNamespace:
-        Converts a configuration dictionary to a `NestedNamespace` object, allowing dot-access notation for settings.
+        env_file_path (str): The file path to the environment-specific configuration file.
+            Defaults to ".env".
+        list_override (bool): A flag that determines whether lists in the environment-specific
+            configuration should override the lists in the base configuration. If set to `True`,
+            lists in the environment-specific configuration will replace those in the base
+            configuration. If set to `False`, lists will be merged. Defaults to `True`.
     """
 
-    def __init__(self, env_file_path: str = ".env"):
-        """
-        Initializes the Config class with the path to the `.env` file.
-
-        Parameters:
-        -----------
-        env_file_path : str
-            The file path to the `.env` file that holds environment variables.
-        """
-        super().__init__(env_file_path=env_file_path)
+    def __init__(self, env_file_path: str = ".env", list_override: bool = True):
+        super().__init__(env_file_path=env_file_path, list_override=list_override)
 
     def get_stage_config(self, phase: PhaseDef, stage: StageDef) -> dict:
         """Returns the configuration for a workflow stage

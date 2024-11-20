@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Friday October 18th 2024 02:14:24 pm                                                #
+# Modified   : Tuesday November 19th 2024 09:55:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,7 +39,7 @@ load_dotenv()
 class ConfigReader(ABC):
     """Base configuration reader."""
 
-    def __init__(self, env_file_path: str = ".env"):
+    def __init__(self, env_file_path: str = ".env", list_override: bool = True):
         """
         Initializes the Config class with the path to the `.env` file.
 
@@ -47,11 +47,17 @@ class ConfigReader(ABC):
         -----------
         env_file_path : str
             The file path to the `.env` file that holds environment variables.
+            list_override (bool): Controls base and environment specific configuration
+                merge behavior. If True, lists in the environment specific configurations
+                will override the lists in the base config. Otherwise, the merge
+                operation will create a superset of the list items, with the environment
+                specific list element overriding the corresponding base list element.
         """
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._env_file_path = env_file_path
         self._current_environment = self.get_environment()
         self._config = None
+        self._list_override = list_override
 
     def get_config(
         self, section: Optional[str] = None, namespace: bool = True
@@ -208,7 +214,7 @@ class ConfigReader(ABC):
             if isinstance(value, Mapping) and key in base:
                 # If both are dictionaries, recursively merge
                 base[key] = self._merge_configs(base.get(key, {}), value)
-            elif isinstance(value, list) and key in base:
+            elif isinstance(value, list) and key in base and not self._list_override:
                 # If both are lists, iterate through and merge list items
                 base[key] = self._merge_list(base[key], value)
             else:

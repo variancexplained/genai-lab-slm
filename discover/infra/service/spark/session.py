@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Saturday October 26th 2024 10:48:03 am                                              #
+# Modified   : Tuesday November 19th 2024 10:02:11 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -150,7 +150,7 @@ class SparkSessionPool:
             try:
                 log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
                 self._logger.debug(
-                    f"Creating an SparkNLP session. log4j Configuration: {log4j_conf_path}"
+                    f"Creating an Spark session. log4j Configuration: {log4j_conf_path}"
                 )
                 spark = (
                     SparkSession.builder.appName("appvocai-discover")
