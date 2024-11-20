@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Tuesday November 19th 2024 12:38:29 pm                                              #
+# Modified   : Tuesday November 19th 2024 08:01:54 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -64,6 +64,7 @@ class DataProcessingStage(Stage):
             Defaults to the dataset repository from DiscoverContainer.
         force (bool, optional): Whether to force execution, even if the output already
             exists. Defaults to False.
+        return_dataset (bool): Whether to return the resultant dataset or the asset_id
     """
 
     @inject
@@ -76,6 +77,7 @@ class DataProcessingStage(Stage):
         asset_idgen: Type[AssetIDGen] = AssetIDGen,
         repo: DatasetRepo = Provide[DiscoverContainer.repo.dataset_repo],
         force: bool = False,
+        return_dataset: bool = False,
     ) -> None:
         super().__init__(
             phase=phase,
@@ -84,6 +86,7 @@ class DataProcessingStage(Stage):
             destination_config=destination_config,
             force=force,
         )
+        self._return_dataset = return_dataset
         self._asset_idgen = asset_idgen
         self._repo = repo
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -238,6 +241,30 @@ class DataProcessingStage(Stage):
                 f"Failed to remove dataset with asset_id: {asset_id}\n {str(e)}"
             )
 
+    def _get_return_value(
+        self,
+        dataset: Optional[Dataset] = None,
+        asset_id: Optional[str] = None,
+        config: Optional[NestedNamespace] = None,
+        return_dataset: bool = False,
+    ) -> Union[Dataset, str]:
+        """Obtains and returns a value based on the boolean `return_dataset` instance variable."""
+        return_dataset = return_dataset or self._return_dataset
+        config = config or self._destination_config  # Config for the returned dataset.
+
+        if return_dataset:
+            try:
+                return dataset or self._load_dataset(asset_id=asset_id, config=config)
+            except Exception as e:
+                msg = f"Unable to return dataset. The dataset or a valid asset_id and configuration must be provided.\n{e}"
+                raise ValueError(msg)
+        else:
+            try:
+                return asset_id or dataset.asset_id
+            except Exception as e:
+                msg = f"Unable to return an asset_id. Either the  asset_id or a dataset with an asset_id must be provided.\n{e}"
+                raise ValueError(msg)
+
 
 # ------------------------------------------------------------------------------------------------ #
 #                                    DATA PREP STAGE                                               #
@@ -317,7 +344,9 @@ class DataPrepStage(DataProcessingStage):
                 )
                 return self._get_return_value(dataset=dataset)
             else:
-                return self._get_return_value(asset_id=destination_asset_id)
+                return self._get_return_value(
+                    asset_id=destination_asset_id, config=self._destination_config
+                )
         else:
             if self.cache:
                 if os.path.exists(self.cache):
@@ -564,20 +593,3 @@ class DataPrepStage(DataProcessingStage):
 
         df = dataset.content[cache_cols]
         IOService.write(filepath=self.cache, data=df)
-
-    def _get_return_value(
-        self, dataset: Optional[Dataset] = None, asset_id: str = None
-    ) -> Union[Dataset, str]:
-        if self._return_dataset:
-            if dataset:
-                return dataset
-            else:
-                return self._load_dataset(asset_id=asset_id)
-        else:
-            if asset_id:
-                return asset_id
-            elif dataset:
-                return dataset.asset_id
-            else:
-                msg = f"No return value from {self.__class__.__name__}"
-                raise Warning(msg)

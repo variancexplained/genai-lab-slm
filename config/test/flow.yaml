@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Monday November 18th 2024 04:03:06 pm                                               #
+# Modified   : Tuesday November 19th 2024 09:05:45 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,18 +24,38 @@ phases:
     stages:
       ingest:
         source_config:
-          filepath: data/raw/reviews
-        destination_config:
+          filepath: data/stage/test/reviews
+      dqd:
+        phase: dataprep
+        stage: dqd
+        source_config:
           asset_type: dataset
           phase: dataprep
           stage: ingest
           name: review
           nlp: False
-          distributed: False
+          distributed: True
+        destination_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: dqd
+          name: review
+          nlp: False
+          distributed: True
         tasks:
-          - class_name: FilterTask
-            module: discover.flow.data_prep.ingest.task
+          - class_name: DetectOrRepairPercentile
+            module: discover.flow.data_prep.dqd.task
             params:
-              column: date
-              frac: 0.01
-              date: 2020
+              column: pa_perplexity
+              new_column: low_perplexity
+              threshold_percentile: 0.5
+              relative_error: 0.001
+              detect_or_repair_less_than_threshold: True
+              mode: detect
+          - class_name: DetectOrRepairMinimumValueTask
+            module: discover.flow.data_prep.dqd.task
+            params:
+              column: review_length
+              new_column: below_min_value
+              threshold: 3
+              mode: detect

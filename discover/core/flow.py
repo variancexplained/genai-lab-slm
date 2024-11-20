@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Tuesday November 19th 2024 01:16:07 pm                                              #
+# Modified   : Tuesday November 19th 2024 06:17:24 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,9 +30,11 @@ class StageDef(Enum):
     SENTIMENT = ("sentiment", "sa", "02_sentiment", "Sentiment Analysis Stage")
     PERPLEXITY = ("perplexity", "pa", "03_perplexity", "Perplexity Analysis Stage")
     DQD = ("dqd", "dqd", "04_dqd", "Data Quality Anomaly Detection Stage")
-    TQA = ("tqa", "tqa", "05_tqa", "Text Quality Analysis Stage")
-    CLEAN = ("clean", "cln", "06_clean", "Data Cleaning Stage")
-    ENRICH = ("enrich", "nrch", "07_enrich", "Data Enrichment Stage")
+    CLEAN = ("clean", "cln", "05_clean", "Data Cleaning Stage")
+    ENRICH = ("enrich", "nrch", "06_enrich", "Data Enrichment Stage")
+
+    # Feature Engineering
+    TQA = ("tqa", "tqa", "01_tqa", "Text Quality Analysis Stage")
 
     @classmethod
     def from_value(cls, value) -> StageDef:

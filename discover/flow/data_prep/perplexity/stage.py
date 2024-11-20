@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 07:01:12 pm                                              #
-# Modified   : Tuesday November 19th 2024 04:41:19 am                                              #
+# Modified   : Tuesday November 19th 2024 08:09:44 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,6 +42,7 @@ class PerplexityAnalysisStage(DataPrepStage):
             where to store the processed data.
         force (bool): Whether to force the execution of this stage, even if it has
             been previously completed. Defaults to False.
+        return_dataset (bool): Whether to return resultant dataset or its asset_id
     """
 
     def __init__(
@@ -51,6 +52,7 @@ class PerplexityAnalysisStage(DataPrepStage):
         source_config: dict,
         destination_config: dict,
         force: bool = False,
+        return_dataset: bool = False,
     ) -> None:
         super().__init__(
             phase=phase,
@@ -58,6 +60,7 @@ class PerplexityAnalysisStage(DataPrepStage):
             source_config=source_config,
             destination_config=destination_config,
             force=force,
+            return_dataset=return_dataset,
         )
 
         env = FlowConfigReader().get_environment()
@@ -73,4 +76,4 @@ class PerplexityAnalysisStage(DataPrepStage):
         Raises:
             RuntimeError: Running on local machine is not supported.
         """
-        raise RuntimeError("Sentiment Analysis is not supported on local machine.")
+        raise RuntimeError("Perplexity Analysis is not supported on local machine.")

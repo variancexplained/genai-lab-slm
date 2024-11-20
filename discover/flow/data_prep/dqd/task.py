@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Tuesday November 19th 2024 09:00:33 am                                              #
+# Modified   : Tuesday November 19th 2024 07:22:04 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -1174,28 +1174,28 @@ class DetectOrRepairMinimumValueTask(DetectOrRemoveTask):
             DataFrame: The DataFrame with an added boolean column indicating
             whether the values in `self._column` are below `self._min_value`.
         """
+        # Check for null values and log a warning if any are found
+        null_count = data.filter(F.col(self._column).isNull()).count()
+        if null_count > 0:
+            self._logger.warning(
+                f"Column '{self._column}' contains {null_count} null values."
+            )
+
+        # Set the boolean indicator for values below the threshold, handling nulls explicitly
         return data.withColumn(
-            self._new_column, (F.col(self._column) < self._threshold)
+            self._new_column,
+            F.when(
+                F.col(self._column).isNotNull()
+                & (F.col(self._column) < self._threshold),
+                True,
+            ).otherwise(False),
         )
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                           DETECT OR REPAIR LOW PERPLEXITY                                        #
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairLowPerplexity(DetectOrRemoveTask):
-    """Detects or repairs text data with low perplexity scores.
-
-    This class identifies or repairs text entries that have low perplexity values,
-    based on a specified percentile threshold. It operates in two modes: "detect"
-    mode, which flags low perplexity entries, or "remove" mode, which filters them out.
-
-    Args:
-        column (str): The name of the column containing perplexity scores. Defaults to "pa_perplexity".
-        new_column (str): The name of the column to store boolean flags indicating low perplexity. Defaults to "low_perplexity".
-        mode (str): Operation mode, either "detect" to flag entries or "remove" to filter them. Defaults to "detect".
-        threshold_percentile (float): The percentile threshold used to define low perplexity. Values below this percentile are considered low. Defaults to 0.5.
-        percentile_relative_error (float): The relative error allowed when computing the percentile value. Defaults to 0.001.
-    """
+class DetectOrRepairPercentile(DetectOrRemoveTask):
 
     def __init__(
         self,
@@ -1203,7 +1203,8 @@ class DetectOrRepairLowPerplexity(DetectOrRemoveTask):
         new_column: str = "low_perplexity",
         mode: str = "detect",
         threshold_percentile: float = 0.5,
-        percentile_relative_error: float = 0.001,
+        relative_error: float = 0.001,
+        detect_or_repair_less_than_threshold: bool = True,
     ) -> None:
         pattern = None
         super().__init__(
@@ -1211,6 +1212,43 @@ class DetectOrRepairLowPerplexity(DetectOrRemoveTask):
             column=column,
             mode=mode,
             new_column=new_column,
-            threshold_percentile=threshold_percentile,
         )
-        self._percentile_relative_error = percentile_relative_error
+        self._relative_error = relative_error
+        self._threshold_percentile = threshold_percentile
+        self._detect_or_repair_less_than_threshold = (
+            detect_or_repair_less_than_threshold
+        )
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+        try:
+            # Compute the percentile threshold with a smaller relative error for better precision
+            threshold = data.approxQuantile(
+                self._column, [self._threshold_percentile], self._relative_error
+            )[0]
+
+            # Check for potential null threshold and raise an error if necessary
+            if threshold is None:
+                raise ValueError(
+                    "Computed percentile threshold is null. Consider adjusting the relative error or data quality."
+                )
+
+            # Apply the threshold logic to the DataFrame
+            if self._detect_or_repair_less_than_threshold:
+                data = data.withColumn(
+                    self._new_column,
+                    F.when(F.col(self._column) < F.lit(threshold), True).otherwise(
+                        False
+                    ),
+                )
+            else:
+                data = data.withColumn(
+                    self._new_column,
+                    F.when(F.col(self._column) > F.lit(threshold), True).otherwise(
+                        False
+                    ),
+                )
+            return data
+        except Exception as e:
+            msg = f"Exception occurred in {self.__class__.__name__}.\n{e}"
+            raise RuntimeError(msg)
