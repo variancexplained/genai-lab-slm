@@ -11,14 +11,19 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 08:16:41 pm                                              #
-# Modified   : Sunday September 22nd 2024 08:18:18 pm                                              #
+# Modified   : Thursday November 21st 2024 12:44:21 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-
-
 from enum import Enum
+from typing import TypeAlias, Union
+
+import pandas as pd
+from pyspark.sql import DataFrame
+
+# ------------------------------------------------------------------------------------------------ #
+DataFrameType: TypeAlias = Union[pd.DataFrame, DataFrame]
 
 
 # ------------------------------------------------------------------------------------------------ #

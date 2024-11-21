@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/base/task.py                                                         #
+# Filename   : /discover/flow/task/base.py                                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Wednesday November 20th 2024 07:12:45 am                                            #
+# Modified   : Wednesday November 20th 2024 09:40:50 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,9 +22,7 @@ from __future__ import annotations
 import importlib
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Optional
-
-from discover.core.flow import StageDef
+from typing import Any
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -47,8 +45,7 @@ class Task(ABC):
         and outputs.
     """
 
-    def __init__(self, stage: Optional[StageDef] = None, **kwargs):
-        self._stage = stage
+    def __init__(self, **kwargs):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -62,11 +59,6 @@ class Task(ABC):
             The name of the task.
         """
         return self.__class__.__name__
-
-    @property
-    def stage(self) -> StageDef:
-        """Returns the id for the stage to which the Task belongs"""
-        return self._stage
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
@@ -107,8 +99,6 @@ def instantiate_class(
         module (str): The name of the module containing the class to be instantiated.
         class_name (str): The name of the class to instantiate.
         params (dict): A dictionary of keyword arguments to pass to the class constructor.
-        stage (StageDef): The stage definition to be passed as the first argument
-                          to the class constructor.
 
     Returns:
         Any: An instance of the specified class.
@@ -139,7 +129,7 @@ class TaskBuilder:
     """
 
     @staticmethod
-    def build(task_config: dict, stage: StageDef):
+    def build(task_config: dict):
         """
         Constructs a task instance based on the given configuration.
 
@@ -152,7 +142,6 @@ class TaskBuilder:
                 - "module" (str): The module containing the task class.
                 - "class_name" (str): The name of the task class to instantiate.
                 - "params" (dict): A dictionary of parameters to pass to the task's constructor.
-            stage (StageDef): The stage definition that the task belongs to.
 
         Returns:
             Any: An instance of the specified task class.
@@ -166,7 +155,6 @@ class TaskBuilder:
         module = task_config["module"]
         class_name = task_config["class_name"]
         params = task_config["params"]
-        params["stage"] = stage
         return instantiate_class(
             module=module,
             class_name=class_name,

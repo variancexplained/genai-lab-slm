@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Wednesday November 20th 2024 06:49:16 pm                                            #
+# Modified   : Thursday November 21st 2024 03:20:36 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -401,29 +401,6 @@ class DetectOrRepairDuplicateReviewIdTask(DetectOrRepairTask):
         )
 
         return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                             DETECT OR REPAIR NEWLINES TASK                                       #
-# ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairURLTask(DetectOrReplaceTask):
-
-    def __init__(
-        self,
-        column: str = "content",
-        new_column: str = "url",
-        replacement: str = "[URL]",
-        mode: str = "detect",
-        **kwargs,
-    ) -> None:
-        pattern = r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*"
-        super().__init__(
-            pattern=pattern,
-            column=column,
-            new_column=new_column,
-            replacement=replacement,
-            mode=mode,
-        )
 
 
 # ------------------------------------------------------------------------------------------------ #
