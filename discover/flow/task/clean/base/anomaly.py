@@ -11,12 +11,11 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:27:43 am                                             #
-# Modified   : Thursday November 21st 2024 01:29:38 am                                             #
+# Modified   : Thursday November 21st 2024 11:35:03 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from abc import abstractmethod
 
 from discover.core.data_structure import DataFrameType
 from discover.flow.task.base import Task
@@ -40,8 +39,6 @@ class Anomaly(Task):
         strategy_factory (StrategyFactory): Factory to retrieve strategies for detection and repair.
         **kwargs: Additional arguments for specific anomaly configurations.
 
-    Properties:
-        detection (str): The column where detection results are stored.
     """
 
     def __init__(
@@ -54,10 +51,10 @@ class Anomaly(Task):
         strategy_factory: StrategyFactory,
         **kwargs,
     ) -> None:
-        super().__init__()
+        super().__init__(**kwargs)
         self._column = column
         self._mode = mode
-        self._new_column = new_column
+        self._new_column = f"{self.stage.id}_{new_column}"
         self._detect_strategy = detect_strategy
         self._repair_strategy = repair_strategy
         self._strategy_factory = strategy_factory()
@@ -65,15 +62,7 @@ class Anomaly(Task):
             "detect": self.detect,
             "repair": self.repair,
         }
-
-    @property
-    def detection(self) -> str:
-        """The column where detection results are stored."""
-        if self._new_column is None:
-            raise ValueError(
-                "The `new_column` property must be set to access detection results."
-            )
-        return self._new_column
+        self._kwargs = kwargs
 
     @task_logger
     def run(self, data: DataFrameType) -> DataFrameType:
@@ -91,7 +80,6 @@ class Anomaly(Task):
         """
         return self._mode_map[self._mode](data=data)
 
-    @abstractmethod
     def detect(self, data: DataFrameType) -> DataFrameType:
         """
         Detects anomalies in the dataset.
@@ -105,9 +93,14 @@ class Anomaly(Task):
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
         """
-        pass
+        strategy_cls = self._strategy_factory().get_detect_strategy(
+            strategy_type=self._detect_strategy
+        )
+        strategy = strategy_cls(
+            column=self._column, new_column=self._new_column, **self._kwargs
+        )
+        return strategy.detect(data=data)
 
-    @abstractmethod
     def repair(self, data: DataFrameType) -> DataFrameType:
         """
         Repairs anomalies in the dataset.
@@ -121,4 +114,10 @@ class Anomaly(Task):
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
         """
-        pass
+        strategy_cls = self._strategy_factory().get_detect_strategy(
+            strategy_type=self._repair_strategy
+        )
+        strategy = strategy_cls(
+            column=self._column, new_column=self._new_column, **self._kwargs
+        )
+        return strategy.repair(data=data)

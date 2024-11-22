@@ -4,19 +4,19 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/perplexity/task.py                                         #
+# Filename   : /discover/flow/task/model/perplexity.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Wednesday November 20th 2024 07:41:24 am                                            #
+# Modified   : Friday November 22nd 2024 12:07:55 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Data Cleaning Module"""
+"""Perplexity Analysis Module"""
 import os
 import warnings
 
@@ -25,7 +25,7 @@ import torch
 from tqdm import tqdm
 from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
-from discover.flow.data_prep.base.task import DataEnhancerTask
+from discover.flow.task.base import Task
 from discover.infra.service.logging.task import task_logger
 from discover.infra.utils.file.io import IOService
 
@@ -36,7 +36,7 @@ tqdm.pandas()
 
 
 # ------------------------------------------------------------------------------------------------ #
-class PerplexityAnalysisTask(DataEnhancerTask):
+class PerplexityAnalysisTask(Task):
     """Task for performing perplexity analysis on text data.
 
     This class uses a pre-trained language model to calculate the perplexity
@@ -65,7 +65,8 @@ class PerplexityAnalysisTask(DataEnhancerTask):
         io_cls: type[IOService] = IOService,
         **kwargs,
     ):
-        super().__init__(new_column=new_column, **kwargs)
+        super().__init__(**kwargs)
+        self._new_column = f"{self.stage.id}_{new_column}"
         self._model_name = model_name
         self._cache_filepath = cache_filepath
         self._device_local = device_local

@@ -11,8 +11,9 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:26:12 am                                             #
-# Modified   : Thursday November 21st 2024 12:27:15 am                                             #
+# Modified   : Thursday November 21st 2024 03:06:35 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+COLUMN_PREFIX = "cln"

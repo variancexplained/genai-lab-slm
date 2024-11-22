@@ -4,31 +4,80 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/enrich/task.py                                                       #
+# Filename   : /discover/flow/task/enrich/review.py                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Thursday November 7th 2024 10:15:01 pm                                              #
-# Modified   : Thursday November 21st 2024 02:13:25 pm                                             #
+# Created    : Thursday November 21st 2024 01:47:02 pm                                             #
+# Modified   : Thursday November 21st 2024 11:49:26 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Metadata Enrichment Module"""
-
+"""Review Enrichment Module"""
+import pandas as pd
+from pandarallel import pandarallel
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.flow.data_prep.base.task import DataEnhancerTask
+from discover.flow.task.enrich.base import EnrichmentTask
 from discover.infra.service.logging.task import task_logger
+
+# ------------------------------------------------------------------------------------------------ #
+pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
+
+
+# ------------------------------------------------------------------------------------------------ #
+class ComputeReviewLength(EnrichmentTask):
+    """
+    Task for adding a new column to a Pandas DataFrame that contains the word count of a specified text column.
+
+    This task calculates the word count for each entry in the specified text column and adds it as a new column
+    in the DataFrame. It uses parallel processing to optimize the computation for large datasets.
+
+    Args:
+        column (str): The name of the column in the DataFrame containing the text to analyze. Defaults to "content".
+        new_column (str): The name of the new column to store the word count. Defaults to "review_length".
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Calculates the word count for each entry in the specified column and adds it to a new column in the DataFrame.
+    """
+
+    def __init__(
+        self, column: str = "content", new_column: str = "review_length", **kwargs
+    ) -> None:
+        super().__init__(column=column, new_column=new_column, **kwargs)
+        self._new_column = (
+            new_column  # We override review_length as it shouldn't be prefixed.
+        )
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculates the word count for each entry in the specified text column and adds it as a new column.
+
+        This method splits the text in the specified column by whitespace and counts the number of words
+        in each entry. The results are stored in a new column in the DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with the new column added containing word counts.
+        """
+        data[self._new_column] = data[self._column].parallel_apply(
+            lambda x: len(x.split())
+        )
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                    COMPUTE REVIEW AGE                                            #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewAgeTask(DataEnhancerTask):
+class ComputeReviewAgeTask(EnrichmentTask):
     """
     A task to compute the "review age" of each entry in a specified date column of a PySpark DataFrame.
 
@@ -37,18 +86,18 @@ class ComputeReviewAgeTask(DataEnhancerTask):
 
     Attributes:
         column (str): The name of the date column to calculate review age from. Defaults to "date".
-        new_column (str): The name of the new column to store the review age. Default is 'en_review_age'.
+        new_column (str): The name of the new column to store the review age. Default is 'review_age'.
 
     Methods:
         run(data: DataFrame) -> DataFrame:
             Calculates the review age for each row in the specified date column and returns the DataFrame
-            with the new "en_review_age" column.
+            with the new "review_age" column.
     """
 
-    def __init__(self, column: str = "date", new_column: str = "en_review_age") -> None:
-        super().__init__()
-        self._column = column
-        self._new_column = new_column
+    def __init__(
+        self, column: str = "date", new_column: str = "review_age", **kwargs
+    ) -> None:
+        super().__init__(column=column, new_column=new_column, **kwargs)
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -56,13 +105,13 @@ class ComputeReviewAgeTask(DataEnhancerTask):
         Executes the review age calculation on the specified date column.
 
         The function first identifies the maximum date within the column and then calculates the number of days
-        between each review date and this maximum date, storing the result in a new "en_review_age" column.
+        between each review date and this maximum date, storing the result in a new "review_age" column.
 
         Args:
             data (DataFrame): The input PySpark DataFrame containing the specified date column.
 
         Returns:
-            DataFrame: The input DataFrame with an additional "en_review_age" column representing the
+            DataFrame: The input DataFrame with an additional "review_age" column representing the
             review age in days.
         """
         # Step 1: Find the maximum date in the specified column
@@ -79,7 +128,7 @@ class ComputeReviewAgeTask(DataEnhancerTask):
 # ------------------------------------------------------------------------------------------------ #
 #                                     REVIEW MONTH                                                 #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewMonthTask(DataEnhancerTask):
+class ComputeReviewMonthTask(EnrichmentTask):
     """
     Task to compute the month from a review date and add it as a new column in the DataFrame.
 
@@ -89,15 +138,13 @@ class ComputeReviewMonthTask(DataEnhancerTask):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted month.
-            Defaults to "en_review_month".
+            Defaults to "review_month".
     """
 
     def __init__(
-        self, column: str = "date", new_column: str = "en_review_month"
+        self, column: str = "date", new_column: str = "review_month", **kwargs
     ) -> None:
-        super().__init__()
-        self._column = column
-        self._new_column = new_column
+        super().__init__(column=column, new_column=new_column, **kwargs)
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -118,7 +165,7 @@ class ComputeReviewMonthTask(DataEnhancerTask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 REVIEW DAY OF WEEK                                               #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewDayofWeekTask(DataEnhancerTask):
+class ComputeReviewDayofWeekTask(EnrichmentTask):
     """
     Task to compute the day of the week from a review date and add it as a new column in the DataFrame.
 
@@ -129,17 +176,13 @@ class ComputeReviewDayofWeekTask(DataEnhancerTask):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted day of the week.
-            Defaults to "en_review_day_of_week".
+            Defaults to "review_day_of_week".
     """
 
     def __init__(
-        self,
-        column: str = "date",
-        new_column: str = "en_review_day_of_week",
+        self, column: str = "date", new_column: str = "review_day_of_week", **kwargs
     ) -> None:
-        super().__init__()
-        self._column = column
-        self._new_column = new_column
+        super().__init__(column=column, new_column=new_column, **kwargs)
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -161,7 +204,7 @@ class ComputeReviewDayofWeekTask(DataEnhancerTask):
 # ------------------------------------------------------------------------------------------------ #
 #                                 REVIEW HOUR OF DAY                                               #
 # ------------------------------------------------------------------------------------------------ #
-class ComputeReviewHourTask(DataEnhancerTask):
+class ComputeReviewHourTask(EnrichmentTask):
     """
     Task to compute the hour from a review date and add it as a new column in the DataFrame.
 
@@ -172,17 +215,13 @@ class ComputeReviewHourTask(DataEnhancerTask):
     Attributes:
         column (str): The name of the column containing date information. Defaults to "date".
         new_column (str): The name of the new column to be created with the extracted hour.
-            Defaults to "en_review_hour".
+            Defaults to "review_hour".
     """
 
     def __init__(
-        self,
-        column: str = "date",
-        new_column: str = "en_review_hour",
+        self, column: str = "date", new_column: str = "review_hour", **kwargs
     ) -> None:
-        super().__init__()
-        self._column = column
-        self._new_column = new_column
+        super().__init__(column=column, new_column=new_column, **kwargs)
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -203,21 +242,19 @@ class ComputeReviewHourTask(DataEnhancerTask):
 # ------------------------------------------------------------------------------------------------ #
 #                               COMPUTE PCT DEVIATION                                              #
 # ------------------------------------------------------------------------------------------------ #
-class ComputePercentDeviationTask(DataEnhancerTask):
+class ComputePercentDeviationTask(EnrichmentTask):
     """
     A task to compute the percent deviation of a specified column from the average
     grouped by a given level and store the result in a new column.
 
     Attributes:
         column (str): The name of the column for which to compute percent deviation.
-        new_column (str): The name of the new column to store the percent deviation values.
         by (str): The level by which the average is computed for the deviation calculation.
     """
 
-    def __init__(self, column: str, new_column: str, by: str = "category") -> None:
-        super().__init__()
-        self._column = column
-        self._new_column = new_column
+    def __init__(self, column: str, by: str = "category", **kwargs) -> None:
+        new_column = f"{column}_deviation_from_average"
+        super().__init__(column=column, new_column=new_column, **kwargs)
         self._by = by
 
     @task_logger

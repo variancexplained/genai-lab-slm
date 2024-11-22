@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Wednesday November 20th 2024 09:40:50 pm                                            #
+# Modified   : Thursday November 21st 2024 11:45:26 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,8 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
+from discover.core.flow import PhaseDef, StageDef
+
 
 # ------------------------------------------------------------------------------------------------ #
 #                                           TASK                                                   #
@@ -33,6 +35,10 @@ class Task(ABC):
     An abstract base class for defining tasks in a pipeline.
     All tasks must implement the `run` method and provide a
     `name` property based on the class name.
+
+    Args:
+        phase (PhaseDef): The phase of the data pipeline.
+        stage (StageDef): The specific stage within the data pipeline.
 
     Methods:
     --------
@@ -45,8 +51,10 @@ class Task(ABC):
         and outputs.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, phase: PhaseDef, stage: StageDef):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        self._phase = phase
+        self._stage = stage
 
     @property
     def name(self) -> str:
@@ -59,6 +67,16 @@ class Task(ABC):
             The name of the task.
         """
         return self.__class__.__name__
+
+    @property
+    def phase(self) -> PhaseDef:
+        """Returns the phase of the pipeline."""
+        return self._phase
+
+    @property
+    def stage(self) -> StageDef:
+        """Returns the specific stage within the pipeline."""
+        return self._stage
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:
@@ -129,7 +147,7 @@ class TaskBuilder:
     """
 
     @staticmethod
-    def build(task_config: dict):
+    def build(phase: PhaseDef, stage: StageDef, task_config: dict):
         """
         Constructs a task instance based on the given configuration.
 
@@ -155,6 +173,8 @@ class TaskBuilder:
         module = task_config["module"]
         class_name = task_config["class_name"]
         params = task_config["params"]
+        params["phase"] = phase
+        params["stage"] = stage
         return instantiate_class(
             module=module,
             class_name=class_name,

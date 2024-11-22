@@ -4,19 +4,19 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/stage/data_prep/base.py                                              #
+# Filename   : /discover/flow/stage/model/perplexity.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday November 21st 2024 11:08:40 pm                                             #
+# Created    : Thursday November 21st 2024 10:51:29 pm                                             #
+# Modified   : Friday November 22nd 2024 12:03:34 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Data preparation stage class module."""
+"""ing stage class module."""
 from __future__ import annotations
 
 from discover.core.flow import PhaseDef, StageDef
@@ -24,25 +24,28 @@ from discover.flow.stage.base import Stage
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                    DATA PREP STAGE                                               #
+#                            PERPLEXITY ANALYSIS MODEL STAGE                                       #
 # ------------------------------------------------------------------------------------------------ #
-class DataPrepStage(Stage):
+class PerplexityAnalysisStage(Stage):
     """
-    Stage for preparing data in the data processing pipeline.
+    Stage for performing perplexity analysis in a data pipeline.
 
-    This class orchestrates the data preparation process, running a series of tasks
-    on the source data, updating endpoints if necessary, and saving the processed
-    data to the destination. It includes methods for merging data, executing tasks,
-    and managing dataset metadata to ensure data integrity and proper lineage tracking.
+    This class calculates perplexity metrics to evaluate the fluency or predictability
+    of textual data. It inherits from the base `Stage` class and allows configuration
+    of source and destination settings.
 
     Args:
         phase (PhaseDef): The phase of the data pipeline.
         stage (StageDef): The specific stage within the data pipeline.
-        source_config (dict): Configuration for the data source.
-        destination_config (dict): Configuration for the data destination.
-        force (bool, optional): Whether to force execution, even if the output already
-            exists. Defaults to False.
-        return_dataset (bool): Whether to return the resultant dataset or the asset_id
+        source_config (dict): Configuration for the data source, including details
+            such as file paths or database connections.
+        destination_config (dict): Configuration for the data destination, including
+            details on where to save processed results.
+        force (bool, optional): Whether to force execution, even if the destination
+            dataset already exists. Defaults to False.
+        return_dataset (bool, optional): Whether to return the resultant dataset
+            instead of only the asset ID. Defaults to True.
+        **kwargs: Additional keyword arguments for custom configurations.
     """
 
     def __init__(

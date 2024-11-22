@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/text/pattern.py                                           #
+# Filename   : /discover/flow/task/clean/strategy/text/pattern.py                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Thursday November 21st 2024 03:21:52 am                                             #
+# Modified   : Thursday November 21st 2024 09:44:14 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -98,7 +98,7 @@ class RegexFactory:
             "replacement": "",
         },
         # Excessive whitespace
-        "excessive_whitespace": {
+        "whitespace": {
             "pattern": re.compile(r"\s{2,}"),
             "replacement": " ",
         },
@@ -106,6 +106,11 @@ class RegexFactory:
         "accents": {
             "pattern": re.compile(r"[\u00C0-\u024F]"),
             "replacement": None,
+        },
+        # New Lines
+        "newline": {
+            "pattern": re.compile(r"\n"),
+            "replacement": " ",
         },
     }
 
@@ -156,7 +161,9 @@ class RegexFactory:
     # Dynamic pattern generators
     # ------------------------------------------------------------------------------------------------ #
 
-    def _elongation(self, threshold: int = 4, max_elongation: int = 3) -> Regex:
+    def _elongation(
+        self, threshold: int = 4, max_elongation: int = 3, **kwargs
+    ) -> Regex:
         """
         Generates a pattern for detecting elongated characters.
 
@@ -172,7 +179,7 @@ class RegexFactory:
         return Regex(pattern=pattern, replacement=replacement)
 
     def _sequence_repetition(
-        self, length_of_sequence: int = 3, min_repetitions: int = 3
+        self, length_of_sequence: int = 3, min_repetitions: int = 3, **kwargs
     ) -> Regex:
         """
         Generates a pattern for detecting repeated sequences of characters.
@@ -188,7 +195,7 @@ class RegexFactory:
         replacement = r"\1"
         return Regex(pattern=pattern, replacement=replacement)
 
-    def _phrase_repetition(self, min_repetitions: int = 3) -> Regex:
+    def _phrase_repetition(self, min_repetitions: int = 3, **kwargs) -> Regex:
         """
         Generates a pattern for detecting repeated phrases.
 
@@ -202,7 +209,7 @@ class RegexFactory:
         replacement = r"\1"
         return Regex(pattern=pattern, replacement=replacement)
 
-    def _word_repetition(self, min_repetitions: int = 3) -> Regex:
+    def _word_repetition(self, min_repetitions: int = 3, **kwargs) -> Regex:
         """
         Generates a pattern for detecting repeated words.
 

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/ingest/task.py                                             #
+# Filename   : /discover/flow/task/normalize/text.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Wednesday November 20th 2024 06:31:51 am                                            #
+# Modified   : Thursday November 21st 2024 11:45:58 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,13 +19,10 @@
 """Ingest Module"""
 
 
-from typing import Optional
-
 import pandas as pd
 from pandarallel import pandarallel
 
-from discover.core.flow import StageDef
-from discover.flow.data_prep.base.task import DataPrepTask
+from discover.flow.task.base import Task
 from discover.infra.service.logging.task import task_logger
 
 # ------------------------------------------------------------------------------------------------ #
@@ -33,7 +30,7 @@ pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
 
 
 # ------------------------------------------------------------------------------------------------ #
-class VerifyEncodingTask(DataPrepTask):
+class VerifyEncodingTask(Task):
     """
     Task for verifying and correcting UTF-8 encoding issues in a specified text column of a Pandas DataFrame.
 
@@ -49,9 +46,10 @@ class VerifyEncodingTask(DataPrepTask):
             Verifies and re-encodes the specified column in the DataFrame to ensure UTF-8 compliance.
     """
 
-    def __init__(self, stage: Optional[StageDef] = None, **kwargs) -> None:
-        super().__init__(stage=stage, **kwargs)
-        self._column = kwargs["column"]
+    def __init__(self, column: str, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._column = column
+        self._kwargs = kwargs
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -74,7 +72,59 @@ class VerifyEncodingTask(DataPrepTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class RemoveNewlinesTask(DataPrepTask):
+class CastDataTypeTask(Task):
+    """
+    Task for casting specified columns in a Pandas DataFrame to desired data types.
+
+    This task casts the specified columns in the DataFrame to the provided data types,
+    ensuring that the data conforms to the expected schema. If a column specified in
+    the task is not found in the DataFrame, an exception is raised.
+
+    Args:
+        datatypes (dict): A dictionary where keys are column names and values are
+            the desired data types (e.g., `{"column1": "float", "column2": "int"}`).
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Casts the specified columns to the desired data types in the DataFrame.
+    """
+
+    def __init__(self, datatypes: dict, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self._datatypes = datatypes
+        self._kwargs = kwargs
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Casts specified columns to the desired data types in the DataFrame.
+
+        This method iterates over the specified columns and casts each one to the
+        desired data type. If a column is not found in the DataFrame, it logs an
+        error and raises a `ValueError`.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the columns to cast.
+
+        Returns:
+            pd.DataFrame: The DataFrame with columns cast to the specified data types.
+
+        Raises:
+            ValueError: If a specified column is not found in the DataFrame.
+        """
+        for column, dtype in self._datatypes.items():
+            if column in data.columns:
+                data[column] = data[column].astype(dtype)
+            else:
+                msg = f"Column {column} not found in DataFrame"
+                self._logger.exception(msg)
+                raise ValueError(msg)
+
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+class RemoveNewlinesTask(Task):
     """
     Task for removing newline characters from a specified text column in a Pandas DataFrame.
 
@@ -108,98 +158,4 @@ class RemoveNewlinesTask(DataPrepTask):
             pd.DataFrame: The DataFrame with newline characters removed from the specified column.
         """
         data[self._column] = data[self._column].str.replace("\n", " ")
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-class CastDataTypeTask(DataPrepTask):
-    """
-    Task for casting specified columns in a Pandas DataFrame to desired data types.
-
-    This task casts the specified columns in the DataFrame to the provided data types,
-    ensuring that the data conforms to the expected schema. If a column specified in
-    the task is not found in the DataFrame, an exception is raised.
-
-    Args:
-        datatypes (dict): A dictionary where keys are column names and values are
-            the desired data types (e.g., `{"column1": "float", "column2": "int"}`).
-
-    Methods:
-        run(data: pd.DataFrame) -> pd.DataFrame:
-            Casts the specified columns to the desired data types in the DataFrame.
-    """
-
-    def __init__(self, datatypes: dict, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self._datatypes = datatypes
-
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Casts specified columns to the desired data types in the DataFrame.
-
-        This method iterates over the specified columns and casts each one to the
-        desired data type. If a column is not found in the DataFrame, it logs an
-        error and raises a `ValueError`.
-
-        Args:
-            data (pd.DataFrame): The input DataFrame containing the columns to cast.
-
-        Returns:
-            pd.DataFrame: The DataFrame with columns cast to the specified data types.
-
-        Raises:
-            ValueError: If a specified column is not found in the DataFrame.
-        """
-        for column, dtype in self._datatypes.items():
-            if column in data.columns:
-                data[column] = data[column].astype(dtype)
-            else:
-                msg = f"Column {column} not found in DataFrame"
-                self._logger.exception(msg)
-                raise ValueError(msg)
-
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-class AddReviewLengthTask(DataPrepTask):
-    """
-    Task for adding a new column to a Pandas DataFrame that contains the word count of a specified text column.
-
-    This task calculates the word count for each entry in the specified text column and adds it as a new column
-    in the DataFrame. It uses parallel processing to optimize the computation for large datasets.
-
-    Args:
-        column (str): The name of the column in the DataFrame containing the text to analyze. Defaults to "content".
-        new_column (str): The name of the new column to store the word count. Defaults to "review_length".
-
-    Methods:
-        run(data: pd.DataFrame) -> pd.DataFrame:
-            Calculates the word count for each entry in the specified column and adds it to a new column in the DataFrame.
-    """
-
-    def __init__(
-        self, column: str = "content", new_column: str = "review_length", **kwargs
-    ) -> None:
-        super().__init__(**kwargs)
-        self._column = column
-        self._new_column = new_column
-
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Calculates the word count for each entry in the specified text column and adds it as a new column.
-
-        This method splits the text in the specified column by whitespace and counts the number of words
-        in each entry. The results are stored in a new column in the DataFrame.
-
-        Args:
-            data (pd.DataFrame): The input DataFrame containing the text data.
-
-        Returns:
-            pd.DataFrame: The DataFrame with the new column added containing word counts.
-        """
-        data[self._new_column] = data[self._column].parallel_apply(
-            lambda x: len(x.split())
-        )
         return data

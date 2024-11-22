@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Wednesday November 20th 2024 03:49:43 pm                                            #
+# Modified   : Thursday November 21st 2024 11:12:48 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,21 +20,35 @@
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
+from datetime import datetime
+from enum import Enum
 from typing import Optional, Type, Union
 
 import pandas as pd
 import pyspark
 from dependency_injector.wiring import Provide, inject
+from pyspark.sql import DataFrame
 
 from discover.assets.dataset import Dataset
 from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
+from discover.core.data_structure import DataFrameType
 from discover.core.flow import PhaseDef, StageDef
 from discover.core.namespace import NestedNamespace
 from discover.flow.task.base import Task, TaskBuilder
 from discover.infra.persistence.repo.dataset import DatasetRepo
+from discover.infra.service.logging.stage import stage_logger
 from discover.infra.utils.file.io import IOService
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     EXECUTION PATH                                               #
+# ------------------------------------------------------------------------------------------------ #
+class ExecutionPath(Enum):
+    RUN = "run"
+    UPDATE_ENDPOINT = "update_endpoint"
+    GET_RETURN_VALUE = "get_return_value"
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -115,20 +129,260 @@ class Stage(ABC):
             )
         self._tasks.append(task)
 
-    @abstractmethod
-    def run(self) -> str:
-        """Executes the stage and returns the resulting asset ID.
+    @stage_logger
+    def run(self) -> Dataset:
+        """Executes the stage and returns the asset ID.
 
-        This method orchestrates the execution of the tasks defined in the stage,
-        processes the source data, and saves the result to the destination.
+        This method determines the execution path based on whether the endpoint
+        exists and whether the `force` flag is set. It runs tasks to prepare
+        the data or updates the endpoint if changes are detected in the source data.
 
         Returns:
-            str: The asset ID of the generated dataset.
+            str: The asset ID of the prepared dataset.
+        """
+        source_asset_id = self._get_asset_id(config=self._source_config)
+        destination_asset_id = self._get_asset_id(config=self._destination_config)
+
+        # Determine execution path
+        execution_path = self._get_execution_path(
+            source_asset_id=source_asset_id, destination_asset_id=destination_asset_id
+        )
+
+        # Direct the process
+        if execution_path == ExecutionPath.RUN:
+            self._logger.debug("Execution path: RUN")
+            dataset = self._run(
+                source_asset_id=source_asset_id,
+                destination_asset_id=destination_asset_id,
+            )
+            return self._get_return_value(dataset=dataset)
+
+        elif execution_path == ExecutionPath.UPDATE_ENDPOINT:
+            self._logger.debug("Execution path: UPDATE ENDPOINT")
+            dataset = self._update_endpoint(
+                source_asset_id=source_asset_id,
+                destination_asset_id=destination_asset_id,
+            )
+            return self._get_return_value(dataset=dataset)
+
+        else:
+            self._logger.debug("Execution path: RETURN")
+            return self._get_return_value(
+                asset_id=destination_asset_id, config=self._destination_config
+            )
+
+    def _get_execution_path(
+        self, source_asset_id: str, destination_asset_id: str
+    ) -> ExecutionPath:
+        """Determines the execution path
+
+        There are thee binary variables creating 2^8 possible conditions that resolve to
+        one of three actions:
+            1. Run The pipeline and return
+            2. Update the existing endpoint with new source data and return
+            3. Get the return value requested. No action required.
+
+        Option 1 executes if Force is true or the endpoint doesn't exist.
+        Option 2 executes if not forcing, the endpoint exists, but there is new source data.
+        Option 3 executes if not forcing, the endpoint exists and the source  has
+            been consumed.
+
+        Args:
+            source_asset_id (str): Asset identifier for source dataset
+            destination_asset_id (str): Asset identifier for destination dataset
+
+        Note: Force must be set to True if the source code has changed or the output changes with
+        the input, and the input has changed.
+        """
+        # Obtain current state
+        endpoint_exists = self._dataset_exists(asset_id=destination_asset_id)
+        source_consumed = self._source_consumed(asset_id=source_asset_id)
+
+        # Easy case first
+        if not self._force and source_consumed and endpoint_exists:
+            return ExecutionPath.GET_RETURN_VALUE
+        # Update endpoint if the soure has changed
+        elif not self._force and not source_consumed and endpoint_exists:
+            return ExecutionPath.UPDATE_ENDPOINT
+        # Otherwise run
+        else:
+            return ExecutionPath.RUN
+
+    def _run(self, source_asset_id: str, destination_asset_id: str) -> Dataset:
+        """Performs the core logic of the stage, executing tasks in sequence.
+
+        Args:
+            source_asset_id (str): The asset identifier for the source dataset.
+            destination_asset_id (str): The asset identifier for the destination dataset.
+        """
+        source_dataset = self._load_dataset(
+            asset_id=source_asset_id, config=self._source_config
+        )
+        data = source_dataset.content
+        for task in self._tasks:
+            data = task.run(data=data)
+
+        # Create the new destination dataset
+        destination_dataset = self._create_dataset(
+            asset_id=destination_asset_id, config=self._destination_config, data=data
+        )
+
+        self._save_dataset(dataset=destination_dataset, replace_if_exists=True)
+        # Mark the source dataset as having been consumed.
+        self._mark_source_consumed(asset_id=source_asset_id)
+
+        return destination_dataset
+
+    def _update_endpoint(self, source_asset_id, destination_asset_id) -> Dataset:
+        """Updates the endpoint dataset with changes in the source dataset.
+
+        Args:
+            source_asset_id (str): The asset identifier for the input dataset.
+            destination_asset_id (str): The asset identifier for the output dataset.
+
+        Returns:
+            Dataset: The updated dataset endpoint
+        """
+        source_dataset = self._load_dataset(
+            asset_id=source_asset_id, config=self._source_config
+        )
+        destination_dataset = self._load_dataset(
+            asset_id=destination_asset_id, config=self._destination_config
+        )
+        result_cols = [
+            col
+            for col in destination_dataset.content.columns
+            if col.startswith(self.stage.id) or col == "id"
+        ]
+        df = self._merge_dataframes(
+            source=source_dataset.content,
+            destination=destination_dataset.content,
+            result_cols=result_cols,
+        )
+
+        # Create the new destination dataset
+        destination_dataset_updated = self._create_dataset(
+            destination_asset_id, config=self._destination_config, data=df
+        )
+        # Save the updated dataset
+        self._save_dataset(dataset=destination_dataset_updated, replace_if_exists=True)
+        # Mark the source dataset as having been consumed.
+        self._mark_source_consumed(dataset=source_dataset)
+        return destination_dataset_updated
+
+    def _source_consumed(self, asset_id: str) -> bool:
+        """Returns True of the source has been consumed"""
+        dataset_meta = self._load_dataset_metadata(asset_id=asset_id)
+        return dataset_meta.consumed
+
+    def _mark_source_consumed(self, asset_id: str) -> None:
+        """Marks the dataset as having been consumed.
+
+        Args:
+            dataset (Dataset): The dataset to mark as consumed.
+
+        """
+        dataset = self._load_dataset_metadata(asset_id=asset_id)
+        dataset.consumed = True
+        dataset.dt_consumed = datetime.now()
+        dataset.consumed_by = self.__class__.__name__
+        self._save_dataset_metadata(dataset=dataset)
+
+    def _merge_dataframes(
+        self,
+        source: DataFrameType,
+        destination: DataFrameType,
+        result_cols: list,
+    ) -> DataFrameType:
+        """Merges two DataFrames of the same type.
+
+        Args:
+            source (DataFrameType): The source dataframe.
+            destination (DataFrameType): The destination dataframe.
+            result_cols (list): The columns from the destination dataframe to include
+                in the merge.
+
+        Returns:
+            DataFrameType: The merged dataframe.
 
         Raises:
-            RuntimeError: If an error occurs during the execution of the stage.
+            TypeError: If the source and destination datasets have incompatible types.
         """
-        pass
+        if isinstance(source, pd.DataFrame) and isinstance(destination, pd.DataFrame):
+            return self._merge_pandas_df(
+                source=source,
+                destination=destination,
+                result_cols=result_cols,
+            )
+        elif isinstance(source, DataFrame) and isinstance(destination, DataFrame):
+            return self._merge_spark_df(
+                source=source,
+                destination=destination,
+                result_cols=result_cols,
+            )
+        else:
+            msg = f"Source and destination datasets have incompatible types: Source: {type(source)}\tDestination: {type(destination)}"
+            raise TypeError(msg)
+
+    def _merge_pandas_df(
+        self, source: pd.DataFrame, destination: pd.DataFrame, result_cols: list
+    ) -> pd.DataFrame:
+        """Merges two Pandas dataframes.
+
+        Args:
+            source (pd.DataFrame): The source dataframe.
+            destination (pd.DataFrame): The destination dataframe.
+            result_cols (list): The columns from the destination dataframe to include
+                in the merge.
+
+        Returns:
+            pd.DataFrame: The merged dataframe.
+        """
+        source["id"] = source["id"].astype("string")
+        destination["id"] = destination["id"].astype("string")
+        return source.merge(destination[result_cols], how="left", on="id")
+
+    def _merge_spark_df(
+        self, source: DataFrame, destination: DataFrame, result_cols: list
+    ) -> DataFrame:
+        """Merges two Spark dataframes.
+
+        Args:
+            source (DataFrame): The source dataframe.
+            destination (DataFrame): The destination dataframe.
+            result_cols (list): The columns from the destination dataframe to include
+                in the join.
+
+        Returns:
+            DataFrame: The merged dataframe.
+        """
+        destination_subset = destination.select(*result_cols)
+        return source.join(destination_subset, on="id", how="left")
+
+    def _create_dataset(
+        self,
+        asset_id: str,
+        config: NestedNamespace,
+        data: Union[pd.DataFrame, pyspark.sql.DataFrame],
+    ) -> Dataset:
+        """Creates a dataset.
+
+        Args:
+            asset_id (str): The identifier for the asset.
+            config (NestedNamespace): Configuration for the dataset.
+            data (Union[pd.DataFrame, pyspark.sql.DataFrame]): The dataset payload.
+
+        Returns:
+            Dataset: The created dataset.
+        """
+        return Dataset(
+            phase=PhaseDef.from_value(config.phase),
+            stage=StageDef.from_value(config.stage),
+            name=config.name,
+            content=data,
+            nlp=config.nlp,
+            distributed=config.distributed,
+        )
 
     @classmethod
     def build(cls, stage_config: dict, force: bool = False, **kwargs) -> Stage:
@@ -146,6 +400,7 @@ class Stage(ABC):
             ValueError: If tasks cannot be built from the configuration.
             RuntimeError: If there is an error creating the stage.
         """
+
         try:
             # Instantiate the Stage object
             stage = cls(
@@ -160,8 +415,9 @@ class Stage(ABC):
             # Construct the Stage's Task objects
             tasks = [
                 cls._task_builder.build(
-                    task_config=task_config,
+                    phase=PhaseDef.from_value(stage_config["phase"]),
                     stage=StageDef.from_value(stage_config["stage"]),
+                    task_config=task_config,
                 )
                 for task_config in stage_config["tasks"]
             ]

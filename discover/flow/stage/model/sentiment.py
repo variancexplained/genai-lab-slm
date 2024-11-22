@@ -4,44 +4,48 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/dqd/stage.py                                               #
+# Filename   : /discover/flow/stage/model/sentiment.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Wednesday November 20th 2024 03:49:43 pm                                            #
+# Created    : Thursday November 21st 2024 10:51:29 pm                                             #
+# Modified   : Friday November 22nd 2024 12:03:16 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Ingest Stage Module"""
-
+"""ing stage class module."""
+from __future__ import annotations
 
 from discover.core.flow import PhaseDef, StageDef
-from discover.flow.stage.data_prep.base import DataPrepStage
+from discover.flow.stage.base import Stage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataQualityDetectionStage(DataPrepStage):
+#                           SENTIMENT ANALYSIS MODEL STAGE                                         #
+# ------------------------------------------------------------------------------------------------ #
+class SentimentAnalysisStage(Stage):
     """
-    Stage for detecting text quality issues in the data preparation pipeline.
+    Stage for performing sentiment analysis in a data pipeline.
 
-    This class performs text quality detection as part of the data preparation process.
-    It inherits from `DataPrepStage` and manages the configuration and execution of
-    tasks that assess the quality of text data, such as checking for inconsistencies,
-    readability, or other quality metrics, and saves the processed data to the
-    specified destination.
+    This class processes textual data to compute sentiment scores or classifications.
+    It inherits from the base `Stage` class and is configurable with source and
+    destination settings.
 
     Args:
         phase (PhaseDef): The phase of the data pipeline.
         stage (StageDef): The specific stage within the data pipeline.
-        source_config (dict): Configuration for the data source.
-        destination_config (dict): Configuration for the data destination.
-        force (bool, optional): Whether to force execution, even if the output already
-            exists. Defaults to False.
-        return_dataset (bool): Whether to return resultant dataset or its asset_id
+        source_config (dict): Configuration for the data source, including details
+            such as file paths or database connections.
+        destination_config (dict): Configuration for the data destination, including
+            details on where to save processed results.
+        force (bool, optional): Whether to force execution, even if the destination
+            dataset already exists. Defaults to False.
+        return_dataset (bool, optional): Whether to return the resultant dataset
+            instead of only the asset ID. Defaults to True.
+        **kwargs: Additional keyword arguments for custom configurations.
     """
 
     def __init__(
@@ -51,7 +55,8 @@ class DataQualityDetectionStage(DataPrepStage):
         source_config: dict,
         destination_config: dict,
         force: bool = False,
-        return_dataset: bool = False,
+        return_dataset: bool = True,
+        **kwargs,
     ) -> None:
         super().__init__(
             phase=phase,
@@ -60,4 +65,5 @@ class DataQualityDetectionStage(DataPrepStage):
             destination_config=destination_config,
             force=force,
             return_dataset=return_dataset,
+            **kwargs,
         )

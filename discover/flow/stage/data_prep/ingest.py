@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/data_prep/ingest/stage.py                                            #
+# Filename   : /discover/flow/stage/data_prep/ingest.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Wednesday November 20th 2024 03:49:43 pm                                            #
+# Modified   : Thursday November 21st 2024 11:41:03 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -52,6 +52,7 @@ class IngestionStage(DataPrepStage):
         destination_config: dict,
         force: bool = False,
         return_dataset: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__(
             phase=phase,
@@ -60,6 +61,7 @@ class IngestionStage(DataPrepStage):
             destination_config=destination_config,
             force=force,
             return_dataset=return_dataset,
+            **kwargs,
         )
 
     @stage_logger
