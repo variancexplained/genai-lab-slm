@@ -11,13 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Thursday November 21st 2024 08:21:42 pm                                             #
+# Modified   : Friday November 22nd 2024 02:12:24 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import unicodedata
-from abc import abstractmethod
 from typing import Literal, Type, Union
 
 import fasttext
@@ -82,7 +81,7 @@ class RegexDetectStrategy(DetectStrategy):
         pattern: str,
         column: str,
         new_column: str,
-        regex_factory_cls: Type[RegexFactory],
+        regex_factory_cls: Type[RegexFactory] = RegexFactory,
         **kwargs,
     ) -> None:
         self._pattern = pattern
@@ -361,7 +360,7 @@ class RegexThresholdDetectStrategy(DetectStrategy):
             # Apply regex to extract matches
             data = data.withColumn(
                 "matches",
-                F.expr(f"regexp_extract_all({self._column}, '{regex_info.pattern}')"),
+                F.expr(f"regexp_extract_all({self._column}, '({regex_info.pattern})')"),
             )
         except Exception as e:
             raise ValueError(f"Failed to apply regex pattern: {self._pattern}\n{e}")
@@ -640,7 +639,6 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
 
         return data
 
-    @abstractmethod
     @staticmethod
     def repair_text(text: str) -> str:
         """
@@ -925,7 +923,9 @@ class NonEnglishDetectStrategy(DetectStrategy):
         new_column: str = None,
         **kwargs,
     ) -> None:
-        super().__init__(column=column, new_column=new_column, **kwargs)
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
 
     def _run_fasttext(self, text: str) -> bool:
         """

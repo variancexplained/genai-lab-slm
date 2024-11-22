@@ -4,27 +4,25 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/stage/data_prep/clean.py                                             #
+# Filename   : /discover/flow/stage/data_prep/quality.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Friday November 22nd 2024 12:15:35 am                                               #
+# Created    : Friday November 22nd 2024 12:15:07 am                                               #
+# Modified   : Friday November 22nd 2024 12:16:06 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Cleaning Stage Module"""
-
-
+"""Data Quality Stage Module"""
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.stage.data_prep.base import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataCleaningStage(DataPrepStage):
+class DataQualityStage(DataPrepStage):
     """
     Stage for cleaning data in the data preparation pipeline.
 

@@ -11,23 +11,17 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Thursday November 21st 2024 11:37:28 pm                                             #
+# Modified   : Friday November 22nd 2024 02:04:35 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from typing import Literal, Type, Union
+from typing import Literal, Union
 
 from discover.flow.task.clean.dimension.anomaly import (
     CategoricalAnomaly,
     NumericAnomaly,
     TextAnomaly,
-)
-from discover.flow.task.clean.strategy.numeric import (
-    ThresholdAnomalyDetectStrategy,
-    ThresholdAnomalyRepairStrategy,
-    ThresholdPercentileAnomalyDetectStrategy,
-    ThresholdPercentileAnomalyRepairStrategy,
 )
 
 
@@ -732,7 +726,7 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedWordTask(TextAnomaly):
+class DetectOrRepairRepeatedWordsTask(TextAnomaly):
     """
     A task for detecting or repairing excessive word repetition in text.
 
@@ -900,12 +894,8 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
         threshold: float = 0.5,
         relative_error: float = 0.001,
         detect_less_than_threshold: bool = True,
-        detect_strategy: Type[
-            ThresholdPercentileAnomalyDetectStrategy
-        ] = ThresholdPercentileAnomalyDetectStrategy,
-        repair_strategy: Type[
-            ThresholdPercentileAnomalyRepairStrategy
-        ] = ThresholdPercentileAnomalyRepairStrategy,
+        detect_strategy: str = "threshold",
+        repair_strategy: str = "threshold",
         **kwargs,
     ) -> None:
         super().__init__(
@@ -962,12 +952,8 @@ class DetectOrRepairShortReviewsTask(NumericAnomaly):
         distributed: bool = True,
         threshold: float = 4,
         detect_less_than_threshold: bool = True,
-        detect_strategy: Type[
-            ThresholdAnomalyDetectStrategy
-        ] = ThresholdAnomalyDetectStrategy,
-        repair_strategy: Type[
-            ThresholdAnomalyRepairStrategy
-        ] = ThresholdAnomalyRepairStrategy,
+        detect_strategy: str = "threshold",
+        repair_strategy: str = "threshold",
         **kwargs,
     ) -> None:
 
@@ -1016,6 +1002,8 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
         new_column: str,
         mode: str = "detect",
         distributed: bool = True,
+        detect_strategy: str = "categorical",
+        repair_strategy: str = "categorical",
         valid_categories: list = None,
         **kwargs,
     ) -> None:

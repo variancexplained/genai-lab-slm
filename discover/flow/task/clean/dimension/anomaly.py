@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 05:35:51 pm                                             #
-# Modified   : Thursday November 21st 2024 11:16:42 pm                                             #
+# Modified   : Friday November 22nd 2024 01:44:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@ from typing import Literal, Type, Union
 
 from discover.flow.task.clean.base.anomaly import Anomaly
 from discover.flow.task.clean.strategy.categorical import CategoricalStrategyFactory
+from discover.flow.task.clean.strategy.nominal import NominalAnomalyStrategyFactory
 from discover.flow.task.clean.strategy.numeric import NumericStrategyFactory
 from discover.flow.task.clean.strategy.text.distributed import (
     TextStrategyFactory as DistributedTextStrategyFactory,
@@ -82,7 +83,7 @@ class TextAnomaly(Anomaly):
         unit: Literal["word", "character"] = None,
         **kwargs,
     ) -> None:
-        new_column = new_column
+
         super().__init__(
             pattern=pattern,
             column=column,
@@ -145,7 +146,7 @@ class NumericAnomaly(Anomaly):
         detect_less_than_threshold: bool = None,
         **kwargs,
     ) -> None:
-        new_column = new_column
+
         super().__init__(
             column=column,
             new_column=new_column,
@@ -201,7 +202,7 @@ class CategoricalAnomaly(Anomaly):
             raise TypeError(
                 "The valid_categories argument must be a list of strings or numbers."
             )
-        new_column = new_column
+
         super().__init__(
             column=column,
             new_column=new_column,
@@ -210,5 +211,54 @@ class CategoricalAnomaly(Anomaly):
             repair_strategy=repair_strategy,
             strategy_factory=strategy_factory,
             valid_categories=valid_categories,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class NominalAnomaly(Anomaly):
+    """
+    Handles anomaly detection and repair for nominal data.
+
+    This class provides functionality to detect and repair anomalies in
+    nominal data columns using specified strategies. It supports both local
+    and distributed execution modes and leverages a strategy factory to
+    dynamically create detection and repair strategies.
+
+    Args:
+        column (str): The name of the column to analyze for anomalies.
+        new_column (str): The name of the column where the detection or repair
+            results will be stored.
+        detect_strategy (str): The name of the detection strategy to use.
+        repair_strategy (str): The name of the repair strategy to use.
+        strategy_factory (Type[NominalAnomalyStrategyFactory]): The factory class
+            used to create strategies. Defaults to `NominalAnomalyStrategyFactory`.
+        mode (str): The mode of operation, either "detect" or "repair".
+            Defaults to "detect".
+        distributed (bool): Whether the anomaly handling should operate in a
+            distributed mode. Defaults to True.
+        **kwargs: Additional keyword arguments passed to the base class.
+    """
+
+    def __init__(
+        self,
+        column: str,
+        new_column: str,
+        detect_strategy: str,
+        repair_strategy: str,
+        strategy_factory: Type[
+            NominalAnomalyStrategyFactory
+        ] = NominalAnomalyStrategyFactory,
+        mode: str = "detect",
+        distributed: bool = True,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            detect_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
+            strategy_factory=strategy_factory,
             **kwargs,
         )

@@ -11,14 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:34:06 am                                             #
-# Modified   : Thursday November 21st 2024 05:57:25 pm                                             #
+# Modified   : Friday November 22nd 2024 12:23:41 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Text Cleaning Strategies for Local Devices"""
 import unicodedata
-from abc import abstractmethod
 from typing import Literal, Type, Union
 
 import pandas as pd
@@ -33,7 +32,6 @@ class TextStrategyFactory(StrategyFactory):
     """Factory to retrieve strategies for anomaly detection and repair."""
 
     @property
-    @abstractmethod
     def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
         """Returns a dictionary of detect strategies"""
         return {
@@ -42,7 +40,6 @@ class TextStrategyFactory(StrategyFactory):
         }
 
     @property
-    @abstractmethod
     def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
         """Returns a dictionary of detect strategies"""
         return {
@@ -515,7 +512,6 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
             data[self._new_column] is True, self._column
         ].parallel_apply(self.repair_text)
 
-    @abstractmethod
     @staticmethod
     def repair_text(text):
         """

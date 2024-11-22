@@ -11,12 +11,11 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Thursday November 21st 2024 09:44:14 pm                                             #
+# Modified   : Friday November 22nd 2024 01:57:37 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-import re
 from dataclasses import dataclass
 from typing import Callable, Dict
 
@@ -57,59 +56,55 @@ class RegexFactory:
     __STATIC_PATTERNS = {
         # Static patterns for detecting specific structures
         "email": {
-            "pattern": re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"),
+            "pattern": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
             "replacement": "[EMAIL]",
         },
         "url": {
-            "pattern": re.compile(
-                r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*"
-            ),
+            "pattern": r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*",
             "replacement": "[URL]",
         },
         "phone": {
-            "pattern": re.compile(
-                r"(\+?\d{1,3})?[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}"
-            ),
+            "pattern": r"(\+?\d{1,3})?[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}",
             "replacement": "[PHONE]",
         },
         # Linguistic punctuation marks
         "punctuation": {
-            "pattern": re.compile(r"[.,!?\"'()\-:;]"),
+            "pattern": r"[.,!?\"'()\-:;]",
             "replacement": None,
         },
         # Non-punctuation special characters
         "special_chars": {
-            "pattern": re.compile(r"[^a-zA-Z0-9\s.,!\"'()\-:;]"),
+            "pattern": r"[^a-zA-Z0-9\s.,!\"''()\\-:;]",
             "replacement": " ",
         },
         # Non-ASCII characters
         "non_ascii": {
-            "pattern": re.compile(r"[^\x00-\x7F]"),
+            "pattern": r"[^\x00-\x7F]",
             "replacement": None,
         },
         # Control characters
         "control_chars": {
-            "pattern": re.compile(r"[\x00-\x1F\x7F]"),
+            "pattern": r"[\x00-\x1F\x7F]",
             "replacement": " ",
         },
         # HTML entities
         "html": {
-            "pattern": re.compile(r"&[#A-Za-z0-9]+;"),
+            "pattern": r"&[#A-Za-z0-9]+;",
             "replacement": "",
         },
         # Excessive whitespace
         "whitespace": {
-            "pattern": re.compile(r"\s{2,}"),
+            "pattern": r"\s{2,}",
             "replacement": " ",
         },
         # Accented characters
         "accents": {
-            "pattern": re.compile(r"[\u00C0-\u024F]"),
+            "pattern": r"[\u00C0-\u024F]",
             "replacement": None,
         },
         # New Lines
         "newline": {
-            "pattern": re.compile(r"\n"),
+            "pattern": r"\n",
             "replacement": " ",
         },
     }

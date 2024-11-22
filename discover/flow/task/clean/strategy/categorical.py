@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:33:51 pm                                             #
-# Modified   : Thursday November 21st 2024 09:12:40 pm                                             #
+# Modified   : Friday November 22nd 2024 01:15:25 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -85,17 +85,6 @@ class CategoricalAnomalyDetectStrategy(DetectStrategy):
         valid_categories: list = None,
         **kwargs,
     ) -> None:
-        """
-        Initializes the categorical anomaly detection strategy.
-
-        Args:
-            column (str): The name of the column to evaluate for categorical anomalies.
-            new_column (str): The name of the column to store the detection results.
-                This column will contain `True` for rows with invalid categories and `False` otherwise.
-            valid_categories (list, optional): A list of valid categorical values to compare against.
-                Defaults to None, which implies no valid categories are defined.
-            **kwargs: Additional keyword arguments for extensibility.
-        """
         super().__init__()
         self._column = column
         self._new_column = new_column
@@ -122,6 +111,7 @@ class CategoricalAnomalyDetectStrategy(DetectStrategy):
         return data
 
 
+# ------------------------------------------------------------------------------------------------ #
 class CategoricalAnomalyRepairStrategy(RepairStrategy):
     """
     A strategy for repairing categorical anomalies by removing rows with invalid values.
@@ -155,19 +145,6 @@ class CategoricalAnomalyRepairStrategy(RepairStrategy):
         ] = CategoricalAnomalyDetectStrategy,
         **kwargs,
     ) -> None:
-        """
-        Initializes the categorical anomaly repair strategy.
-
-        Args:
-            column (str): The name of the column to evaluate for categorical anomalies.
-            new_column (str): The name of the column to store detection results.
-                This column will contain `True` for rows with invalid categories and `False` otherwise.
-            valid_categories (list, optional): A list of valid categorical values to compare against.
-                Defaults to None, which implies no valid categories are defined.
-            detect_strategy (Type[CategoricalAnomalyDetectStrategy], optional): The detection
-                strategy class to use for identifying anomalies. Defaults to `CategoricalAnomalyDetectStrategy`.
-            **kwargs: Additional keyword arguments for extensibility.
-        """
         self._column = column
         self._new_column = new_column
         self._valid_categories = valid_categories
