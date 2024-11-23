@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday November 21st 2024 11:12:48 pm                                             #
+# Modified   : Friday November 22nd 2024 03:08:21 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -267,7 +267,7 @@ class Stage(ABC):
         # Save the updated dataset
         self._save_dataset(dataset=destination_dataset_updated, replace_if_exists=True)
         # Mark the source dataset as having been consumed.
-        self._mark_source_consumed(dataset=source_dataset)
+        self._mark_source_consumed(asset_id=source_dataset.asset_id)
         return destination_dataset_updated
 
     def _source_consumed(self, asset_id: str) -> bool:

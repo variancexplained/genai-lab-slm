@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Wednesday November 20th 2024 07:58:59 am                                            #
+# Modified   : Friday November 22nd 2024 02:58:18 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
 from pandarallel import pandarallel
 
-from discover.app.base import Analysis
+from discover.app.analysis import Analysis
 from discover.assets.idgen import AssetIDGen
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
