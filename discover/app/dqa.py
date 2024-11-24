@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Sunday November 24th 2024 04:26:31 am                                               #
+# Modified   : Sunday November 24th 2024 04:40:27 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -195,6 +195,11 @@ class DQA(Analysis):
     # -------------------------------------------------------------------------------------------- #
     #                                 QUALITY SCORE                                                #
     # -------------------------------------------------------------------------------------------- #
+    def analyze_quality(self) -> pd.DataFrame:
+        df = self.summarize_quality()
+        self.plot_quality(df=df)
+        return df
+
     def summarize_quality(self) -> pd.DataFrame:
         d = {
             "Dimension": [
@@ -311,7 +316,7 @@ class DQA(Analysis):
                 self.review_validity,
             ],
         }
-        return pd.DataFrame(d)
+        return pd.DataFrame(d).reset_index(drop=True)
 
     def summarize_review_validity(self) -> pd.DataFrame:
         columns = self._config.validity.columns.review_validity
@@ -323,7 +328,11 @@ class DQA(Analysis):
             }
             for col in columns
         )
-        return df.loc[df["Count"] > 0].sort_values(by="%", ascending=False)
+        return (
+            df.loc[df["Count"] > 0]
+            .sort_values(by="%", ascending=False)
+            .reset_index(drop=True)
+        )
 
     def _compute_validity(self) -> pd.DataFrame:
         self._validity = (
@@ -374,7 +383,7 @@ class DQA(Analysis):
             "Component": ["Language Relevance", "Review Length Relevance"],
             "Score": [self.language_relevance, self.review_length_relevance],
         }
-        return pd.DataFrame(d)
+        return pd.DataFrame(d).reset_index(drop=True)
 
     def _compute_relevance(self) -> float:
         self._relevance = (
@@ -429,7 +438,7 @@ class DQA(Analysis):
                 self.review_uniqueness,
             ],
         }
-        return pd.DataFrame(d)
+        return pd.DataFrame(d).reset_index(drop=True)
 
     def _compute_uniqueness(self) -> float:
         self._uniqueness = (
@@ -598,7 +607,9 @@ class DQA(Analysis):
         df = df if df is not None else self._df
         viz.countplot(
             data=df,
-            x="category",
+            y="category",
+            order_by_count=True,
+            plot_counts=True,
             title=f"Distribution of Category\nClass Balance Score: {round(self.category_completeness,2)}",
         )
 
@@ -608,6 +619,8 @@ class DQA(Analysis):
         df = df if df is not None else self._df
         viz.countplot(
             data=df,
+            order_by_count=True,
+            plot_counts=True,
             x="sa_sentiment",
             title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.sentiment_completeness,2)}",
         )
