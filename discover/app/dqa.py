@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Sunday November 24th 2024 04:02:48 am                                               #
+# Modified   : Sunday November 24th 2024 04:26:31 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -228,8 +228,9 @@ class DQA(Analysis):
     #                                  COMPLETENESS                                                #
     # -------------------------------------------------------------------------------------------- #
     def analyze_completeness(self) -> pd.DataFrame:
-        self.plot_completeness()
-        return self.summarize_completeness()
+        df = self.summarize_completeness()
+        self.plot_completeness(df=df)
+        return df
 
     def summarize_completeness(self) -> pd.DataFrame:
         d = {
@@ -286,12 +287,14 @@ class DQA(Analysis):
     #                                     VALIDITY                                                 #
     # -------------------------------------------------------------------------------------------- #
     def analyze_validity(self) -> pd.DataFrame:
-        self.plot_validity()
-        return self.summarize_validity()
+        df = self.summarize_validity()
+        self.plot_validity(df=df)
+        return df
 
     def analyze_review_validity(self) -> pd.DataFrame:
-        self.plot_review_validity()
-        return self.summarize_review_validity()
+        df = self.summarize_review_validity()
+        self.plot_review_validity(df=df)
+        return df
 
     def summarize_validity(self) -> pd.DataFrame:
         d = {
@@ -362,8 +365,9 @@ class DQA(Analysis):
     #                                    RELEVANCE                                                 #
     # -------------------------------------------------------------------------------------------- #
     def analyze_relevance(self) -> pd.DataFrame:
-        self.plot_relevance()
-        return self.summarize_relevance()
+        df = self.summarize_relevance()
+        self.plot_relevance(df=df)
+        return df
 
     def summarize_relevance(self) -> pd.DataFrame:
         d = {
@@ -408,8 +412,9 @@ class DQA(Analysis):
     #                                    UNIQUENESS                                                #
     # -------------------------------------------------------------------------------------------- #
     def analyze_uniqueness(self) -> pd.DataFrame:
-        self.plot_uniqueness()
-        return self.summarize_uniqueness()
+        df = self.summarize_uniqueness()
+        self.plot_uniqueness(df=df)
+        return df
 
     def summarize_uniqueness(self) -> pd.DataFrame:
         d = {
@@ -453,20 +458,21 @@ class DQA(Analysis):
     #                                     PRIVACY                                                  #
     # -------------------------------------------------------------------------------------------- #
     def analyze_privacy(self) -> pd.DataFrame:
-        self.plot_privacy()
-        return self.summarize_privacy()
+        df = self.summarize_privacy()
+        self.plot_privacy(df=df)
+        return df
 
     def summarize_privacy(self) -> pd.DataFrame:
         columns = self._config.privacy.columns
         df = pd.DataFrame(
             {
-                "Anomaly": [self._convert_labels(col)],
-                "Count": self._df[col].shape[0],
-                "%": self._df[col].shape[0] / self._df.shape[0],
+                "Anomaly": self._convert_labels(col),
+                "Count": self._df.loc[self._df[col]].shape[0],
+                "%": self._df.loc[self._df[col]].shape[0] / self._df.shape[0],
             }
             for col in columns
         )
-        return df.sort_values(by="Count", ascending=False).reset_index(drop=True)
+        return df.sort_values(by="%", ascending=False).reset_index(drop=True)
 
     def _compute_privacy(self) -> float:
         # Retrieve the list of columns to evaluate from the configuration
@@ -526,79 +532,91 @@ class DQA(Analysis):
     # -------------------------------------------------------------------------------------------- #
     #                                       VISUAL                                                 #
     # -------------------------------------------------------------------------------------------- #
-    def plot_quality(self) -> None:
+    def plot_quality(self, df: Optional[pd.DataFrame] = None) -> None:
+        df = df if df is not None else self.summarize_quality()
         viz.barplot(
-            data=self.summarize_quality(),
+            data=df,
             x="Dimension",
             y="Score",
             palette="Blues_r",
             title=f"AppVoCAI Dataset Quality Analysis\nQuality Score: {round(self.quality_score,3)}",
         )
 
-    def plot_completeness(self) -> None:
+    def plot_completeness(self, df: Optional[pd.DataFrame] = None) -> None:
+        df = df if df is not None else self.summarize_completeness()
         viz.barplot(
-            data=self.summarize_completeness(),
+            data=df,
             x="Component",
             y="Score",
             palette="Blues_r",
             title=f"AppVoCAI Dataset Quality Analysis\nCompleteness Score: {round(self.completeness,3)}",
         )
 
-    def plot_validity(self) -> None:
+    def plot_validity(self, df: Optional[pd.DataFrame] = None) -> None:
+        df = df if df is not None else self.summarize_validity()
         viz.barplot(
-            data=self.summarize_validity(),
+            data=df,
             x="Component",
             y="Score",
             palette="Blues_r",
             title=f"AppVoCAI Dataset Quality Analysis\nValidity Score: {round(self.validity,3)}",
         )
 
-    def plot_review_validity(self) -> None:
+    def plot_review_validity(self, df: Optional[pd.DataFrame] = None) -> None:
+        df = df if df is not None else self.summarize_review_validity()
         viz.barplot(
-            data=self.summarize_review_validity(),
+            data=df,
             y="Anomaly",
             x="%",
             palette="Blues_r",
-            title=f"AppVoCAI Dataset Quality Analysis\nReview Validty: {round(self.review_validity,3)}",
+            title=f"AppVoCAI Dataset Quality Analysis\nReview Validity: {round(self.review_validity,3)}",
         )
 
-    def plot_relevance(self) -> None:
+    def plot_relevance(self, df: Optional[pd.DataFrame] = None) -> None:
+        df = df if df is not None else self.summarize_relevance()
         viz.barplot(
-            data=self.summarize_relevance(),
+            data=df,
             x="Component",
             y="Score",
             palette="Blues_r",
             title=f"AppVoCAI Dataset Quality Analysis\nRelevance Score: {round(self.relevance,3)}",
         )
 
-    def plot_uniqueness(self) -> None:
+    def plot_uniqueness(self, df: Optional[pd.DataFrame] = None) -> None:
+        df = df if df is not None else self.summarize_uniqueness()
         viz.barplot(
-            data=self.summarize_uniqueness(),
+            data=df,
             x="Component",
             y="Score",
             palette="Blues_r",
             title=f"AppVoCAI Dataset Quality Analysis\nUniqueness Score: {round(self.uniqueness,3)}",
         )
 
-    def plot_category_class_balance(self) -> pd.DataFrame:
+    def plot_category_class_balance(
+        self, df: Optional[pd.DataFrame] = None
+    ) -> pd.DataFrame:
+        df = df if df is not None else self._df
         viz.countplot(
-            data=self._df,
+            data=df,
             x="category",
             title=f"Distribution of Category\nClass Balance Score: {round(self.category_completeness,2)}",
         )
 
-    def plot_sentiment_class_balance(self) -> pd.DataFrame:
+    def plot_sentiment_class_balance(
+        self, df: Optional[pd.DataFrame] = None
+    ) -> pd.DataFrame:
+        df = df if df is not None else self._df
         viz.countplot(
-            data=self._df,
+            data=df,
             x="sa_sentiment",
             title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.sentiment_completeness,2)}",
         )
 
-    def plot_privacy(self) -> None:
-        privacy = self.summarize_privacy()
+    def plot_privacy(self, df: Optional[pd.DataFrame] = None) -> None:
+        df = df if df is not None else self.summarize_privacy()
         viz.barplot(
-            data=privacy,
-            y="Defect",
+            data=df,
+            y="Anomaly",
             x="%",
             title="Personally Identifiable Information (PII)",
         )
