@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Friday November 22nd 2024 02:22:03 am                                               #
+# Modified   : Saturday November 23rd 2024 09:23:02 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -160,14 +160,18 @@ class UniquenessAnomalyDetectStrategy(NominalAnomalyDetectStrategy):
     Strategy for detecting uniqueness anomalies in a dataset.
 
     This strategy marks rows as duplicates if there are multiple occurrences
-    of the same value in the specified column (`self._column`). Rows are sorted
-    by a "date" column, and only the last occurrence is marked as unique,
-    with all others marked as duplicates.
+    of the same combination of values in the specified columns (`self._columns`).
+    Rows are sorted by a "date" column, and only the last occurrence is marked
+    as unique, with all others marked as duplicates.
+
+    Args:
+        column (list[str]): A list of column names to include in duplication evaluation.
+        new_column (str): Name of the column to store duplicate indicators.
     """
 
     def __init__(
         self,
-        column: str,
+        column: list[str],
         new_column: str,
         **kwargs,
     ) -> None:
@@ -175,7 +179,7 @@ class UniquenessAnomalyDetectStrategy(NominalAnomalyDetectStrategy):
 
     def detect(self, data: DataFrame) -> DataFrame:
         """
-        Detects duplicate rows in the dataset based on the specified column.
+        Detects duplicate rows in the dataset based on the specified columns.
 
         Args:
             data (DataFrame): The input PySpark DataFrame.
@@ -188,8 +192,8 @@ class UniquenessAnomalyDetectStrategy(NominalAnomalyDetectStrategy):
         from pyspark.sql import functions as F
         from pyspark.sql.window import Window
 
-        # Define a window specification partitioned by the target column and ordered by date
-        window_spec = Window.partitionBy(self._column).orderBy(F.desc("date"))
+        # Define a window specification partitioned by the target columns and ordered by date
+        window_spec = Window.partitionBy(*self._column).orderBy(F.desc("date"))
 
         # Add a row number to identify duplicates
         data_with_duplicates = data.withColumn(
@@ -217,7 +221,7 @@ class UniquenessAnomalyRepairStrategy(NominalAnomalyRepairStrategy):
     occurrence.
 
     Args:
-        column (str): The name of the column containing the data to check for uniqueness.
+        column (list[str]): List of columns to consider for uniqueness.
         new_column (str): The name of the column where the detection results will be stored.
         detect_strategy (Type[UniquenessAnomalyDetectStrategy]): The strategy used to detect uniqueness anomalies.
         **kwargs: Additional keyword arguments passed to the base class.
@@ -225,7 +229,7 @@ class UniquenessAnomalyRepairStrategy(NominalAnomalyRepairStrategy):
 
     def __init__(
         self,
-        column: str,
+        column: list[str],
         new_column: str,
         detect_strategy: Type[
             UniquenessAnomalyDetectStrategy

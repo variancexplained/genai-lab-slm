@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Friday November 22nd 2024 02:04:35 am                                               #
+# Modified   : Sunday November 24th 2024 01:27:17 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,8 @@ from typing import Literal, Union
 
 from discover.flow.task.clean.dimension.anomaly import (
     CategoricalAnomaly,
+    DiscreteAnomaly,
+    IntervalAnomaly,
     NumericAnomaly,
     TextAnomaly,
 )
@@ -1020,14 +1022,44 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRatingAnomalyTask(CategoricalAnomaly):
+class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
+    """
+    Task for detecting or repairing anomalies in rating data.
+
+    This class is designed to handle rating anomalies by detecting values
+    that fall outside a specified range or repairing them to conform to
+    the specified range. It extends `DiscreteAnomaly` to leverage configurable
+    strategies for detection and repair and supports operation in both local
+    and distributed environments.
+
+    Args:
+        column (str): The name of the column containing rating values to evaluate for anomalies.
+        new_column (str): The name of the column to store the results of the operation
+            (e.g., anomaly flags or repaired values).
+        mode (str, optional): The mode of operation, either `"detect"` for anomaly
+            detection or `"repair"` for anomaly repair. Defaults to `"detect"`.
+        distributed (bool, optional): Whether the operations should be performed
+            in a distributed environment (e.g., with PySpark). Defaults to `True`.
+        detect_strategy (str, optional): The detection strategy to identify rating anomalies.
+            Defaults to `"range"`.
+        repair_strategy (str, optional): The repair strategy to handle rating anomalies.
+            Defaults to `"range"`.
+        range_min (int, optional): The minimum acceptable rating value. Defaults to `1`.
+        range_max (int, optional): The maximum acceptable rating value. Defaults to `5`.
+        **kwargs: Additional keyword arguments passed to the parent class.
+
+    """
+
     def __init__(
         self,
         column: str,
         new_column: str,
         mode: str = "detect",
         distributed: bool = True,
-        valid_categories: list = [1, 2, 3, 4, 5],
+        detect_strategy: str = "range",
+        repair_strategy: str = "range",
+        range_min: int = 1,
+        range_max: int = 5,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -1035,8 +1067,65 @@ class DetectOrRepairRatingAnomalyTask(CategoricalAnomaly):
             new_column=new_column,
             mode=mode,
             distributed=distributed,
-            valid_categories=valid_categories,
-            detect_strategy="categorical",
-            repair_strategy="categorical",
+            detect_strategy=detect_strategy,
+            repair_strategy=detect_strategy,
+            range_min=range_min,
+            range_max=range_max,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
+    """
+    Task for detecting or repairing anomalies in review date data.
+
+    This class is designed to handle review date anomalies by detecting values
+    that fall outside a specified date range or repairing them to conform to
+    the specified range. It extends `IntervalAnomaly` to leverage configurable
+    strategies for detection and repair and supports operation in both local
+    and distributed environments.
+
+    Args:
+        column (str): The name of the column containing review dates to evaluate for anomalies.
+        new_column (str): The name of the column to store the results of the operation
+            (e.g., anomaly flags or repaired values).
+        mode (str, optional): The mode of operation, either `"detect"` for anomaly
+            detection or `"repair"` for anomaly repair. Defaults to `"detect"`.
+        distributed (bool, optional): Whether the operations should be performed
+            in a distributed environment (e.g., with PySpark). Defaults to `True`.
+        detect_strategy (str, optional): The detection strategy to identify review date anomalies.
+            Defaults to `"date_range"`.
+        repair_strategy (str, optional): The repair strategy to handle review date anomalies.
+            Defaults to `"date_range"`.
+        range_min (int, optional): The minimum acceptable review date (e.g., year as an integer). Defaults to `2020`.
+        range_max (int, optional): The maximum acceptable review date (e.g., year as an integer). Defaults to `2023`.
+        range_type: (Literal["year", "month", "date"]): Indicates whether the ranges are years, months, or dates.
+        **kwargs: Additional keyword arguments passed to the parent class.
+    """
+
+    def __init__(
+        self,
+        column: str,
+        new_column: str,
+        mode: str = "detect",
+        distributed: bool = True,
+        detect_strategy: str = "date_range",
+        repair_strategy: str = "date_range",
+        range_min: int = 2020,
+        range_max: int = 2023,
+        range_type: Literal["year", "month", "date"] = "year",
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            distributed=distributed,
+            detect_strategy=detect_strategy,
+            repair_strategy=detect_strategy,
+            range_min=range_min,
+            range_max=range_max,
+            range_type=range_type,
             **kwargs,
         )

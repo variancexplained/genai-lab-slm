@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 05:35:51 pm                                             #
-# Modified   : Friday November 22nd 2024 01:44:08 am                                               #
+# Modified   : Sunday November 24th 2024 01:15:19 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,8 @@ from typing import Literal, Type, Union
 
 from discover.flow.task.clean.base.anomaly import Anomaly
 from discover.flow.task.clean.strategy.categorical import CategoricalStrategyFactory
+from discover.flow.task.clean.strategy.discrete import DiscreteAnomalyStrategyFactory
+from discover.flow.task.clean.strategy.interval import IntervalAnomalyStrategyFactory
 from discover.flow.task.clean.strategy.nominal import NominalAnomalyStrategyFactory
 from discover.flow.task.clean.strategy.numeric import NumericStrategyFactory
 from discover.flow.task.clean.strategy.text.distributed import (
@@ -249,6 +251,114 @@ class NominalAnomaly(Anomaly):
         strategy_factory: Type[
             NominalAnomalyStrategyFactory
         ] = NominalAnomalyStrategyFactory,
+        mode: str = "detect",
+        distributed: bool = True,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            detect_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
+            strategy_factory=strategy_factory,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class IntervalAnomaly(Anomaly):
+    """
+    Handles interval-based anomaly detection and repair in a dataset.
+
+    This class manages interval-based anomalies in a specified column of a dataset.
+    It supports both detection and repair modes, leveraging strategies from a
+    strategy factory to perform the operations. The anomalies are flagged or
+    repaired based on the specified detection and repair strategies.
+
+    Args:
+        column (str): The name of the column to evaluate for anomalies.
+        new_column (str): The name of the column to store the results of the operation
+            (e.g., anomaly flags or repaired values).
+        detect_strategy (str): The detection strategy to be used for identifying
+            anomalies in the column.
+        repair_strategy (str): The repair strategy to be used for addressing
+            detected anomalies in the column.
+        strategy_factory (Type[IntervalAnomalyStrategyFactory], optional): The factory
+            class responsible for creating detection and repair strategy instances.
+            Defaults to `IntervalAnomalyStrategyFactory`.
+        mode (str, optional): The mode of operation, either `"detect"` for anomaly
+            detection or `"repair"` for anomaly repair. Defaults to `"detect"`.
+        distributed (bool, optional): Whether the operations should be performed
+            in a distributed environment (e.g., with PySpark). Defaults to `True`.
+        **kwargs: Additional keyword arguments passed to the parent class or
+            strategy factory.
+
+    """
+
+    def __init__(
+        self,
+        column: str,
+        new_column: str,
+        detect_strategy: str,
+        repair_strategy: str,
+        strategy_factory: Type[
+            IntervalAnomalyStrategyFactory
+        ] = IntervalAnomalyStrategyFactory,
+        mode: str = "detect",
+        distributed: bool = True,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            detect_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
+            strategy_factory=strategy_factory,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DiscreteAnomaly(Anomaly):
+    """
+    Handles detection and repair of discrete anomalies in a dataset.
+
+    This class provides functionality for identifying and addressing anomalies in
+    discrete data, leveraging configurable strategies for detection and repair.
+    It supports both local and distributed environments, making it suitable for
+    datasets of varying scales.
+
+    Args:
+        column (str): The name of the column to evaluate for anomalies.
+        new_column (str): The name of the column to store the results of the operation
+            (e.g., anomaly flags or repaired values).
+        detect_strategy (str): The detection strategy to be used for identifying
+            discrete anomalies in the column.
+        repair_strategy (str): The repair strategy to be used for handling
+            detected anomalies in the column.
+        strategy_factory (Type[DiscreteAnomalyStrategyFactory], optional): The factory
+            class responsible for creating detection and repair strategy instances.
+            Defaults to `DiscreteAnomalyStrategyFactory`.
+        mode (str, optional): The mode of operation, either `"detect"` for anomaly
+            detection or `"repair"` for anomaly repair. Defaults to `"detect"`.
+        distributed (bool, optional): Whether the operations should be performed
+            in a distributed environment (e.g., with PySpark). Defaults to `True`.
+        **kwargs: Additional keyword arguments passed to the parent class or
+            strategy factory.
+
+    """
+
+    def __init__(
+        self,
+        column: str,
+        new_column: str,
+        detect_strategy: str,
+        repair_strategy: str,
+        strategy_factory: Type[
+            DiscreteAnomalyStrategyFactory
+        ] = DiscreteAnomalyStrategyFactory,
         mode: str = "detect",
         distributed: bool = True,
         **kwargs,
