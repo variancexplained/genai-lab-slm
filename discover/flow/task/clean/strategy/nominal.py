@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Saturday November 23rd 2024 09:23:02 pm                                             #
+# Modified   : Sunday November 24th 2024 07:25:46 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -133,6 +133,7 @@ class NominalAnomalyRepairStrategy(RepairStrategy):
         detect_strategy: Type[NominalAnomalyDetectStrategy],
         **kwargs,
     ) -> None:
+        super().__init__()
         self._column = column
         self._new_column = new_column
         self._detect_strategy = detect_strategy
@@ -236,7 +237,9 @@ class UniquenessAnomalyRepairStrategy(NominalAnomalyRepairStrategy):
         ] = UniquenessAnomalyDetectStrategy,
         **kwargs,
     ) -> None:
-        super().__init__(column=column, new_column=new_column)
+        super().__init__(
+            column=column, new_column=new_column, detect_strategy=detect_strategy
+        )
 
     def repair(self, data: DataFrame) -> DataFrame:
         """

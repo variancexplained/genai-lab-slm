@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Friday November 22nd 2024 01:57:37 am                                               #
+# Modified   : Sunday November 24th 2024 07:43:07 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -57,15 +57,15 @@ class RegexFactory:
         # Static patterns for detecting specific structures
         "email": {
             "pattern": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
-            "replacement": "[EMAIL]",
+            "replacement": " ",
         },
         "url": {
             "pattern": r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*",
-            "replacement": "[URL]",
+            "replacement": " ",
         },
         "phone": {
             "pattern": r"(\+?\d{1,3})?[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}",
-            "replacement": "[PHONE]",
+            "replacement": " ",
         },
         # Linguistic punctuation marks
         "punctuation": {
@@ -74,7 +74,7 @@ class RegexFactory:
         },
         # Non-punctuation special characters
         "special_chars": {
-            "pattern": r"[^a-zA-Z0-9\s.,!\"''()\\-:;]",
+            "pattern": r"[^a-zA-Z0-9\s.,!\"''()\\:;-]",
             "replacement": " ",
         },
         # Non-ASCII characters
@@ -119,6 +119,7 @@ class RegexFactory:
         """
         self.__DYNAMIC_PATTERN_REPLACEMENT: Dict[str, Callable[..., Regex]] = {
             "elongation": self._elongation,
+            "character_repetition": self._character_repetition,
             "sequence_repetition": self._sequence_repetition,
             "phrase_repetition": self._phrase_repetition,
             "word_repetition": self._word_repetition,
@@ -171,6 +172,20 @@ class RegexFactory:
         """
         pattern = rf"(.)\1{{{threshold - 1},}}"
         replacement = r"\1" * max_elongation
+        return Regex(pattern=pattern, replacement=replacement)
+
+    def _character_repetition(self, min_repetitions: int = 4, **kwargs) -> Regex:
+        """
+        Generates a pattern for detecting repeated sequences of characters.
+
+        Args:
+            min_repetitions (int): Minimum number of repetitions to consider a match.
+
+        Returns:
+            Pattern: Regex pattern and replacement logic.
+        """
+        pattern = f"(.+?)\\1{{{min_repetitions - 1}}}"
+        replacement = r"\1"
         return Regex(pattern=pattern, replacement=replacement)
 
     def _sequence_repetition(

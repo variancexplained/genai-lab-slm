@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Tuesday November 19th 2024 10:35:26 pm                                              #
+# Modified   : Sunday November 24th 2024 05:56:51 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -409,7 +409,7 @@ class DatasetRepo(Repo):
             # Delete the dataset object.
             self._dataset_dao.delete(asset_id=asset_id)
             msg = f"Removed dataset {asset_id} from the repository."
-            self._logger.info(msg)
+            self._logger.debug(msg)
         # If ignoring errors, issue a warning and search for file remnants by name.
         elif ignore_errors:
             msg = f"Warning: Dataset {asset_id} does not exist."
@@ -431,7 +431,7 @@ class DatasetRepo(Repo):
         if self._fao_cfs.exists(filepath=filepath):
             self._fao_cfs.delete(filepath)
             msg = f"Removed dataset file at {filepath} from repository."
-            self._logger.info(msg)
+            self._logger.debug(msg)
 
     # -------------------------------------------------------------------------------------------- #
     #                             DATASET EXISTENCE METHOD                                         #

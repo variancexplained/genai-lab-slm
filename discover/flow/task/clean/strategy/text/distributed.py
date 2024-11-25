@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Friday November 22nd 2024 02:12:24 am                                               #
+# Modified   : Sunday November 24th 2024 07:35:58 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -84,6 +84,7 @@ class RegexDetectStrategy(DetectStrategy):
         regex_factory_cls: Type[RegexFactory] = RegexFactory,
         **kwargs,
     ) -> None:
+        super().__init__()
         self._pattern = pattern
         self._column = column
         self._new_column = new_column
@@ -144,7 +145,9 @@ class RegexReplaceStrategy(RepairStrategy):
         new_column: str = None,
         replacement: str = None,
         regex_factory_cls: Type[RegexFactory] = RegexFactory,
+        **kwargs,
     ) -> None:
+        super().__init__()
         self._pattern = pattern
         self._column = column
         self._new_column = (
@@ -225,6 +228,7 @@ class RegexRemoveStrategy(RepairStrategy):
         detect_strategy: Type[RegexDetectStrategy] = RegexDetectStrategy,
         **kwargs,
     ) -> None:
+        super().__init__()
         self._pattern = pattern
         self._column = column
         self._new_column = new_column
@@ -307,6 +311,7 @@ class RegexThresholdDetectStrategy(DetectStrategy):
         regex_factory_cls: Type[RegexFactory] = RegexFactory,
         **kwargs,
     ) -> None:
+        super().__init__()
         self._pattern = pattern
         self._column = column
         self._new_column = new_column
@@ -690,6 +695,7 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
         super().__init__(
             pattern=pattern, column=column, new_column=new_column, **kwargs
         )
+        self._kwargs = kwargs
 
     @staticmethod
     def repair_text(text: str) -> str:

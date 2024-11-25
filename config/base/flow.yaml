@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Sunday November 24th 2024 03:49:55 am                                               #
+# Modified   : Sunday November 24th 2024 07:06:23 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -181,14 +181,14 @@ phases:
               mode: detect
               distributed: True
           - class_name: DetectOrRepairNonEnglishTask
-            module: discover.flow.task.clean.dimension.validity
+            module: discover.flow.task.clean.dimension.relevance
             params:
               column: app_name
               new_column: relevance_contains_non_english_app_name
               mode: detect
               distributed: True
           - class_name: DetectOrRepairNonEnglishTask
-            module: discover.flow.task.clean.dimension.validity
+            module: discover.flow.task.clean.dimension.relevance
             params:
               column: content
               new_column: relevance_contains_non_english_text
@@ -266,6 +266,14 @@ phases:
               new_column: validity_contains_excess_sequence_repetition
               mode: detect
               distributed: True
+          - class_name: DetectOrRepairRepeatedCharactersTask
+            module: discover.flow.task.clean.dimension.validity
+            params:
+              column: content
+              new_column: validity_excess_character_repetition
+              min_repetitions: 4
+              mode: detect
+              distributed: True
           - class_name: DetectOrRepairRepeatedWordsTask
             module: discover.flow.task.clean.dimension.validity
             params:
@@ -297,7 +305,7 @@ phases:
               mode: detect
               distributed: True
           - class_name: DetectOrRepairShortReviewsTask
-            module: discover.flow.task.clean.dimension.validity
+            module: discover.flow.task.clean.dimension.relevance
             params:
               column: review_length
               new_column: relevance_short_review
@@ -347,85 +355,141 @@ phases:
               range_max: 2024
               range_type: year
       clean:
+        phase: dataprep
         stage: clean
         source_config:
           asset_type: dataset
           phase: dataprep
-          stage: ingest
+          stage: dqd
           name: review
-          distributed: True
           nlp: False
+          distributed: True
         destination_config:
           asset_type: dataset
           phase: dataprep
           stage: clean
           name: review
           nlp: False
-          distributed: False
+          distributed: True
         tasks:
-          - class_name: URLMaskTask
-            module: discover.flow.data_prep.clean.task
+          - class_name: DetectOrRepairUniquenessTask
+            module: discover.flow.task.clean.dimension.unique
+            params:
+              column:
+                - id
+              new_column: uniqueness_duplicate_review_id
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairControlCharsTask
+            module: discover.flow.task.clean.dimension.validity
             params:
               column: content
-              replacement: '[URL]'
-          - class_name: EmailAddressMaskTask
-            module: discover.flow.data_prep.clean.task
+              new_column: validity_contains_ctrl_chars
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairURLTask
+            module: discover.flow.task.clean.dimension.validity
             params:
               column: content
-              replacement: '[EMAIL]'
-          - class_name: PhoneNumberMaskTask
-            module: discover.flow.data_prep.clean.task
+              new_column: privacy_contains_url
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairEmailAddressTask
+            module: discover.flow.task.clean.dimension.validity
             params:
               column: content
-              replacement: '[PHONE]'
-          - class_name: RemoveControlCharsTask
-            module: discover.flow.data_prep.clean.task
-            params:
-              replacement: ""
-              column: content
-          - class_name: RemoveAccentsTask
-            module: discover.flow.data_prep.clean.task
+              new_column: privacy_contains_email
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairPhoneNumberTask
+            module: discover.flow.task.clean.dimension.validity
             params:
               column: content
-          - class_name: RemoveHTMLCharsTask
-            module: discover.flow.data_prep.clean.task
-            params:
-              replacement: ""
-              column: content
-          - class_name: RemoveExcessiveWhitespaceTask
-            module: discover.flow.data_prep.clean.task
-            params:
-              replacement: " "
-              column: content
-          - class_name: RemoveNonEnglishTask
-            module: discover.flow.data_prep.clean.task
+              new_column: privacy_contains_phone
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairNonEnglishTask
+            module: discover.flow.task.clean.dimension.relevance
             params:
               column: app_name
-              n_jobs: 18
-          - class_name: RemoveNonEnglishTask
-            module: discover.flow.data_prep.clean.task
+              new_column: relevance_contains_non_english_app_name
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairNonEnglishTask
+            module: discover.flow.task.clean.dimension.relevance
             params:
               column: content
-              n_jobs: 18
-          - class_name: RemoveExcessiveSpecialCharsTask
-            module: discover.flow.data_prep.clean.task
+              new_column: relevance_contains_non_english_text
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairHTMLCharsTask
+            module: discover.flow.task.clean.dimension.validity
             params:
               column: content
+              new_column: validity_contains_html_chars
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairAccentedCharsTask
+            module: discover.flow.task.clean.dimension.validity
+            params:
+              column: content
+              new_column: validity_contains_accents
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairRepeatedCharactersTask
+            module: discover.flow.task.clean.dimension.validity
+            params:
+              column: content
+              new_column: validity_excess_character_repetition
+              min_repetitions: 4
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairRepeatedWordsTask
+            module: discover.flow.task.clean.dimension.validity
+            params:
+              column: content
+              new_column: validity_excess_word_repetition
+              threshold: 1
+              threshold_type: count
+              min_repetitions: 3
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairRepeatedPhraseTask
+            module: discover.flow.task.clean.dimension.validity
+            params:
+              column: content
+              new_column: validity_excess_phrase_repetition
+              threshold: 1
+              threshold_type: count
+              min_repetitions: 2
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairShortReviewsTask
+            module: discover.flow.task.clean.dimension.relevance
+            params:
+              column: review_length
+              new_column: relevance_short_review
+              threshold: 2
+              detect_less_than_threshold: True
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairExcessiveSpecialCharsTask
+            module: discover.flow.task.clean.dimension.validity
+            params:
+              column: content
+              new_column: validity_contains_excess_special_chars
               threshold: 0.3
-          - class_name: RemoveDuplicateReviewIdTask
-            module: discover.flow.data_prep.clean.task
-            params:
-              column: id
-          - class_name: DelongationTask
-            module: discover.flow.data_prep.clean.task
-            params:
-              column: content
-              threshold: 4
-              max_elongation: 3
-          - class_name: NormalizeUnicodeTextTask
-            module: discover.flow.data_prep.clean.task
+              threshold_type: proportion
+              unit: character
+              mode: repair
+              distributed: True
+          - class_name: DetectOrRepairExcessiveWhitespaceTask
+            module: discover.flow.task.clean.dimension.validity
             params:
               column: content
+              new_column: validity_contains_excess_whitespace
+              mode: repair
+              distributed: True
   enrichment:
     stages:
       enrich_review:

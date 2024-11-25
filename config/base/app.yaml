@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Sunday November 24th 2024 02:35:16 am                                               #
+# Modified   : Sunday November 24th 2024 05:52:32 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -137,6 +137,7 @@ dqa:
       - dqd_validity_contains_excess_special_chars
       - dqd_validity_contains_elongation
       - dqd_validity_contains_non_ascii_chars
+      - dqd_validity_contains_excess_character_repetition
       - dqd_validity_contains_excess_sequence_repetition
       - dqd_validity_excess_word_repetition
       - dqd_validity_excess_phrase_repetition

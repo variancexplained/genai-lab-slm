@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:27:43 am                                             #
-# Modified   : Friday November 22nd 2024 12:31:11 am                                               #
+# Modified   : Sunday November 24th 2024 07:23:52 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -115,10 +115,12 @@ class Anomaly(Task):
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
         """
-        strategy_cls = self._strategy_factory.get_detect_strategy(
+        strategy_cls = self._strategy_factory.get_repair_strategy(
             strategy_type=self._repair_strategy
         )
         strategy = strategy_cls(
-            column=self._column, new_column=self._new_column, **self._kwargs
+            column=self._column,
+            new_column=self._new_column,
+            **self._kwargs,
         )
         return strategy.repair(data=data)
