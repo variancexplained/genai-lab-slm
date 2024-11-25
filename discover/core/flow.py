@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Thursday November 21st 2024 02:13:25 pm                                             #
+# Modified   : Sunday November 24th 2024 08:36:24 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,8 +29,8 @@ class StageDef(Enum):
     INGEST = ("ingest", "ing", "01_ingest", "Data Ingestion Stage")
     SENTIMENT = ("sentiment", "sa", "02_sentiment", "Sentiment Analysis Stage")
     PERPLEXITY = ("perplexity", "pa", "03_perplexity", "Perplexity Analysis Stage")
-    DQD = ("dqd", "dqd", "04_dqd", "Data Quality Anomaly Detection Stage")
-    CLEAN = ("clean", "cln", "05_clean", "Data Cleaning Stage")
+    DQD = ("dqd", "dp", "04_dqd", "Data Quality Anomaly Detection Stage")
+    CLEAN = ("clean", "dp", "05_clean", "Data Cleaning Stage")
     ENRICH = ("enrich", "en", "06_enrich", "Data Enrichment Stage")
 
     # Feature Engineering

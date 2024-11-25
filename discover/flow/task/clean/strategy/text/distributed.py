@@ -11,23 +11,26 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Sunday November 24th 2024 07:35:58 pm                                               #
+# Modified   : Sunday November 24th 2024 11:55:42 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import re
 import unicodedata
 from typing import Literal, Type, Union
 
 import fasttext
+import pandas as pd
 from lingua import Language, LanguageDetectorBuilder
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.functions import udf
+from pyspark.sql.functions import pandas_udf, udf
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
 from discover.flow.task.clean.base.factory import StrategyFactory
 from discover.flow.task.clean.base.strategy import DetectStrategy, RepairStrategy
+from discover.flow.task.clean.strategy.text import SPECIAL_ACCENT_MAP
 from discover.flow.task.clean.strategy.text.pattern import RegexFactory
 
 # ------------------------------------------------------------------------------------------------ #
@@ -61,6 +64,7 @@ class TextStrategyFactory(StrategyFactory):
             "accent": AccentRepairStrategy,
             "non_ascii": NonAsciiRepairStrategy,
             "non_english": NonEnglishRemovalStrategy,
+            "whitespace": ExcessWhitespaceRepairStrategy,
         }
 
 
@@ -184,7 +188,7 @@ class RegexReplaceStrategy(RepairStrategy):
         try:
             # Apply regex replacement
             data = data.withColumn(
-                self._new_column,
+                self._column,
                 F.regexp_replace(F.col(self._column), regex_info.pattern, replacement),
             )
         except Exception as e:
@@ -259,14 +263,13 @@ class RegexRemoveStrategy(RepairStrategy):
             raise KeyError(f"Column '{self._column}' does not exist in the DataFrame.")
 
         # Apply detection strategy if the detection column does not exist
-        if self._new_column not in data.columns:
-            strategy = self._detect_strategy(
-                pattern=self._pattern,
-                column=self._column,
-                new_column=self._new_column,
-                **self._kwargs,
-            )
-            data = strategy.detect(data)
+        strategy = self._detect_strategy(
+            pattern=self._pattern,
+            column=self._column,
+            new_column=self._new_column,
+            **self._kwargs,
+        )
+        data = strategy.detect(data)
 
         # Filter out rows where anomalies are detected
         data = data.filter(~F.col(self._new_column))
@@ -474,17 +477,17 @@ class RegexThresholdRemoveStrategy(RegexRemoveStrategy):
                 are provided to the detection strategy.
         """
 
-        if self._new_column not in data.columns:
-            strategy = self._detect_strategy(
-                pattern=self._pattern,
-                column=self._column,
-                new_column=self._new_column,
-                threshold=self._threshold,
-                threshold_type=self._threshold_type,
-                unit=self._unit,
-                **self._kwargs,
-            )
-            data = strategy.detect(data=data)
+        # Re-apply detection strategy
+        strategy = self._detect_strategy(
+            pattern=self._pattern,
+            column=self._column,
+            new_column=self._new_column,
+            threshold=self._threshold,
+            threshold_type=self._threshold_type,
+            unit=self._unit,
+            **self._kwargs,
+        )
+        data = strategy.detect(data=data)
 
         # Filter out rows where anomalies are detected
         return data.filter(~F.col(self._new_column))
@@ -545,7 +548,7 @@ class CustomRemoveStrategy(RepairStrategy):
         if self._column not in data.columns:
             raise KeyError(f"Column '{self._column}' does not exist in the DataFrame.")
 
-        # Apply detection strategy if the detection column does not exist
+        # Apply detection strategy
         if self._new_column not in data.columns:
             strategy = self._detect_strategy(
                 column=self._column,
@@ -621,15 +624,14 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
         if self._column not in data.columns:
             raise KeyError(f"Column '{self._column}' does not exist in the DataFrame.")
 
-        # Apply detection strategy if the detection column does not exist
-        if self._new_column not in data.columns:
-            strategy = self._detect_strategy(
-                pattern=self._pattern,
-                column=self._column,
-                new_column=self._new_column,
-                **self._kwargs,
-            )
-            data = strategy.detect(data)
+        # Apply detection strategy
+        strategy = self._detect_strategy(
+            pattern=self._pattern,
+            column=self._column,
+            new_column=self._new_column,
+            **self._kwargs,
+        )
+        data = strategy.detect(data)
 
         # Define a UDF for the custom repair logic
         repair_udf = udf(self.repair_text, StringType())
@@ -662,27 +664,7 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class AccentRepairStrategy(CustomRegexRepairStrategy):
-    """
-    A strategy for repairing text by removing accents and diacritics.
-
-    This strategy detects anomalies based on a regex pattern and repairs the text
-    by removing accents and diacritical marks from characters. It extends the
-    `CustomRegexRepairStrategy` and defines the specific repair logic in the `repair_text` method.
-
-    Args:
-        pattern (str): The regex pattern used to detect anomalies.
-        column (str): The name of the column to evaluate.
-        new_column (str, optional): The name of the column to store detection results.
-            Defaults to None, in which case the column name is used.
-        replacement (str, optional): A placeholder argument inherited from `CustomRegexRepairStrategy`.
-            Not used in this class but included for compatibility.
-        **kwargs: Additional keyword arguments passed to the parent class.
-
-    Methods:
-        repair_text(text: str) -> str:
-            Removes accents and diacritics from a given text string.
-    """
+class ExcessWhitespaceRepairStrategy(CustomRegexRepairStrategy):
 
     def __init__(
         self,
@@ -700,22 +682,22 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
     @staticmethod
     def repair_text(text: str) -> str:
         """
-        Removes accents and diacritics from a given text string.
+        Cleans excessive whitespace from text, including non-breaking spaces
+        and other invisible characters.
 
         Args:
-            text (str): The input string with potential accented characters.
+            text (str): Input text to clean.
 
         Returns:
-            str: The text with accents and diacritics removed.
+            str: Cleaned text with normalized whitespace.
         """
-        if not text:
-            return text
-        # Decompose characters into base and diacritics, then remove diacritics
-        text_normalized = unicodedata.normalize("NFD", text)
-        text_without_accents = "".join(
-            char for char in text_normalized if unicodedata.category(char) != "Mn"
-        )
-        return text_without_accents
+        # Replace all types of excessive whitespace
+        text = re.sub(r"[\s\u00A0\u200B]+", " ", text)
+
+        # Remove leading and trailing whitespace
+        text = text.strip()
+
+        return text
 
     def repair(self, data: DataFrame) -> DataFrame:
         """
@@ -731,26 +713,102 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
         Returns:
             DataFrame: A new DataFrame with repaired text in the specified column.
         """
-        # Ensure the detection column exists
-        if self._new_column not in data.columns:
-            strategy = self._detect_strategy(
-                pattern=self._pattern,
-                column=self._column,
-                new_column=self._new_column,
-                **self._kwargs,
-            )
-            data = strategy.detect(data)
 
         # Define a UDF for the repair logic
         repair_udf = udf(self.repair_text, StringType())
 
         # Apply the UDF to rows flagged as anomalies
-        data = data.withColumn(
-            self._column,
-            F.when(F.col(self._new_column), repair_udf(F.col(self._column))).otherwise(
-                F.col(self._column)
-            ),
+        data = data.withColumn(self._column, F.trim(repair_udf(F.col(self._column))))
+
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+class AccentRepairStrategy(CustomRegexRepairStrategy):
+    """
+    A strategy for repairing text by removing accents and diacritics.
+
+    This strategy detects anomalies based on a regex pattern and repairs the text
+    by removing accents and diacritical marks from characters. It extends the
+    `CustomRegexRepairStrategy` and defines the specific repair logic in the `repair_text_pandas` method.
+
+    Args:
+        pattern (str): The regex pattern used to detect anomalies.
+        column (str): The name of the column to evaluate.
+        new_column (str, optional): The name of the column to store detection results.
+            Defaults to None, in which case the column name is used.
+        replacement (str, optional): A placeholder argument inherited from `CustomRegexRepairStrategy`.
+            Not used in this class but included for compatibility.
+        **kwargs: Additional keyword arguments passed to the parent class.
+
+    Methods:
+        repair_text_pandas(series: pd.Series) -> pd.Series:
+            Removes accents and diacritics from a pandas Series of text strings, including handling special cases.
+    """
+
+    def __init__(
+        self,
+        pattern: str,
+        column: str,
+        new_column: str = None,
+        replacement: str = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            pattern=pattern, column=column, new_column=new_column, **kwargs
         )
+        self._kwargs = kwargs
+
+    @staticmethod
+    def repair_text_pandas(series: pd.Series) -> pd.Series:
+        """
+        Removes accents and diacritics from a pandas Series of text strings, including handling special cases.
+
+        Args:
+            series (pd.Series): A pandas Series of text strings.
+
+        Returns:
+            pd.Series: A pandas Series with accents and diacritical marks removed.
+        """
+
+        def remove_accents(text: str) -> str:
+            if not text:
+                return text
+            # Normalize to decomposed form (NFD)
+            text_normalized = unicodedata.normalize("NFD", text)
+            # Remove diacritics
+            text_without_accents = "".join(
+                char for char in text_normalized if unicodedata.category(char) != "Mn"
+            )
+            # Handle special cases
+            for key, value in SPECIAL_ACCENT_MAP.items():
+                text_without_accents = text_without_accents.replace(key, value)
+
+            # Normalize back to composed form (NFC)
+            text_without_accents = unicodedata.normalize("NFC", text_without_accents)
+            return text_without_accents
+
+        return series.apply(remove_accents)
+
+    def repair(self, data: DataFrame) -> DataFrame:
+        """
+        Detects anomalies and repairs text by removing accents and diacritics.
+
+        If the detection results column (`new_column`) does not exist in the DataFrame,
+        the associated detection strategy is used to generate it. Text repair is then
+        applied to rows where anomalies are flagged.
+
+        Args:
+            data (DataFrame): The input PySpark DataFrame to process.
+
+        Returns:
+            DataFrame: A new DataFrame with repaired text in the specified column.
+        """
+        # Define a Pandas UDF for the repair logic
+        repair_text_udf = pandas_udf(self.repair_text_pandas, StringType())
+
+        # Apply the UDF to rows flagged as anomalies
+        data = data.withColumn(self._column, repair_text_udf(F.col(self._column)))
 
         return data
 

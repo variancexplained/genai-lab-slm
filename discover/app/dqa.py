@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Sunday November 24th 2024 04:40:27 pm                                               #
+# Modified   : Sunday November 24th 2024 11:20:27 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,19 +22,16 @@ from typing import Optional, Type, Union
 
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
-from pandarallel import pandarallel
 
 from discover.app.analysis import Analysis
 from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
-# ------------------------------------------------------------------------------------------------ #
-pandarallel.initialize(nb_workers=18, verbose=False)
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                         DATA QUAAITY ANALYSIS SERVICE                                            #
+#                         DATA QUALITY ANALYSIS SERVICE                                            #
 # ------------------------------------------------------------------------------------------------ #
 class DQA(Analysis):
     def __init__(
@@ -652,11 +649,11 @@ class DQA(Analysis):
         return df.sort_values(by="n", ascending=False).reset_index(drop=True)
 
     def _get_columns(self, substring) -> Optional[str]:
-        return [col for col in self._cols if substring in col]
+        return [col for col in self._df.columns if substring in col]
 
     def _convert_labels(self, txt) -> str:
         """Converts column names to Title case labels."""
-        txt = txt.replace("dqd_", "")
+        txt = txt.replace("dp_", "")
         txt = txt.replace("_", " ")
         txt = txt.title()
         return txt

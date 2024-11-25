@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Sunday November 24th 2024 07:33:57 pm                                               #
+# Modified   : Sunday November 24th 2024 10:54:33 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -235,8 +235,8 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
         mode: str = "detect",
         distributed: bool = True,
         detect_strategy: str = "regex_threshold",
-        repair_strategy: str = "regex_replace",
-        threshold: Union[float, int] = 0.3,
+        repair_strategy: str = "regex_threshold_remove",
+        threshold: Union[float, int] = 0.35,
         threshold_type: Literal["count", "proportion"] = "proportion",
         unit: Literal["word", "character"] = "character",
         **kwargs,
@@ -471,7 +471,7 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
         mode: str = "detect",
         distributed: bool = True,
         detect_strategy: str = "regex",
-        repair_strategy: str = "regex_replace",
+        repair_strategy: str = "whitespace",
         threshold: Union[float, int] = None,
         threshold_type: Literal["count", "proportion"] = None,
         unit: Literal["word", "character"] = None,
