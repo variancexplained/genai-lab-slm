@@ -4,44 +4,37 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/enrich/app/stage.py                                                  #
+# Filename   : /discover/flow/stage/data_prep/enrich.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Tuesday November 19th 2024 03:08:02 am                                              #
-# Modified   : Wednesday November 20th 2024 03:49:42 pm                                            #
+# Created    : Friday November 22nd 2024 12:15:07 am                                               #
+# Modified   : Tuesday November 26th 2024 03:27:17 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""App Enrichment Stage Module"""
+"""Data Enrichment Stage Module"""
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.stage.data_prep.base import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class AppEnrichmentStage(DataPrepStage):
-    """Stage for enriching app data with various metrics and deviations.
-
-    This class adds enrichment features to app data, including app rating,
-    perplexity, review length, review age, voting counts, and deviations
-    of these metrics relative to category-level aggregates. This enrichment
-    provides a comprehensive view of each app's performance and characteristics
-    compared to its category, facilitating in-depth analysis and comparisons.
+class DataEnrichmentStage(DataPrepStage):
+    """
+    A stage in the data preparation pipeline that performs dataset enrichment by adding
+    new features or transformations to enhance downstream analysis.
 
     Args:
-        phase (PhaseDef): The phase definition indicating where this stage
-            fits within the overall data processing workflow.
-        stage (StageDef): The stage definition providing details on the
-            configuration and behavior of this stage.
-        source_config (dict): Configuration for the data source, including
-            connection parameters and data retrieval settings.
-        destination_config (dict): Configuration for the data destination,
-            specifying where to store the enriched data.
-        force (bool): Whether to force the execution of this stage, even if
-            it has been previously completed. Defaults to False.
+        phase (PhaseDef): The phase of the pipeline to which this stage belongs.
+        stage (StageDef): The specific stage identifier within the phase.
+        source_config (dict): Configuration for the source dataset, including input paths and schema details.
+        destination_config (dict): Configuration for the destination dataset, specifying where enriched data will be saved.
+        force (bool, optional): If True, forces the stage to re-run even if outputs already exist. Defaults to False.
+        return_dataset (bool, optional): If True, returns the enriched dataset after processing. Defaults to False.
+        **kwargs: Additional arguments to support custom functionality or configurations.
     """
 
     def __init__(
@@ -51,6 +44,8 @@ class AppEnrichmentStage(DataPrepStage):
         source_config: dict,
         destination_config: dict,
         force: bool = False,
+        return_dataset: bool = False,
+        **kwargs,
     ) -> None:
         super().__init__(
             phase=phase,
@@ -58,4 +53,6 @@ class AppEnrichmentStage(DataPrepStage):
             source_config=source_config,
             destination_config=destination_config,
             force=force,
+            return_dataset=return_dataset,
+            **kwargs,
         )

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 11:21:06 pm                                             #
-# Modified   : Thursday November 21st 2024 11:58:58 pm                                             #
+# Modified   : Tuesday November 26th 2024 03:42:09 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,11 +35,12 @@ class EnrichmentTask(Task):
 
     def __init__(
         self,
-        column: str,
-        new_column: str,
+        column: str = None,
+        new_column: str = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
         self._column = column
-        self._new_column = f"{self.stage.id}_{new_column}"
+        if new_column:
+            self._new_column = f"{self.stage.id}_{new_column}"
         self._kwargs = kwargs
