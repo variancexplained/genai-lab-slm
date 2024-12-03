@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Friday November 22nd 2024 12:07:55 am                                               #
+# Modified   : Monday December 2nd 2024 07:10:24 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -118,6 +118,7 @@ class PerplexityAnalysisTask(Task):
         Returns:
             pd.DataFrame: The DataFrame with a new column containing perplexity scores.
         """
+
         # Clear CUDA memory to ensure enough space is available for the model
         torch.cuda.empty_cache()
 

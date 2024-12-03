@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/feature/tqa/task.py                                                  #
+# Filename   : /discover/flow/task/enrich/tqa.py                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Thursday November 21st 2024 10:33:41 pm                                             #
+# Modified   : Monday December 2nd 2024 07:55:27 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,9 +21,8 @@ import os
 
 import seaborn as sns
 from pyspark.ml import Pipeline
-from pyspark.sql import DataFrame, Window
+from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.utils import AnalysisException
 from sparknlp.annotator import PerceptronModel, Tokenizer
 from sparknlp.base import DocumentAssembler, Finisher
 
@@ -60,7 +59,7 @@ class NLPTask(Task):
         POS tagging, and output formatting using a Finisher.
     """
 
-    def __init__(self, column: str = "content") -> None:
+    def __init__(self, column: str = "content", **kwargs) -> None:
         """
         Initializes NLPTask with the column to process.
 
@@ -69,7 +68,7 @@ class NLPTask(Task):
         column : str, optional
             The name of the column containing the content data to process (default is "content").
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self._column = column
 
     @task_logger
@@ -151,9 +150,10 @@ class ComputeTextQualityTask(Task):
         weight_adverb: float = 0.2,
         weight_syntactic: float = 0.5,
         weight_lexical: float = 0.5,
+        **kwargs,
     ) -> None:
 
-        super().__init__()
+        super().__init__(**kwargs)
         self._weight_noun = weight_noun
         self._weight_adjective = weight_adjective
         self._weight_verb = weight_verb
@@ -164,25 +164,13 @@ class ComputeTextQualityTask(Task):
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
         """
-        Computes POS statistics and text quality scores for aspect-based sentiment analysis.
-
-        This method calculates various POS-related statistics, including counts and proportions of
-        specific POS tags (nouns, verbs, adjectives, adverbs) within each review. It also computes
-        the Lexical Diversity Score (TTR) and combines it with a length-weighted Syntactic Score
-        to derive a comprehensive Text Quality Score. The method then drops intermediate columns
-        used in the calculations.
+        Computes POS statistics and text quality scores, emphasizing raw POS counts.
 
         Args:
-            data (DataFrame): The input PySpark DataFrame containing the POS tags as a list
-                            in the "tp_pos" column and tokens in the "tp_tokens" column.
+            data (DataFrame): Input PySpark DataFrame with POS tags in "tp_pos" and tokens in "tp_tokens".
 
         Returns:
-            DataFrame: The input DataFrame with additional columns:
-                    - "tqa_token_count": Total token count per review.
-                    - "tqa_unique_token_count": Unique token count per review.
-                    - "tqa_lexical_diversity": Lexical diversity score (TTR).
-                    - "tqa_syntactic_score": Length-weighted syntactic score.
-                    - "tqa_score": Final combined text quality score.
+            DataFrame: Output DataFrame with text quality scores and additional POS count columns.
         """
         try:
             # Step 1: Calculate the total token count per review
@@ -193,13 +181,13 @@ class ComputeTextQualityTask(Task):
                 "tqa_unique_token_count", F.size(F.array_distinct("tp_tokens"))
             )
 
-            # Step 3: Compute the Lexical Diversity Score (TTR)
+            # Step 3: Compute Lexical Diversity (TTR)
             data = data.withColumn(
                 "tqa_lexical_diversity",
                 F.col("tqa_unique_token_count") / F.col("tqa_token_count"),
             )
 
-            # Step 4: Calculate counts and proportions of specific POS tags
+            # Step 4: Calculate counts of specific POS tags
             pos_tags = ["NOUN", "VERB", "ADJ", "ADV"]
             pos_labels = ["nouns", "verbs", "adjectives", "adverbs"]
 
@@ -208,33 +196,19 @@ class ComputeTextQualityTask(Task):
                     f"pos_n_{pos_labels[i]}",
                     F.expr(f"size(filter(tp_pos, x -> x = '{tag}'))"),
                 )
-                data = data.withColumn(
-                    f"pos_p_{pos_labels[i]}",
-                    F.when(
-                        F.col("tqa_token_count") > 0,
-                        F.col(f"pos_n_{pos_labels[i]}") / F.col("tqa_token_count"),
-                    ).otherwise(0),
-                )
 
-            # Step 5: Compute the Syntactic Score
+            # Step 5: Compute Syntactic Score based on raw POS counts
             data = data.withColumn(
-                "tqa_syntactic_score_intermediate",
+                "tqa_syntactic_score",
                 (
-                    self._weight_noun * F.col("pos_p_nouns")
-                    + self._weight_adjective * F.col("pos_p_adjectives")
-                    + self._weight_verb * F.col("pos_p_verbs")
-                    + self._weight_adverb * F.col("pos_p_adverbs")
+                    self._weight_noun * F.col("pos_n_nouns")
+                    + self._weight_adjective * F.col("pos_n_adjectives")
+                    + self._weight_verb * F.col("pos_n_verbs")
+                    + self._weight_adverb * F.col("pos_n_adverbs")
                 ),
             )
 
-            # Step 6: Compute the Length-Weighted Syntactic Score
-            data = data.withColumn(
-                "tqa_syntactic_score",
-                F.col("tqa_syntactic_score_intermediate")
-                * F.log1p(F.col("tqa_token_count")),
-            )
-
-            # Step 7: Combine syntactic and lexical measures
+            # Step 6: Combine Syntactic and Lexical Scores
             data = data.withColumn(
                 "tqa_score",
                 (
@@ -243,37 +217,37 @@ class ComputeTextQualityTask(Task):
                 ),
             )
 
-            # Step 8: Set quality of non-english reviews to 0
+            # Step 7: Set quality of non-English reviews to 0
             data = data.withColumn(
                 "tqa_score",
-                F.when(F.col("dqd_non_english_text") == True, 0).otherwise(  # noqa
-                    F.col("tqa_score")
-                ),
+                F.when(
+                    F.col("dp_relevance_contains_non_english_text") == True, 0  # noqa
+                ).otherwise(F.col("tqa_score")),
             )
 
-            # Step 9: Scale the values to [0,100]
-            data = data.withColumn(
-                "tqa_score",
-                (
-                    (F.col("tqa_score") - F.min("tqa_score").over(Window.partitionBy()))
-                    / (
-                        F.max("tqa_score").over(Window.partitionBy())
-                        - F.min("tqa_score").over(Window.partitionBy())
-                    )
-                    * 100
-                ),
-            )
+            # Step 8: Log transform to make the distribution more symmetric
+            data = data.withColumn("tqa_score", F.log1p(F.col("tqa_score")))
 
-            # Step 10: Clean up intermediate columns
+            # # Step 8: Scale scores to [0, 100]
+            # data = data.withColumn(
+            #     "tqa_score",
+            #     (
+            #         (F.col("tqa_score") - F.min("tqa_score").over(Window.partitionBy()))
+            #         / (
+            #             F.max("tqa_score").over(Window.partitionBy())
+            #             - F.min("tqa_score").over(Window.partitionBy())
+            #         )
+            #         * 100
+            #     ),
+            # )
+
+            # Clean up intermediate columns
             for label in pos_labels:
-                data = data.drop(f"pos_n_{label}", f"pos_p_{label}")
+                data = data.drop(f"pos_n_{label}")
 
             # Drop unnecessary columns
             data = data.drop("tp_tokens", "tp_pos")
 
             return data
-
-        except AnalysisException as e:
-            raise AnalysisException(f"Column 'tp_pos' not found: {e}")
         except Exception as e:
-            raise Exception(f"Unexpected error during POS statistics calculation: {e}")
+            raise RuntimeError(f"Error in ComputeTextQualityTask: {e}")

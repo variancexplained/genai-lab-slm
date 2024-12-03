@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Tuesday November 26th 2024 03:48:24 pm                                              #
+# Modified   : Monday December 2nd 2024 06:40:08 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -60,59 +60,6 @@ phases:
             params:
               column: content
               new_column: review_length
-      perplexity:
-        phase: dataprep
-        stage: perplexity
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: ingest
-          name: review
-          nlp: False
-          distributed: False
-        destination_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: perplexity
-          name: review
-          nlp: False
-          distributed: False
-        tasks:
-          - class_name: PerplexityAnalysisTask
-            module: discover.flow.task.model.perplexity
-            params:
-              column: content
-              new_column: perplexity
-              model_name: distilbert/distilgpt2
-              stride: 512
-              cache_filepath: models/perplexity/perplexity_prod.csv
-              device_local: False
-      sentiment:
-        phase: dataprep
-        stage: sentiment
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: perplexity
-          name: review
-          nlp: False
-          distributed: False
-        destination_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: sentiment
-          name: review
-          nlp: False
-          distributed: False
-        tasks:
-          - class_name: SentimentAnalysisTask
-            module: discover.flow.task.model.sentiment
-            params:
-              column: content
-              new_column: sentiment
-              model_name: tabularisai/robust-sentiment-analysis
-              cache_filepath: models/sentiment/inference/sentiments_prod.csv
-              device_local: False
       dqd:
         phase: dataprep
         stage: dqd
@@ -730,16 +677,29 @@ phases:
           phase: dataprep
           stage: clean
           name: review
-          nlp: False
+          nlp: True
           distributed: True
         destination_config:
           asset_type: dataset
           phase: dataprep
           stage: enrich_review
           name: review
-          nlp: False
+          nlp: True
           distributed: True
         tasks:
+          - class_name: NLPTask
+            module: discover.flow.task.enrich.tqa
+            params:
+              column: content
+          - class_name: ComputeTextQualityTask
+            module: discover.flow.task.enrich.tqa
+            params:
+              weight_noun: 0.3
+              weight_adjective: 0.3
+              weight_verb: 0.2
+              weight_adverb: 0.2
+              weight_syntactic: 0.5
+              weight_lexical: 0.5
           - class_name: ComputeReviewAgeTask
             module: discover.flow.task.enrich.review
             params:
