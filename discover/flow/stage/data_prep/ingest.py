@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Thursday November 21st 2024 11:41:03 pm                                             #
+# Modified   : Sunday December 15th 2024 03:15:19 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -96,6 +96,7 @@ class IngestionStage(DataPrepStage):
             destination_dataset = self._create_dataset(
                 asset_id=destination_asset_id,
                 config=self._destination_config,
+                dataframe_type=self.destination_dataframe_type,
                 data=data,
             )
             self._save_dataset(dataset=destination_dataset)

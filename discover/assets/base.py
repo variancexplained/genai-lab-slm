@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Saturday November 16th 2024 02:57:44 pm                                             #
+# Modified   : Sunday December 15th 2024 12:44:12 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 from discover.assets.idgen import AssetIDGen
-from discover.core.data_class import DataClass
+from discover.core.data_structure import DataClass
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.utils.date_time.format import ThirdDateFormatter
 

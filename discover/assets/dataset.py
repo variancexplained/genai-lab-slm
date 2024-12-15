@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Sunday November 17th 2024 03:26:08 am                                               #
+# Modified   : Sunday December 15th 2024 03:55:01 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,8 +41,7 @@ class Dataset(Asset):
         configuration information.
 
     Attributes:
-        nlp (bool): Whether the dataset is part of an NLP pipeline
-        distributed (bool): Whether the dataset contents are persisted in a distributed dataframe structure.
+        dataframe_type (str): Whether to use a pandas, pyspark, or sparknlp dataframe.
         storage_location (Any): Object specifying the storage location for the dataset content payload.
         nrows (int): The number of rows in the dataset. Defaults to 0.
         ncols (int): The number of columns in the dataset. Defaults to 0.
@@ -64,8 +63,7 @@ class Dataset(Asset):
             and size.
     """
 
-    nlp: bool = False
-    distributed: bool = False
+    dataframe_type_id: str = "pandas"
     storage_location: Optional[Any] = None
     nrows: int = 0
     ncols: int = 0

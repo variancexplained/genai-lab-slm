@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 12:21:51 am                                               #
-# Modified   : Sunday November 24th 2024 12:53:06 am                                               #
+# Modified   : Sunday December 15th 2024 05:02:24 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from discover.flow.task.clean.base.strategy import DetectStrategy, RepairStrateg
 # ------------------------------------------------------------------------------------------------ #
 
 
-class IntervalAnomalyStrategyFactory(StrategyFactory):
+class IntervalStrategyFactory(StrategyFactory):
 
     @property
     def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
@@ -77,7 +77,7 @@ class DateRangeAnomalyDetectStrategy(DetectStrategy):
         self._range_max = self._convert_to_datetime(range_max, range_type)
         self._range_type = range_type
 
-    def _convert_to_datetime(self, value: int, range_type: str) -> datetime:
+    def _convert_to_datetime(self, value: int, range_type_id: str) -> datetime:
         """
         Converts the integer range value to a datetime object based on the range type.
 
@@ -88,13 +88,13 @@ class DateRangeAnomalyDetectStrategy(DetectStrategy):
         Returns:
             datetime: The converted datetime object.
         """
-        if range_type == "year":
+        if range_type_id == "year":
             return datetime(value, 1, 1)
-        elif range_type == "month":
+        elif range_type_id == "month":
             year = value // 100
             month = value % 100
             return datetime(year, month, 1)
-        elif range_type == "date":
+        elif range_type_id == "date":
             year = value // 10000
             month = (value // 100) % 100
             day = value % 100

@@ -11,12 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:27:43 am                                             #
-# Modified   : Sunday November 24th 2024 07:23:52 pm                                               #
+# Modified   : Sunday December 15th 2024 05:43:20 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-
+"""Anomaly Task Base Class Module"""
 from discover.core.data_structure import DataFrameType
 from discover.flow.task.base import Task
 from discover.flow.task.clean.base.factory import StrategyFactory
@@ -36,7 +36,7 @@ class Anomaly(Task):
         mode (str): The operation mode ("detect" or "repair").
         detect_strategy (str): The name of the detection strategy to use.
         repair_strategy (str): The name of the repair strategy to use.
-        strategy_factory (StrategyFactory): Factory to retrieve strategies for detection and repair.
+        strategy_factory_id (StrategyFactory): Factory to retrieve strategies for detection and repair.
         **kwargs: Additional arguments for specific anomaly configurations.
 
     """
@@ -48,7 +48,7 @@ class Anomaly(Task):
         mode: str,
         detect_strategy: str,
         repair_strategy: str,
-        strategy_factory: StrategyFactory,
+        strategy_factory_id: StrategyFactory,
         **kwargs,
     ) -> None:
 
@@ -58,7 +58,7 @@ class Anomaly(Task):
         self._new_column = f"{self.stage.id}_{new_column}"
         self._detect_strategy = detect_strategy
         self._repair_strategy = repair_strategy
-        self._strategy_factory = strategy_factory()
+        self._strategy_factory_id = strategy_factory_id()
         self._mode_map = {
             "detect": self.detect,
             "repair": self.repair,
@@ -94,7 +94,7 @@ class Anomaly(Task):
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
         """
-        strategy_cls = self._strategy_factory.get_detect_strategy(
+        strategy_cls = self._strategy_factory_id.get_detect_strategy(
             strategy_type=self._detect_strategy
         )
         strategy = strategy_cls(
@@ -115,7 +115,7 @@ class Anomaly(Task):
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
         """
-        strategy_cls = self._strategy_factory.get_repair_strategy(
+        strategy_cls = self._strategy_factory_id.get_repair_strategy(
             strategy_type=self._repair_strategy
         )
         strategy = strategy_cls(

@@ -11,12 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 14th 2024 11:59:29 pm                                             #
-# Modified   : Saturday November 16th 2024 05:18:04 pm                                             #
+# Modified   : Sunday December 15th 2024 04:31:13 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-# ------------------------------------------------------------------------------------------------ #
+"""DataManager Module"""
 from abc import ABC
 from typing import Type
 
@@ -26,19 +26,28 @@ from dependency_injector.wiring import Provide, inject
 from discover.assets.dataset import Dataset
 from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
+from discover.core.data_structure import DataFrameType
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persistence.repo.dataset import DatasetRepo
 
 
+# ------------------------------------------------------------------------------------------------ #
 class DataManager(ABC):
-    """Abstract base class for managing data operations, including dataset retrieval,
-    addition, and asset ID generation.
+    """
+    Abstract base class for managing datasets in a data pipeline.
+
+    Provides methods to retrieve and add datasets, interacting with the underlying repository
+    and configuration settings.
+
+    Args:
+        repo (DatasetRepo): Repository for dataset operations.
+        config_reader_cls (Type[AppConfigReader]): Class for reading application configuration.
 
     Attributes:
-        _repo: The dataset repository used for retrieving and adding datasets.
-        _config_reader: An instance of the configuration reader for accessing environment settings.
-        _env: The current environment obtained from the configuration reader.
+        _repo (DatasetRepo): Handles dataset persistence and retrieval operations.
+        _config_reader (AppConfigReader): Reads application configuration settings.
+        _env (str): The current environment determined from the application configuration.
     """
 
     @inject
@@ -47,51 +56,58 @@ class DataManager(ABC):
         repo: DatasetRepo = Provide[DiscoverContainer.repo.dataset_repo],
         config_reader_cls: Type["AppConfigReader"] = AppConfigReader,
     ) -> None:
-        """Initializes the DataManager with a repository and configuration reader.
-
-        Args:
-            repo (DatasetRepo): The dataset repository for data retrieval and addition.
-            config_reader_cls (Type[AppConfigReader], optional): Class to read configuration settings. Defaults to AppConfigReader.
-
-        Initializes:
-            - The dataset repository (`_repo`).
-            - The configuration reader (`_config_reader`).
-            - The current environment (`_env`).
-        """
         self._repo = repo
         self._config_reader = config_reader_cls()
         self._env = self._config_reader.get_environment()
 
-    def get_dataset(self, stage: str = "ingest", name: str = "review") -> pd.DataFrame:
-        """Retrieves a dataset from the repository based on the given stage and name.
+    def get_dataset(
+        self,
+        stage: str = "ingest",
+        name: str = "review",
+        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+    ) -> pd.DataFrame:
+        """
+        Retrieves a dataset by stage and name, returning its content as a DataFrame.
 
         Args:
-            stage (str, optional): The stage of the dataset. Defaults to "ingest".
-            name (str, optional): The name of the dataset. Defaults to "review".
+            stage (str): The pipeline stage of the dataset. Defaults to "ingest".
+            name (str): The name of the dataset. Defaults to "review".
+            dataframe_type (DataFrameType): Type of DataFrame to return. Defaults to PANDAS.
 
         Returns:
-            pd.DataFrame: The content of the retrieved dataset.
+            pd.DataFrame: The dataset content as a DataFrame.
+
+        Raises:
+            DatasetNotFoundError: If the dataset does not exist.
+            DatasetIOError: If an error occurs during dataset retrieval.
         """
         asset_id = self.get_asset_id(stage=stage, name=name)
-        return self._repo.get(asset_id=asset_id).content
+        return self._repo.get(asset_id=asset_id, dataframe_type=dataframe_type).content
 
-    def add_dataset(self, df: pd.DataFrame, stage: str = "sentiment") -> None:
-        """Adds a dataset to the repository.
+    def add_dataset(
+        self,
+        df: pd.DataFrame,
+        stage: str = "sentiment",
+        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+    ) -> None:
+        """
+        Adds a dataset to the repository.
 
         Args:
-            df (pd.DataFrame): The dataset to add.
-            stage (str, optional): The stage of the dataset. Defaults to "sentiment".
+            df (pd.DataFrame): The dataset content to persist.
+            stage (str): The pipeline stage of the dataset. Defaults to "sentiment".
+            dataframe_type (DataFrameType): Type of DataFrame provided. Defaults to PANDAS.
 
-        Returns:
-            None
+        Raises:
+            DatasetIOError: If an error occurs during dataset persistence.
+            DatasetCreationError: If dataset creation fails.
         """
         dataset = Dataset(
             phase=PhaseDef.DATAPREP,
             stage=StageDef.from_value(value=stage),
             name="review",
             content=df,
-            nlp=False,
-            distributed=False,
+            dataframe_type=dataframe_type,
         )
         self._repo.add(dataset=dataset)
 

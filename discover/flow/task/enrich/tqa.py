@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Monday December 2nd 2024 07:55:27 pm                                                #
+# Modified   : Saturday December 14th 2024 11:07:41 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -193,7 +193,7 @@ class ComputeTextQualityTask(Task):
 
             for i, tag in enumerate(pos_tags):
                 data = data.withColumn(
-                    f"pos_n_{pos_labels[i]}",
+                    f"tqa_pos_n_{pos_labels[i]}",
                     F.expr(f"size(filter(tp_pos, x -> x = '{tag}'))"),
                 )
 
@@ -201,10 +201,10 @@ class ComputeTextQualityTask(Task):
             data = data.withColumn(
                 "tqa_syntactic_score",
                 (
-                    self._weight_noun * F.col("pos_n_nouns")
-                    + self._weight_adjective * F.col("pos_n_adjectives")
-                    + self._weight_verb * F.col("pos_n_verbs")
-                    + self._weight_adverb * F.col("pos_n_adverbs")
+                    self._weight_noun * F.col("tqa_pos_n_nouns")
+                    + self._weight_adjective * F.col("tqa_pos_n_adjectives")
+                    + self._weight_verb * F.col("tqa_pos_n_verbs")
+                    + self._weight_adverb * F.col("tqa_pos_n_adverbs")
                 ),
             )
 
@@ -240,10 +240,6 @@ class ComputeTextQualityTask(Task):
             #         * 100
             #     ),
             # )
-
-            # Clean up intermediate columns
-            for label in pos_labels:
-                data = data.drop(f"pos_n_{label}")
 
             # Drop unnecessary columns
             data = data.drop("tp_tokens", "tp_pos")

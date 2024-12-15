@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 01:04:01 am                                               #
-# Modified   : Sunday November 24th 2024 01:13:07 am                                               #
+# Modified   : Sunday December 15th 2024 04:59:30 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from discover.flow.task.clean.base.strategy import DetectStrategy, RepairStrateg
 # ------------------------------------------------------------------------------------------------ #
 
 
-class DiscreteAnomalyStrategyFactory(StrategyFactory):
+class DiscreteStrategyFactory(StrategyFactory):
 
     @property
     def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 06:56:09 pm                                               #
-# Modified   : Sunday November 24th 2024 09:07:42 pm                                               #
+# Modified   : Sunday December 15th 2024 12:44:12 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from discover.core.data_class import DataClass
+from discover.core.data_structure import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #

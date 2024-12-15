@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Sunday November 24th 2024 07:25:46 pm                                               #
+# Modified   : Sunday December 15th 2024 05:02:59 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from discover.flow.task.clean.base.strategy import DetectStrategy, RepairStrateg
 
 
 # ------------------------------------------------------------------------------------------------ #
-class NominalAnomalyStrategyFactory(StrategyFactory):
+class NominalStrategyFactory(StrategyFactory):
     """
     Factory for creating strategies to detect and repair nominal anomalies.
 

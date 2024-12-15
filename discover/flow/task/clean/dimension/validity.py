@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Sunday November 24th 2024 10:54:33 pm                                               #
+# Modified   : Sunday December 15th 2024 06:33:11 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from typing import Literal, Union
 
-from discover.flow.task.clean.dimension.anomaly import (
+from discover.flow.task.clean.dimension.base import (
     CategoricalAnomaly,
     DiscreteAnomaly,
     IntervalAnomaly,
@@ -30,27 +30,35 @@ from discover.flow.task.clean.dimension.anomaly import (
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairURLTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing URLs in a DataFrame column.
-    The class provides functionality to either flag the presence of URLs in a new
-    column or replace URLs with a specified replacement string.
+    Class for detecting or repairing URLs in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting and repairing URLs in text columns, replacing URLs with a specified
+    placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where URLs are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of URL detection/repair. Defaults to "contains_url".
+        replacement (str, optional): The string that will replace detected URLs during repair. Defaults to "[URL]".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting URLs in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected URLs. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variable:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of URL detection/repair.
+        replacement (str): The string used to replace detected URLs during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting URLs.
+        repair_strategy (str): The strategy to use for repairing detected URLs.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "url"
@@ -61,7 +69,7 @@ class DetectOrRepairURLTask(TextAnomaly):
         new_column: str = "contains_url",
         replacement: str = "[URL]",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -74,7 +82,7 @@ class DetectOrRepairURLTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -87,27 +95,35 @@ class DetectOrRepairURLTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairEmailAddressTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing email addresses in a DataFrame column.
-    The class provides functionality to either flag the presence of email addresses in a
-    new column or replace email addresses with a specified replacement string.
+    Class for detecting or repairing email addresses in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting and repairing email addresses in text columns, replacing email addresses
+    with a specified placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where email addresses are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of email address detection/repair. Defaults to "contains_email".
+        replacement (str, optional): The string that will replace detected email addresses during repair. Defaults to "[EMAIL]".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting email addresses in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected email addresses. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of email address detection/repair.
+        replacement (str): The string used to replace detected email addresses during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting email addresses.
+        repair_strategy (str): The strategy to use for repairing detected email addresses.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "email"
@@ -118,7 +134,7 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
         new_column: str = "contains_email",
         replacement: str = "[EMAIL]",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -131,7 +147,7 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -144,27 +160,35 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairPhoneNumberTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing phone numbers in a DataFrame column.
-    The class provides functionality to either flag the presence of phone numbers in a
-    new column or replace phone numbers with a specified replacement string.
+    Class for detecting or repairing phone numbers in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting and repairing phone numbers in text columns, replacing phone numbers
+    with a specified placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where phone numbers are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of phone number detection/repair. Defaults to "contains_phone".
+        replacement (str, optional): The string that will replace detected phone numbers during repair. Defaults to "[PHONE]".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting phone numbers in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected phone numbers. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of phone number detection/repair.
+        replacement (str): The string used to replace detected phone numbers during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting phone numbers.
+        repair_strategy (str): The strategy to use for repairing detected phone numbers.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "phone"
@@ -175,7 +199,7 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
         new_column: str = "contains_phone",
         replacement: str = "[PHONE]",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -183,13 +207,12 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
         unit: Literal["word", "character"] = None,
         **kwargs,
     ) -> None:
-
         super().__init__(
             pattern=self.__PATTERN,
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -202,27 +225,35 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing phone numbers in a DataFrame column.
-    The class provides functionality to either flag the presence of phone numbers in a
-    new column or replace phone numbers with a specified replacement string.
+    Class for detecting or repairing excessive special characters in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting excessive special characters in text columns and replacing them with
+    a specified placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where excessive special characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of special character detection/repair. Defaults to "contains_excessive_special_chars".
+        replacement (str, optional): The string that will replace excessive special characters during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting excessive special characters in the text. Defaults to "regex_threshold".
+        repair_strategy (str, optional): The strategy to use for repairing detected excessive special characters. Defaults to "regex_threshold_remove".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 0.35.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to "proportion".
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to "character".
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of special character detection/repair.
+        replacement (str): The string used to replace excessive special characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting excessive special characters.
+        repair_strategy (str): The strategy to use for repairing excessive special characters.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "special_chars"
@@ -233,7 +264,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
         new_column: str = "contains_excessive_special_chars",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_threshold_remove",
         threshold: Union[float, int] = 0.35,
@@ -247,7 +278,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -260,31 +291,35 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairNonASCIICharsTask(TextAnomaly):
     """
-    A task for detecting or repairing non-ASCII characters in text data.
+    Class for detecting or repairing non-ASCII characters in text data.
 
-    This class extends `DetectOrReplaceTask` to provide functionality for either
-    detecting or repairing text that contains non-ASCII (Unicode) characters. In
-    'detect' mode, it flags text with non-ASCII characters. In 'repair' mode, it
-    attempts to normalize the text by removing non-ASCII characters and converting
-    it to an ASCII-only format.
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting non-ASCII characters in text columns and replacing them with a
+    specified placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where non-ASCII characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of non-ASCII character detection/repair. Defaults to "contains_non_ascii_chars".
+        replacement (str, optional): The string that will replace non-ASCII characters during repair. Defaults to None (no replacement).
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting non-ASCII characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected non-ASCII characters. Defaults to "non_ascii".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of non-ASCII character detection/repair.
+        replacement (str): The string used to replace non-ASCII characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting non-ASCII characters.
+        repair_strategy (str): The strategy to use for repairing non-ASCII characters.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "non_ascii"
@@ -295,7 +330,7 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
         new_column: str = "contains_non_ascii_chars",
         replacement: str = None,
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "non_ascii",
         threshold: Union[float, int] = None,
@@ -309,7 +344,7 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -322,27 +357,35 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairControlCharsTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing control characters in a DataFrame column.
-    The class provides functionality to either flag the presence of control characters or
-    remove/replace them with a specified replacement string.
+    Class for detecting or repairing control characters in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting control characters in text columns and replacing them with a
+    specified placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where control characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of control character detection/repair. Defaults to "contains_control_chars".
+        replacement (str, optional): The string that will replace control characters during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting control characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected control characters. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of control character detection/repair.
+        replacement (str): The string used to replace control characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting control characters.
+        repair_strategy (str): The strategy to use for repairing control characters.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "control_chars"
@@ -353,7 +396,7 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
         new_column: str = "contains_control_chars",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -367,7 +410,7 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -380,27 +423,35 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairHTMLCharsTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing HTML character entities in a DataFrame column.
-    The class provides functionality to either flag the presence of HTML character entities
-    or remove/replace them with a specified replacement string.
+    Class for detecting or repairing HTML characters in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting HTML characters in text columns and replacing them with a specified
+    placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where HTML characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of HTML character detection/repair. Defaults to "contains_html".
+        replacement (str, optional): The string that will replace HTML characters during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting HTML characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected HTML characters. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of HTML character detection/repair.
+        replacement (str): The string used to replace HTML characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting HTML characters.
+        repair_strategy (str): The strategy to use for repairing HTML characters.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "html"
@@ -411,7 +462,7 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
         new_column: str = "contains_html",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -425,7 +476,7 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -438,27 +489,35 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing excessive whitespace in a DataFrame column.
-    The class provides functionality to either flag rows with excessive whitespace or
-    replace multiple whitespace characters with a single space.
+    Class for detecting or repairing excessive whitespace in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting excessive whitespace in text columns and replacing it with a specified
+    placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where excessive whitespace is to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of excessive whitespace detection/repair. Defaults to "contains_excessive_whitespace".
+        replacement (str, optional): The string that will replace excessive whitespace during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting excessive whitespace in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected excessive whitespace. Defaults to "whitespace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of excessive whitespace detection/repair.
+        replacement (str): The string used to replace excessive whitespace during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting excessive whitespace.
+        repair_strategy (str): The strategy to use for repairing excessive whitespace.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "whitespace"
@@ -469,7 +528,7 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
         new_column: str = "contains_excessive_whitespace",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "whitespace",
         threshold: Union[float, int] = None,
@@ -483,7 +542,7 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -496,27 +555,35 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairAccentedCharsTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing accented and diacritic characters in a DataFrame column.
-    The class provides functionality to either flag the presence of accented characters or
-    normalize text by removing accents and diacritics.
+    Class for detecting or repairing accented characters in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for
+    detecting accented characters in text columns and replacing them with a specified
+    placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where accented characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of accented character detection/repair. Defaults to "contains_accents".
+        replacement (str, optional): The string that will replace accented characters during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting accented characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected accented characters. Defaults to "accent".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of accented character detection/repair.
+        replacement (str): The string used to replace accented characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting accented characters.
+        repair_strategy (str): The strategy to use for repairing accented characters.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "accents"
@@ -527,7 +594,7 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
         new_column: str = "contains_accents",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "accent",
         threshold: Union[float, int] = None,
@@ -541,7 +608,7 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -554,27 +621,37 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairElongationTask(TextAnomaly):
     """
-    A PySpark task class for detecting or repairing elongated characters in a DataFrame column.
-    The class provides functionality to either flag instances of character elongation (e.g., "sooo good")
-    or replace them by limiting the repetition of characters to a specified maximum.
+    Class for detecting or repairing character elongations (repeated characters) in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for detecting
+    elongated characters (e.g., repeated letters in a word) and replacing them with a
+    specified placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where elongations are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of elongation detection/repair. Defaults to "contains_elongation".
+        replacement (str, optional): The string that will replace elongated characters during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting elongated characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected elongated characters. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 4.
+        max_elongation (int, optional): The maximum allowable number of consecutive repeated characters. Defaults to 3.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to "count".
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of elongation detection/repair.
+        replacement (str): The string used to replace elongated characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting elongated characters.
+        repair_strategy (str): The strategy to use for repairing elongated characters.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        max_elongation (int): The maximum allowable number of consecutive repeated characters.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "elongation"
@@ -585,7 +662,7 @@ class DetectOrRepairElongationTask(TextAnomaly):
         new_column: str = "contains_elongation",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 4,
@@ -600,7 +677,7 @@ class DetectOrRepairElongationTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -613,6 +690,39 @@ class DetectOrRepairElongationTask(TextAnomaly):
 
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
+    """
+    Class for detecting or repairing excessive repeated characters in text data.
+
+    This class extends the `TextAnomaly` class and provides functionality for detecting
+    excessive repeated characters (e.g., "aaa") and replacing them with a specified
+    placeholder string during the repair process.
+
+    Args:
+        column (str, optional): The name of the column containing the text data where repeated characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of repeated character detection/repair. Defaults to "contains_excess_repeated_characters".
+        replacement (str, optional): The string that will replace excessive repeated characters during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting repeated characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected repeated characters. Defaults to "regex_replace".
+        min_repetitions (int, optional): The minimum number of repetitions of a character to be considered excessive. Defaults to 4.
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
+
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of repeated character detection/repair.
+        replacement (str): The string used to replace excessive repeated characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting repeated characters.
+        repair_strategy (str): The strategy to use for repairing repeated characters.
+        min_repetitions (int): The minimum number of repetitions of a character to be considered excessive.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
+    """
 
     __PATTERN = "character_repetition"
 
@@ -622,7 +732,7 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_characters",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         min_repetitions: int = 4,
@@ -637,7 +747,7 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -651,29 +761,39 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
     """
-    A task for detecting or repairing excessive sequence repetition in text.
+    Class for detecting or repairing excessive repeated sequences in text data.
 
-    This class inherits from `DetectOrRemoveTask` and uses a regular expression
-    to identify repeated patterns within the specified text column. The task can
-    be configured to either detect or repair these patterns.
+    This class extends the `TextAnomaly` class and provides functionality for detecting
+    sequences of characters or words that are excessively repeated (e.g., "abcabcabc")
+    and replacing them with a specified placeholder string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where repeated sequences are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of repeated sequence detection/repair. Defaults to "contains_excess_repeated_sequences".
+        replacement (str, optional): The string that will replace excessive repeated sequences during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting repeated sequences in the text. Defaults to "regex_threshold".
+        repair_strategy (str, optional): The strategy to use for repairing detected repeated sequences. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 3.
+        length_of_sequence (int, optional): The length of the sequence to check for repetition. Defaults to 3.
+        min_repetitions (int, optional): The minimum number of repetitions of a sequence to be considered excessive. Defaults to 3.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to "count".
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of repeated sequence detection/repair.
+        replacement (str): The string used to replace excessive repeated sequences during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting repeated sequences.
+        repair_strategy (str): The strategy to use for repairing repeated sequences.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        length_of_sequence (int): The length of the sequence to check for repetition.
+        min_repetitions (int): The minimum number of repetitions of a sequence to be considered excessive.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "sequence_repetition"
@@ -684,7 +804,7 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_sequences",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 3,
@@ -700,7 +820,7 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -715,29 +835,37 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairRepeatedWordsTask(TextAnomaly):
     """
-    A task for detecting or repairing excessive word repetition in text.
+    Class for detecting or repairing excessive repeated words in text data.
 
-    This class inherits from `DetectOrRemoveTask` and uses a regular expression
-    to identify repeated patterns within the specified text column. The task can
-    be configured to either detect or repair these patterns.
+    This class extends the `TextAnomaly` class and provides functionality for detecting
+    repeated words (e.g., "hello hello") and replacing them with a specified placeholder
+    string during the repair process.
 
     Args:
+        column (str, optional): The name of the column containing the text data where repeated words are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of repeated word detection/repair. Defaults to "contains_excess_repeated_words".
+        replacement (str, optional): The string that will replace excessive repeated words during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting repeated words in the text. Defaults to "regex_threshold".
+        repair_strategy (str, optional): The strategy to use for repairing detected repeated words. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 1.
+        min_repetitions (int, optional): The minimum number of repetitions of a word to be considered excessive. Defaults to 3.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to "count".
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of repeated word detection/repair.
+        replacement (str): The string used to replace excessive repeated words during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting repeated words.
+        repair_strategy (str): The strategy to use for repairing repeated words.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        min_repetitions (int): The minimum number of repetitions of a word to be considered excessive.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     __PATTERN = "word_repetition"
@@ -748,7 +876,7 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_words",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 1,
@@ -763,7 +891,7 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -777,28 +905,37 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
     """
-    A task for detecting or repairing excessive phrase repetition in text.
+    Class for detecting or repairing excessive repeated phrases in text data.
 
-    This class inherits from `DetectOrRemoveTask` and uses a regular expression
-    to identify repeated patterns within the specified text column. The task can
-    be configured to either detect or repair these patterns.
+    This class extends the `TextAnomaly` class and provides functionality for detecting
+    repeated phrases (e.g., "hello world hello world") and replacing them with a specified
+    placeholder string during the repair process.
 
     Args:
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["phrase", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "phrase" or "character". Defaults to "phrase".
+        column (str, optional): The name of the column containing the text data where repeated phrases are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of repeated phrase detection/repair. Defaults to "contains_excess_repeated_phrases".
+        replacement (str, optional): The string that will replace excessive repeated phrases during repair. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting repeated phrases in the text. Defaults to "regex_threshold".
+        repair_strategy (str, optional): The strategy to use for repairing detected repeated phrases. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 3.
+        min_repetitions (int, optional): The minimum number of repetitions of a phrase to be considered excessive. Defaults to 3.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to "count".
+        unit (Literal["phrase", "character"], optional): Specifies whether to apply the threshold to phrases or characters. Defaults to None.
 
-    Class Variables:
-        __PATTERN (str): Returns the pattern corresponding with a pattern in the PatternFactory.
-            See discover/flow/task/clean/strategy/text/pattern.py for a list of valid patterns.
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of repeated phrase detection/repair.
+        replacement (str): The string used to replace excessive repeated phrases during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting repeated phrases.
+        repair_strategy (str): The strategy to use for repairing repeated phrases.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        min_repetitions (int): The minimum number of repetitions of a phrase to be considered excessive.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to phrases or characters.
     """
 
     __PATTERN = "phrase_repetition"
@@ -809,7 +946,7 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_phrases",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 3,
@@ -824,7 +961,7 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -838,38 +975,33 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairGibberishTask(NumericAnomaly):
     """
-    A task for detecting or repairing gibberish content based on numeric anomalies.
+    Class for detecting or repairing gibberish in numeric data based on a threshold.
 
-    This task evaluates numeric data, such as perplexity scores, to detect or repair
-    rows flagged as gibberish. It uses percentile-based anomaly detection and repair
-    strategies. Users can configure detection thresholds, operation modes, and execution
-    (distributed or local).
+    This class extends the `NumericAnomaly` class and provides functionality for detecting
+    gibberish in numeric data (e.g., perplexity scores) based on a threshold, and optionally
+    repairing the detected anomalies by setting them to a default value.
 
     Args:
-        column (str, optional): The name of the column to evaluate for anomalies.
-            Defaults to "pa_perplexity".
-        new_column (str, optional): The name of the column to store detection or repair results.
-            Defaults to "contains_gibberish".
-        mode (str, optional): The operation mode: "detect" for anomaly detection or "repair"
-            for anomaly repair. Defaults to "detect".
-        distributed (bool, optional): If True, uses distributed strategies; otherwise, uses local strategies.
-            Defaults to True.
-        threshold (float, optional): The percentile threshold for anomaly detection.
-            Defaults to 0.5 (50th percentile, median).
-        relative_error (float, optional): The relative error for the `approxQuantile` calculation.
-            Smaller values result in more precise thresholds but may increase computation time.
-            Defaults to 0.001.
-        detect_less_than_threshold (bool, optional): If True, detects values below the threshold.
-            If False, detects values above the threshold. Defaults to True.
-        detect_strategy (Type[ThresholdPercentileAnomalyDetectStrategy], optional): The detection
-            strategy class to use for identifying anomalies. Defaults to `ThresholdPercentileAnomalyDetectStrategy`.
-        repair_strategy (Type[ThresholdPercentileAnomalyRepairStrategy], optional): The repair
-            strategy class to use for handling anomalies. Defaults to `ThresholdPercentileAnomalyRepairStrategy`.
-        **kwargs: Additional keyword arguments for advanced configuration or strategy customization.
+        column (str, optional): The name of the column containing numeric data to check for gibberish. Defaults to "pa_perplexity".
+        new_column (str, optional): The name of the new column that will store the results of gibberish detection/repair. Defaults to "contains_gibberish".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "numeric".
+        threshold (float, optional): The threshold value for gibberish detection. Defaults to 0.5.
+        relative_error (float, optional): The relative error used for threshold detection. Defaults to 0.001.
+        detect_less_than_threshold (bool, optional): Whether to detect gibberish values less than the threshold. Defaults to True.
+        detect_strategy (str, optional): The strategy to use for detecting gibberish in the numeric data. Defaults to "threshold".
+        repair_strategy (str, optional): The strategy to use for repairing detected gibberish values. Defaults to "threshold".
 
-    Methods:
-        Inherits methods from `NumericAnomaly`, including functionality for applying detection
-        and repair strategies to gibberish content.
+    Attributes:
+        column (str): The name of the column containing numeric data.
+        new_column (str): The name of the new column to store the results of gibberish detection/repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        threshold (float): The threshold value for gibberish detection.
+        relative_error (float): The relative error for threshold detection.
+        detect_less_than_threshold (bool): Flag indicating whether to detect values less than the threshold.
+        detect_strategy (str): The strategy for detecting gibberish in numeric data.
+        repair_strategy (str): The strategy for repairing detected gibberish values.
     """
 
     def __init__(
@@ -877,7 +1009,7 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
         column: str = "pa_perplexity",
         new_column: str = "contains_gibberish",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "numeric",
         threshold: float = 0.5,
         relative_error: float = 0.001,
         detect_less_than_threshold: bool = True,
@@ -889,6 +1021,7 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -900,28 +1033,28 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
     """
-    A task for detecting or repairing anomalies in categorical data.
+    Class for detecting or repairing category anomalies in categorical data.
 
-    This task evaluates a column of categorical data to identify and optionally
-    repair values that do not belong to a predefined list of valid categories.
-    Users can configure the operation mode ("detect" or "repair") and whether
-    to use distributed or local execution.
+    This class extends the `CategoricalAnomaly` class and provides functionality for detecting
+    and optionally repairing anomalies in categorical data based on a list of valid categories.
 
     Args:
-        column (str): The name of the column to evaluate for anomalies.
-        new_column (str): The name of the column to store detection or repair results.
-            This column will contain `True` for rows with invalid categories and `False` otherwise.
-        mode (str, optional): The operation mode: "detect" for anomaly detection or "repair"
-            for anomaly repair. Defaults to "detect".
-        distributed (bool, optional): If True, uses distributed strategies; otherwise, uses local strategies.
-            Defaults to True.
-        valid_categories (list, optional): A list of valid categorical values to compare against.
-            Defaults to None, which implies no valid categories are defined.
-        **kwargs: Additional keyword arguments for advanced configuration or strategy customization.
+        column (str): The name of the column containing categorical data to check for anomalies.
+        new_column (str): The name of the new column that will store the results of category anomaly detection/repair.
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "categorical".
+        detect_strategy (str, optional): The strategy to use for detecting category anomalies. Defaults to "categorical".
+        repair_strategy (str, optional): The strategy to use for repairing detected category anomalies. Defaults to "categorical".
+        valid_categories (list, optional): A list of valid categories to use for anomaly detection. Defaults to None.
 
-    Methods:
-        Inherits methods from `CategoricalAnomaly`, including functionality for detecting
-        and repairing categorical anomalies.
+    Attributes:
+        column (str): The name of the column containing categorical data.
+        new_column (str): The name of the new column to store the results of category anomaly detection/repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy for detecting category anomalies.
+        repair_strategy (str): The strategy for repairing category anomalies.
+        valid_categories (list): The list of valid categories to validate against.
     """
 
     def __init__(
@@ -929,7 +1062,7 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
         column: str,
         new_column: str,
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "categorical",
         detect_strategy: str = "categorical",
         repair_strategy: str = "categorical",
         valid_categories: list = None,
@@ -939,7 +1072,7 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             valid_categories=valid_categories,
             detect_strategy="categorical",
             repair_strategy="categorical",
@@ -950,30 +1083,30 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
     """
-    Task for detecting or repairing anomalies in rating data.
+    Class for detecting or repairing rating anomalies in discrete data.
 
-    This class is designed to handle rating anomalies by detecting values
-    that fall outside a specified range or repairing them to conform to
-    the specified range. It extends `DiscreteAnomaly` to leverage configurable
-    strategies for detection and repair and supports operation in both local
-    and distributed environments.
+    This class extends the `DiscreteAnomaly` class and provides functionality for detecting
+    and optionally repairing anomalies in rating data, based on a specified valid range.
 
     Args:
-        column (str): The name of the column containing rating values to evaluate for anomalies.
-        new_column (str): The name of the column to store the results of the operation
-            (e.g., anomaly flags or repaired values).
-        mode (str, optional): The mode of operation, either `"detect"` for anomaly
-            detection or `"repair"` for anomaly repair. Defaults to `"detect"`.
-        distributed (bool, optional): Whether the operations should be performed
-            in a distributed environment (e.g., with PySpark). Defaults to `True`.
-        detect_strategy (str, optional): The detection strategy to identify rating anomalies.
-            Defaults to `"range"`.
-        repair_strategy (str, optional): The repair strategy to handle rating anomalies.
-            Defaults to `"range"`.
-        range_min (int, optional): The minimum acceptable rating value. Defaults to `1`.
-        range_max (int, optional): The maximum acceptable rating value. Defaults to `5`.
-        **kwargs: Additional keyword arguments passed to the parent class.
+        column (str): The name of the column containing the rating data to check for anomalies.
+        new_column (str): The name of the new column that will store the results of rating anomaly detection/repair.
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "discrete".
+        detect_strategy (str, optional): The strategy to use for detecting rating anomalies. Defaults to "range".
+        repair_strategy (str, optional): The strategy to use for repairing detected rating anomalies. Defaults to "range".
+        range_min (int, optional): The minimum valid value for the rating. Defaults to 1.
+        range_max (int, optional): The maximum valid value for the rating. Defaults to 5.
 
+    Attributes:
+        column (str): The name of the column containing rating data.
+        new_column (str): The name of the new column to store the results of rating anomaly detection/repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy for detecting rating anomalies.
+        repair_strategy (str): The strategy for repairing rating anomalies.
+        range_min (int): The minimum valid rating value.
+        range_max (int): The maximum valid rating value.
     """
 
     def __init__(
@@ -981,7 +1114,7 @@ class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
         column: str,
         new_column: str,
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "discrete",
         detect_strategy: str = "range",
         repair_strategy: str = "range",
         range_min: int = 1,
@@ -992,7 +1125,7 @@ class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=detect_strategy,
             range_min=range_min,
@@ -1004,30 +1137,32 @@ class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
     """
-    Task for detecting or repairing anomalies in review date data.
+    Class for detecting or repairing review date anomalies in interval data.
 
-    This class is designed to handle review date anomalies by detecting values
-    that fall outside a specified date range or repairing them to conform to
-    the specified range. It extends `IntervalAnomaly` to leverage configurable
-    strategies for detection and repair and supports operation in both local
-    and distributed environments.
+    This class extends the `IntervalAnomaly` class and provides functionality for detecting
+    and optionally repairing anomalies in review dates based on a specified valid date range.
 
     Args:
-        column (str): The name of the column containing review dates to evaluate for anomalies.
-        new_column (str): The name of the column to store the results of the operation
-            (e.g., anomaly flags or repaired values).
-        mode (str, optional): The mode of operation, either `"detect"` for anomaly
-            detection or `"repair"` for anomaly repair. Defaults to `"detect"`.
-        distributed (bool, optional): Whether the operations should be performed
-            in a distributed environment (e.g., with PySpark). Defaults to `True`.
-        detect_strategy (str, optional): The detection strategy to identify review date anomalies.
-            Defaults to `"date_range"`.
-        repair_strategy (str, optional): The repair strategy to handle review date anomalies.
-            Defaults to `"date_range"`.
-        range_min (int, optional): The minimum acceptable review date (e.g., year as an integer). Defaults to `2020`.
-        range_max (int, optional): The maximum acceptable review date (e.g., year as an integer). Defaults to `2023`.
-        range_type: (Literal["year", "month", "date"]): Indicates whether the ranges are years, months, or dates.
-        **kwargs: Additional keyword arguments passed to the parent class.
+        column (str): The name of the column containing the review date data to check for anomalies.
+        new_column (str): The name of the new column that will store the results of review date anomaly detection/repair.
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "interval".
+        detect_strategy (str, optional): The strategy to use for detecting review date anomalies. Defaults to "date_range".
+        repair_strategy (str, optional): The strategy to use for repairing detected review date anomalies. Defaults to "date_range".
+        range_min (int, optional): The minimum valid year for the review date. Defaults to 2020.
+        range_max (int, optional): The maximum valid year for the review date. Defaults to 2023.
+        range_type (str, optional): The type of date range to check against ("year", "month", or "date"). Defaults to "year".
+
+    Attributes:
+        column (str): The name of the column containing review date data.
+        new_column (str): The name of the new column to store the results of review date anomaly detection/repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy for detecting review date anomalies.
+        repair_strategy (str): The strategy for repairing review date anomalies.
+        range_min (int): The minimum valid year for the review date.
+        range_max (int): The maximum valid year for the review date.
+        range_type (str): The type of date range to check against ("year", "month", or "date").
     """
 
     def __init__(
@@ -1035,7 +1170,7 @@ class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
         column: str,
         new_column: str,
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "interval",
         detect_strategy: str = "date_range",
         repair_strategy: str = "date_range",
         range_min: int = 2020,
@@ -1047,7 +1182,7 @@ class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=detect_strategy,
             range_min=range_min,

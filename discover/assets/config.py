@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/element/config.py                                                         #
+# Filename   : /discover/assets/config.py                                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 11th 2024 09:42:37 pm                                                #
-# Modified   : Friday October 11th 2024 09:43:19 pm                                                #
+# Modified   : Sunday December 15th 2024 12:44:12 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ from typing import Any, Dict
 
 from pydantic.dataclasses import dataclass
 
-from discover.core.data_class import DataClass
+from discover.core.data_structure import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #

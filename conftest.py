@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday November 21st 2024 10:31:02 pm                                             #
+# Modified   : Sunday December 15th 2024 03:35:55 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -151,8 +151,7 @@ def spark_df(spark, pandas_df):
 def centralized_ds(pandas_df, container):
     dataset = Dataset(
         name="test_centralized_ds",
-        nlp=False,
-        distributed=False,
+        dataframe_type="pandas",
         phase=PhaseDef.DATAPREP,
         stage=StageDef.TQA,
         content=pandas_df,
@@ -168,8 +167,7 @@ def centralized_ds(pandas_df, container):
 def distributed_ds(spark_df, container):
     dataset = Dataset(
         name="test_distributed_ds",
-        nlp=False,
-        distributed=True,
+        dataframe_type="spark",
         phase=PhaseDef.DATAPREP,
         stage=StageDef.TQA,
         content=spark_df,
@@ -185,8 +183,7 @@ def distributed_ds(spark_df, container):
 def distributed_ds_nlp(spark_df, container):
     dataset = Dataset(
         name="test_distributed_nlp_ds",
-        nlp=True,
-        distributed=True,
+        dataframe_type="sparknlp",
         phase=PhaseDef.DATAPREP,
         stage=StageDef.TQA,
         content=spark_df,

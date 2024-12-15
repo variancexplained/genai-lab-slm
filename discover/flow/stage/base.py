@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Friday November 22nd 2024 03:08:21 pm                                               #
+# Modified   : Sunday December 15th 2024 06:21:21 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,9 +33,8 @@ from pyspark.sql import DataFrame
 from discover.assets.dataset import Dataset
 from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
-from discover.core.data_structure import DataFrameType
+from discover.core.data_structure import DataFrameType, NestedNamespace
 from discover.core.flow import PhaseDef, StageDef
-from discover.core.namespace import NestedNamespace
 from discover.flow.task.base import Task, TaskBuilder
 from discover.infra.persistence.repo.dataset import DatasetRepo
 from discover.infra.service.logging.stage import stage_logger
@@ -102,6 +101,17 @@ class Stage(ABC):
         self._return_dataset = return_dataset
         self._force = force
         self._tasks = []
+        # Dataset asset identifiers for use in subclasses.
+        self.source_asset_id = None
+        self.destination_asset_id = None
+
+        # Indicates whether to use pandas, spark, or sparknlp DataFrames
+        self.source_dataframe_type = DataFrameType.from_identifier(
+            self._source_config.dataframe_type
+        )
+        self.destination_dataframe_type = DataFrameType.from_identifier(
+            self._destination_config.dataframe_type
+        )
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -131,49 +141,58 @@ class Stage(ABC):
 
     @stage_logger
     def run(self) -> Dataset:
-        """Executes the stage and returns the asset ID.
+        """
+        Executes the stage and directs the flow based on the execution path.
 
-        This method determines the execution path based on whether the endpoint
-        exists and whether the `force` flag is set. It runs tasks to prepare
-        the data or updates the endpoint if changes are detected in the source data.
+        This method is responsible for determining the execution path (RUN, UPDATE_ENDPOINT, or RETURN)
+        and delegating to the appropriate logic to process the dataset. The method is decorated with
+        the stage_logger to log the execution flow.
 
         Returns:
-            str: The asset ID of the prepared dataset.
+            Dataset: The resulting dataset after the appropriate processing based on the execution path.
         """
-        source_asset_id = self._get_asset_id(config=self._source_config)
-        destination_asset_id = self._get_asset_id(config=self._destination_config)
+        return self._core_stage_run()
+
+    def _core_stage_run(self) -> Dataset:
+        """
+        Core logic for running the stage, determining the execution path,
+        and delegating to the appropriate processing function.
+
+        This method performs the following steps:
+        1. Retrieves the source and destination asset IDs using the provided configurations.
+        2. Determines the execution path based on the current asset IDs.
+        3. Executes the appropriate processing logic depending on the execution path:
+        - RUN: Executes the main processing logic.
+        - UPDATE_ENDPOINT: Updates the endpoint.
+        - RETURN: Returns the dataset without modification.
+
+        Returns:
+            Dataset: The resulting dataset after the execution path has been followed.
+        """
+        self.source_asset_id = self._get_asset_id(config=self._source_config)
+        self.destination_asset_id = self._get_asset_id(config=self._destination_config)
 
         # Determine execution path
-        execution_path = self._get_execution_path(
-            source_asset_id=source_asset_id, destination_asset_id=destination_asset_id
-        )
+        execution_path = self._get_execution_path()
 
         # Direct the process
         if execution_path == ExecutionPath.RUN:
             self._logger.debug("Execution path: RUN")
-            dataset = self._run(
-                source_asset_id=source_asset_id,
-                destination_asset_id=destination_asset_id,
-            )
+            dataset = self._run()
             return self._get_return_value(dataset=dataset)
 
         elif execution_path == ExecutionPath.UPDATE_ENDPOINT:
             self._logger.debug("Execution path: UPDATE ENDPOINT")
-            dataset = self._update_endpoint(
-                source_asset_id=source_asset_id,
-                destination_asset_id=destination_asset_id,
-            )
+            dataset = self._update_endpoint()
             return self._get_return_value(dataset=dataset)
 
         else:
             self._logger.debug("Execution path: RETURN")
             return self._get_return_value(
-                asset_id=destination_asset_id, config=self._destination_config
+                dataframe_type=self.destination_dataframe_type
             )
 
-    def _get_execution_path(
-        self, source_asset_id: str, destination_asset_id: str
-    ) -> ExecutionPath:
+    def _get_execution_path(self) -> ExecutionPath:
         """Determines the execution path
 
         There are thee binary variables creating 2^8 possible conditions that resolve to
@@ -187,16 +206,12 @@ class Stage(ABC):
         Option 3 executes if not forcing, the endpoint exists and the source  has
             been consumed.
 
-        Args:
-            source_asset_id (str): Asset identifier for source dataset
-            destination_asset_id (str): Asset identifier for destination dataset
-
         Note: Force must be set to True if the source code has changed or the output changes with
         the input, and the input has changed.
         """
         # Obtain current state
-        endpoint_exists = self._dataset_exists(asset_id=destination_asset_id)
-        source_consumed = self._source_consumed(asset_id=source_asset_id)
+        endpoint_exists = self._dataset_exists(asset_id=self.destination_asset_id)
+        source_consumed = self._source_consumed(asset_id=self.source_asset_id)
 
         # Easy case first
         if not self._force and source_consumed and endpoint_exists:
@@ -208,15 +223,10 @@ class Stage(ABC):
         else:
             return ExecutionPath.RUN
 
-    def _run(self, source_asset_id: str, destination_asset_id: str) -> Dataset:
-        """Performs the core logic of the stage, executing tasks in sequence.
-
-        Args:
-            source_asset_id (str): The asset identifier for the source dataset.
-            destination_asset_id (str): The asset identifier for the destination dataset.
-        """
+    def _run(self) -> Dataset:
+        """Performs the core logic of the stage, executing tasks in sequence."""
         source_dataset = self._load_dataset(
-            asset_id=source_asset_id, config=self._source_config
+            asset_id=self.source_asset_id, dataframe_type=self.source_dataframe_type
         )
         data = source_dataset.content
         for task in self._tasks:
@@ -224,30 +234,30 @@ class Stage(ABC):
 
         # Create the new destination dataset
         destination_dataset = self._create_dataset(
-            asset_id=destination_asset_id, config=self._destination_config, data=data
+            asset_id=self.destination_asset_id,
+            config=self._destination_config,
+            dataframe_type=self.destination_dataframe_type,
+            data=data,
         )
 
         self._save_dataset(dataset=destination_dataset, replace_if_exists=True)
         # Mark the source dataset as having been consumed.
-        self._mark_source_consumed(asset_id=source_asset_id)
+        self._mark_source_consumed(asset_id=self.source_asset_id)
 
         return destination_dataset
 
-    def _update_endpoint(self, source_asset_id, destination_asset_id) -> Dataset:
+    def _update_endpoint(self) -> Dataset:
         """Updates the endpoint dataset with changes in the source dataset.
-
-        Args:
-            source_asset_id (str): The asset identifier for the input dataset.
-            destination_asset_id (str): The asset identifier for the output dataset.
 
         Returns:
             Dataset: The updated dataset endpoint
         """
         source_dataset = self._load_dataset(
-            asset_id=source_asset_id, config=self._source_config
+            asset_id=self.source_asset_id, dataframe_type=self.source_dataframe_type
         )
         destination_dataset = self._load_dataset(
-            asset_id=destination_asset_id, config=self._destination_config
+            asset_id=self.destination_asset_id,
+            dataframe_type=self.destination_dataframe_type,
         )
         result_cols = [
             col
@@ -262,7 +272,10 @@ class Stage(ABC):
 
         # Create the new destination dataset
         destination_dataset_updated = self._create_dataset(
-            destination_asset_id, config=self._destination_config, data=df
+            self.destination_asset_id,
+            config=self._destination_config,
+            dataframe_type=self.destination_dataframe_type,
+            data=df,
         )
         # Save the updated dataset
         self._save_dataset(dataset=destination_dataset_updated, replace_if_exists=True)
@@ -363,6 +376,7 @@ class Stage(ABC):
         self,
         asset_id: str,
         config: NestedNamespace,
+        dataframe_type: DataFrameType,
         data: Union[pd.DataFrame, pyspark.sql.DataFrame],
     ) -> Dataset:
         """Creates a dataset.
@@ -380,8 +394,7 @@ class Stage(ABC):
             stage=StageDef.from_value(config.stage),
             name=config.name,
             content=data,
-            nlp=config.nlp,
-            distributed=config.distributed,
+            dataframe_type=dataframe_type,
         )
 
     @classmethod
@@ -488,14 +501,15 @@ class Stage(ABC):
             raise RuntimeError(msg)
 
     def _load_dataset(
-        self, asset_id: str, config: NestedNamespace
+        self,
+        asset_id: str,
+        dataframe_type: DataFrameType,
     ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
         """Loads a dataset from the repository.
 
         Args:
             asset_id (str): The identifier for the dataset asset.
-            config (NestedNamespace): Dataset configuration specifying whether to
-                load the dataset as a Pandas or PySpark DataFrame and if NLP dependencies are needed.
+            dataframe_type (DataFrameType): Configuration for a pandas, spark, or sparknlp DataFrame.
 
         Returns:
             Union[pd.DataFrame, pyspark.sql.DataFrame]: Pandas or PySpark DataFrame.
@@ -507,11 +521,13 @@ class Stage(ABC):
         try:
             dataset = self._repo.get(
                 asset_id=asset_id,
-                distributed=config.distributed,
-                nlp=config.nlp,
+                dataframe_type=dataframe_type,
             )
 
-            if config.distributed and "__index_level_0__" in dataset.content.columns:
+            if (
+                dataframe_type.distributed
+                and "__index_level_0__" in dataset.content.columns
+            ):
                 # Rename the pandas index column if it exists in the PySpark DataFrame
                 dataset.content = dataset.content.withColumnRenamed(
                     "__index_level_0__", "pandas_index"
@@ -595,16 +611,18 @@ class Stage(ABC):
         self,
         dataset: Optional[Dataset] = None,
         asset_id: Optional[str] = None,
-        config: Optional[NestedNamespace] = None,
+        dataframe_type: Optional[DataFrameType] = None,
         return_dataset: bool = False,
     ) -> Union[Dataset, str]:
         """Obtains and returns a value based on the boolean `return_dataset` instance variable."""
         return_dataset = return_dataset or self._return_dataset
-        config = config or self._destination_config  # Config for the returned dataset.
+        dataframe_type = dataframe_type or DataFrameType.from_identifier("pandas")
 
         if return_dataset:
             try:
-                return dataset or self._load_dataset(asset_id=asset_id, config=config)
+                return dataset or self._load_dataset(
+                    asset_id=asset_id, dataframe_type=dataframe_type
+                )
             except Exception as e:
                 msg = f"Unable to return dataset. The dataset or a valid asset_id and configuration must be provided.\n{e}"
                 raise ValueError(msg)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:47:02 pm                                             #
-# Modified   : Thursday November 21st 2024 11:49:26 pm                                             #
+# Modified   : Saturday December 14th 2024 11:23:58 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,6 +21,8 @@ import pandas as pd
 from pandarallel import pandarallel
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
+from pyspark.sql.functions import col, udf
+from pyspark.sql.types import IntegerType
 
 from discover.flow.task.enrich.base import EnrichmentTask
 from discover.infra.service.logging.task import task_logger
@@ -29,6 +31,8 @@ from discover.infra.service.logging.task import task_logger
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                COMPUTE REVIEW LENGTH                                             #
 # ------------------------------------------------------------------------------------------------ #
 class ComputeReviewLength(EnrichmentTask):
     """
@@ -68,9 +72,68 @@ class ComputeReviewLength(EnrichmentTask):
         Returns:
             pd.DataFrame: The DataFrame with the new column added containing word counts.
         """
+
         data[self._new_column] = data[self._column].parallel_apply(
             lambda x: len(x.split())
         )
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                COMPUTE REVIEW LENGTH (PYSPARK)                                   #
+# ------------------------------------------------------------------------------------------------ #
+
+
+class ComputeReviewLengthPS(EnrichmentTask):
+    """
+    Task for adding a new column to a pyspark DataFrame that contains the word count of a specified text column.
+
+    This task calculates the word count for each entry in the specified text column and adds it as a new column
+    in the DataFrame. It uses parallel processing to optimize the computation for large datasets.
+
+    Args:
+        column (str): The name of the column in the DataFrame containing the text to analyze. Defaults to "content".
+        new_column (str): The name of the new column to store the word count. Defaults to "review_length".
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Calculates the word count for each entry in the specified column and adds it to a new column in the DataFrame.
+    """
+
+    def __init__(
+        self, column: str = "content", new_column: str = "review_length", **kwargs
+    ) -> None:
+        super().__init__(column=column, new_column=new_column, **kwargs)
+        self._new_column = (
+            new_column  # We override review_length as it shouldn't be prefixed.
+        )
+
+    @task_logger
+    def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Calculates the word count for each entry in the specified text column and adds it as a new column.
+
+        This method splits the text in the specified column by whitespace and counts the number of words
+        in each entry. The results are stored in a new column in the DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the text data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with the new column added containing word counts.
+        """
+
+        # Define a UDF (User-Defined Function) to calculate the length of split strings
+        def count_words(text):
+            return len(text.split())
+
+        # Register the UDF
+        count_words_udf = udf(count_words, IntegerType())
+
+        # Apply UDF to dataframe.
+        data = data.withColumn(self._new_column, count_words_udf(col(self._column)))
+
+        # Return the updated DataFrame
         return data
 
 

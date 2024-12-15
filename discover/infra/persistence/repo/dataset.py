@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Sunday November 24th 2024 05:56:51 pm                                               #
+# Modified   : Sunday December 15th 2024 04:19:15 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,6 +25,7 @@ import pyspark
 
 from discover.assets.dataset import Dataset
 from discover.assets.repo import Repo
+from discover.core.data_structure import DataFrameType
 from discover.core.flow import PhaseDef
 from discover.infra.persistence.dal.dao.dataset import DatasetDAO
 from discover.infra.persistence.dal.dao.exception import ObjectNotFoundError
@@ -44,64 +45,23 @@ from discover.infra.persistence.repo.exception import (
     DatasetRemovalError,
 )
 
+DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
+
 
 # ------------------------------------------------------------------------------------------------ #
 class DatasetRepo(Repo):
     """
-    Repository class for managing dataset storage and retrieval operations.
+    A repository for managing datasets in both centralized and distributed environments.
 
-    This class provides methods to add, retrieve, list, and remove datasets, as well as
-    read and write datasets to centralized (Pandas) or distributed (PySpark) file systems.
-    It leverages DAOs (Data Access Objects) for interacting with underlying storage mechanisms.
+    This class provides methods to create, retrieve, update, and manage datasets,
+    ensuring consistency across metadata storage and file persistence.
 
     Args:
-        dataset_dao (DatasetDAO): Data Access Object for dataset metadata.
-        fao_cfs (FAOCFS): Data Access Object for centralized file storage (e.g., local filesystem).
-        fao_dfs (FAODFS): Data Access Object for distributed file storage (e.g., HDFS).
-        location_service (LocationService): Service that centralizes the assignment of filepaths.
-        partitioned (bool): Whether dataset files are to be partitioned parquet files. Default is True
-
-
-    Methods:
-        add(dataset: Dataset) -> None:
-            Adds a new dataset to the storage system.
-
-        get(id: int) -> Optional[Dataset]:
-            Retrieves a dataset by its ID.
-
-        list_all() -> pd.DataFrame:
-            Returns a DataFrame containing all datasets' metadata.
-
-        list_by_phase(phase: PhaseDef) -> pd.DataFrame:
-            Lists datasets filtered by the specified phase.
-
-        list_by_stage(stage: StageDef) -> pd.DataFrame:
-            Lists datasets filtered by the specified stage.
-
-        remove(id: int) -> None:
-            Removes a dataset and its associated content by its ID.
-
-        exists(id: int) -> bool:
-            Checks if a dataset exists by its ID.
-
-    Private Methods:
-        _read_file(dataset: Dataset) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
-            Reads a dataset's content
-
-        _read_centralized_file(dataset: Dataset) -> pd.DataFrame:
-            Reads a dataset's content from a centralized file system (e.g., local filesystem).
-
-        _read_distributed_file(dataset: Dataset) -> pyspark.sql.DataFrame:
-            Reads a dataset's content from a distributed file system (e.g., HDFS).
-
-        _write_file(dataset: Dataset) -> None:
-            Writes a dataset's content.
-
-        _write_centralized_file(dataset: Dataset) -> None:
-            Writes a dataset's content to a centralized file system.
-
-        _write_distributed_file(dataset: Dataset) -> None:
-            Writes a dataset's content to a distributed file system.
+        dataset_dao (DatasetDAO): Data Access Object for managing dataset metadata.
+        fao_cfs (FAOCFS): File access object for centralized file system interactions.
+        fao_dfs (FAODFS): File access object for distributed file system interactions.
+        location_service (FileLocationService): Service for determining file storage locations.
+        partitioned (bool, optional): Whether to store datasets in partitioned format. Defaults to True.
     """
 
     def __init__(
@@ -112,7 +72,6 @@ class DatasetRepo(Repo):
         location_service: FileLocationService,
         partitioned: bool = True,
     ) -> None:
-
         self._dataset_dao = dataset_dao
         self._fao_cfs = fao_cfs
         self._fao_dfs = fao_dfs
@@ -121,19 +80,20 @@ class DatasetRepo(Repo):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     # -------------------------------------------------------------------------------------------- #
-    #                             DATASET CREATION METHODS                                         #
-    # -------------------------------------------------------------------------------------------- #
-    def add(self, dataset: Dataset) -> Optional[Dataset]:
+    def add(self, dataset: Dataset) -> None:
         """
-        Adds a new dataset to the repository. Raises an error if the dataset ID already exists.
+        Adds a dataset to the repository.
+
+        This method validates the dataset, determines its storage location, writes its
+        content to the file system, and stores its metadata using the DAO.
+        If an error occurs during persistence, it rolls back the operation to maintain consistency.
 
         Args:
-            dataset (Dataset): The dataset object to be added.
+            dataset (Dataset): The dataset to be added.
 
-        Returns:
-            dataset (Dataset): The dataset object with storage location added.
         Raises:
-            FileExistsError: If a dataset with the given ID already exists.
+            DatasetIOError: If an error occurs during file I/O or metadata persistence.
+            DatasetCreationError: If the dataset cannot be created due to an error.
         """
         # Ensure dataset doesn't already exist
         self._validate_add(dataset=dataset)
@@ -173,28 +133,29 @@ class DatasetRepo(Repo):
             raise DatasetCreationError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
-    #                             DATASET RETRIEVAL METHODS                                        #
-    # -------------------------------------------------------------------------------------------- #
     def get(
         self,
         asset_id: str,
-        distributed: Optional[bool] = None,
-        nlp: bool = False,
+        dataframe_type: DataFrameType = DataFrameType.PANDAS,
     ) -> Optional[Dataset]:
         """
-        Retrieves a dataset by its ID.
+        Retrieves a dataset by its asset ID.
+
+        This method fetches the dataset's metadata and content from storage, returning
+        a fully populated `Dataset` object.
 
         Args:
-            asset_id (str): The id of the dataset to retrieve.
-            distributed (bool): If True, a distributed (Spark) DataFrame is returned.
-                If None, distributed value is obtained from dataset metadata
-            nlp (bool): If True, a Spark session for NLP will be used.
+            asset_id (str): The unique identifier of the dataset.
+            dataframe_type (DataFrameType, optional): The type of DataFrame to return
+                (e.g., Pandas, Spark). Defaults to `DataFrameType.PANDAS`.
 
         Returns:
-            Optional[Dataset]: The dataset object if found; otherwise, None.
+            Optional[Dataset]: The retrieved dataset.
 
         Raises:
-            FileNotFoundError: If an error occurs while reading the dataset.
+            DatasetNotFoundError: If the dataset does not exist.
+            DatasetIOError: If an error occurs during I/O operations.
+            DatasetIntegrityError: If the dataset file is missing or inconsistent.
         """
         # Step 1: Obtain the dataset object containing metadata and config.
         try:
@@ -211,7 +172,8 @@ class DatasetRepo(Repo):
         # Step 2: Get the dataset contents from file, add to dataset object and return
         try:
             dataset.content = self._read_file(
-                dataset=dataset, distributed=distributed, nlp=nlp
+                dataset=dataset,
+                dataframe_type=dataframe_type,
             )
             return dataset
         except FileNotFoundError as e:
@@ -229,47 +191,46 @@ class DatasetRepo(Repo):
                 raise DatasetIOError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
-    def select(self, asset_id: str, condition: Callable) -> pd.DataFrame:
+    def select(
+        self,
+        asset_id: str,
+        condition: Callable,
+        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+    ) -> pd.DataFrame:
         """
-        Selects and returns rows from the asset data that meet a specified condition.
+        Selects rows from a dataset based on a condition.
 
-        Parameters
-        ----------
-        asset_id : str
-            The unique identifier for the asset from which to retrieve data.
-
-        condition : Callable
-            A lambda function or callable expression that filters the DataFrame rows.
-            This function should accept a DataFrame and return a boolean Series to filter rows
-            (e.g., `lambda x: x['date'] > some_date`).
-
-        Returns
-        -------
-        pd.DataFrame
-            A DataFrame containing only the rows that satisfy the specified condition.
-
-        Example
-        -------
-        >>> select("asset_123", lambda x: x['date'] > '2023-01-01')
-        """
-        df = self.get(asset_id=asset_id)
-        return df[condition]
-
-    # -------------------------------------------------------------------------------------------- #
-    def get_dataset_metadata(self, asset_id: str) -> Dataset:
-        """
-        Retrieves a dataset with metadata only.
+        This method retrieves the dataset and applies the specified condition to filter rows.
 
         Args:
-            asset_id (str): The id of the dataset to retrieve.
+            asset_id (str): The unique identifier of the dataset.
+            condition (Callable): A function representing the condition to apply to the DataFrame.
+            dataframe_type (DataFrameType, optional): The type of DataFrame to use. Defaults to `DataFrameType.PANDAS`.
 
         Returns:
-            Optional[Dataset]: The dataset object containing just metadata if found; otherwise, None.
+            pd.DataFrame: The filtered DataFrame.
 
         Raises:
-            FileNotFoundError: If an error occurs while reading the dataset.
+            DatasetNotFoundError: If the dataset does not exist.
+            DatasetIOError: If an error occurs during retrieval or processing.
         """
-        # Step 1: Obtain the dataset object containing metadata and config.
+        df = self.get(asset_id=asset_id, dataframe_type=dataframe_type)
+        return df[condition]
+
+    def get_dataset_metadata(self, asset_id: str) -> Dataset:
+        """
+        Retrieves metadata for a dataset by its asset ID.
+
+        Args:
+            asset_id (str): The unique identifier of the dataset.
+
+        Returns:
+            Dataset: The dataset object containing metadata.
+
+        Raises:
+            DatasetNotFoundError: If the dataset does not exist.
+            DatasetIOError: If an error occurs during metadata retrieval.
+        """
         try:
             return self._dataset_dao.read(asset_id=asset_id)
         except ObjectNotFoundError:
@@ -284,18 +245,14 @@ class DatasetRepo(Repo):
     # -------------------------------------------------------------------------------------------- #
     def update_dataset_metadata(self, dataset: Dataset) -> None:
         """
-        Updates the metadata for a dataset.
+        Updates metadata for a given dataset.
 
         Args:
-            asset_id (str): The id of the dataset to retrieve.
-
-        Returns:
-            Optional[Dataset]: The dataset object containing just metadata if found; otherwise, None.
+            dataset (Dataset): The dataset with updated metadata.
 
         Raises:
-            FileNotFoundError: If an error occurs while reading the dataset.
+            DatasetIOError: If the metadata cannot be updated.
         """
-        # Step 1: Obtain the dataset object containing metadata and config.
         try:
             return self._dataset_dao.update(dataset=dataset)
         except Exception as e:
@@ -305,25 +262,28 @@ class DatasetRepo(Repo):
 
     # -------------------------------------------------------------------------------------------- #
     def _read_file(
-        self, dataset: Dataset, distributed: Optional[bool] = None, nlp: bool = False
-    ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
+        self,
+        dataset: Dataset,
+        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+    ) -> DataFrame:
         """
-        Reads a dataset's content based on its storage configuration.
+        Reads the content of a dataset from storage.
+
+        This method determines the appropriate read operation based on the
+        specified DataFrame type (e.g., centralized or distributed).
 
         Args:
-            dataset (Dataset): The dataset to read.
-            distributed (Optional[bool]): Indicates whether the dataset should be read
-                as a distributed dataset (Spark) or centralized (Pandas)
-            nlp (bool): Whether to obtain data using a NLP spark session.
+            dataset (Dataset): The dataset whose content is to be read.
+            dataframe_type (DataFrameType, optional): The type of DataFrame to return. Defaults to `DataFrameType.PANDAS`.
 
         Returns:
-            Union[pd.DataFrame, pyspark.sql.DataFrame]: The dataset's content.
-        """
-        if distributed is None:
-            distributed = dataset.distributed
+            DataFrame: The dataset content as a DataFrame.
 
-        if distributed:
-            return self._read_distributed_file(dataset=dataset, nlp=nlp)
+        Raises:
+            DatasetIOError: If an error occurs during file reading.
+        """
+        if dataframe_type.distributed:
+            return self._read_distributed_file(dataset=dataset, nlp=dataframe_type.nlp)
         else:
             return self._read_centralized_file(dataset=dataset)
 
@@ -353,7 +313,6 @@ class DatasetRepo(Repo):
         Returns:
             pyspark.sql.DataFrame: The content of the dataset.
         """
-        nlp = dataset.nlp or nlp
         return self._fao_dfs.read(filepath=dataset.storage_location, nlp=nlp)
 
     # -------------------------------------------------------------------------------------------- #

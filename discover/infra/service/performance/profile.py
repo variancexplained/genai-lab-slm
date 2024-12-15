@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Saturday November 16th 2024 05:18:05 pm                                             #
+# Modified   : Sunday December 15th 2024 12:44:12 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Union
 
-from discover.core.data_class import DataClass
+from discover.core.data_structure import DataClass
 from discover.core.flow import (
     EDAStageDef,
     ModelingStageDef,

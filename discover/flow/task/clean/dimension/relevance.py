@@ -11,37 +11,48 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Sunday November 24th 2024 05:29:41 pm                                               #
+# Modified   : Sunday December 15th 2024 06:21:16 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from typing import Literal, Union
 
-from discover.flow.task.clean.dimension.anomaly import NumericAnomaly, TextAnomaly
+from discover.flow.task.clean.dimension.base import NumericAnomaly, TextAnomaly
 
 
 # ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairNonEnglishTask(TextAnomaly):
     """
-    A PySpark task class for detecting or removing non-English text in a DataFrame column.
-    The class provides functionality to either flag non-English text using FastText and Lingua
-    language detection libraries or remove rows where the text is non-English.
+    Class for detecting or repairing non-English text anomalies.
+
+    This class extends the `TextAnomaly` class and provides functionality for identifying
+    and repairing non-English content in text columns. It supports detection and repair
+    strategies for non-English content, with customizable thresholds for anomaly detection.
 
     Args:
+        column (str, optional): The name of the column in the dataset to apply anomaly detection. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of the non-English detection/repair. Defaults to "contains_non_english".
+        replacement (str, optional): A string to replace detected non-English content. Defaults to " ".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        detect_strategy (str, optional): The strategy to use for detecting non-English content. Defaults to "non_english".
+        repair_strategy (str, optional): The strategy to use for repairing detected non-English content. Defaults to "non_english".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
-        column (str): The name of the column containing text to examine.
-        new_column (str): The name of the new column for detection flags.
-        replacement (str): The string to replace URLs with in 'repair' mode.
-        threshold (float): An optional threshold for detection logic.
-        mode (str): The mode of operation, either 'detect' or 'repair'.
-        distributed (bool): Whether to use a distributed runtime environment.
-        threshold (Union[float, int]): The threshold value for anomaly detection.
-        threshold_type (Literal["count", "proportion"]): The type of threshold. Use "count" for
-            a fixed number of matches or "proportion" for a relative ratio.
-        unit (Literal["word", "character"], optional): The unit for proportions when `threshold_type`
-            is "proportion". Must be "word" or "character". Defaults to "word".
-
+    Attributes:
+        column (str): The name of the column in the dataset to apply anomaly detection.
+        new_column (str): The name of the new column that will store the results of the non-English detection/repair.
+        replacement (str): A string to replace detected non-English content.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_id (str): The ID of the strategy factory to use.
+        detect_strategy (str): The strategy to use for detecting non-English content.
+        repair_strategy (str): The strategy to use for repairing detected non-English content.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
     """
 
     def __init__(
@@ -50,7 +61,7 @@ class DetectOrRepairNonEnglishTask(TextAnomaly):
         new_column: str = "contains_non_english",
         replacement: str = " ",
         mode: str = "detect",
-        distributed: bool = True,
+        strategy_factory_id: str = "text_spark",
         detect_strategy: str = "non_english",
         repair_strategy: str = "non_english",
         threshold: Union[float, int] = None,
@@ -58,12 +69,11 @@ class DetectOrRepairNonEnglishTask(TextAnomaly):
         unit: Literal["word", "character"] = None,
         **kwargs,
     ) -> None:
-
         super().__init__(
             column=column,
             new_column=new_column,
             mode=mode,
-            distributed=distributed,
+            strategy_factory_id=strategy_factory_id,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -112,7 +122,7 @@ class DetectOrRepairShortReviewsTask(NumericAnomaly):
         column: str = "review_length",
         new_column: str = "short_review",
         mode: str = "detect",
-        distributed: bool = True,
+        dataframe_type_id: str = "spark",
         threshold: float = 4,
         detect_less_than_threshold: bool = True,
         detect_strategy: str = "threshold",

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Tuesday November 19th 2024 10:02:11 pm                                              #
+# Modified   : Sunday December 15th 2024 12:42:43 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from typing import Dict
 
 from pyspark.sql import SparkSession
 
-from discover.core.namespace import NestedNamespace
+from discover.core.data_structure import NestedNamespace
 
 # ------------------------------------------------------------------------------------------------ #
 # Set up root logger to only log errors
