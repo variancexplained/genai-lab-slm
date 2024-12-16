@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/storage/local/io.py                                                 #
+# Filename   : /discover/infra/utils/file/io.py                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 11th 2024 12:21:35 am                                           #
-# Modified   : Tuesday October 8th 2024 09:59:47 pm                                                #
+# Modified   : Sunday December 15th 2024 04:35:01 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -235,7 +235,7 @@ class YamlIO(IO):  # pragma: no cover
         logging.debug(f"Reading file using {cls.__name__}")
         with open(filepath, "r", encoding="utf-8") as f:
             try:
-                data = yaml.safe_load(f)
+                data = yaml.load(f, Loader=yaml.FullLoader)
             except yaml.YAMLError as e:  # pragma: no cover
                 logging.exception(e)
                 raise IOError(e) from e

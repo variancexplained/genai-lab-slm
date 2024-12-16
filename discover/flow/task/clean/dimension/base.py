@@ -4,21 +4,29 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/dimension/anomaly.py                                      #
+# Filename   : /discover/flow/task/clean/dimension/base.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 05:35:51 pm                                             #
-# Modified   : Sunday December 15th 2024 05:55:57 am                                               #
+# Modified   : Sunday December 15th 2024 08:04:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from typing import Literal, Union
+from typing import Literal, Type, Union
 
 from discover.flow.task.clean.base.anomaly import Anomaly
+from discover.flow.task.clean.strategy.categorical import CategoricalStrategyFactory
+from discover.flow.task.clean.strategy.discrete import DiscreteStrategyFactory
+from discover.flow.task.clean.strategy.interval import IntervalStrategyFactory
+from discover.flow.task.clean.strategy.nominal import NominalStrategyFactory
+from discover.flow.task.clean.strategy.numeric import NumericStrategyFactory
+from discover.flow.task.clean.strategy.text.distributed import (
+    TextStrategyFactory as SparkTextStrategyFactory,
+)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -43,7 +51,8 @@ class TextAnomaly(Anomaly):
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
         threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
         unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory]): SparkTextStrategyFactory subclass responsible for providing the
+            factory for detect and repair strategies.
 
     Attributes:
         column (str): The name of the column in the dataset to apply anomaly detection.
@@ -57,7 +66,8 @@ class TextAnomaly(Anomaly):
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
         threshold_type (str): Specifies if the threshold is based on a count or proportion.
         unit (str): Specifies whether to apply the threshold to words or characters.
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory]): SparkTextStrategyFactory subclass responsible for providing the
+            factory for detect and repair strategies.
     """
 
     def __init__(
@@ -73,7 +83,7 @@ class TextAnomaly(Anomaly):
         threshold: Union[float, int] = None,
         threshold_type: Literal["count", "proportion"] = None,
         unit: Literal["word", "character"] = None,
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -84,7 +94,7 @@ class TextAnomaly(Anomaly):
             mode=mode,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             threshold=threshold,
             threshold_type=threshold_type,
             unit=unit,
@@ -95,32 +105,18 @@ class TextAnomaly(Anomaly):
 # ------------------------------------------------------------------------------------------------ #
 class NumericAnomaly(Anomaly):
     """
-    Class for handling numeric anomaly detection and repair strategies.
-
-    This class extends the `Anomaly` class and provides functionality for detecting
-    and repairing anomalies in numeric data. It utilizes specific detection and repair
-    strategies, defined via the provided strategies and factory class. Additionally, it
-    supports configuring thresholds for anomaly detection and adjusting the detection mode.
+    Handles the detection and repair of numerical anomalies.
 
     Args:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "numeric".
-        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        threshold (Union[float, int], optional): The threshold value used for detecting anomalies. If not provided, no threshold is applied.
-        detect_less_than_threshold (bool, optional): If True, anomalies are detected for values less than the threshold. Defaults to None.
-
-    Attributes:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str): The ID of the strategy factory to use.
-        mode (str): The mode of operation, either "detect" or "repair".
-        threshold (Union[float, int]): The threshold value used for detecting anomalies.
-        detect_less_than_threshold (bool): If True, anomalies are detected for values less than the threshold.
+        column (str): The name of the column to analyze.
+        new_column (str): The name of the column where the results will be stored.
+        detect_strategy (str): The strategy to use for detecting anomalies.
+        repair_strategy (str): The strategy to use for repairing anomalies.
+        strategy_factory_cls (Type[NumericStrategyFactory], optional): The factory class to create the strategy. Defaults to NumericStrategyFactory.
+        mode (str, optional): The mode for the task, either 'detect' or 'repair'. Defaults to 'detect'.
+        threshold (Union[float, int], optional): The threshold value for anomaly detection.
+        detect_less_than_threshold (bool, optional): If True, detects values less than the threshold. Defaults to None.
+        **kwargs: Additional keyword arguments to be passed to the parent class.
     """
 
     def __init__(
@@ -129,7 +125,7 @@ class NumericAnomaly(Anomaly):
         new_column: str,
         detect_strategy: str,
         repair_strategy: str,
-        strategy_factory_id: str = "numeric",
+        strategy_factory_cls: Type[NumericStrategyFactory] = NumericStrategyFactory,
         mode: str = "detect",
         threshold: Union[float, int] = None,
         detect_less_than_threshold: bool = None,
@@ -140,7 +136,7 @@ class NumericAnomaly(Anomaly):
             new_column=new_column,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             mode=mode,
             threshold=threshold,
             detect_less_than_threshold=detect_less_than_threshold,
@@ -151,31 +147,20 @@ class NumericAnomaly(Anomaly):
 # ------------------------------------------------------------------------------------------------ #
 class CategoricalAnomaly(Anomaly):
     """
-    Class for handling categorical anomaly detection and repair strategies.
-
-    This class extends the `Anomaly` class and provides functionality for detecting
-    and repairing anomalies in categorical data. It utilizes specific detection and repair
-    strategies, defined via the provided strategies and factory class. Additionally, it
-    ensures that only valid categories are processed.
+    Handles the detection and repair of anomalies in categorical data columns.
 
     Args:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "categorical".
-        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        valid_categories (list, optional): A list of valid categories that should be present in the data.
-            If not provided, a `TypeError` is raised.
+        column (str): The name of the column to analyze.
+        new_column (str): The name of the column where the results will be stored.
+        detect_strategy (str): The strategy to use for detecting anomalies.
+        repair_strategy (str): The strategy to use for repairing anomalies.
+        strategy_factory_cls (Type[CategoricalStrategyFactory], optional): The factory class to create the strategy. Defaults to CategoricalStrategyFactory.
+        mode (str, optional): The mode for the task, either 'detect' or 'repair'. Defaults to 'detect'.
+        valid_categories (list): A list of valid categories for the categorical data.
+        **kwargs: Additional keyword arguments to be passed to the parent class.
 
-    Attributes:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str): The ID of the strategy factory to use.
-        mode (str): The mode of operation, either "detect" or "repair".
-        valid_categories (list): The list of valid categories to be considered for anomaly detection.
+    Raises:
+        TypeError: If the `valid_categories` argument is not provided or is not a list.
     """
 
     def __init__(
@@ -184,7 +169,9 @@ class CategoricalAnomaly(Anomaly):
         new_column: str,
         detect_strategy: str,
         repair_strategy: str,
-        strategy_factory_id: str = "categorical",
+        strategy_factory_cls: Type[
+            CategoricalStrategyFactory
+        ] = CategoricalStrategyFactory,
         mode: str = "detect",
         valid_categories: list = None,
         **kwargs,
@@ -197,7 +184,7 @@ class CategoricalAnomaly(Anomaly):
             new_column=new_column,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             mode=mode,
             valid_categories=valid_categories,
             **kwargs,
@@ -207,27 +194,17 @@ class CategoricalAnomaly(Anomaly):
 # ------------------------------------------------------------------------------------------------ #
 class NominalAnomaly(Anomaly):
     """
-    Class for handling nominal anomaly detection and repair strategies.
-
-    This class extends the `Anomaly` class and provides functionality for detecting
-    and repairing anomalies in nominal data. It utilizes specific detection and repair
-    strategies, defined via the provided strategies and factory class.
+    Handles the detection and repair of anomalies in nominal (categorical) data columns.
 
     Args:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "nominal".
-        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        column (str): The name of the column to analyze.
+        new_column (str): The name of the column where the results will be stored.
+        detect_strategy (str): The strategy to use for detecting anomalies.
+        repair_strategy (str): The strategy to use for repairing anomalies.
+        strategy_factory_cls (Type[NominalStrategyFactory], optional): The factory class to create the strategy. Defaults to NominalStrategyFactory.
+        mode (str, optional): The mode for the task, either 'detect' or 'repair'. Defaults to 'detect'.
+        **kwargs: Additional keyword arguments to be passed to the parent class.
 
-    Attributes:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str): The ID of the strategy factory to use.
-        mode (str): The mode of operation, either "detect" or "repair".
     """
 
     def __init__(
@@ -236,7 +213,7 @@ class NominalAnomaly(Anomaly):
         new_column: str,
         detect_strategy: str,
         repair_strategy: str,
-        strategy_factory_id: str = "nominal",
+        strategy_factory_cls: Type[NominalStrategyFactory] = NominalStrategyFactory,
         mode: str = "detect",
         **kwargs,
     ) -> None:
@@ -245,7 +222,7 @@ class NominalAnomaly(Anomaly):
             new_column=new_column,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             mode=mode,
             **kwargs,
         )
@@ -254,27 +231,17 @@ class NominalAnomaly(Anomaly):
 # ------------------------------------------------------------------------------------------------ #
 class IntervalAnomaly(Anomaly):
     """
-    Class for handling interval anomaly detection and repair strategies.
-
-    This class extends the `Anomaly` class and provides functionality for detecting
-    and repairing anomalies in interval data. It utilizes specific detection and repair
-    strategies, defined via the provided strategies and factory class.
+    Handles the detection and repair of anomalies in interval data columns.
 
     Args:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "interval".
-        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        column (str): The name of the column to analyze.
+        new_column (str): The name of the column where the results will be stored.
+        detect_strategy (str): The strategy to use for detecting anomalies.
+        repair_strategy (str): The strategy to use for repairing anomalies.
+        strategy_factory_cls (Type[IntervalStrategyFactory], optional): The factory class to create the strategy. Defaults to IntervalStrategyFactory.
+        mode (str, optional): The mode for the task, either 'detect' or 'repair'. Defaults to 'detect'.
+        **kwargs: Additional keyword arguments to be passed to the parent class.
 
-    Attributes:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str): The ID of the strategy factory to use.
-        mode (str): The mode of operation, either "detect" or "repair".
     """
 
     def __init__(
@@ -283,7 +250,7 @@ class IntervalAnomaly(Anomaly):
         new_column: str,
         detect_strategy: str,
         repair_strategy: str,
-        strategy_factory_id: str = "interval",
+        strategy_factory_cls: Type[IntervalStrategyFactory] = IntervalStrategyFactory,
         mode: str = "detect",
         **kwargs,
     ) -> None:
@@ -292,7 +259,7 @@ class IntervalAnomaly(Anomaly):
             new_column=new_column,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             mode=mode,
             **kwargs,
         )
@@ -301,28 +268,17 @@ class IntervalAnomaly(Anomaly):
 # ------------------------------------------------------------------------------------------------ #
 class DiscreteAnomaly(Anomaly):
     """
-    Class for handling discrete anomaly detection and repair strategies.
-
-    This class extends the `Anomaly` class and provides functionality for detecting
-    and repairing anomalies in discrete data. It utilizes specific detection and repair
-    strategies, defined via the provided strategies and factory class.
+    Handles the detection and repair of anomalies in discrete data columns.
 
     Args:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "discrete".
-        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        **kwargs: Additional arguments passed to the parent class `Anomaly`.
+        column (str): The name of the column to analyze.
+        new_column (str): The name of the column where the results will be stored.
+        detect_strategy (str): The strategy to use for detecting anomalies.
+        repair_strategy (str): The strategy to use for repairing anomalies.
+        strategy_factory_cls (Type[DiscreteStrategyFactory], optional): The factory class to create the strategy. Defaults to DiscreteStrategyFactory.
+        mode (str, optional): The mode for the task, either 'detect' or 'repair'. Defaults to 'detect'.
+        **kwargs: Additional keyword arguments to be passed to the parent class.
 
-    Attributes:
-        column (str): The name of the column in the dataset to apply anomaly detection.
-        new_column (str): The name of the new column that will store repaired values.
-        detect_strategy (str): The strategy to use for detecting anomalies in the column.
-        repair_strategy (str): The strategy to use for repairing detected anomalies.
-        strategy_factory_id (str): The ID of the strategy factory to use.
-        mode (str): The mode of operation, either "detect" or "repair".
     """
 
     def __init__(
@@ -331,7 +287,7 @@ class DiscreteAnomaly(Anomaly):
         new_column: str,
         detect_strategy: str,
         repair_strategy: str,
-        strategy_factory_id: str = "discrete",
+        strategy_factory_cls: Type[DiscreteStrategyFactory] = DiscreteStrategyFactory,
         mode: str = "detect",
         **kwargs,
     ) -> None:
@@ -341,6 +297,6 @@ class DiscreteAnomaly(Anomaly):
             mode=mode,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             **kwargs,
         )

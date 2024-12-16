@@ -4,30 +4,59 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/service/logging/__init__.py                                         #
+# Filename   : /discover/core/dtypes.py                                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday September 13th 2024 05:32:58 pm                                              #
-# Modified   : Sunday December 15th 2024 01:01:01 pm                                               #
+# Created    : Monday August 26th 2024 10:17:42 pm                                                 #
+# Modified   : Sunday December 15th 2024 09:22:12 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-PRINTING_PARAMETERS = {
-    "ncols": 4,
-    "columns": (
-        "Task",
-        "Start",
-        "End",
-        "Runtime",
-    ),
-    "colwidths": (
-        40,
-        12,
-        12,
-        12,
-    ),
-}
+"""Data Types Module """
+from typing import Tuple
+
+import numpy as np
+
+# ------------------------------------------------------------------------------------------------ #
+#                                           DATA TYPES                                             #
+# ------------------------------------------------------------------------------------------------ #
+IMMUTABLE_TYPES: Tuple = (
+    str,
+    int,
+    float,
+    bool,
+    type(None),
+    np.int16,
+    np.int32,
+    np.int64,
+    np.int8,
+    np.float16,
+    np.float32,
+    np.float64,
+    np.float128,
+)
+SEQUENCE_TYPES: Tuple = (
+    list,
+    tuple,
+)
+# ------------------------------------------------------------------------------------------------ #
+NUMERICS = [
+    "int16",
+    "int32",
+    "int64",
+    "float16",
+    "float32",
+    "float64",
+    np.int16,
+    np.int32,
+    np.int64,
+    np.int8,
+    np.float16,
+    np.float32,
+    np.float64,
+    np.float128,
+]

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Sunday December 15th 2024 12:42:44 am                                               #
+# Modified   : Sunday December 15th 2024 04:35:38 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -274,7 +274,7 @@ class ConfigReader(ABC):
         """
         try:
             with open(filepath, "r") as file:
-                return yaml.safe_load(file)
+                return yaml.load(file, Loader=yaml.FullLoader)
         except FileNotFoundError:
             self._logger.exception(
                 f"Unable to read {content}. File not found at {filepath}."

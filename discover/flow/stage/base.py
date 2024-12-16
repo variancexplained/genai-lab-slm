@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Sunday December 15th 2024 06:21:21 am                                               #
+# Modified   : Monday December 16th 2024 04:14:18 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -107,10 +107,10 @@ class Stage(ABC):
 
         # Indicates whether to use pandas, spark, or sparknlp DataFrames
         self.source_dataframe_type = DataFrameType.from_identifier(
-            self._source_config.dataframe_type
+            self._source_config.dataframe_type_id
         )
         self.destination_dataframe_type = DataFrameType.from_identifier(
-            self._destination_config.dataframe_type
+            self._destination_config.dataframe_type_id
         )
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -398,11 +398,18 @@ class Stage(ABC):
         )
 
     @classmethod
-    def build(cls, stage_config: dict, force: bool = False, **kwargs) -> Stage:
+    def build(
+        cls,
+        stage_config: dict,
+        return_dataframe_type_id: str = "pandas",
+        force: bool = False,
+        **kwargs,
+    ) -> Stage:
         """Creates and returns a new stage instance from the provided configuration.
 
         Args:
             stage_config (dict): The configuration dictionary containing source, destination, and tasks details.
+
             force (bool, optional): Whether to force execution even if the destination dataset exists. Defaults to False.
 
         Returns:
@@ -503,7 +510,7 @@ class Stage(ABC):
     def _load_dataset(
         self,
         asset_id: str,
-        dataframe_type: DataFrameType,
+        dataframe_type: DataFrameType = DataFrameType.PANDAS,
     ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
         """Loads a dataset from the repository.
 
@@ -628,7 +635,7 @@ class Stage(ABC):
                 raise ValueError(msg)
         else:
             try:
-                return asset_id or dataset.asset_id
+                return asset_id or self.destination_asset_id
             except Exception as e:
                 msg = f"Unable to return an asset_id. Either the  asset_id or a dataset with an asset_id must be provided.\n{e}"
                 raise ValueError(msg)

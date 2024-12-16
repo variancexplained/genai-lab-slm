@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 01:04:56 pm                                             #
-# Modified   : Sunday October 27th 2024 03:17:32 pm                                                #
+# Modified   : Monday December 16th 2024 03:58:38 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,13 +19,14 @@
 """FilePath Service Module"""
 
 import os
+from abc import abstractmethod
 
-from discover.core.flow import PhaseDef, StageDef
+from discover.assets.base import AssetMeta
 from discover.infra.persistence.dal.base.location import LocationService
 
 
 # ------------------------------------------------------------------------------------------------ #
-class FileLocationService(LocationService):
+class FAOLocationService(LocationService):
     """
     Manages the generation and reconstruction of file paths for different entities, phases, and stages
     within a workspace. It ensures that directories are created as needed and provides a consistent
@@ -44,31 +45,24 @@ class FileLocationService(LocationService):
         """
         self._workspace = workspace
 
+    @abstractmethod
     def get_filepath(
         self,
-        asset_type: str,
-        phase: PhaseDef,
-        stage: StageDef,
-        name: str,
-        partition: bool = True,
+        asset_meta: AssetMeta,
+        partitioned: bool = True,
     ) -> str:
         """
-        Constructs the file path for a given asset_type, phase, stage, and name.  Ensures that
-        the necessary directories are created.
+        Constructs the file path for a given asset.
 
         Args:
-            asset_type (str): The type of asset_type (e.g., 'dataset' or 'model') to be stored.
-            phase (PhaseDef): The phase definition object representing the phase of the task.
-            stage (StageDef): The stage definition object representing the stage of the task.
-            name (str): The specific name or identifier for the file.
-            partition (bool, optional): Whether to partition the file (adds a `.parquet` extension if True).
-                                        Defaults to True.
+            asset_meta (AssetMeta): The Asset metadata for which a file location is to be returned.
 
         Returns:
-            str: The complete file path for the specified asset_type, phase, stage, and name.
+            str: The complete file path for the specified asset.
         """
-        filename = f"appvocai_discover-{phase.directory}-{stage.directory}-{name}-{asset_type}.parquet"
-        filepath = os.path.join(self._workspace, asset_type, phase.directory, filename)
-        directory = filepath if not partition else os.path.dirname(filepath)
-        os.makedirs(directory, exist_ok=True)
+        filename = f"appvocai_discover-{asset_meta.phase.directory}-{asset_meta.stage.directory}-{asset_meta.name}-{asset_meta.asset_type}.parquet"
+        filepath = os.path.join(
+            self._workspace, asset_meta.asset_type, asset_meta.phase.directory, filename
+        )
+        os.makedirs(filepath, exist_ok=True)
         return filepath

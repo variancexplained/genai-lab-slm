@@ -11,12 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Sunday December 15th 2024 06:33:11 am                                               #
+# Modified   : Sunday December 15th 2024 09:35:32 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from typing import Literal, Union
+from typing import Literal, Type, Union
 
 from discover.flow.task.clean.dimension.base import (
     CategoricalAnomaly,
@@ -24,6 +24,13 @@ from discover.flow.task.clean.dimension.base import (
     IntervalAnomaly,
     NumericAnomaly,
     TextAnomaly,
+)
+from discover.flow.task.clean.strategy.categorical import CategoricalStrategyFactory
+from discover.flow.task.clean.strategy.discrete import DiscreteStrategyFactory
+from discover.flow.task.clean.strategy.interval import IntervalStrategyFactory
+from discover.flow.task.clean.strategy.numeric import NumericStrategyFactory
+from discover.flow.task.clean.strategy.text.distributed import (
+    TextStrategyFactory as SparkTextStrategyFactory,
 )
 
 
@@ -41,7 +48,7 @@ class DetectOrRepairURLTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of URL detection/repair. Defaults to "contains_url".
         replacement (str, optional): The string that will replace detected URLs during repair. Defaults to "[URL]".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting URLs in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected URLs. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -53,7 +60,7 @@ class DetectOrRepairURLTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of URL detection/repair.
         replacement (str): The string used to replace detected URLs during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory]): The class for the strategy factory to use.
         detect_strategy (str): The strategy to use for detecting URLs.
         repair_strategy (str): The strategy to use for repairing detected URLs.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -69,7 +76,7 @@ class DetectOrRepairURLTask(TextAnomaly):
         new_column: str = "contains_url",
         replacement: str = "[URL]",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -82,7 +89,7 @@ class DetectOrRepairURLTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -106,7 +113,7 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of email address detection/repair. Defaults to "contains_email".
         replacement (str, optional): The string that will replace detected email addresses during repair. Defaults to "[EMAIL]".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting email addresses in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected email addresses. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -118,7 +125,7 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of email address detection/repair.
         replacement (str): The string used to replace detected email addresses during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting email addresses.
         repair_strategy (str): The strategy to use for repairing detected email addresses.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -134,7 +141,7 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
         new_column: str = "contains_email",
         replacement: str = "[EMAIL]",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -147,7 +154,7 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -171,7 +178,7 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of phone number detection/repair. Defaults to "contains_phone".
         replacement (str, optional): The string that will replace detected phone numbers during repair. Defaults to "[PHONE]".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting phone numbers in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected phone numbers. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -183,7 +190,7 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of phone number detection/repair.
         replacement (str): The string used to replace detected phone numbers during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting phone numbers.
         repair_strategy (str): The strategy to use for repairing detected phone numbers.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -199,7 +206,7 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
         new_column: str = "contains_phone",
         replacement: str = "[PHONE]",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -212,7 +219,7 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -236,7 +243,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of special character detection/repair. Defaults to "contains_excessive_special_chars".
         replacement (str, optional): The string that will replace excessive special characters during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting excessive special characters in the text. Defaults to "regex_threshold".
         repair_strategy (str, optional): The strategy to use for repairing detected excessive special characters. Defaults to "regex_threshold_remove".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 0.35.
@@ -248,7 +255,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of special character detection/repair.
         replacement (str): The string used to replace excessive special characters during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting excessive special characters.
         repair_strategy (str): The strategy to use for repairing excessive special characters.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -264,7 +271,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
         new_column: str = "contains_excessive_special_chars",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_threshold_remove",
         threshold: Union[float, int] = 0.35,
@@ -278,7 +285,7 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -302,7 +309,7 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of non-ASCII character detection/repair. Defaults to "contains_non_ascii_chars".
         replacement (str, optional): The string that will replace non-ASCII characters during repair. Defaults to None (no replacement).
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting non-ASCII characters in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected non-ASCII characters. Defaults to "non_ascii".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -314,7 +321,7 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of non-ASCII character detection/repair.
         replacement (str): The string used to replace non-ASCII characters during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting non-ASCII characters.
         repair_strategy (str): The strategy to use for repairing non-ASCII characters.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -330,7 +337,7 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
         new_column: str = "contains_non_ascii_chars",
         replacement: str = None,
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "non_ascii",
         threshold: Union[float, int] = None,
@@ -344,7 +351,7 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -368,7 +375,7 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of control character detection/repair. Defaults to "contains_control_chars".
         replacement (str, optional): The string that will replace control characters during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting control characters in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected control characters. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -380,7 +387,7 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of control character detection/repair.
         replacement (str): The string used to replace control characters during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting control characters.
         repair_strategy (str): The strategy to use for repairing control characters.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -396,7 +403,7 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
         new_column: str = "contains_control_chars",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -410,7 +417,7 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -434,7 +441,7 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of HTML character detection/repair. Defaults to "contains_html".
         replacement (str, optional): The string that will replace HTML characters during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting HTML characters in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected HTML characters. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -446,7 +453,7 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of HTML character detection/repair.
         replacement (str): The string used to replace HTML characters during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting HTML characters.
         repair_strategy (str): The strategy to use for repairing HTML characters.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -462,7 +469,7 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
         new_column: str = "contains_html",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
@@ -476,7 +483,7 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -500,7 +507,7 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of excessive whitespace detection/repair. Defaults to "contains_excessive_whitespace".
         replacement (str, optional): The string that will replace excessive whitespace during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting excessive whitespace in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected excessive whitespace. Defaults to "whitespace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -512,7 +519,7 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of excessive whitespace detection/repair.
         replacement (str): The string used to replace excessive whitespace during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting excessive whitespace.
         repair_strategy (str): The strategy to use for repairing excessive whitespace.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -528,7 +535,7 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
         new_column: str = "contains_excessive_whitespace",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "whitespace",
         threshold: Union[float, int] = None,
@@ -542,7 +549,7 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -566,7 +573,7 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of accented character detection/repair. Defaults to "contains_accents".
         replacement (str, optional): The string that will replace accented characters during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting accented characters in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected accented characters. Defaults to "accent".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -578,7 +585,7 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of accented character detection/repair.
         replacement (str): The string used to replace accented characters during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting accented characters.
         repair_strategy (str): The strategy to use for repairing accented characters.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -594,7 +601,7 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
         new_column: str = "contains_accents",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "accent",
         threshold: Union[float, int] = None,
@@ -608,7 +615,7 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -632,7 +639,7 @@ class DetectOrRepairElongationTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of elongation detection/repair. Defaults to "contains_elongation".
         replacement (str, optional): The string that will replace elongated characters during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting elongated characters in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected elongated characters. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 4.
@@ -645,7 +652,7 @@ class DetectOrRepairElongationTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of elongation detection/repair.
         replacement (str): The string used to replace elongated characters during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting elongated characters.
         repair_strategy (str): The strategy to use for repairing elongated characters.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -662,7 +669,7 @@ class DetectOrRepairElongationTask(TextAnomaly):
         new_column: str = "contains_elongation",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 4,
@@ -677,7 +684,7 @@ class DetectOrRepairElongationTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -702,7 +709,7 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of repeated character detection/repair. Defaults to "contains_excess_repeated_characters".
         replacement (str, optional): The string that will replace excessive repeated characters during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting repeated characters in the text. Defaults to "regex".
         repair_strategy (str, optional): The strategy to use for repairing detected repeated characters. Defaults to "regex_replace".
         min_repetitions (int, optional): The minimum number of repetitions of a character to be considered excessive. Defaults to 4.
@@ -715,7 +722,7 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of repeated character detection/repair.
         replacement (str): The string used to replace excessive repeated characters during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting repeated characters.
         repair_strategy (str): The strategy to use for repairing repeated characters.
         min_repetitions (int): The minimum number of repetitions of a character to be considered excessive.
@@ -732,7 +739,7 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_characters",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         min_repetitions: int = 4,
@@ -747,7 +754,7 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -772,7 +779,7 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of repeated sequence detection/repair. Defaults to "contains_excess_repeated_sequences".
         replacement (str, optional): The string that will replace excessive repeated sequences during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting repeated sequences in the text. Defaults to "regex_threshold".
         repair_strategy (str, optional): The strategy to use for repairing detected repeated sequences. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 3.
@@ -786,7 +793,7 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of repeated sequence detection/repair.
         replacement (str): The string used to replace excessive repeated sequences during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting repeated sequences.
         repair_strategy (str): The strategy to use for repairing repeated sequences.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -804,7 +811,7 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_sequences",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 3,
@@ -820,7 +827,7 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -846,7 +853,7 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of repeated word detection/repair. Defaults to "contains_excess_repeated_words".
         replacement (str, optional): The string that will replace excessive repeated words during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting repeated words in the text. Defaults to "regex_threshold".
         repair_strategy (str, optional): The strategy to use for repairing detected repeated words. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 1.
@@ -859,7 +866,7 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of repeated word detection/repair.
         replacement (str): The string used to replace excessive repeated words during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting repeated words.
         repair_strategy (str): The strategy to use for repairing repeated words.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -876,7 +883,7 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_words",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 1,
@@ -891,7 +898,7 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -916,7 +923,7 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of repeated phrase detection/repair. Defaults to "contains_excess_repeated_phrases".
         replacement (str, optional): The string that will replace excessive repeated phrases during repair. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting repeated phrases in the text. Defaults to "regex_threshold".
         repair_strategy (str, optional): The strategy to use for repairing detected repeated phrases. Defaults to "regex_replace".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to 3.
@@ -929,7 +936,7 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of repeated phrase detection/repair.
         replacement (str): The string used to replace excessive repeated phrases during repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         detect_strategy (str): The strategy to use for detecting repeated phrases.
         repair_strategy (str): The strategy to use for repairing repeated phrases.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -946,7 +953,7 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
         new_column: str = "contains_excess_repeated_phrases",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 3,
@@ -961,7 +968,7 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -985,7 +992,7 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
         column (str, optional): The name of the column containing numeric data to check for gibberish. Defaults to "pa_perplexity".
         new_column (str, optional): The name of the new column that will store the results of gibberish detection/repair. Defaults to "contains_gibberish".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "numeric".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         threshold (float, optional): The threshold value for gibberish detection. Defaults to 0.5.
         relative_error (float, optional): The relative error used for threshold detection. Defaults to 0.001.
         detect_less_than_threshold (bool, optional): Whether to detect gibberish values less than the threshold. Defaults to True.
@@ -996,7 +1003,7 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
         column (str): The name of the column containing numeric data.
         new_column (str): The name of the new column to store the results of gibberish detection/repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
         threshold (float): The threshold value for gibberish detection.
         relative_error (float): The relative error for threshold detection.
         detect_less_than_threshold (bool): Flag indicating whether to detect values less than the threshold.
@@ -1009,7 +1016,7 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
         column: str = "pa_perplexity",
         new_column: str = "contains_gibberish",
         mode: str = "detect",
-        strategy_factory_id: str = "numeric",
+        strategy_factory_cls: Type[NumericStrategyFactory] = NumericStrategyFactory,
         threshold: float = 0.5,
         relative_error: float = 0.001,
         detect_less_than_threshold: bool = True,
@@ -1021,7 +1028,7 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -1042,7 +1049,7 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
         column (str): The name of the column containing categorical data to check for anomalies.
         new_column (str): The name of the new column that will store the results of category anomaly detection/repair.
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "categorical".
+        strategy_factory_cls (Type[CategoricalStrategyFactory], optional): The class for the strategy factory to use. Defaults to `CategoricalStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting category anomalies. Defaults to "categorical".
         repair_strategy (str, optional): The strategy to use for repairing detected category anomalies. Defaults to "categorical".
         valid_categories (list, optional): A list of valid categories to use for anomaly detection. Defaults to None.
@@ -1051,7 +1058,7 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
         column (str): The name of the column containing categorical data.
         new_column (str): The name of the new column to store the results of category anomaly detection/repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[CategoricalStrategyFactory]): The class for the strategy factory to use.
         detect_strategy (str): The strategy for detecting category anomalies.
         repair_strategy (str): The strategy for repairing category anomalies.
         valid_categories (list): The list of valid categories to validate against.
@@ -1062,7 +1069,9 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
         column: str,
         new_column: str,
         mode: str = "detect",
-        strategy_factory_id: str = "categorical",
+        strategy_factory_cls: Type[
+            CategoricalStrategyFactory
+        ] = CategoricalStrategyFactory,
         detect_strategy: str = "categorical",
         repair_strategy: str = "categorical",
         valid_categories: list = None,
@@ -1072,7 +1081,7 @@ class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             valid_categories=valid_categories,
             detect_strategy="categorical",
             repair_strategy="categorical",
@@ -1092,7 +1101,7 @@ class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
         column (str): The name of the column containing the rating data to check for anomalies.
         new_column (str): The name of the new column that will store the results of rating anomaly detection/repair.
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "discrete".
+        strategy_factory_cls (Type[DiscreteStrategyFactory], optional): The class for the strategy factory to use. Defaults to `DiscreteStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting rating anomalies. Defaults to "range".
         repair_strategy (str, optional): The strategy to use for repairing detected rating anomalies. Defaults to "range".
         range_min (int, optional): The minimum valid value for the rating. Defaults to 1.
@@ -1102,7 +1111,7 @@ class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
         column (str): The name of the column containing rating data.
         new_column (str): The name of the new column to store the results of rating anomaly detection/repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[DiscreteStrategyFactory]): The class for the strategy factory to use.
         detect_strategy (str): The strategy for detecting rating anomalies.
         repair_strategy (str): The strategy for repairing rating anomalies.
         range_min (int): The minimum valid rating value.
@@ -1114,7 +1123,7 @@ class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
         column: str,
         new_column: str,
         mode: str = "detect",
-        strategy_factory_id: str = "discrete",
+        strategy_factory_cls: Type[DiscreteStrategyFactory] = DiscreteStrategyFactory,
         detect_strategy: str = "range",
         repair_strategy: str = "range",
         range_min: int = 1,
@@ -1125,9 +1134,9 @@ class DetectOrRepairRatingAnomalyTask(DiscreteAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
-            repair_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
             range_min=range_min,
             range_max=range_max,
             **kwargs,
@@ -1146,7 +1155,7 @@ class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
         column (str): The name of the column containing the review date data to check for anomalies.
         new_column (str): The name of the new column that will store the results of review date anomaly detection/repair.
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "interval".
+        strategy_factory_cls (str, optional): The ID of the strategy factory to use. Defaults to "interval".
         detect_strategy (str, optional): The strategy to use for detecting review date anomalies. Defaults to "date_range".
         repair_strategy (str, optional): The strategy to use for repairing detected review date anomalies. Defaults to "date_range".
         range_min (int, optional): The minimum valid year for the review date. Defaults to 2020.
@@ -1157,7 +1166,7 @@ class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
         column (str): The name of the column containing review date data.
         new_column (str): The name of the new column to store the results of review date anomaly detection/repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (str): The ID of the strategy factory to use.
         detect_strategy (str): The strategy for detecting review date anomalies.
         repair_strategy (str): The strategy for repairing review date anomalies.
         range_min (int): The minimum valid year for the review date.
@@ -1170,7 +1179,7 @@ class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
         column: str,
         new_column: str,
         mode: str = "detect",
-        strategy_factory_id: str = "interval",
+        strategy_factory_cls: Type[IntervalStrategyFactory] = IntervalStrategyFactory,
         detect_strategy: str = "date_range",
         repair_strategy: str = "date_range",
         range_min: int = 2020,
@@ -1182,7 +1191,7 @@ class DetectOrRepairReviewDateAnomalyTask(IntervalAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=detect_strategy,
             range_min=range_min,

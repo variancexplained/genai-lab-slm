@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Thursday October 17th 2024 09:54:40 am                                              #
+# Modified   : Monday December 16th 2024 03:56:31 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,10 +27,10 @@ from dependency_injector import containers, providers
 
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persistence.dal.dao.dataset import DatasetDAO
-from discover.infra.persistence.dal.dao.location import DatasetLocationService
+from discover.infra.persistence.dal.dao.location import DAOLocationService
 from discover.infra.persistence.dal.fao.centralized import CentralizedFileSystemFAO
 from discover.infra.persistence.dal.fao.distributed import DistributedFileSystemFAO
-from discover.infra.persistence.dal.fao.location import FileLocationService
+from discover.infra.persistence.dal.fao.location import FAOLocationService
 from discover.infra.persistence.repo.dataset import DatasetRepo
 from discover.infra.service.spark.session import SparkSessionPool
 
@@ -70,12 +70,12 @@ class RepoContainer(containers.DeclarativeContainer):
     spark = providers.DependenciesContainer()
 
     dataset_location_service = providers.Singleton(
-        DatasetLocationService,
+        DAOLocationService,
         workspace=config.workspace,
         location=config.repository.dataset.objects.location,
     )
     file_location_service = providers.Singleton(
-        FileLocationService, workspace=config.workspace
+        FAOLocationService, workspace=config.workspace
     )
 
     # Data Access Object

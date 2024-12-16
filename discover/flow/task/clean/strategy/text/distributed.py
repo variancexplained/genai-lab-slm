@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Sunday November 24th 2024 11:55:42 pm                                               #
+# Modified   : Sunday December 15th 2024 09:32:03 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,8 +28,11 @@ from pyspark.sql import functions as F
 from pyspark.sql.functions import pandas_udf, udf
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
-from discover.flow.task.clean.base.factory import StrategyFactory
-from discover.flow.task.clean.base.strategy import DetectStrategy, RepairStrategy
+from discover.flow.task.clean.strategy.factory import (
+    DetectStrategy,
+    RepairStrategy,
+    StrategyFactory,
+)
 from discover.flow.task.clean.strategy.text import SPECIAL_ACCENT_MAP
 from discover.flow.task.clean.strategy.text.pattern import RegexFactory
 

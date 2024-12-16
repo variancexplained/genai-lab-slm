@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Friday November 8th 2024 01:11:40 am                                                #
+# Modified   : Sunday December 15th 2024 01:29:15 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,9 @@ import functools
 import logging
 from datetime import datetime
 
+from discover.infra.service.logging import PRINTING_PARAMETERS as PP
 from discover.infra.utils.date_time.format import ThirdDateFormatter
-from discover.infra.utils.visual.print import Printer
+from discover.infra.utils.visual.print import Printer, TablePrinter
 
 # ------------------------------------------------------------------------------------------------ #
 # Instantiating a global instance of the date formatter which will be reused across all calls.
@@ -30,6 +31,9 @@ dt4mtr = ThirdDateFormatter()
 # ------------------------------------------------------------------------------------------------ #
 # This class handles formatted printing.
 printer = Printer()
+table_printer = TablePrinter(
+    ncols=PP["ncols"], columns=PP["columns"], colwidths=PP["colwidths"]
+)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -44,39 +48,35 @@ def task_logger(func):
             # Get the task name
             task_name = self.name
 
-            # Formatting the current time using the date formatter in HTTP format.
-            # This is logged with the message indicating the start of the method.
+            # Compute and format current datetime
             start = datetime.now()
-            start_fmt = dt4mtr.to_HTTP_format(start)
-
-            # Print the task name and its start time
-            printer.print_subheader(subtitle=task_name)
-            printer.print_kv(k="Start Datetime", v=start_fmt)
+            start_fmt = start.strftime(format="%H:%M:%S")
 
             # Execute the original function being decorated, passing all args and kwargs.
             result = func(self, *args, **kwargs)
 
-            # After the function completes, compute stop time and duration
+            # After the function completes, compute stop time
             end = datetime.now()
-            end_fmt = dt4mtr.to_HTTP_format(end)
-            duration = (end - start).total_seconds()
-            duration_fmt = dt4mtr.format_duration(seconds=duration)
+            end_fmt = end.strftime(format="%H:%M:%S")
+            # and runtime
+            runtime = (end - start).total_seconds()
+            runtime_fmt = dt4mtr.format_duration(seconds=runtime)
 
-            # Print end time, duration, and any task specific information.
-            printer.print_kv(k="Complete Datetime", v=end_fmt)
-            printer.print_kv(k="Runtime", v=duration_fmt)
+            # Print task info
+            table_printer.print_line(
+                data=(
+                    self.name,
+                    start_fmt,
+                    end_fmt,
+                    runtime_fmt,
+                )
+            )
 
-            # Log to file
+            # Log task to file.
             logger.debug(f"Task: {task_name}")
             logger.debug(f"Started: {start_fmt}")
             logger.debug(f"Completed: {end_fmt}")
-            logger.debug(f"Runtime: {duration_fmt}")
-
-            # Print summary if a summary property exists.
-            if hasattr(self, "summary"):
-                if self.summary:
-                    printer.print_kv(k="Summary", v=self.summary)
-                    logger.debug(f"Summary: {self.summary}")
+            logger.debug(f"Runtime: {runtime_fmt}")
 
         except Exception as e:
             # If an exception occurs, prepare the function signature for more informative logging.

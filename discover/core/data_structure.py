@@ -11,12 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Sunday December 15th 2024 01:00:03 am                                               #
+# Modified   : Sunday December 15th 2024 11:30:13 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Core Data Structures """
+"""Data Structures Module"""
 from __future__ import annotations
 
 from abc import ABC
@@ -24,11 +24,12 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from types import SimpleNamespace
-from typing import Any, Dict, Mapping, Tuple, Union
+from typing import Any, Dict, Mapping, Union
 
-import numpy as np
 import pandas as pd
 from dependency_injector.providers import ConfigurationOption
+
+from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -42,47 +43,6 @@ class NestedNamespace(SimpleNamespace):
                 self.__setattr__(key, NestedNamespace(value))
             else:
                 self.__setattr__(key, value)
-
-
-# ------------------------------------------------------------------------------------------------ #
-# mypy: allow-any-generics
-# ------------------------------------------------------------------------------------------------ #
-IMMUTABLE_TYPES: Tuple = (
-    str,
-    int,
-    float,
-    bool,
-    type(None),
-    np.int16,
-    np.int32,
-    np.int64,
-    np.int8,
-    np.float16,
-    np.float32,
-    np.float64,
-    np.float128,
-)
-SEQUENCE_TYPES: Tuple = (
-    list,
-    tuple,
-)
-# ------------------------------------------------------------------------------------------------ #
-NUMERICS = [
-    "int16",
-    "int32",
-    "int64",
-    "float16",
-    "float32",
-    "float64",
-    np.int16,
-    np.int32,
-    np.int64,
-    np.int8,
-    np.float16,
-    np.float32,
-    np.float64,
-    np.float128,
-]
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -107,6 +67,7 @@ class DataClass(ABC):  # noqa
         d = self.as_dict()
         for k, v in d.items():
             if type(v) in IMMUTABLE_TYPES:
+                k = k.strip("_")
                 s += f"\n{k.rjust(width,' ')} | {v}"
         s += "\n\n"
         return s

@@ -11,14 +11,15 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 22nd 2024 01:08:57 am                                               #
-# Modified   : Sunday December 15th 2024 06:21:21 am                                               #
+# Modified   : Sunday December 15th 2024 08:05:48 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from typing import Literal, Union
+from typing import Literal, Type, Union
 
 from discover.flow.task.clean.dimension.base import NominalAnomaly
+from discover.flow.task.clean.strategy.nominal import NominalStrategyFactory
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -34,7 +35,7 @@ class DetectOrRepairUniquenessTask(NominalAnomaly):
         column (list[str]): A list of columns in the dataset to apply anomaly detection. The values in these columns should be unique.
         new_column (str): The name of the new column that will store the results of the uniqueness detection/repair.
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "nominal".
+        strategy_factory_cls (Type[NominalStrategyFactory], optional): The class for the strategy factory to use. Defaults to `NominalStrategyFactory`.
         detect_strategy (str, optional): The strategy to use for detecting uniqueness anomalies. Defaults to "unique".
         repair_strategy (str, optional): The strategy to use for repairing detected uniqueness anomalies. Defaults to "unique".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -42,10 +43,10 @@ class DetectOrRepairUniquenessTask(NominalAnomaly):
         unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
     Attributes:
-        column (list[str]): The list of columns in the dataset to apply anomaly detection.
+        column (list[str]): The list of columns in the dataset to apply anomaly detection. The values in these columns should be unique.
         new_column (str): The name of the new column that will store the results of the uniqueness detection/repair.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (Type[NominalStrategyFactory]): The class for the strategy factory to use.
         detect_strategy (str): The strategy to use for detecting uniqueness anomalies.
         repair_strategy (str): The strategy to use for repairing detected uniqueness anomalies.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -58,7 +59,7 @@ class DetectOrRepairUniquenessTask(NominalAnomaly):
         column: list[str],
         new_column: str,
         mode: str = "detect",
-        strategy_factory_id: str = "nominal",
+        strategy_factory_cls: Type[NominalStrategyFactory] = NominalStrategyFactory,
         detect_strategy: str = "unique",
         repair_strategy: str = "unique",
         threshold: Union[float, int] = None,
@@ -70,7 +71,7 @@ class DetectOrRepairUniquenessTask(NominalAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,

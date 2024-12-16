@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Monday December 2nd 2024 07:10:24 pm                                                #
+# Modified   : Sunday December 15th 2024 11:50:56 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,6 @@ import warnings
 import pandas as pd
 import torch
 from tqdm import tqdm
-from transformers import GPT2LMHeadModel, GPT2TokenizerFast
 
 from discover.flow.task.base import Task
 from discover.infra.service.logging.task import task_logger
@@ -183,6 +182,8 @@ class PerplexityAnalysisTask(Task):
 
     def _load_model_tokenizer_to_device(self) -> None:
         """Loads the device, tokenizer, and model for perplexity analysis."""
+        from transformers import GPT2LMHeadModel, GPT2TokenizerFast
+
         # Select GPU if available, otherwise use CPU
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

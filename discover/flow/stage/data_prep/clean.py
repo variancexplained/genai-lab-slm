@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Sunday December 15th 2024 02:54:09 am                                               #
+# Modified   : Sunday December 15th 2024 02:59:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,12 +19,10 @@
 """Cleaning Stage Module"""
 import pandas as pd
 
-from discover.assets.dataset import Dataset
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.stage.data_prep.base import DataPrepStage
-from discover.infra.service.logging.stage import stage_logger
 from discover.infra.utils.data.compare import compare_dataframes
-from discover.infra.utils.visual.print import Printer
+from discover.infra.utils.data.format import show_thousands_separator
 
 # ------------------------------------------------------------------------------------------------ #
 COLUMNS = [
@@ -83,65 +81,41 @@ class DataCleaningStage(DataPrepStage):
             **kwargs,
         )
 
-    @stage_logger
-    def run(self) -> Dataset:
-        """Executes the stage and returns the asset ID.
-
-        This method determines the execution path based on whether the endpoint
-        exists and whether the `force` flag is set. It runs tasks to prepare
-        the data or updates the endpoint if changes are detected in the source data.
-
-        Returns:
-            str: The asset ID of the prepared dataset.
-        """
-        result = super()._core_stage_run()
+    def summarize(self) -> None:
         # Reload original and clean datasets
-        orig_dataset = self._load_dataset(
-            asset_id=self.source_asset_id, dataframe_type=self.source_dataframe_type
-        )
-        clean_dataset = self._load_dataset(
-            asset_id=self.destination_asset_id,
-            dataframe_type=self.destination_dataframe_type,
-        )
-
-        # Summarize the data cleaning operation.
-        summary = self._summarize(
-            orig=orig_dataset.content, clean=clean_dataset.content
-        )
-        Printer().print_subheader("Data Cleaning Analysis")
-        print(summary)
-        return result
-
-    def _summarize(self, orig: pd.DataFrame, clean: pd.DataFrame) -> None:
+        orig_df = self._load_dataset(asset_id=self.source_asset_id).content
+        clean_df = self._load_dataset(asset_id=self.destination_asset_id).content
         comparison = compare_dataframes(
-            self_df=orig,
-            other_df=clean,
+            self_df=orig_df,
+            other_df=clean_df,
             cols=COLUMNS,
         )
         comparison_dict = {
             "Rows": [
-                orig.shape[0],
-                clean.shape[0],
-                round((orig.shape[0] - clean.shape[0]) / orig.shape[0] * 100, 2),
+                int(orig_df.shape[0]),
+                int(clean_df.shape[0]),
+                round(
+                    (orig_df.shape[0] - clean_df.shape[0]) / orig_df.shape[0] * 100, 2
+                ),
             ],
             "Rows Modified": [
                 0,
-                comparison.rows_modified,
-                round(comparison.rows_modified / orig.shape[0] * 100, 2),
+                int(comparison.rows_modified),
+                round(comparison.rows_modified / orig_df.shape[0] * 100, 2),
             ],
             "Average Review Length": [
-                round(orig["review_length"].mean(), 2),
-                round(clean["review_length"].mean(), 2),
+                round(orig_df["review_length"].mean(), 2),
+                round(clean_df["review_length"].mean(), 2),
                 round(
-                    (orig["review_length"].mean() - clean["review_length"].mean())
-                    / orig["review_length"].mean(),
+                    (clean_df["review_length"].mean() - orig_df["review_length"].mean())
+                    / orig_df["review_length"].mean(),
                     2,
                 )
                 * 100,
             ],
             "Size (Mb)": [
-                comparison.self_dataset_size,
-                comparison.other_dataset_size,
+                int(comparison.self_dataset_size) / 1024 * 1024,
+                int(comparison.other_dataset_size) / 1024 * 1024,
                 round(
                     (comparison.self_dataset_size - comparison.other_dataset_size)
                     / comparison.self_dataset_size
@@ -150,8 +124,9 @@ class DataCleaningStage(DataPrepStage):
                 ),
             ],
         }
-        return pd.DataFrame.from_dict(
+        summary = pd.DataFrame.from_dict(
             data=comparison_dict,
             orient="index",
             columns=["Original", "Clean", "% Change"],
         )
+        return summary.apply(show_thousands_separator)

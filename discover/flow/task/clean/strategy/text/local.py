@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:34:06 am                                             #
-# Modified   : Friday November 22nd 2024 12:23:41 am                                               #
+# Modified   : Sunday December 15th 2024 09:32:03 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,11 @@ from typing import Literal, Type, Union
 
 import pandas as pd
 
-from discover.flow.task.clean.base.factory import StrategyFactory
-from discover.flow.task.clean.base.strategy import DetectStrategy, RepairStrategy
+from discover.flow.task.clean.strategy.factory import (
+    DetectStrategy,
+    RepairStrategy,
+    StrategyFactory,
+)
 from discover.flow.task.clean.strategy.text.pattern import Regex, RegexFactory
 
 

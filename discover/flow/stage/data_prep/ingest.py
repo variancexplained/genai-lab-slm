@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Sunday December 15th 2024 03:15:19 am                                               #
+# Modified   : Sunday December 15th 2024 06:45:45 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -83,7 +83,8 @@ class IngestionStage(DataPrepStage):
         if not self._force and endpoint_exists:
             # Get return value based on config
             return self._get_return_value(
-                asset_id=destination_asset_id, config=self._destination_config
+                asset_id=destination_asset_id,
+                dataframe_type=self.destination_dataframe_type,
             )
         else:
             if endpoint_exists:

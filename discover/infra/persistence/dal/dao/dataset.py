@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Saturday November 16th 2024 03:16:28 pm                                             #
+# Modified   : Monday December 16th 2024 03:53:30 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,12 +20,11 @@
 import logging
 import os
 import shelve
-from copy import copy
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import pandas as pd
 
-from discover.assets.dataset import Dataset
+from discover.assets.dataset import DatasetMeta
 from discover.core.flow import PhaseDef
 from discover.infra.persistence.dal.dao.base import DAO
 from discover.infra.persistence.dal.dao.exception import (
@@ -33,7 +32,7 @@ from discover.infra.persistence.dal.dao.exception import (
     ObjectIOException,
     ObjectNotFoundError,
 )
-from discover.infra.persistence.dal.dao.location import DatasetLocationService
+from discover.infra.persistence.dal.dao.location import DAOLocationService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -50,11 +49,11 @@ class DatasetDAO(DAO):
         location_service (LocationService): Service encapsulating persistence locations.
     """
 
-    def __init__(self, location_service: DatasetLocationService):
+    def __init__(self, location_service: DAOLocationService):
         self._db_path = location_service.get_filepath()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def create(self, dataset: Dataset) -> None:
+    def create(self, dataset_meta: DatasetMeta) -> None:
         """
         Creates a new dataset entry in the object database.
 
@@ -62,40 +61,38 @@ class DatasetDAO(DAO):
         key-value store. Raises an error if the object database is not found.
 
         Args:
-            dataset (Dataset): The dataset object to be created.
+            dataset_meta (DatasetMeta): The serialized dataset metadata object to be created.
 
         Raises:
             ObjectDatabaseNotFoundError: If the database file is not found.
             Exception: For any other exceptions encountered during the process.
         """
 
-        # Create a serializable dataset object by removing the content, which will
-        # be persisted via the file access object.
-        serialized_dataset = copy(dataset)
-        serialized_dataset.content = None
+        # Create a serializable DatasetMeta object
+        serialized_dataset_meta = dataset_meta.__getstate__()
 
         # Store the serializable version in the key value store.
         try:
             with shelve.open(self._db_path, writeback=True) as db:
-                db[dataset.asset_id] = serialized_dataset
+                db[dataset_meta.asset_id] = serialized_dataset_meta
         except FileNotFoundError as e:
             msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg)
         except Exception as e:
-            msg = f"Unknown exception occurred while creating dataset {dataset.asset_id}.\n{e}"
+            msg = f"Unknown exception occurred while creating dataset {dataset_meta.asset_id}.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def read(self, asset_id: str) -> Optional[Dataset]:
+    def read(self, asset_id: str) -> Optional[DatasetMeta]:
         """
-        Reads a dataset by its id from the object database.
+        Reads dataset metadata into a DatasetMeta object.
 
         Args:
             asset_id (str): The id of the dataset to retrieve.
 
         Returns:
-            Optional[Dataset]: The retrieved dataset object or None if not found.
+            Optional[DatasetMeta]: The retrieved state as a dictionary object or None if not found.
 
         Raises:
             ObjectNotFoundError: If the dataset does not exist.
@@ -104,7 +101,7 @@ class DatasetDAO(DAO):
         """
         try:
             with shelve.open(self._db_path) as db:
-                return db[asset_id]
+                return DatasetMeta.deserialize(db[asset_id])
         except KeyError:
             msg = f"Dataset object {asset_id} was not found."
             self._logger.error(msg)
@@ -118,23 +115,23 @@ class DatasetDAO(DAO):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def read_all(self) -> pd.DataFrame:
+    def read_all(self) -> List[DatasetMeta]:
         """
-        Reads all datasets from the object database and returns them as a DataFrame.
+        Reads all DatasetMeta objects from the object database and returns them as a List.
 
         Returns:
-            pd.DataFrame: A DataFrame containing all datasets stored in the object database.
+            List[DatasetMeta]: A list of DatasetMeta objects.
 
         Raises:
             ObjectDatabaseNotFoundError: If the database file is not found.
             Exception: For any other exceptions encountered during the process.
         """
-        datasets_list = []
+        dataset_meta_list = []
         try:
             with shelve.open(self._db_path) as db:
-                for key in db:
-                    dataset = db[key]
-                    datasets_list.append(dataset.as_dict())
+                for asset_id in db:
+                    dataset_meta = DatasetMeta.deserialize(db[asset_id])
+                    dataset_meta_list.append(dataset_meta)
 
         except FileNotFoundError as e:
             msg = f"The object database was not found at {self._db_path}.\n{e}"
@@ -145,10 +142,10 @@ class DatasetDAO(DAO):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-        if len(datasets_list) == 0:
+        if len(dataset_meta_list) == 0:
             self._logger.info("No datasets found.")
 
-        return pd.DataFrame(datasets_list)
+        return dataset_meta_list
 
     def read_by_phase(self, phase: PhaseDef) -> pd.DataFrame:
         """
@@ -162,13 +159,13 @@ class DatasetDAO(DAO):
         """
         return self._read_by_attribute("phase", phase)
 
-    def update(self, dataset: Dataset) -> None:
+    def update(self, dataset_meta: DatasetMeta) -> None:
         """Updates the Dataset in the object database
 
         Args:
-            dataset (Dataset): Dataset object
+            dataset_meta (DatasetMeta): DatasetMeta object
         """
-        self.create(dataset=dataset)
+        self.create(dataset_meta=dataset_meta)
 
     def exists(self, asset_id: str) -> bool:
         """
@@ -266,13 +263,13 @@ class DatasetDAO(DAO):
             ObjectDatabaseNotFoundError: If the database file is not found.
             Exception: For any other exceptions encountered during the process.
         """
-        datasets_list = []
+        dataset_meta_list = []
         try:
             with shelve.open(self._db_path) as db:
-                for key in db:
-                    dataset = db[key]
-                    if getattr(dataset, attribute) == value:
-                        datasets_list.append(dataset.as_dict())
+                for asset_id in db:
+                    dataset_meta = DatasetMeta.deserialize(db[asset_id])
+                    if getattr(dataset_meta, attribute) == value:
+                        dataset_meta_list.append(dataset_meta)
         except FileNotFoundError as e:
             msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
@@ -282,7 +279,7 @@ class DatasetDAO(DAO):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-        if len(datasets_list) == 0:
+        if len(dataset_meta_list) == 0:
             self._logger.info(f"No datasets found for {attribute}={value}.")
 
-        return pd.DataFrame(datasets_list)
+        return dataset_meta_list

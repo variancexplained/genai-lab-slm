@@ -11,14 +11,24 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Sunday December 15th 2024 06:21:16 am                                               #
+# Modified   : Sunday December 15th 2024 02:49:57 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from typing import Literal, Union
+from typing import List, Literal, Optional, Type, Union
 
+import pandas as pd
+import pyspark
+import pyspark.sql
+
+from discover.flow.task.base import Task
 from discover.flow.task.clean.dimension.base import NumericAnomaly, TextAnomaly
+from discover.flow.task.clean.strategy.numeric import NumericStrategyFactory
+from discover.flow.task.clean.strategy.text.distributed import (
+    TextStrategyFactory as SparkTextStrategyFactory,
+)
+from discover.infra.service.logging.task import task_logger
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -35,7 +45,7 @@ class DetectOrRepairNonEnglishTask(TextAnomaly):
         new_column (str, optional): The name of the new column that will store the results of the non-English detection/repair. Defaults to "contains_non_english".
         replacement (str, optional): A string to replace detected non-English content. Defaults to " ".
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_id (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
+        strategy_factory_cls (str, optional): The ID of the strategy factory to use. Defaults to "text_spark".
         detect_strategy (str, optional): The strategy to use for detecting non-English content. Defaults to "non_english".
         repair_strategy (str, optional): The strategy to use for repairing detected non-English content. Defaults to "non_english".
         threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
@@ -47,7 +57,7 @@ class DetectOrRepairNonEnglishTask(TextAnomaly):
         new_column (str): The name of the new column that will store the results of the non-English detection/repair.
         replacement (str): A string to replace detected non-English content.
         mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_id (str): The ID of the strategy factory to use.
+        strategy_factory_cls (str): The ID of the strategy factory to use.
         detect_strategy (str): The strategy to use for detecting non-English content.
         repair_strategy (str): The strategy to use for repairing detected non-English content.
         threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
@@ -61,7 +71,7 @@ class DetectOrRepairNonEnglishTask(TextAnomaly):
         new_column: str = "contains_non_english",
         replacement: str = " ",
         mode: str = "detect",
-        strategy_factory_id: str = "text_spark",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "non_english",
         repair_strategy: str = "non_english",
         threshold: Union[float, int] = None,
@@ -73,7 +83,7 @@ class DetectOrRepairNonEnglishTask(TextAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
-            strategy_factory_id=strategy_factory_id,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
@@ -124,6 +134,7 @@ class DetectOrRepairShortReviewsTask(NumericAnomaly):
         mode: str = "detect",
         dataframe_type_id: str = "spark",
         threshold: float = 4,
+        strategy_factory_cls: Type[NumericStrategyFactory] = NumericStrategyFactory,
         detect_less_than_threshold: bool = True,
         detect_strategy: str = "threshold",
         repair_strategy: str = "threshold",
@@ -134,9 +145,81 @@ class DetectOrRepairShortReviewsTask(NumericAnomaly):
             column=column,
             new_column=new_column,
             mode=mode,
+            strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
             detect_less_than_threshold=detect_less_than_threshold,
             **kwargs,
         )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DropColumnsTask(Task):
+    """
+    Class to drops irrelevant specified columns or columns with specified prefixes from a DataFrame.
+
+    This class works for both PySpark and Pandas DataFrames. It removes columns by
+    exact names or by checking if the column names start with any of the given prefixes.
+
+    Args:
+        columns (Optional[List[str]]): A list of column names to be dropped. Default is an empty list.
+        prefix (Optional[List[str]]): A list of prefixes. Columns whose names start with any of these prefixes will be dropped. Default is an empty list.
+
+    Methods:
+        run(data): Removes specified columns or columns with specified prefixes from the input DataFrame.
+    """
+
+    def __init__(
+        self,
+        columns: Optional[List[str]] = None,
+        prefix: Optional[List[str]] = None,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._columns = columns or []
+        self._prefix = prefix or []
+
+    @task_logger
+    def run(
+        self, data: Union[pyspark.sql.DataFrame, pd.DataFrame]
+    ) -> Union[pyspark.sql.DataFrame, pd.DataFrame]:
+        """
+        Drops specified columns or columns with specified prefixes from the input DataFrame.
+
+        This method identifies columns to drop by exact name and by prefix, then drops them
+        from the input DataFrame, which can either be a PySpark or Pandas DataFrame.
+
+        Args:
+            data (Union[pyspark.sql.DataFrame, pd.DataFrame]):
+                The input DataFrame (either PySpark or Pandas).
+
+        Returns:
+            Union[pyspark.sql.DataFrame, pd.DataFrame]:
+                A new DataFrame with the specified columns removed.
+
+        Raises:
+            TypeError:
+                If the input data is neither a Pandas nor a PySpark DataFrame.
+
+        """
+        # Identify columns to drop by name
+        columns_to_drop = set(self._columns)
+
+        # Identify columns to drop by prefix
+        if self._prefix:
+            prefix_columns = [
+                col
+                for col in data.columns
+                if any(col.startswith(p) for p in self._prefix)
+            ]
+            columns_to_drop.update(prefix_columns)
+
+        try:
+            # Drop columns for PySpark DataFrame
+            return data.drop(*columns_to_drop)
+        except AttributeError:
+            # Drop columns for Pandas DataFrame (when PySpark's drop method is not available)
+            return data.drop(columns=columns_to_drop, axis=1)
+        except Exception as e:
+            raise TypeError("Input must be a Pandas or PySpark DataFrame") from e

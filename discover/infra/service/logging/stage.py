@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Thursday October 24th 2024 03:29:02 am                                              #
+# Modified   : Sunday December 15th 2024 01:42:46 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,14 +20,19 @@ import functools
 import logging
 from datetime import datetime
 
+from discover.infra.service.logging import PRINTING_PARAMETERS as PP
 from discover.infra.utils.date_time.format import ThirdDateFormatter
-from discover.infra.utils.visual.print import Printer
+from discover.infra.utils.visual.print import Printer, TablePrinter
 
 # ------------------------------------------------------------------------------------------------ #
 # Instantiating a global instance of the date formatter which will be reused across all calls.
 # This is efficient since ThirdDateFormatter presumably doesn't need to be instantiated more than once.
 dt4mtr = ThirdDateFormatter()
 printer = Printer()
+table_printer = TablePrinter(
+    ncols=PP["ncols"], columns=PP["columns"], colwidths=PP["colwidths"]
+)
+# ------------------------------------------------------------------------------------------------ #
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -39,37 +44,45 @@ def stage_logger(func):
         logger = logging.getLogger(f"{func.__qualname__}")
 
         try:
-            printer.print_header(title=self.stage.description)
+            # Print title and dataframe header
+            printer.print_title(title=self.stage.description)
             # Formatting the current time using the date formatter in HTTP format.
             # This is logged with the message indicating the start of the method.
             start = datetime.now()
-            start_fmt = dt4mtr.to_HTTP_format(start)
+            start_fmt = start.strftime(format="%H:%M:%S")
 
             # Execute the original function being decorated, passing all args and kwargs.
             result = func(self, *args, **kwargs)
 
             # Log runtime.
             end = datetime.now()
-            end_fmt = dt4mtr.to_HTTP_format(end)
-            duration = (end - start).total_seconds()
-            duration_fmt = dt4mtr.format_duration(seconds=duration)
+            end_fmt = end.strftime(format="%H:%M:%S")
+            runtime = (end - start).total_seconds()
+            runtime_fmt = dt4mtr.format_duration(seconds=runtime)
 
-            # Print stage
-            printer.print_subheader(subtitle=self.stage.description, linestyle="=")
-            printer.print_kv(k="Stage Started", v=start_fmt)
-            printer.print_kv(k="Stage Completed", v=end_fmt)
-            printer.print_kv(k="Stage Runtime", v=duration_fmt)
-            # Check duration to see if cached result was used.
-            if duration < 2:
-                printer.print_kv(k="Cached Result", v="True")
+            # Print table total line
+            table_printer.print_total_line(
+                data=(
+                    self.stage.description,
+                    start_fmt,
+                    end_fmt,
+                    runtime_fmt,
+                )
+            )
+            # Print summary if the stage has a summarize method
+            if hasattr(self, "summarize"):
+                printer.print_subtitle(subtitle=self.stage.description + " Summary")
+                print(self.summarize())
+
+            # Close the stage output
             printer.print_trailer()
 
             # Log stage
             logger.debug(f"Stage: {self.stage.description}")
             logger.debug(f"Stage Started: {start_fmt}")
             logger.debug(f"Stage Completed: {end_fmt}")
-            logger.debug(f"Stage Runtime: {duration_fmt}")
-            if duration < 2:
+            logger.debug(f"Stage Runtime: {runtime_fmt}")
+            if runtime < 2:
                 logger.debug("Cached Result: True")
 
         except Exception as e:
