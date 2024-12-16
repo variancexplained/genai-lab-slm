@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Monday December 16th 2024 04:14:18 am                                               #
+# Modified   : Monday December 16th 2024 05:06:35 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,16 +21,15 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
-from datetime import datetime
 from enum import Enum
-from typing import Optional, Type, Union
+from typing import Type, Union
 
 import pandas as pd
 import pyspark
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.assets.dataset import Dataset
+from discover.assets.dataset import Dataset, DatasetMeta
 from discover.assets.idgen import AssetIDGen
 from discover.container import DiscoverContainer
 from discover.core.data_structure import DataFrameType, NestedNamespace
@@ -70,8 +69,6 @@ class Stage(ABC):
             Defaults to AssetIDGen.
         repo (DatasetRepo, optional): The repository interface for dataset operations.
             Defaults to `DiscoverContainer.repo.dataset_repo`.
-        return_dataset (bool, optional): Indicates whether the dataset should be returned after processing.
-            Defaults to False.
         force (bool, optional): If true, forces execution even if the destination dataset exists.
             Defaults to False.
         **kwargs: Additional keyword arguments for stage customization.
@@ -102,14 +99,14 @@ class Stage(ABC):
         self._force = force
         self._tasks = []
         # Dataset asset identifiers for use in subclasses.
-        self.source_asset_id = None
-        self.destination_asset_id = None
+        self._source_asset_id = None
+        self._destination_asset_id = None
 
         # Indicates whether to use pandas, spark, or sparknlp DataFrames
-        self.source_dataframe_type = DataFrameType.from_identifier(
+        self._source_dataframe_type = DataFrameType.from_identifier(
             self._source_config.dataframe_type_id
         )
-        self.destination_dataframe_type = DataFrameType.from_identifier(
+        self._destination_dataframe_type = DataFrameType.from_identifier(
             self._destination_config.dataframe_type_id
         )
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -142,19 +139,6 @@ class Stage(ABC):
     @stage_logger
     def run(self) -> Dataset:
         """
-        Executes the stage and directs the flow based on the execution path.
-
-        This method is responsible for determining the execution path (RUN, UPDATE_ENDPOINT, or RETURN)
-        and delegating to the appropriate logic to process the dataset. The method is decorated with
-        the stage_logger to log the execution flow.
-
-        Returns:
-            Dataset: The resulting dataset after the appropriate processing based on the execution path.
-        """
-        return self._core_stage_run()
-
-    def _core_stage_run(self) -> Dataset:
-        """
         Core logic for running the stage, determining the execution path,
         and delegating to the appropriate processing function.
 
@@ -169,8 +153,8 @@ class Stage(ABC):
         Returns:
             Dataset: The resulting dataset after the execution path has been followed.
         """
-        self.source_asset_id = self._get_asset_id(config=self._source_config)
-        self.destination_asset_id = self._get_asset_id(config=self._destination_config)
+        self._source_asset_id = self._get_asset_id(config=self._source_config)
+        self._destination_asset_id = self._get_asset_id(config=self._destination_config)
 
         # Determine execution path
         execution_path = self._get_execution_path()
@@ -178,19 +162,15 @@ class Stage(ABC):
         # Direct the process
         if execution_path == ExecutionPath.RUN:
             self._logger.debug("Execution path: RUN")
-            dataset = self._run()
-            return self._get_return_value(dataset=dataset)
+            self._run()
 
         elif execution_path == ExecutionPath.UPDATE_ENDPOINT:
             self._logger.debug("Execution path: UPDATE ENDPOINT")
-            dataset = self._update_endpoint()
-            return self._get_return_value(dataset=dataset)
+            self._update_endpoint()
 
         else:
             self._logger.debug("Execution path: RETURN")
-            return self._get_return_value(
-                dataframe_type=self.destination_dataframe_type
-            )
+        return self._destination_asset_id
 
     def _get_execution_path(self) -> ExecutionPath:
         """Determines the execution path
@@ -210,8 +190,8 @@ class Stage(ABC):
         the input, and the input has changed.
         """
         # Obtain current state
-        endpoint_exists = self._dataset_exists(asset_id=self.destination_asset_id)
-        source_consumed = self._source_consumed(asset_id=self.source_asset_id)
+        endpoint_exists = self._dataset_exists(asset_id=self._destination_asset_id)
+        source_consumed = self._source_consumed(asset_id=self._source_asset_id)
 
         # Easy case first
         if not self._force and source_consumed and endpoint_exists:
@@ -226,93 +206,72 @@ class Stage(ABC):
     def _run(self) -> Dataset:
         """Performs the core logic of the stage, executing tasks in sequence."""
         source_dataset = self._load_dataset(
-            asset_id=self.source_asset_id, dataframe_type=self.source_dataframe_type
+            asset_id=self._source_asset_id, dataframe_type=self._source_dataframe_type
         )
         data = source_dataset.content
         for task in self._tasks:
             data = task.run(data=data)
 
-        # Create the new destination dataset
+        # Create the new destination dataset including metadata
         destination_dataset = self._create_dataset(
-            asset_id=self.destination_asset_id,
             config=self._destination_config,
-            dataframe_type=self.destination_dataframe_type,
             data=data,
         )
 
+        # Mark the source dataset as consumed and persist the metadata.
+        source_dataset.meta.consume(asset_id=destination_dataset.meta.asset_id)
+        self._save_dataset_metadata(dataset_meta=source_dataset.meta)
+
+        # Persist pipeline stage destination dataset
         self._save_dataset(dataset=destination_dataset, replace_if_exists=True)
-        # Mark the source dataset as having been consumed.
-        self._mark_source_consumed(asset_id=self.source_asset_id)
 
-        return destination_dataset
-
-    def _update_endpoint(self) -> Dataset:
-        """Updates the endpoint dataset with changes in the source dataset.
-
-        Returns:
-            Dataset: The updated dataset endpoint
-        """
+    def _update_endpoint(self) -> None:
+        """Updates the endpoint dataset with changes in the source dataset."""
+        # Load the source and destination datasets
         source_dataset = self._load_dataset(
-            asset_id=self.source_asset_id, dataframe_type=self.source_dataframe_type
+            asset_id=self._source_asset_id, dataframe_type=self._source_dataframe_type
         )
         destination_dataset = self._load_dataset(
-            asset_id=self.destination_asset_id,
-            dataframe_type=self.destination_dataframe_type,
+            asset_id=self._destination_asset_id,
+            dataframe_type=self._destination_dataframe_type,
         )
-        result_cols = [
+        # Obtain the columns to merge
+        merge_cols = [
             col
             for col in destination_dataset.content.columns
             if col.startswith(self.stage.id) or col == "id"
         ]
-        df = self._merge_dataframes(
+        # Merge the DataFrames and update the destination dataset
+        destination_dataset.content = self._merge_dataframes(
             source=source_dataset.content,
             destination=destination_dataset.content,
-            result_cols=result_cols,
+            merge_cols=merge_cols,
         )
 
-        # Create the new destination dataset
-        destination_dataset_updated = self._create_dataset(
-            self.destination_asset_id,
-            config=self._destination_config,
-            dataframe_type=self.destination_dataframe_type,
-            data=df,
-        )
-        # Save the updated dataset
-        self._save_dataset(dataset=destination_dataset_updated, replace_if_exists=True)
-        # Mark the source dataset as having been consumed.
-        self._mark_source_consumed(asset_id=source_dataset.asset_id)
-        return destination_dataset_updated
+        # Mark the source dataset as consumed and persist the metadata.
+        source_dataset.meta.consume(asset_id=destination_dataset.meta.asset_id)
+        self._save_dataset_metadata(dataset_meta=source_dataset.meta)
+
+        # Persist pipeline stage destination dataset
+        self._save_dataset(dataset=destination_dataset, replace_if_exists=True)
 
     def _source_consumed(self, asset_id: str) -> bool:
         """Returns True of the source has been consumed"""
         dataset_meta = self._load_dataset_metadata(asset_id=asset_id)
         return dataset_meta.consumed
 
-    def _mark_source_consumed(self, asset_id: str) -> None:
-        """Marks the dataset as having been consumed.
-
-        Args:
-            dataset (Dataset): The dataset to mark as consumed.
-
-        """
-        dataset = self._load_dataset_metadata(asset_id=asset_id)
-        dataset.consumed = True
-        dataset.dt_consumed = datetime.now()
-        dataset.consumed_by = self.__class__.__name__
-        self._save_dataset_metadata(dataset=dataset)
-
     def _merge_dataframes(
         self,
         source: DataFrameType,
         destination: DataFrameType,
-        result_cols: list,
+        merge_cols: list,
     ) -> DataFrameType:
         """Merges two DataFrames of the same type.
 
         Args:
             source (DataFrameType): The source dataframe.
             destination (DataFrameType): The destination dataframe.
-            result_cols (list): The columns from the destination dataframe to include
+            merge_cols (list): The columns from the destination dataframe to include
                 in the merge.
 
         Returns:
@@ -325,27 +284,27 @@ class Stage(ABC):
             return self._merge_pandas_df(
                 source=source,
                 destination=destination,
-                result_cols=result_cols,
+                merge_cols=merge_cols,
             )
         elif isinstance(source, DataFrame) and isinstance(destination, DataFrame):
             return self._merge_spark_df(
                 source=source,
                 destination=destination,
-                result_cols=result_cols,
+                merge_cols=merge_cols,
             )
         else:
             msg = f"Source and destination datasets have incompatible types: Source: {type(source)}\tDestination: {type(destination)}"
             raise TypeError(msg)
 
     def _merge_pandas_df(
-        self, source: pd.DataFrame, destination: pd.DataFrame, result_cols: list
+        self, source: pd.DataFrame, destination: pd.DataFrame, merge_cols: list
     ) -> pd.DataFrame:
         """Merges two Pandas dataframes.
 
         Args:
             source (pd.DataFrame): The source dataframe.
             destination (pd.DataFrame): The destination dataframe.
-            result_cols (list): The columns from the destination dataframe to include
+            merge_cols (list): The columns from the destination dataframe to include
                 in the merge.
 
         Returns:
@@ -353,49 +312,46 @@ class Stage(ABC):
         """
         source["id"] = source["id"].astype("string")
         destination["id"] = destination["id"].astype("string")
-        return source.merge(destination[result_cols], how="left", on="id")
+        return source.merge(destination[merge_cols], how="left", on="id")
 
     def _merge_spark_df(
-        self, source: DataFrame, destination: DataFrame, result_cols: list
+        self, source: DataFrame, destination: DataFrame, merge_cols: list
     ) -> DataFrame:
         """Merges two Spark dataframes.
 
         Args:
             source (DataFrame): The source dataframe.
             destination (DataFrame): The destination dataframe.
-            result_cols (list): The columns from the destination dataframe to include
+            merge_cols (list): The columns from the destination dataframe to include
                 in the join.
 
         Returns:
             DataFrame: The merged dataframe.
         """
-        destination_subset = destination.select(*result_cols)
+        destination_subset = destination.select(*merge_cols)
         return source.join(destination_subset, on="id", how="left")
 
     def _create_dataset(
         self,
-        asset_id: str,
         config: NestedNamespace,
-        dataframe_type: DataFrameType,
         data: Union[pd.DataFrame, pyspark.sql.DataFrame],
     ) -> Dataset:
         """Creates a dataset.
 
         Args:
-            asset_id (str): The identifier for the asset.
             config (NestedNamespace): Configuration for the dataset.
             data (Union[pd.DataFrame, pyspark.sql.DataFrame]): The dataset payload.
 
         Returns:
             Dataset: The created dataset.
         """
-        return Dataset(
+
+        meta = DatasetMeta(
             phase=PhaseDef.from_value(config.phase),
             stage=StageDef.from_value(config.stage),
             name=config.name,
-            content=data,
-            dataframe_type=dataframe_type,
         )
+        return Dataset(meta=meta, content=data)
 
     @classmethod
     def build(
@@ -511,7 +467,7 @@ class Stage(ABC):
         self,
         asset_id: str,
         dataframe_type: DataFrameType = DataFrameType.PANDAS,
-    ) -> Union[pd.DataFrame, pyspark.sql.DataFrame]:
+    ) -> Dataset:
         """Loads a dataset from the repository.
 
         Args:
@@ -519,7 +475,7 @@ class Stage(ABC):
             dataframe_type (DataFrameType): Configuration for a pandas, spark, or sparknlp DataFrame.
 
         Returns:
-            Union[pd.DataFrame, pyspark.sql.DataFrame]: Pandas or PySpark DataFrame.
+            Dataset object
 
         Raises:
             FileNotFoundError: If the source dataset cannot be found or loaded.
@@ -549,7 +505,7 @@ class Stage(ABC):
             self._logger.error(msg)
             raise RuntimeError(msg)
 
-    def _load_dataset_metadata(self, asset_id: str) -> bool:
+    def _load_dataset_metadata(self, asset_id: str) -> DatasetMeta:
         """Loads the metadata for a dataset.
 
         Args:
@@ -578,25 +534,27 @@ class Stage(ABC):
             RuntimeError: If saving the dataset fails.
         """
         try:
-            if self._repo.exists(asset_id=dataset.asset_id) and replace_if_exists:
-                self._repo.remove(asset_id=dataset.asset_id)
+            if self._repo.exists(asset_id=dataset.meta.asset_id) and replace_if_exists:
+                self._repo.remove(asset_id=dataset.meta.asset_id)
             self._repo.add(dataset=dataset)
         except Exception as e:
             raise RuntimeError(f"Failed to save dataset\n{dataset} {str(e)}")
 
-    def _save_dataset_metadata(self, dataset: Dataset) -> None:
+    def _save_dataset_metadata(self, dataset_meta: DatasetMeta) -> None:
         """Saves dataset metadata to the repository.
 
         Args:
-            dataset (Dataset): The dataset whose metadata is to be saved.
+            dataset_meta (DatasetMeta): The dataset metadata object.
 
         Raises:
             RuntimeError: If saving the metadata fails.
         """
         try:
-            self._repo.update_dataset_metadata(dataset=dataset)
+            self._repo.update_dataset_metadata(dataset_meta=dataset_meta)
         except Exception as e:
-            raise RuntimeError(f"Failed to save dataset metadata\n{dataset}\n{str(e)}")
+            raise RuntimeError(
+                f"Failed to save dataset metadata\n{dataset_meta}\n{str(e)}"
+            )
 
     def _remove_dataset(self, asset_id: str) -> None:
         """Removes the dataset with the specified asset_id from the repository.
@@ -613,29 +571,3 @@ class Stage(ABC):
             raise RuntimeError(
                 f"Failed to remove dataset with asset_id: {asset_id}\n {str(e)}"
             )
-
-    def _get_return_value(
-        self,
-        dataset: Optional[Dataset] = None,
-        asset_id: Optional[str] = None,
-        dataframe_type: Optional[DataFrameType] = None,
-        return_dataset: bool = False,
-    ) -> Union[Dataset, str]:
-        """Obtains and returns a value based on the boolean `return_dataset` instance variable."""
-        return_dataset = return_dataset or self._return_dataset
-        dataframe_type = dataframe_type or DataFrameType.from_identifier("pandas")
-
-        if return_dataset:
-            try:
-                return dataset or self._load_dataset(
-                    asset_id=asset_id, dataframe_type=dataframe_type
-                )
-            except Exception as e:
-                msg = f"Unable to return dataset. The dataset or a valid asset_id and configuration must be provided.\n{e}"
-                raise ValueError(msg)
-        else:
-            try:
-                return asset_id or self.destination_asset_id
-            except Exception as e:
-                msg = f"Unable to return an asset_id. Either the  asset_id or a dataset with an asset_id must be provided.\n{e}"
-                raise ValueError(msg)

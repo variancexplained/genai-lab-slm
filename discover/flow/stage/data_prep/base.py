@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday November 21st 2024 11:08:40 pm                                             #
+# Modified   : Monday December 16th 2024 02:07:51 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,7 +42,6 @@ class DataPrepStage(Stage):
         destination_config (dict): Configuration for the data destination.
         force (bool, optional): Whether to force execution, even if the output already
             exists. Defaults to False.
-        return_dataset (bool): Whether to return the resultant dataset or the asset_id
     """
 
     def __init__(
@@ -52,7 +51,6 @@ class DataPrepStage(Stage):
         source_config: dict,
         destination_config: dict,
         force: bool = False,
-        return_dataset: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -61,6 +59,5 @@ class DataPrepStage(Stage):
             source_config=source_config,
             destination_config=destination_config,
             force=force,
-            return_dataset=return_dataset,
             **kwargs,
         )

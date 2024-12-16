@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Sunday December 15th 2024 06:45:45 am                                               #
+# Modified   : Monday December 16th 2024 04:36:09 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,7 +41,6 @@ class IngestionStage(DataPrepStage):
         destination_config (dict): Configuration for the data destination.
         force (bool, optional): Whether to force execution, even if the output already
             exists. Defaults to False.
-        return_dataset (bool): Whether to return the resultant dataset or the asset_id
     """
 
     def __init__(
@@ -51,7 +50,6 @@ class IngestionStage(DataPrepStage):
         source_config: dict,
         destination_config: dict,
         force: bool = False,
-        return_dataset: bool = False,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -60,7 +58,6 @@ class IngestionStage(DataPrepStage):
             source_config=source_config,
             destination_config=destination_config,
             force=force,
-            return_dataset=return_dataset,
             **kwargs,
         )
 
@@ -80,15 +77,7 @@ class IngestionStage(DataPrepStage):
         destination_asset_id = self._get_asset_id(config=self._destination_config)
         endpoint_exists = self._dataset_exists(asset_id=destination_asset_id)
 
-        if not self._force and endpoint_exists:
-            # Get return value based on config
-            return self._get_return_value(
-                asset_id=destination_asset_id,
-                dataframe_type=self.destination_dataframe_type,
-            )
-        else:
-            if endpoint_exists:
-                self._remove_dataset(asset_id=destination_asset_id)
+        if self._force or not endpoint_exists:
             data = self._load_file(filepath=self._source_config.filepath)
 
             for task in self._tasks:
@@ -97,9 +86,9 @@ class IngestionStage(DataPrepStage):
             destination_dataset = self._create_dataset(
                 asset_id=destination_asset_id,
                 config=self._destination_config,
-                dataframe_type=self.destination_dataframe_type,
                 data=data,
             )
-            self._save_dataset(dataset=destination_dataset)
-            # Get return value based on config
-            return self._get_return_value(dataset=destination_dataset)
+            # Persist pipeline stage destination dataset
+            self._save_dataset(dataset=destination_dataset, replace_if_exists=True)
+
+        return destination_asset_id

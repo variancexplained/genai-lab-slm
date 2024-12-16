@@ -11,20 +11,20 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Sunday November 24th 2024 11:20:27 pm                                               #
+# Modified   : Monday December 16th 2024 04:29:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
 
-from typing import Optional, Type, Union
+from typing import Optional, Union
 
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
 
 from discover.app.analysis import Analysis
-from discover.infra.config.app import AppConfigReader
+from discover.assets.dataset import Dataset
 
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
@@ -36,12 +36,11 @@ viz = Visualizer()
 class DQA(Analysis):
     def __init__(
         self,
-        df: pd.DataFrame,
-        config_reader_cls: Type[AppConfigReader] = AppConfigReader,
+        dataset: Dataset,
     ) -> None:
-        super().__init__(df=df)
-        self._config_reader = config_reader_cls()
-        self._config = self._config_reader.get_config(section="dqa", namespace=True)
+        super().__init__(df=dataset.content)
+        # Dataset
+        self._dataset = dataset
         # Nobs
         self._N = self._df.shape[0]
         # Total quality score
@@ -71,6 +70,23 @@ class DQA(Analysis):
 
         # Privacy Measures
         self._privacy = None
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                   RETURN DATASET                                             #
+    # -------------------------------------------------------------------------------------------- #
+    def get_dataset(self) -> Dataset:
+        return self._dataset
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                      STATE                                                   #
+    # -------------------------------------------------------------------------------------------- #
+    def accept(self) -> None:
+        self._df.drop(
+            columns=[col for col in self._df.columns if col.startswith("dp_")],
+            inplace=True,
+        )
+        self._dataset.content = self._df
+        self._dataset.approve()
 
     # -------------------------------------------------------------------------------------------- #
     #                                 QUALITY SCORE                                                #

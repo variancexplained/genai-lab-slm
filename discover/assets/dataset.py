@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Monday December 16th 2024 03:07:57 am                                               #
+# Modified   : Monday December 16th 2024 03:06:46 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,25 +39,32 @@ class DatasetMeta(AssetMeta):
         phase: PhaseDef,
         stage: StageDef,
         name: str,
-        **kwargs,
     ):
         super().__init__(phase=phase, stage=stage, name=name)
         self._consumed: bool = False
         self._consumed_by: Optional[StageDef] = None
         self._dt_consumed: Optional[datetime] = None
         self._location = None
+        self._approved = False
 
     @property
     def asset_type(self) -> str:
         return self.__asset_type
 
     @property
+    def approved(self) -> bool:
+        return self._approved
+
+    @property
     def consumed(self) -> bool:
         return self._consumed
 
-    def consume(self, stage: StageDef) -> None:
+    def approve(self) -> None:
+        self._approved = True
+
+    def consume(self, asset_id: str) -> None:
         self._consumed = True
-        self._consumed_by = stage
+        self._consumed_by = asset_id
         self._dt_consumed = datetime.now()
 
     @classmethod
@@ -75,3 +82,6 @@ class Dataset(Asset):
         self, meta: AssetMeta, content: Union[pd.DataFrame, DataFrame]
     ) -> None:
         super.__init__(meta=meta, content=content)
+
+    def approve(self) -> None:
+        self._meta.approve()

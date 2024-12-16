@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Monday December 16th 2024 04:12:25 am                                               #
+# Modified   : Monday December 16th 2024 02:24:10 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repository Module"""
 import logging
-from typing import Any, Dict, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 import pyspark
@@ -193,7 +193,7 @@ class DatasetRepo(Repo):
                 raise DatasetIOError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
-    def get_dataset_meta(self, asset_id: str) -> Optional[Dict[str, Any]]:
+    def get_dataset_metadata(self, asset_id: str) -> Optional[DatasetMeta]:
         """
         Retrieves dataset metadata by its asset ID.
 
@@ -219,7 +219,7 @@ class DatasetRepo(Repo):
             raise DatasetIOError(msg, e) from e
 
     # -------------------------------------------------------------------------------------------- #
-    def update_dataset_meta(self, dataset_meta: DatasetMeta) -> None:
+    def update_dataset_metadata(self, dataset_meta: DatasetMeta) -> None:
         """
         Updates metadata for a given dataset.meta.
 
