@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
-# Modified   : Wednesday December 18th 2024 12:05:05 am                                            #
+# Modified   : Wednesday December 18th 2024 06:22:49 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -77,9 +77,7 @@ class LocationService(ABC):
     @abstractmethod
     def get_filepath(self, **kwargs) -> str:
         """
-        Abstract method to generate a file path for a given AssetMeta object.
-        This method should be implemented by subclasses to define the logic for constructing
-        file paths according to the needs of the specific implementation.
+        Abstract method to generate a file path
 
         Args:
             **kwargs: Arbitrary keyword arguments.

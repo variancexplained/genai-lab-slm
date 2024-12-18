@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday December 17th 2024 10:02:19 pm                                              #
+# Modified   : Wednesday December 18th 2024 05:46:28 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,24 +23,15 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
-from discover.assets.dataset import Dataset
 from discover.container import DiscoverContainer
-from discover.core.flow import PhaseDef, StageDef
-from discover.flow.stage.data_prep.base import DataPrepStage
 from discover.infra.config.app import AppConfigReader
-from discover.infra.config.flow import FlowConfigReader
 from discover.infra.persistence.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = [
-    "tests/test_infra/test_dal/**/*py",
-    "tests/test_infra/test_operations/**/*py",
-    "tests/test_infra/test_storage/**/*py",
-    "tests/test_orchestration/**/*py",
-]
+collect_ignore_glob = []
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -54,9 +45,7 @@ def container() -> DiscoverContainer:
     container = DiscoverContainer()
     container.init_resources()
     container.wire(
-        modules=[
-            "discover.flow.stage.base",
-        ],
+        modules=[],
     )
 
     return container
@@ -142,68 +131,3 @@ def spark_df(spark, pandas_df):
     """
 
     return spark.createDataFrame(pandas_df)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                  DATASETS                                                        #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def centralized_ds(pandas_df, container):
-    dataset = Dataset(
-        name="test_centralized_ds",
-        dataframe_type="pandas",
-        phase=PhaseDef.DATAPREP,
-        stage=StageDef.TQA,
-        content=pandas_df,
-    )
-    repo = container.persist.dataset_repo()
-    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
-    yield dataset
-    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def distributed_ds(spark_df, container):
-    dataset = Dataset(
-        name="test_distributed_ds",
-        dataframe_type="spark",
-        phase=PhaseDef.DATAPREP,
-        stage=StageDef.TQA,
-        content=spark_df,
-    )
-    repo = container.persist.dataset_repo()
-    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
-    yield dataset
-    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="function")
-def distributed_ds_nlp(spark_df, container):
-    dataset = Dataset(
-        name="test_distributed_nlp_ds",
-        dataframe_type="sparknlp",
-        phase=PhaseDef.DATAPREP,
-        stage=StageDef.TQA,
-        content=spark_df,
-    )
-    repo = container.persist.dataset_repo()
-    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
-    yield dataset
-    repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                  DATA PREP                                                       #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def norm_asset_id(container):
-    reader = FlowConfigReader()
-    config = reader.get_config("phases", namespace=False)
-    stage_config = config["dataprep"]["stages"][1]
-
-    # Build Stage
-    stage = DataPrepStage.build(stage_config=stage_config)
-    asset_id = stage.run()
-    return asset_id

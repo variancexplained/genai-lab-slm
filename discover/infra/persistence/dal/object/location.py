@@ -11,14 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday October 16th 2024 10:24:35 pm                                             #
-# Modified   : Wednesday December 18th 2024 12:07:56 am                                            #
+# Modified   : Wednesday December 18th 2024 06:23:41 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 
-from discover.assets.base import AssetMeta
 from discover.infra.persistence.dal.base import LocationService
 
 
@@ -46,7 +45,7 @@ class DALLocationService(LocationService):
         self._workspace = workspace
         self._location = location
 
-    def get_filepath(self, asset_meta: AssetMeta, **kwargs):
+    def get_filepath(self, **kwargs):
         """
         Constructs and returns the file path for a object based on the workspace, location, and asset.
 

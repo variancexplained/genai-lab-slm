@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Wednesday December 18th 2024 05:38:07 am                                            #
+# Modified   : Wednesday December 18th 2024 07:02:34 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,9 +20,7 @@
 import logging
 import os
 import shelve
-from typing import Optional
 
-from discover.assets.dataset import Dataset, DatasetMeta
 from discover.infra.persistence.dal.base import DAL
 from discover.infra.persistence.dal.object.exception import (
     ObjectDatabaseNotFoundError,
@@ -50,7 +48,7 @@ class DatasetDAL(DAL):
         self._db_path = location_service.get_filepath()
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def create(self, dataset: Dataset) -> None:
+    def create(self, dataset) -> None:
         try:
             with shelve.open(self._db_path) as db:
                 db[dataset.asset_id] = dataset
@@ -63,15 +61,15 @@ class DatasetDAL(DAL):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def read(self, asset_id: str) -> Optional[DatasetMeta]:
+    def read(self, asset_id: str):
         """
-        Reads dataset metadata into a DatasetMeta object.
+        Reads dataset metadata into a Dataset object.
 
         Args:
             asset_id (str): The id of the dataset to retrieve.
 
         Returns:
-            Optional[DatasetMeta]: The retrieved state as a dictionary object or None if not found.
+            Optional[Dataset]: The retrieved state as a dictionary object or None if not found.
 
         Raises:
             ObjectNotFoundError: If the dataset does not exist.
