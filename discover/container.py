@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Monday December 16th 2024 03:56:31 am                                               #
+# Modified   : Wednesday December 18th 2024 05:02:31 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,12 +26,13 @@ import logging.config
 from dependency_injector import containers, providers
 
 from discover.infra.config.app import AppConfigReader
-from discover.infra.persistence.dal.dao.dataset import DatasetDAO
-from discover.infra.persistence.dal.dao.location import DAOLocationService
-from discover.infra.persistence.dal.fao.centralized import CentralizedFileSystemFAO
-from discover.infra.persistence.dal.fao.distributed import DistributedFileSystemFAO
-from discover.infra.persistence.dal.fao.location import FAOLocationService
+from discover.infra.persistence.dal.fileset.centralized import CentralizedFilesetDAL
+from discover.infra.persistence.dal.fileset.distributed import DistributedFilesetDAL
+from discover.infra.persistence.dal.fileset.location import FilesetLocationService
+from discover.infra.persistence.dal.object.dataset import DatasetDAL
+from discover.infra.persistence.dal.object.location import DALLocationService
 from discover.infra.persistence.repo.dataset import DatasetRepo
+from discover.infra.persistence.repo.fileset import FilesetRepo
 from discover.infra.service.spark.session import SparkSessionPool
 
 # ------------------------------------------------------------------------------------------------ #
@@ -63,45 +64,53 @@ class SparkContainer(containers.DeclarativeContainer):
 # ------------------------------------------------------------------------------------------------ #
 #                                   REPO CONTAINER                                                 #
 # ------------------------------------------------------------------------------------------------ #
-class RepoContainer(containers.DeclarativeContainer):
+class PersistenceContainer(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
     spark = providers.DependenciesContainer()
 
     dataset_location_service = providers.Singleton(
-        DAOLocationService,
+        DALLocationService,
         workspace=config.workspace,
-        location=config.repository.dataset.objects.location,
+        location=config.persistence.data.datasets.location,
     )
     file_location_service = providers.Singleton(
-        FAOLocationService, workspace=config.workspace
+        FilesetLocationService, workspace=config.workspace
     )
 
-    # Data Access Object
-    dao = providers.Singleton(DatasetDAO, location_service=dataset_location_service)
+    # Data Access Layer
+    dal = providers.Singleton(DatasetDAL, location_service=dataset_location_service)
 
     # Centralized File System File Access Object
     fao_cfs = providers.Singleton(
-        CentralizedFileSystemFAO,
-        storage_config=config.repository.dataset.files.centralized,
+        CentralizedFilesetDAL,
+        storage_config=config.persistence.data.files.centralized,
+        location_service=file_location_service,
     )
 
     # Distributed File System File Access Object
     fao_dfs = providers.Singleton(
-        DistributedFileSystemFAO,
-        storage_config=config.repository.dataset.files.distributed,
+        DistributedFilesetDAL,
+        storage_config=config.persistence.data.files.distributed,
+        location_service=file_location_service,
         session_pool=spark.session_pool,
+    )
+
+    # Fileset Repository
+    fileset_repo = providers.Singleton(
+        FilesetRepo,
+        fao_cfs=fao_cfs,
+        fao_dfs=fao_dfs,
+        location_service=file_location_service,
+        partitioned=config.persistence.data.files.partitioned,
     )
 
     # Dataset Repository
     dataset_repo = providers.Singleton(
         DatasetRepo,
-        dataset_dao=dao,
-        fao_cfs=fao_cfs,
-        fao_dfs=fao_dfs,
-        location_service=file_location_service,
-        partitioned=config.repository.dataset.files.partitioned,
+        dataset_dal=dal,
+        fileset_repo=fileset_repo,
     )
 
 
@@ -125,7 +134,7 @@ class DiscoverContainer(containers.DeclarativeContainer):
     spark = providers.Container(SparkContainer, config=config)
 
     # Configure the repository by injecting the database.
-    repo = providers.Container(RepoContainer, spark=spark, config=config)
+    persist = providers.Container(PersistenceContainer, spark=spark, config=config)
 
 
 # ------------------------------------------------------------------------------------------------ #

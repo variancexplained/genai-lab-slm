@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Monday December 16th 2024 04:29:02 pm                                               #
+# Modified   : Monday December 16th 2024 05:16:36 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -80,13 +80,13 @@ class DQA(Analysis):
     # -------------------------------------------------------------------------------------------- #
     #                                      STATE                                                   #
     # -------------------------------------------------------------------------------------------- #
-    def accept(self) -> None:
+    def approve(self) -> None:
         self._df.drop(
             columns=[col for col in self._df.columns if col.startswith("dp_")],
             inplace=True,
         )
         self._dataset.content = self._df
-        self._dataset.approve()
+        self._dataset.meta.approve()
 
     # -------------------------------------------------------------------------------------------- #
     #                                 QUALITY SCORE                                                #

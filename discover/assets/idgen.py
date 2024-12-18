@@ -11,11 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 01:36:41 am                                              #
-# Modified   : Monday October 21st 2024 07:18:59 am                                                #
+# Modified   : Tuesday December 17th 2024 07:00:39 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+from abc import ABC, abstractmethod
+
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
 
@@ -24,31 +26,53 @@ config_reader = AppConfigReader()
 
 
 # ------------------------------------------------------------------------------------------------ #
-class AssetIDGen:
+class AssetIDGen(ABC):
+    """Abstract base class for generating asset IDs.
+
+    Defines the contract for asset ID generation. Subclasses must implement the `generate_asset_id` method.
+
+    Methods:
+        generate_asset_id: Abstract method for generating asset IDs.
     """
-    A utility class for generating asset IDs based on asset type, phase, stage, and name.
-    Provides a static method for constructing a standardized asset ID string.
+
+    @abstractmethod
+    @staticmethod
+    def generate_asset_id(**kwargs) -> str:
+        """Abstract method for generating asset IDs.
+
+        Args:
+            **kwargs: Keyword arguments required for ID generation.
+
+        Returns:
+            str: The generated asset ID.
+        """
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DatasetPrepIDGen(AssetIDGen):
+    """Concrete implementation of AssetIDGen for dataset preparation.
+
+    Generates asset IDs for datasets created during the data preparation phase.
+
+    Methods:
+        generate_asset_id: Generates asset IDs based on the data preparation phase, stage, and dataset name.
     """
 
     @staticmethod
-    def get_asset_id(
-        asset_type: str,
+    def generate_asset_id(
         phase: PhaseDef,
         stage: StageDef,
         name: str,
     ) -> str:
-        """
-        Generates an asset ID string based on the provided asset type, phase, stage, and name.
+        """Generates a dataset asset ID for the data preparation phase.
 
         Args:
-            asset_type (str): The type of the asset (e.g., 'dataset', 'model').
-            phase (PhaseDef): The phase definition object representing the phase of the asset.
-            stage (StageDef): The stage definition object representing the stage of the asset.
-            name (str): The specific name or identifier for the asset.
+            phase (PhaseDef): The phase of data preparation (e.g., ingestion, cleaning).
+            stage (StageDef): The stage within the phase (e.g., raw, processed).
+            name (str): The name of the dataset.
 
         Returns:
-            str: A standardized asset ID string in the format:
-                 "{asset_type}-{phase.value}-{stage.value}-{name}"
+            str: The generated dataset asset ID.
         """
         env = config_reader.get_environment()
-        return f"{asset_type}-{env}-{phase.value}-{stage.value}-{name}"
+        return f"dataset-{env}-{phase.value}-{stage.value}-{name}"

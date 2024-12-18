@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Tuesday October 29th 2024 07:48:28 pm                                               #
+# Modified   : Tuesday December 17th 2024 10:02:20 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from discover.dynamics.observability.profile import Profile
 # ------------------------------------------------------------------------------------------------ #
 # Initialize the repository once at the module level
 container = DiscoverContainer()
-profile_repo = container.repo.profile()
+profile_repo = container.persist.profile()
 # ------------------------------------------------------------------------------------------------ #
 
 

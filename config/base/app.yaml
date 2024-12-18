@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Sunday December 15th 2024 11:32:32 am                                               #
+# Modified   : Wednesday December 18th 2024 12:36:28 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -64,16 +64,17 @@ data:
   frac: 1.0
 
 # ------------------------------------------------------------------------------------------------ #
-#                                     REPOSITORY                                                   #
+#                                        PERSISTENCE                                               #
 # ------------------------------------------------------------------------------------------------ #
-repository:
-  dataset:
-    objects:
+persistence:
+  data:
+    datasets:
       location: dataset/odb
     files:
-      location: dataset
+      location: files
       partitioned: True
       centralized:
+        format: parquet
         read_kwargs:
           engine: pyarrow
         write_kwargs:
@@ -85,6 +86,7 @@ repository:
           partition_cols:
           - category
       distributed:
+        format: parquet
         write_kwargs:
           mode: error
           partitionBy:

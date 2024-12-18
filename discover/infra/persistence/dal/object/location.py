@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/dal/dao/location.py                                     #
+# Filename   : /discover/infra/persistence/dal/object/location.py                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday October 16th 2024 10:24:35 pm                                             #
-# Modified   : Monday December 16th 2024 03:55:33 am                                               #
+# Modified   : Wednesday December 18th 2024 12:07:56 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,11 +19,11 @@
 import os
 
 from discover.assets.base import AssetMeta
-from discover.infra.persistence.dal.base.location import LocationService
+from discover.infra.persistence.dal.base import LocationService
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DAOLocationService(LocationService):
+class DALLocationService(LocationService):
     """
     A concrete implementation of the LocationService for datasets. This class constructs file paths
     for datasets based on the specified workspace and location.
@@ -36,7 +36,7 @@ class DAOLocationService(LocationService):
 
     def __init__(self, workspace: str, location: str) -> None:
         """
-        Initializes the DAOLocationService with the specified workspace and location.
+        Initializes the DALLocationService with the specified workspace and location.
 
         Args:
             workspace (str): The base directory where dataset files will be stored.

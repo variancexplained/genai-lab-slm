@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 07:06:20 pm                                              #
-# Modified   : Wednesday November 20th 2024 03:49:42 pm                                            #
+# Modified   : Tuesday December 17th 2024 10:02:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -57,7 +57,7 @@ class TestNormalize:  # pragma: no cover
             stage=StageDef.NORM,
         )
 
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         repo.remove(asset_id=asset_id)
 
         # ---------------------------------------------------------------------------------------- #
@@ -85,7 +85,7 @@ class TestNormalize:  # pragma: no cover
         stage = DataPrepStage.build(stage_config=stage_config)
         asset_id = stage.run()
         # Confirm existence
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         assert repo.exists(asset_id=asset_id)
 
         # ---------------------------------------------------------------------------------------- #

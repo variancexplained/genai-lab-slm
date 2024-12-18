@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/dal/fao/base.py                                         #
+# Filename   : /discover/infra/persistence/dal/fileset/base.py                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 06:05:13 pm                                              #
-# Modified   : Wednesday October 16th 2024 10:43:16 pm                                             #
+# Modified   : Wednesday December 18th 2024 03:26:03 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,27 +24,37 @@ from typing import Union
 import pandas as pd
 import pyspark.sql
 
-from discover.infra.persistence.dal.dao.base import DAO
-from discover.infra.persistence.dal.fao.exception import FileIOException
+from discover.infra.persistence.dal.base import DAL
+from discover.infra.persistence.dal.fileset.exception import FileIOException
+from discover.infra.persistence.dal.fileset.location import FilesetLocationService
 
 
 # ------------------------------------------------------------------------------------------------ #
-class FileSystemFAO(DAO):
-    """
-    A Data Access Object (DAO) class for interacting with the filesystem, providing methods
-    to create, read, delete, and check the existence of files or directories. This class
-    abstracts the underlying file operations and allows the actual read and write operations
-    to be implemented by subclasses.
-
-    Attributes:
-        _logger (logging.Logger): A logger instance for logging messages.
-    """
-
-    def __init__(self) -> None:
-        """
-        Initializes the FileSystemFAO instance, setting up a logger.
-        """
+class FilesetDAL(DAL):
+    def __init__(
+        self, storage_config: dict, location_service: FilesetLocationService
+    ) -> None:
+        self._storage_config = storage_config
+        self._location_service = location_service
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def get_filepath(self, name: str) -> str:
+        """Returns a filepath for the specified file name.
+
+        Note, the name has no file extension. It will default to .parquet and overriden
+        in subclasses as required.
+
+        Args:
+            name (str): Name of the file for which a relative filepath is returned.
+
+        Returns:
+            str: Relative filepath
+
+        """
+        filename = f"{name}.{self._storage_config.get('format', 'parquet')}"
+        filepath = self._location_service.get_filepath(filename=filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        return filepath
 
     def create(
         self,
@@ -64,7 +74,6 @@ class FileSystemFAO(DAO):
                 to the file.
             **kwargs: Additional keyword arguments to be passed to the `_write` method.
         """
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         self._write(filepath=filepath, data=data, **kwargs)
 
     def read(

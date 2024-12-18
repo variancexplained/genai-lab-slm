@@ -4,21 +4,66 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/dal/base/location.py                                    #
+# Filename   : /discover/infra/persistence/dal/base.py                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday October 16th 2024 10:22:35 pm                                             #
-# Modified   : Monday December 16th 2024 03:52:19 am                                               #
+# Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
+# Modified   : Wednesday December 18th 2024 12:05:05 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from abc import ABC, abstractmethod
+"""Data Access Layer Base Module"""
 
-from discover.assets.base import AssetMeta
+from abc import ABC, abstractmethod
+from typing import Any
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DAL(ABC):
+    """Abstract base class for the data access layer."""
+
+    @abstractmethod
+    def create(self, *args, **kwargs) -> None:
+        """Adds data to an underlying storage mechanism.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
+
+    @abstractmethod
+    def read(self, *args, **kwargs) -> Any:
+        """Reads data from an underlying storage mechanism.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+
+        Returns:
+            Any: The data read from the storage.
+        """
+
+    @abstractmethod
+    def delete(self, *args, **kwargs) -> None:
+        """Deletes data from an underlying storage mechanism.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
+
+    @abstractmethod
+    def exists(self, *args, **kwargs) -> bool:
+        """Determines existence of an alement
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -30,14 +75,13 @@ class LocationService(ABC):
     """
 
     @abstractmethod
-    def get_filepath(self, asset_meta: AssetMeta, **kwargs) -> str:
+    def get_filepath(self, **kwargs) -> str:
         """
         Abstract method to generate a file path for a given AssetMeta object.
         This method should be implemented by subclasses to define the logic for constructing
         file paths according to the needs of the specific implementation.
 
         Args:
-            asset_meta(AssetMeta): Object containing the asset metadata.
             **kwargs: Arbitrary keyword arguments.
 
         Returns:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Monday December 16th 2024 03:00:41 am                                               #
+# Modified   : Wednesday December 18th 2024 04:13:38 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,63 +20,26 @@
 from __future__ import annotations
 
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 from datetime import datetime
-from typing import Any
+from typing import Optional
 
-from discover.assets.idgen import AssetIDGen
 from discover.core.dtypes import IMMUTABLE_TYPES
-from discover.core.flow import PhaseDef, StageDef
-from discover.infra.utils.date_time.format import ThirdDateFormatter
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                         ASSET                                                    #
+#                                        ASSET                                                     #
 # ------------------------------------------------------------------------------------------------ #
 class Asset(ABC):
-    def __init__(self, meta: AssetMeta, content: Any) -> None:
-        self._meta = meta
-        self._content = content
-
-    @property
-    def meta(self) -> AssetMeta:
-        return self._meta
-
-    @property
-    def content(self) -> Any:
-        return self._content
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                    ASSET METADATA                                                #
-# ------------------------------------------------------------------------------------------------ #
-class AssetMeta(ABC):
-    """
-    Represents an asset metadata such as phase, stage, and name. Provides methods for generating a unique asset ID,
-    and retrieving asset details such as description, phase, stage, and creation date.
-
-    Args:
-        phase (PhaseDef): The phase the asset is associated with.
-        stage (StageDef): The stage the asset is in.
-        name (str): The name of the asset.
-
-    Attributes:
-        asset_id (str): Unique identifier for the asset.
-        name (str): Name of the asset.
-        description (str): Description of the asset including phase, stage, and creation date.
-        phase (PhaseDef): The phase of the asset.
-        stage (StageDef): The stage of the asset.
-        created (datetime): The creation timestamp of the asset.
-    """
-
-    def __init__(self, phase: PhaseDef, stage: StageDef, name: str) -> None:
-        self._phase = phase
-        self._stage = stage
+    def __init__(
+        self, asset_id, name: str, description: Optional[str] = None, **kwargs
+    ) -> None:
+        self._asset_id = asset_id
         self._name = name
+        self._description = description
         self._created = datetime.now()
-        self._location = None
+
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self._asset_id = self._genid()
 
     def __eq__(self, other: object) -> bool:
         """
@@ -88,7 +51,7 @@ class AssetMeta(ABC):
         Returns:
             bool: True if the asset IDs are equal, False otherwise.
         """
-        if not isinstance(other, AssetMeta):
+        if not isinstance(other, Asset):
             return NotImplemented
         return self.asset_id == other.asset_id
 
@@ -153,6 +116,16 @@ class AssetMeta(ABC):
         self.__dict__.update(state)
 
     @property
+    def description(self) -> str:
+        """
+        Custom description functionality defined in subclasses.
+
+        Returns:
+            str: The description of the asset.
+        """
+        return self._description
+
+    @property
     def asset_id(self) -> str:
         """
         Returns the unique asset identifier.
@@ -173,46 +146,6 @@ class AssetMeta(ABC):
         return self._name
 
     @property
-    @abstractmethod
-    def asset_type(self) -> str:
-        """
-        Returns the type of the asset.
-
-        Returns:
-            str: The asset type.
-        """
-
-    @property
-    def description(self) -> str:
-        """
-        Returns a description of the asset including phase, stage, and creation date.
-
-        Returns:
-            str: The description of the asset.
-        """
-        return f"{self.phase.description} - {self.stage.description} {self.asset_type} created on {ThirdDateFormatter().to_HTTP_format(self._created)}."
-
-    @property
-    def phase(self) -> PhaseDef:
-        """
-        Returns the phase of the asset.
-
-        Returns:
-            PhaseDef: The phase of the asset.
-        """
-        return self._phase
-
-    @property
-    def stage(self) -> StageDef:
-        """
-        Returns the stage of the asset.
-
-        Returns:
-            StageDef: The stage of the asset.
-        """
-        return self._stage
-
-    @property
     def created(self) -> datetime:
         """
         Returns the creation timestamp of the asset.
@@ -221,39 +154,3 @@ class AssetMeta(ABC):
             datetime: The creation time of the asset.
         """
         return self._created
-
-    @property
-    def location(self) -> str:
-        """
-        Returns a string representing the Asset's persistence location.
-
-        Returns:
-            str: String containing a location
-        """
-        return self._location
-
-    @location.setter
-    def location(self, location: str) -> None:
-        self._location = location
-
-    def _genid(self) -> str:
-        """
-        Generates a unique ID for the asset based on its phase, stage, and name.
-
-        Returns:
-            str: The generated asset ID.
-
-        Raises:
-            Exception: If there is an error in generating the asset ID.
-        """
-        try:
-            return AssetIDGen.get_asset_id(
-                asset_type=self.asset_type,
-                phase=self._phase,
-                stage=self._stage,
-                name=self._name,
-            )
-
-        except Exception as e:
-            msg = f"Unable to create {self.description}\n{e}"
-            self._logger.exception(msg)

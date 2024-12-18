@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 12:41:52 pm                                              #
-# Modified   : Wednesday November 20th 2024 03:49:42 pm                                            #
+# Modified   : Tuesday December 17th 2024 10:02:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -58,7 +58,7 @@ class TestIngest:  # pragma: no cover
         )
 
         try:
-            repo = container.repo.dataset_repo()
+            repo = container.persist.dataset_repo()
             repo.remove(asset_id=asset_id)
         except Exception:
             pass
@@ -90,7 +90,7 @@ class TestIngest:  # pragma: no cover
         stage = DataPrepStage.build(stage_config=stage_config, force=True)
         asset_id = stage.run()
         # Confirm existence
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         assert repo.exists(asset_id=asset_id)
         # Stage run and endpoint exists
         _ = stage.run()

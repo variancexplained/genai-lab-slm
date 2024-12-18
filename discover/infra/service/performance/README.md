@@ -80,7 +80,7 @@ Ensure that you have Python installed along with the necessary dependencies.
 
    # Obtain the repository from the container
    container = DiscoverContainer()
-   profile_repo = container.repo.profile()
+   profile_repo = container.persist.profile()
 
    # Add a profile
    profile_repo.add(profile)

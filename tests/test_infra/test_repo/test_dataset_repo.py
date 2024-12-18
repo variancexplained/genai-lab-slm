@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Saturday November 16th 2024 04:06:40 pm                                             #
+# Modified   : Tuesday December 17th 2024 10:02:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -87,7 +87,7 @@ class TestDatasetRepoAdd:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         repo.add(dataset=dataset)
         assert repo.exists(dataset.asset_id)
         validate_dataset(dataset)
@@ -117,7 +117,7 @@ class TestDatasetRepoAdd:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         repo.add(dataset=dataset)
         with pytest.raises(DatasetExistsError):
             repo.add(dataset=dataset)
@@ -152,7 +152,7 @@ class TestDatasetRepoGet:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         repo.add(dataset=dataset)
         ds2 = repo.get(asset_id=dataset.asset_id)
         validate_dataset(ds2)
@@ -184,7 +184,7 @@ class TestDatasetRepoGet:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         with pytest.raises(DatasetNotFoundError):
             repo.get(asset_id="bogus_dataset_name")
         with pytest.raises(DatasetNotFoundError):
@@ -216,7 +216,7 @@ class TestDatasetRepoGet:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         repo.add(dataset=dataset)
         remove_dataset_file(dataset)
         with pytest.raises(DatasetIntegrityError):
@@ -253,7 +253,7 @@ class TestDatasetRepoRemove:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         repo.add(dataset=dataset)
         repo.remove(asset_id=dataset.asset_id)
         assert not repo.exists(asset_id=dataset.asset_id)
@@ -275,7 +275,7 @@ class TestDatasetRepoRemove:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         with pytest.raises(DatasetRemovalError):
             repo.remove(asset_id="bogus")
 
@@ -306,7 +306,7 @@ class TestDatasetConsumed:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         dataset = centralized_ds
-        repo = container.repo.dataset_repo()
+        repo = container.persist.dataset_repo()
         repo.add(dataset=dataset)
         assert not repo.is_consumed(asset_id=dataset.asset_id)
         repo.consumed(asset_id=dataset.asset_id)

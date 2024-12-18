@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday September 25th 2024 03:46:36 pm                                           #
-# Modified   : Wednesday October 16th 2024 10:43:16 pm                                             #
+# Modified   : Wednesday December 18th 2024 12:17:46 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ from datetime import datetime
 
 import pytest
 
-from discover.infra.persistence.dal.dao.dataset import DatasetDAO
-from discover.infra.persistence.dal.fao.centralized import CentralizedFileSystemFAO
+from discover.infra.persistence.dal.fileset.centralized import CentralizedFilesetDAL
+from discover.infra.persistence.dal.object.dataset import DatasetDAL
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -38,7 +38,7 @@ single_line = f"\n{100 * '-'}"
 
 @pytest.mark.file
 @pytest.mark.dao
-class TestCentralizedFileDAO:  # pragma: no cover
+class TestCentralizedFileDAL:  # pragma: no cover
     # ============================================================================================ #
     def test_pandas_dataset(self, centralized_ds, caplog) -> None:
         start = datetime.now()
@@ -50,7 +50,7 @@ class TestCentralizedFileDAO:  # pragma: no cover
         dataset = centralized_ds
 
         # Persist in KVS
-        dao = CentralizedFileSystemFAO()
+        dao = CentralizedFilesetDAL()
         dao.create(dataset=dataset)
         ds2 = dao.read(name=dataset.name)
 
@@ -88,7 +88,7 @@ class TestCentralizedFileDAO:  # pragma: no cover
         dataset = centralized_ds
 
         # Persist in KVS
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         dao.create(dataset=dataset)
         ds2 = dao.read(name=dataset.name)
 
@@ -125,7 +125,7 @@ class TestCentralizedFileDAO:  # pragma: no cover
         dataset = distributed_ds
 
         # Persist in KVS
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         dao.create(dataset=dataset)
         ds2 = dao.read(name=dataset.name)
 
@@ -163,7 +163,7 @@ class TestCentralizedFileDAO:  # pragma: no cover
         dataset = spark_partitioned_ds
 
         # Persist in KVS
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         dao.create(dataset=dataset)
         ds2 = dao.read(name=dataset.name)
 
@@ -201,7 +201,7 @@ class TestCentralizedFileDAO:  # pragma: no cover
         dataset = distributed_ds_nlp
 
         # Persist in KVS
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         dao.create(dataset=dataset)
         ds2 = dao.read(name=dataset.name)
 

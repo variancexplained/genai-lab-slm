@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Sunday December 15th 2024 03:35:55 am                                               #
+# Modified   : Tuesday December 17th 2024 10:02:19 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -156,7 +156,7 @@ def centralized_ds(pandas_df, container):
         stage=StageDef.TQA,
         content=pandas_df,
     )
-    repo = container.repo.dataset_repo()
+    repo = container.persist.dataset_repo()
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
     yield dataset
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
@@ -172,7 +172,7 @@ def distributed_ds(spark_df, container):
         stage=StageDef.TQA,
         content=spark_df,
     )
-    repo = container.repo.dataset_repo()
+    repo = container.persist.dataset_repo()
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
     yield dataset
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
@@ -188,7 +188,7 @@ def distributed_ds_nlp(spark_df, container):
         stage=StageDef.TQA,
         content=spark_df,
     )
-    repo = container.repo.dataset_repo()
+    repo = container.persist.dataset_repo()
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)
     yield dataset
     repo.remove(asset_id=dataset.asset_id, ignore_errors=True)

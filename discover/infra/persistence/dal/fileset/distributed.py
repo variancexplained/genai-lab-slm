@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/dal/fao/distributed.py                                  #
+# Filename   : /discover/infra/persistence/dal/fileset/distributed.py                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:42 pm                                              #
-# Modified   : Wednesday October 16th 2024 10:43:15 pm                                             #
+# Modified   : Wednesday December 18th 2024 12:42:49 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,15 +21,16 @@ from typing import Dict
 
 import pyspark
 
-from discover.infra.persistence.dal.fao.base import FileSystemFAO
-from discover.infra.persistence.dal.fao.exception import FileIOException
+from discover.infra.persistence.dal.fileset.base import FilesetDAL
+from discover.infra.persistence.dal.fileset.exception import FileIOException
+from discover.infra.persistence.dal.fileset.location import FilesetLocationService
 from discover.infra.service.spark.session import SparkSessionPool
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DistributedFileSystemFAO(FileSystemFAO):
+class DistributedFilesetDAL(FilesetDAL):
     """
-    Data Access Object (DAO) for interacting with a distributed file system using PySpark.
+    File Access Object (DAL) for interacting with a distributed file system using PySpark.
 
     This class manages reading from and writing to a distributed file system (e.g., HDFS, S3)
     using PySpark DataFrames. It coordinates with a SparkSessionPool to obtain or create
@@ -45,17 +46,19 @@ class DistributedFileSystemFAO(FileSystemFAO):
     def __init__(
         self,
         storage_config: Dict,
+        location_service: FilesetLocationService,
         session_pool: SparkSessionPool,
     ) -> None:
         """
-        Initializes the DistributedFileSystemFAO with a provided Spark session pool.
+        Initializes the DistributedFilesetDAL with a provided Spark session pool.
 
         Args:
             session_pool (SparkSessionPool): A Spark session pool for obtaining or creating
                 Spark sessions, injected by the dependency injection framework.
         """
-        super().__init__()
-        self._storage_config = storage_config
+        super().__init__(
+            storage_config=storage_config, location_service=location_service
+        )
         self._session_pool = session_pool
 
     def _read(self, filepath: str, nlp: bool = False) -> pyspark.sql.DataFrame:

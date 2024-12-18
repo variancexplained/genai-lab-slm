@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 08:29:47 pm                                                #
-# Modified   : Saturday November 16th 2024 05:18:05 pm                                             #
+# Modified   : Wednesday December 18th 2024 12:07:57 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 import pytest
 
 from discover.core.flow import PhaseDef, StageDef
-from discover.infra.persistence.dal.dao.dataset import DatasetDAO
+from discover.infra.persistence.dal.object.dataset import DatasetDAL
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -60,7 +60,7 @@ def check_storage_config(a, b):
 @pytest.mark.dataset
 @pytest.mark.dataset_dao
 @pytest.mark.dao
-class TestPandasDatasetDAO:  # pragma: no cover
+class TestPandasDatasetDAL:  # pragma: no cover
     # ============================================================================================ #
     def test_setup(self, caplog) -> None:
         start = datetime.now()
@@ -69,7 +69,7 @@ class TestPandasDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         dao.reset(force=True)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -88,7 +88,7 @@ class TestPandasDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         ds = dao.create(dataset=centralized_ds)
         assert dao.exists(id=centralized_ds.id)
         assert isinstance(ds.persisted, datetime)
@@ -111,7 +111,7 @@ class TestPandasDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         ds = dao.read(id=centralized_ds.id)
         assert ds.id == centralized_ds.id
         assert ds.name == centralized_ds.name
@@ -135,7 +135,7 @@ class TestPandasDatasetDAO:  # pragma: no cover
 @pytest.mark.dataset
 @pytest.mark.dataset_dao
 @pytest.mark.dao
-class TestPandasPartitionedDatasetDAO:  # pragma: no cover
+class TestPandasPartitionedDatasetDAL:  # pragma: no cover
     # ============================================================================================ #
     def test_create_centralized_ds(self, pandas_partitioned_ds, caplog) -> None:
         start = datetime.now()
@@ -144,7 +144,7 @@ class TestPandasPartitionedDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         pandas_partitioned_ds.content = None
         pandas_partitioned_ds.persist()
         dao.create(dataset=pandas_partitioned_ds)
@@ -167,7 +167,7 @@ class TestPandasPartitionedDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         ds = dao.read(id=pandas_partitioned_ds.id)
         assert ds.id == pandas_partitioned_ds.id
         assert ds.name == pandas_partitioned_ds.name
@@ -192,7 +192,7 @@ class TestPandasPartitionedDatasetDAO:  # pragma: no cover
 @pytest.mark.dataset
 @pytest.mark.dataset_dao
 @pytest.mark.dao
-class TestSparkDatasetDAO:  # pragma: no cover
+class TestSparkDatasetDAL:  # pragma: no cover
     # ============================================================================================ #
     def test_create_distributed_ds(self, distributed_ds, caplog) -> None:
         start = datetime.now()
@@ -201,7 +201,7 @@ class TestSparkDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         distributed_ds.content = None
         distributed_ds.persist()
         dao.create(dataset=distributed_ds)
@@ -224,7 +224,7 @@ class TestSparkDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         ds = dao.read(id=distributed_ds.id)
         assert ds.id == distributed_ds.id
         assert ds.name == distributed_ds.name
@@ -248,7 +248,7 @@ class TestSparkDatasetDAO:  # pragma: no cover
 @pytest.mark.dataset
 @pytest.mark.dataset_dao
 @pytest.mark.dao
-class TestSparkPartitionedDatasetDAO:  # pragma: no cover
+class TestSparkPartitionedDatasetDAL:  # pragma: no cover
     # ============================================================================================ #
     def test_create_distributed_ds(self, spark_partitioned_ds, caplog) -> None:
         start = datetime.now()
@@ -257,7 +257,7 @@ class TestSparkPartitionedDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         spark_partitioned_ds.content = None
         spark_partitioned_ds.persist()
         dao.create(dataset=spark_partitioned_ds)
@@ -280,7 +280,7 @@ class TestSparkPartitionedDatasetDAO:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         ds = dao.read(id=spark_partitioned_ds.id)
         assert ds.id == spark_partitioned_ds.id
         assert ds.name == spark_partitioned_ds.name
@@ -304,7 +304,7 @@ class TestSparkPartitionedDatasetDAO:  # pragma: no cover
 @pytest.mark.dataset
 @pytest.mark.dataset_dao
 @pytest.mark.dao
-class TestDAOReading:  # pragma: no cover
+class TestDALReading:  # pragma: no cover
     # ============================================================================================ #
     def test_read_all(self, caplog) -> None:
         start = datetime.now()
@@ -313,7 +313,7 @@ class TestDAOReading:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         logger.info(dao.read_all)
 
         # ---------------------------------------------------------------------------------------- #
@@ -333,7 +333,7 @@ class TestDAOReading:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         logger.info(dao.read_by_phase(phase=PhaseDef.DATAPREP))
         logger.info(dao.read_by_phase(phase=PhaseDef.TRANSFORMATION))
 
@@ -354,7 +354,7 @@ class TestDAOReading:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        dao = DatasetDAO()
+        dao = DatasetDAL()
         logger.info(dao.read_by_stage(stage=StageDef.RAW))
 
         # ---------------------------------------------------------------------------------------- #
