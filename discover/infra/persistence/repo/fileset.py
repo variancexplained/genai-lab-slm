@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Wednesday December 18th 2024 07:17:16 pm                                            #
+# Modified   : Thursday December 19th 2024 05:00:17 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,12 +26,12 @@ from typing import Optional, Union
 import pandas as pd
 import pyspark
 
-from discover.asset.workspace.repo import Repo
+from discover.assets.workspace.repo import Repo
 from discover.core.data_structure import DataFrameType
-from discover.infra.persistence.dal.fileset.centralized import (
+from discover.infra.persistence.dal.fao.centralized import (
     CentralizedFilesetDAL as FAOCFS,
 )
-from discover.infra.persistence.dal.fileset.distributed import (
+from discover.infra.persistence.dal.fao.distributed import (
     DistributedFilesetDAL as FAODFS,
 )
 

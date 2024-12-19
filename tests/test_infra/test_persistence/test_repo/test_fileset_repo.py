@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 05:42:21 am                                            #
-# Modified   : Wednesday December 18th 2024 07:32:19 pm                                            #
+# Modified   : Wednesday December 18th 2024 10:43:59 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -49,7 +49,7 @@ class TestFilesetRepoPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         assert not repo.exists(asset_id=ASSET_ID_PANDAS)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -68,7 +68,7 @@ class TestFilesetRepoPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         filepath = repo.add(asset_id=ASSET_ID_PANDAS, data=pandas_df)
         assert os.path.exists(filepath)
         assert os.path.isdir(filepath)
@@ -89,7 +89,7 @@ class TestFilesetRepoPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         assert repo.exists(asset_id=ASSET_ID_PANDAS)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -108,7 +108,7 @@ class TestFilesetRepoPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         df = repo.get(asset_id=ASSET_ID_PANDAS)
         logger.info(df.head)
         logger.info(pandas_df.head)
@@ -130,7 +130,7 @@ class TestFilesetRepoPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         repo.remove(asset_id=ASSET_ID_PANDAS)
         assert not repo.exists(asset_id=ASSET_ID_PANDAS)
         # ---------------------------------------------------------------------------------------- #
@@ -150,7 +150,7 @@ class TestFilesetRepoPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         filepath = repo.get_filepath(asset_id=ASSET_ID_PANDAS)
         if os.path.exists(filepath):
             shutil.rmtree(filepath)
@@ -180,7 +180,7 @@ class TestFilesetRepoSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         assert not repo.exists(asset_id=ASSET_ID_SPARK)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -199,7 +199,7 @@ class TestFilesetRepoSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         filepath = repo.add(asset_id=ASSET_ID_SPARK, data=pandas_df)
         assert os.path.exists(filepath)
         assert os.path.isdir(filepath)
@@ -220,7 +220,7 @@ class TestFilesetRepoSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         assert repo.exists(asset_id=ASSET_ID_SPARK)
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -239,7 +239,7 @@ class TestFilesetRepoSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         df = repo.get(asset_id=ASSET_ID_SPARK)
         logger.info(df.head)
         logger.info(pandas_df.head)
@@ -261,7 +261,7 @@ class TestFilesetRepoSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         repo.remove(asset_id=ASSET_ID_SPARK)
         assert not repo.exists(asset_id=ASSET_ID_SPARK)
         # ---------------------------------------------------------------------------------------- #
@@ -281,7 +281,7 @@ class TestFilesetRepoSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.file_persistence.fileset_repo()
+        repo = container.fileset_persistence.fileset_repo()
         filepath = repo.get_filepath(asset_id=ASSET_ID_SPARK)
         if os.path.exists(filepath):
             shutil.rmtree(filepath)

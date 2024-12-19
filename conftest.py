@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday December 18th 2024 05:46:28 am                                            #
+# Modified   : Wednesday December 18th 2024 10:28:40 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,13 +41,12 @@ collect_ignore_glob = []
 #                              DEPENDENCY INJECTION                                                #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session", autouse=True)
-def container() -> DiscoverContainer:
+def container():
     container = DiscoverContainer()
     container.init_resources()
     container.wire(
-        modules=[],
+        modules=["discover.asset.data.factory"],
     )
-
     return container
 
 

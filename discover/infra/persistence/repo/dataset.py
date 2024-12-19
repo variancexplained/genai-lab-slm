@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Wednesday December 18th 2024 02:39:10 pm                                            #
+# Modified   : Thursday December 19th 2024 05:00:17 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,10 +20,10 @@
 import logging
 from typing import Optional
 
-from discover.asset.data.dataset import Dataset
-from discover.asset.workspace.repo import Repo
-from discover.infra.persistence.dal.object.dataset import DatasetDAL
-from discover.infra.persistence.dal.object.exception import ObjectNotFoundError
+from discover.assets.data.dataset import Dataset
+from discover.assets.workspace.repo import Repo
+from discover.infra.persistence.dal.dao.dataset import DatasetDAL
+from discover.infra.persistence.dal.dao.exception import ObjectNotFoundError
 from discover.infra.persistence.repo.exception import (
     DatasetIOError,
     DatasetNotFoundError,

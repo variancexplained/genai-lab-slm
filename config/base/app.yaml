@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Wednesday December 18th 2024 07:29:04 pm                                            #
+# Modified   : Thursday December 19th 2024 05:28:28 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -60,16 +60,9 @@ logging:
 #                                         DATA                                                     #
 # ------------------------------------------------------------------------------------------------ #
 data:
-  raw: data/raw/reviews
-  frac: 1.0
-
-# ------------------------------------------------------------------------------------------------ #
-#                                        PERSISTENCE                                               #
-# ------------------------------------------------------------------------------------------------ #
-persistence:
-  data:
-    datasets:
-      location: dataset/odb
+  dal:
+    db: dataset/odb
+  fal:
     files:
       location: files
       partitioned: True

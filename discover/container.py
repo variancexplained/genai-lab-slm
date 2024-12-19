@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Wednesday December 18th 2024 07:05:43 pm                                            #
+# Modified   : Thursday December 19th 2024 05:00:17 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,6 +26,13 @@ import logging.config
 from dependency_injector import containers, providers
 
 from discover.infra.config.app import AppConfigReader
+from discover.infra.persistence.dal.dao.dataset import DatasetDAL
+from discover.infra.persistence.dal.dao.location import DALLocationService
+from discover.infra.persistence.dal.fao.centralized import CentralizedFilesetDAL
+from discover.infra.persistence.dal.fao.distributed import DistributedFilesetDAL
+from discover.infra.persistence.dal.fao.location import FilesetLocationService
+from discover.infra.persistence.repo.dataset import DatasetRepo
+from discover.infra.persistence.repo.fileset import FilesetRepo
 from discover.infra.service.spark.session import SparkSessionPool
 
 # ------------------------------------------------------------------------------------------------ #
@@ -58,11 +65,6 @@ class SparkContainer(containers.DeclarativeContainer):
 #                               FILE PERSISTENCE CONTAINER                                         #
 # ------------------------------------------------------------------------------------------------ #
 class FilePersistenceContainer(containers.DeclarativeContainer):
-
-    from discover.infra.persistence.dal.fileset.centralized import CentralizedFilesetDAL
-    from discover.infra.persistence.dal.fileset.distributed import DistributedFilesetDAL
-    from discover.infra.persistence.dal.fileset.location import FilesetLocationService
-    from discover.infra.persistence.repo.fileset import FilesetRepo
 
     config = providers.Configuration()
 
@@ -99,10 +101,6 @@ class FilePersistenceContainer(containers.DeclarativeContainer):
 #                          OBJECT PERSISTENCE CONTAINER                                            #
 # ------------------------------------------------------------------------------------------------ #
 class ObjectPersistenceContainer(containers.DeclarativeContainer):
-
-    from discover.infra.persistence.dal.object.dataset import DatasetDAL
-    from discover.infra.persistence.dal.object.location import DALLocationService
-    from discover.infra.persistence.repo.dataset import DatasetRepo
 
     config = providers.Configuration()
 
@@ -145,7 +143,7 @@ class DiscoverContainer(containers.DeclarativeContainer):
     spark = providers.Container(SparkContainer, config=config)
 
     # File Persistence Container
-    file_persistence = providers.Container(
+    fileset_persistence = providers.Container(
         FilePersistenceContainer, spark=spark, config=config
     )
 
