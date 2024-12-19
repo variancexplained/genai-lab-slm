@@ -11,27 +11,25 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Thursday December 19th 2024 05:00:17 am                                             #
+# Modified   : Thursday December 19th 2024 01:40:50 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset DAL Module"""
 import logging
-import os
 import shelve
 
-from discover.infra.persistence.dal.base import DAL
-from discover.infra.persistence.dal.dao.exception import (
+from discover.infra.data.dal.base import DAO
+from discover.infra.data.dal.exception import (
     ObjectDatabaseNotFoundError,
     ObjectIOException,
     ObjectNotFoundError,
 )
-from discover.infra.persistence.dal.dao.location import DALLocationService
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DatasetDAL(DAL):
+class DatasetDAO(DAO):
     """
     A Data Access Object (DAL) for managing Dataset objects within a key-value store.
 
@@ -44,8 +42,8 @@ class DatasetDAL(DAL):
         location_service (LocationService): Service encapsulating persistence locations.
     """
 
-    def __init__(self, location_service: DALLocationService):
-        self._db_path = location_service.get_filepath()
+    def __init__(self, db_path: str):
+        self._db_path = db_path
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(self, dataset) -> None:
@@ -145,30 +143,3 @@ class DatasetDAL(DAL):
             msg = f"Unknown exception occurred while deleting dataset {asset_id}."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
-
-    def reset(self, force: bool = False) -> None:
-        """
-        Resets the dataset storage, deleting all persisted datasets.
-
-        Args:
-            force (bool): If True, bypasses user confirmation for reset.
-                          Default is False, which prompts for confirmation.
-        """
-        if (
-            force
-            or "y"
-            in input("Resetting the DatasetDAL is permanent. Confirm. [Y/N] ").lower()
-        ):
-            self._reset()
-
-    def _reset(self) -> None:
-        """
-        Internal method to perform the reset of the dataset storage.
-
-        Deletes the object database files associated with the shelve storage.
-        """
-        for ext in (".db", ".bak", ".dat", ".dir"):
-            try:
-                os.remove(self._db_path + ext)
-            except FileNotFoundError:
-                pass

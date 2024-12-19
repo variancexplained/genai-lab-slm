@@ -16,7 +16,7 @@ data/stage/
 tests/data/
 
 # Workspace
-workspace/
+/workspace/
 
 # Cache
 **/cache/**

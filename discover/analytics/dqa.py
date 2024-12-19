@@ -11,20 +11,21 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Thursday December 19th 2024 04:48:42 am                                             #
+# Modified   : Thursday December 19th 2024 02:33:34 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
 
-from typing import Optional, Union
+from typing import Optional, Type, Union
 
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
 
 from discover.analytics.analysis import Analysis
 from discover.assets.data.dataset import Dataset
+from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
@@ -34,11 +35,15 @@ viz = Visualizer()
 #                         DATA QUALITY ANALYSIS SERVICE                                            #
 # ------------------------------------------------------------------------------------------------ #
 class DQA(Analysis):
+
     def __init__(
         self,
         dataset: Dataset,
+        config_reader_cls: Type[AppConfigReader] = AppConfigReader,
     ) -> None:
         super().__init__(df=dataset.content)
+        self._config_reader = config_reader_cls()
+        self._config = self._config_reader.get_config(section="dqa", namespace=True)
         # Dataset
         self._dataset = dataset
         # Nobs

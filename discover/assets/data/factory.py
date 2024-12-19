@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:26:09 pm                                            #
-# Modified   : Thursday December 19th 2024 04:48:42 am                                             #
+# Modified   : Thursday December 19th 2024 01:40:51 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,7 +30,6 @@ from discover.container import DiscoverContainer
 from discover.core.data_structure import DataFrameType
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.persistence.repo.dataset import DatasetRepo
-from discover.infra.persistence.repo.fileset import FilesetRepo
 from discover.infra.utils.file.copy import Copy
 
 # ------------------------------------------------------------------------------------------------ #
@@ -46,9 +45,6 @@ class DatasetFactory:
         self,
         dataset_repo: DatasetRepo = Provide[
             DiscoverContainer.object_persistence.dataset_repo
-        ],
-        fileset_repo: FilesetRepo = Provide[
-            DiscoverContainer.fileset_persistence.fileset_repo
         ],
         idgen: Type[DatasetIDGen] = DatasetIDGen,
     ) -> None:
