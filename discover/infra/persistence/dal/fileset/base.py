@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 06:05:13 pm                                              #
-# Modified   : Wednesday December 18th 2024 03:26:03 am                                            #
+# Modified   : Wednesday December 18th 2024 05:49:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -52,9 +52,7 @@ class FilesetDAL(DAL):
 
         """
         filename = f"{name}.{self._storage_config.get('format', 'parquet')}"
-        filepath = self._location_service.get_filepath(filename=filename)
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        return filepath
+        return self._location_service.get_filepath(filename=filename)
 
     def create(
         self,

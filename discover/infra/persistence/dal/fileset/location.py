@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persistence/dal/file/location.py                                    #
+# Filename   : /discover/infra/persistence/dal/fileset/location.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 01:04:56 pm                                             #
-# Modified   : Wednesday December 18th 2024 12:13:03 am                                            #
+# Modified   : Wednesday December 18th 2024 07:16:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -53,5 +53,4 @@ class FilesetLocationService(LocationService):
             OSError: If the directory creation fails.
         """
         filepath = os.path.join(self._workspace, "fileset", filename)
-        os.makedirs(filepath, exist_ok=True)
         return filepath

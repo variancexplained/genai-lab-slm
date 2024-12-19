@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Monday December 16th 2024 05:06:35 pm                                               #
+# Modified   : Wednesday December 18th 2024 02:53:09 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,8 +29,8 @@ import pyspark
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.assets.dataset import Dataset, DatasetMeta
-from discover.assets.idgen import AssetIDGen
+from discover.asset.data.dataset import Dataset, DatasetMeta
+from discover.asset.idgen.dataset import DatasetIDGen
 from discover.container import DiscoverContainer
 from discover.core.data_structure import DataFrameType, NestedNamespace
 from discover.core.flow import PhaseDef, StageDef
@@ -65,8 +65,8 @@ class Stage(ABC):
         stage (StageDef): The specific stage identifier within the pipeline.
         source_config (dict): The configuration for the source data.
         destination_config (dict): The configuration for the destination data.
-        asset_idgen (Type[AssetIDGen], optional): The class responsible for generating asset IDs.
-            Defaults to AssetIDGen.
+        asset_idgen (Type[DatasetIDGen], optional): The class responsible for generating asset IDs.
+            Defaults to DatasetIDGen.
         repo (DatasetRepo, optional): The repository interface for dataset operations.
             Defaults to `DiscoverContainer.repo.dataset_repo`.
         force (bool, optional): If true, forces execution even if the destination dataset exists.
@@ -83,7 +83,7 @@ class Stage(ABC):
         stage: StageDef,
         source_config: dict,
         destination_config: dict,
-        asset_idgen: Type[AssetIDGen] = AssetIDGen,
+        asset_idgen: Type[DatasetIDGen] = DatasetIDGen,
         repo: DatasetRepo = Provide[DiscoverContainer.repo.dataset_repo],
         return_dataset: bool = False,
         force: bool = False,

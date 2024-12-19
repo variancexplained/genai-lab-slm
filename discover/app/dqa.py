@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Monday December 16th 2024 05:16:36 pm                                               #
+# Modified   : Wednesday December 18th 2024 02:39:11 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
 
 from discover.app.analysis import Analysis
-from discover.assets.dataset import Dataset
+from discover.asset.data.dataset import Dataset
 
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()

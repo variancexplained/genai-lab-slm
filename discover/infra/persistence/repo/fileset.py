@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Wednesday December 18th 2024 05:52:37 am                                            #
+# Modified   : Wednesday December 18th 2024 07:17:16 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from typing import Optional, Union
 import pandas as pd
 import pyspark
 
-from discover.assets.repo import Repo
+from discover.asset.workspace.repo import Repo
 from discover.core.data_structure import DataFrameType
 from discover.infra.persistence.dal.fileset.centralized import (
     CentralizedFilesetDAL as FAOCFS,
@@ -183,7 +183,7 @@ class FilesetRepo(Repo):
 
     def _get_write_fao(self, data: DataFrame) -> Union[FAOCFS, FAODFS]:
         """Returns a file access object based on the data type"""
-        if isinstance(data, (pd.DataFrame, pd.core.Frame.DataFrame)):
+        if isinstance(data, (pd.DataFrame, pd.core.frame.DataFrame)):
             return self._fao_cfs
         elif isinstance(data, pyspark.sql.DataFrame):
             return self._fao_dfs

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Wednesday December 18th 2024 06:50:03 am                                            #
+# Modified   : Wednesday December 18th 2024 07:05:43 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -92,8 +92,6 @@ class FilePersistenceContainer(containers.DeclarativeContainer):
         FilesetRepo,
         fao_cfs=fao_cfs,
         fao_dfs=fao_dfs,
-        location_service=file_location_service,
-        partitioned=config.persistence.data.files.partitioned,
     )
 
 
@@ -155,7 +153,6 @@ class DiscoverContainer(containers.DeclarativeContainer):
     object_persistence = providers.Container(
         ObjectPersistenceContainer,
         config=config,
-        fileset_repo=file_persistence.fileset_repo,
     )
 
 

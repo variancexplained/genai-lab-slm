@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/assets/base.py                                                            #
+# Filename   : /discover/asset/base.py                                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday September 21st 2024 10:21:05 pm                                            #
-# Modified   : Wednesday December 18th 2024 04:13:38 am                                            #
+# Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
+# Modified   : Wednesday December 18th 2024 03:01:10 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
