@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:26:09 pm                                            #
-# Modified   : Thursday December 19th 2024 01:40:51 pm                                             #
+# Modified   : Thursday December 19th 2024 10:49:09 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from pyspark.sql import DataFrame
 from discover.assets.data.dataset import Dataset
 from discover.assets.idgen.dataset import DatasetIDGen
 from discover.container import DiscoverContainer
-from discover.core.data_structure import DataFrameType
+from discover.core.data_structure import DataStructure
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.persistence.repo.dataset import DatasetRepo
 from discover.infra.utils.file.copy import Copy
@@ -63,7 +63,7 @@ class DatasetFactory:
         name: str,
         filepath: str,
         description: Optional[str] = None,
-        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+        data_structure: DataStructure = DataStructure.PANDAS,
     ) -> Dataset:
         """Create Dataset from a parquet file.
 
@@ -71,7 +71,7 @@ class DatasetFactory:
 
         """
         # Obtain a file access object reader for the dataframe type and read the data
-        fao = self._fileset_repo._get_read_fao(dataframe_type=dataframe_type)
+        fao = self._fileset_repo._get_read_fao(data_structure=data_structure)
         data = fao.read(filepath=filepath)
 
         return self._from_df(
@@ -79,7 +79,7 @@ class DatasetFactory:
             stage=stage,
             name=name,
             data=data,
-            dataframe_type=dataframe_type,
+            data_structure=data_structure,
             description=description,
         )
 
@@ -92,7 +92,7 @@ class DatasetFactory:
         name: str,
         filepath: str,
         description: Optional[str] = None,
-        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+        data_structure: DataStructure = DataStructure.PANDAS,
     ) -> Dataset:
         """Create Dataset from a parquet file.
 
@@ -106,7 +106,7 @@ class DatasetFactory:
             name=name,
             filepath=filepath,
             description=description,
-            dataframe_type=dataframe_type,
+            data_structure=data_structure,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -120,7 +120,7 @@ class DatasetFactory:
         name: str,
         data: pd.DataFrame,
         description: Optional[str] = None,
-        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+        data_structure: DataStructure = DataStructure.PANDAS,
     ) -> Dataset:
         return self._from_df(
             phase=phase,
@@ -128,7 +128,7 @@ class DatasetFactory:
             name=name,
             data=data,
             description=description,
-            dataframe_type=dataframe_type,
+            data_structure=data_structure,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -140,7 +140,7 @@ class DatasetFactory:
         name: str,
         data: DataFrame,
         description: Optional[str] = None,
-        dataframe_type: DataFrameType = DataFrameType.SPARK,
+        data_structure: DataStructure = DataStructure.SPARK,
     ) -> Dataset:
         return self._from_df(
             phase=phase,
@@ -148,7 +148,7 @@ class DatasetFactory:
             name=name,
             data=data,
             description=description,
-            dataframe_type=dataframe_type,
+            data_structure=data_structure,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -160,7 +160,7 @@ class DatasetFactory:
         name: str,
         data: DataFrame,
         description: Optional[str] = None,
-        dataframe_type: DataFrameType = DataFrameType.SPARKNLP,
+        data_structure: DataStructure = DataStructure.SPARKNLP,
     ) -> Dataset:
         return self._from_df(
             phase=phase,
@@ -168,7 +168,7 @@ class DatasetFactory:
             name=name,
             data=data,
             description=description,
-            dataframe_type=dataframe_type,
+            data_structure=data_structure,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -181,7 +181,7 @@ class DatasetFactory:
         stage: StageDef,
         name: str,
         data: pd.DataFrame,
-        dataframe_type: DataFrameType,
+        data_structure: DataStructure,
         description: Optional[str] = None,
         **kwargs,
     ) -> Dataset:
@@ -193,7 +193,7 @@ class DatasetFactory:
             name=name,
             data=data,
             description=description,
-            dataframe_type=dataframe_type,
+            data_structure=data_structure,
         )
         self._dataset_repo.add(dataset=dataset)
         self._fileset_repo.add(asset_id=asset_id, data=data)

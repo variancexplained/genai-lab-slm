@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Thursday December 19th 2024 04:05:43 pm                                             #
+# Modified   : Thursday December 19th 2024 11:10:43 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,6 +21,7 @@ import pyspark
 
 from discover.infra.data.dal.base import FAO
 from discover.infra.data.fao.exception import FileIOException
+from discover.infra.service.spark.session import SparkSessionPool
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -30,8 +31,19 @@ class SparkParquetFAO(FAO):
     """
     Spark File Access Object (FAO) for parquet files."""
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, spark_session_pool: SparkSessionPool) -> None:
         self._config = config
+        self._spark_session_pool = spark_session_pool
+        self._spark_session = None
+
+    # -------------------------------------------------------------------------------------------- #
+    def stop_spark_session(self) -> None:
+        try:
+            self._spark_session.stop()
+        except TypeError:
+            pass
+        except Exception as e:
+            raise (f"Unexpected error occurred while shutting down spark session.\n{e}")
 
     # -------------------------------------------------------------------------------------------- #
     def create(
@@ -97,7 +109,7 @@ class SparkParquetFAO(FAO):
                 Parquet file, including cases where the file is not found.
         """
         try:
-            spark_session = self._session_pool.get_or_create(nlp=nlp)
+            self._spark_session = self._spark_session_pool.get_or_create(nlp=nlp)
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a Parquet file from {filepath}.File does not exist.\n{e}"
             self._logger.error(msg)
@@ -108,7 +120,7 @@ class SparkParquetFAO(FAO):
             raise FileIOException(msg, e) from e
 
         try:
-            return spark_session.read.parquet(filepath)
+            return self._spark_session.read.parquet(filepath)
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a Parquet file from {filepath}. The file does not exist."
             self._logger.exception(msg)
@@ -124,8 +136,9 @@ class SparkParquetFAO(FAO):
 # ------------------------------------------------------------------------------------------------ #
 class SparkCSVFAO(FAO):
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, session_pool: SparkSessionPool) -> None:
         self._config = config
+        self._session_pool = session_pool
 
     # -------------------------------------------------------------------------------------------- #
     def create(

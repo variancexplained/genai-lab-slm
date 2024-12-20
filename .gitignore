@@ -18,6 +18,12 @@ tests/data/
 # Workspace
 /workspace/
 
+# Tests
+/tests/
+
+# Notes
+/notes/
+
 # Cache
 **/cache/**
 

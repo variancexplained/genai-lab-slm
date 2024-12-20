@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Thursday December 19th 2024 03:54:23 pm                                             #
+# Modified   : Thursday December 19th 2024 11:23:42 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 """Pandas File Access Object Module"""
 import pandas as pd
 
-from discover.infra.data.dal.base import FAO
+from discover.infra.data.fao.base import FAO
 from discover.infra.data.fao.exception import FileIOException
 
 

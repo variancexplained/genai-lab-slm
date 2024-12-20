@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Sunday December 15th 2024 11:30:13 pm                                               #
+# Modified   : Thursday December 19th 2024 10:33:01 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -111,7 +111,7 @@ class DataClass(ABC):  # noqa
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataFrameType(Enum):
+class DataStructure(Enum):
     """
     Enumeration representing different types of DataFrames and their characteristics.
 
@@ -131,7 +131,7 @@ class DataFrameType(Enum):
     SPARK = ("spark", True, False)
     SPARKNLP = ("sparknlp", True, True)
 
-    def __new__(cls, value: str, distributed: bool, nlp: bool) -> DataFrameType:
+    def __new__(cls, value: str, distributed: bool, nlp: bool) -> DataStructure:
         obj = object.__new__(cls)
         obj._value_ = value  # Set the Enum value
         obj._distributed = distributed
@@ -154,7 +154,7 @@ class DataFrameType(Enum):
         return self._nlp
 
     @classmethod
-    def from_identifier(cls, identifier: str) -> DataFrameType:
+    def from_identifier(cls, identifier: str) -> DataStructure:
         """
         Finds the enum member based on its string identifier.
 
@@ -162,7 +162,7 @@ class DataFrameType(Enum):
             identifier (str): The string identifier of the DataFrame type (e.g., "pandas").
 
         Returns:
-            DataFrameType: The matching enum member.
+            DataStructure: The matching enum member.
 
         Raises:
             ValueError: If no matching enum member is found.

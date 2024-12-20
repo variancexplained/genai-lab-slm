@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Thursday December 19th 2024 06:16:35 am                                             #
+# Modified   : Friday December 20th 2024 12:45:27 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,14 +19,14 @@
 """Dataset Module"""
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
 from pyspark.sql import DataFrame
 
 from discover.assets.base import Asset
-from discover.core.data_structure import DataFrameType
+from discover.container import DiscoverContainer
+from discover.core.data_structure import DataStructure
 from discover.core.flow import PhaseDef, StageDef
 
 
@@ -43,20 +43,28 @@ class Dataset(Asset):
         name: str,
         description: Optional[str] = None,
         data: Optional[Union[pd.DataFrame, DataFrame]] = None,
-        dataframe_type: Optional[DataFrameType] = None,
-        creator: Optional[str] = None,
+        filepath: Optional[str] = None,
+        data_structure: Optional[DataStructure] = None,
+        source: Optional[str] = None,
         parent: Optional[Dataset] = None,
     ) -> None:
-        super().__init__(asset_id=asset_id, name=name, description=description)
-        self._phase = phase
-        self._stage = stage
+        super().__init__(
+            asset_id=asset_id,
+            name=name,
+            phase=phase,
+            stage=stage,
+            description=description,
+        )
         self._data = data
-        self._creator = creator
+        self._filepath = filepath
+        self._source = source
+        self._parent = parent
         self._description = (
             self._description
-            or f"Dataset asset {self._asset_id} - {self.name} created by {creator} on {self._created.strftime('%Y-%m-%d')} at {self._created.strftime('H:%M:%S')}"
+            or f"Dataset asset {self._asset_id} - {self.name} created by {source} on {self._created.strftime('%Y-%m-%d')} at {self._created.strftime('H:%M:%S')}"
         )
-        self._persisted = None
+
+        self._repo = None
         self._is_composite = False
 
     # --------------------------------------------------------------------------------------------- #
@@ -89,30 +97,6 @@ class Dataset(Asset):
         self.__dict__.update(state)
 
     # --------------------------------------------------------------------------------------------- #
-    #                                       FLOW                                                    #
-    # --------------------------------------------------------------------------------------------- #
-
-    @property
-    def phase(self) -> PhaseDef:
-        """
-        Returns the phase for which the asset was created.
-
-        Returns:
-            PhaseDef: Phase.
-        """
-        return self._phase
-
-    @property
-    def stage(self) -> StageDef:
-        """
-        Returns the stage for which the asset was created.
-
-        Returns:
-            StageDef: Stage.
-        """
-        return self._stage
-
-    # --------------------------------------------------------------------------------------------- #
     #                                    EXTRACT DATA                                               #
     # --------------------------------------------------------------------------------------------- #
     def to_pandas(self) -> pd.DataFrame:
@@ -124,7 +108,7 @@ class Dataset(Asset):
         if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame)):
             return self._data
         else:
-            self._load_data(dataframe_type=DataFrameType.PANDAS)
+            self._load_data(data_structure=DataStructure.PANDAS)
             return self._data
 
     def to_spark(self) -> DataFrame:
@@ -133,12 +117,12 @@ class Dataset(Asset):
         Returns:
             DataFrame: The dataset in Spark format.
         """
-        if self._dataframe_type == DataFrameType.SPARK and isinstance(
+        if self._data_structure == DataStructure.SPARK and isinstance(
             self._data, DataFrame
         ):
             return self._data
         else:
-            self._load_data(dataframe_type=DataFrameType.SPARK)
+            self._load_data(data_structure=DataStructure.SPARK)
             return self._data
 
     def to_sparknlp(self) -> DataFrame:
@@ -147,42 +131,25 @@ class Dataset(Asset):
         Returns:
             DataFrame: The dataset in SparkNLP format.
         """
-        if self._dataframe_type == DataFrameType.SPARKNLP and isinstance(
+        if self._data_structure == DataStructure.SPARKNLP and isinstance(
             self._data, DataFrame
         ):
             return self._data
         else:
-            self._load_data(dataframe_type=DataFrameType.SPARKNLP)
+            self._load_data(data_structure=DataStructure.SPARKNLP)
             return self._data
 
-    # --------------------------------------------------------------------------------------------- #
-    #                                        DATA IO                                                #
-    # --------------------------------------------------------------------------------------------- #
-    def load_data(self, dataframe_type: DataFrameType) -> None:
+    def load_data(self, data_structure: DataStructure) -> None:
         """Loads data into the dataset from the repository.
 
         Args:
-            dataframe_type (DataFrameType): The type of DataFrame to load (e.g., Pandas, Spark, SparkNLP).
+            data_structure (DataStructure): The type of DataFrame to load (e.g., Pandas, Spark, SparkNLP).
         """
-
-        repo = DiscoverContainer.fileset_persistence.fileset_repo()
-
-        self._data = repo.get(asset_id=self._asset_id, dataframe_type=dataframe_type)
-        self._dataframe_type = dataframe_type
-
-    def save_data(self) -> None:
-        """Saves the dataset to the repository.
-
-        Raises:
-            RuntimeError: If no data is available to save.
-        """
-
-        if self._data is None:
-            raise RuntimeError("No Data to save.")
-
-        from discover.container import DiscoverContainer
-
-        repo = DiscoverContainer.fileset_persistence.fileset_repo()
-
-        self._filepath = repo.add(asset_id=self._asset_id, data=self._data)
-        self._persisted = datetime.now()
+        try:
+            self._repo = self._repo or DiscoverContainer.repo.dataset_repo()
+            self._data = self._repo.read(
+                filepath=self._filepath, data_structure=data_structure
+            )
+            self._data_structure = data_structure
+        except Exception as e:
+            raise (f"Unexpected error occurred. \n{e}")

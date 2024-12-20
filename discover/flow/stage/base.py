@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday December 19th 2024 01:40:47 pm                                             #
+# Modified   : Thursday December 19th 2024 10:49:09 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,7 +32,7 @@ from pyspark.sql import DataFrame
 from discover.assets.data.dataset import Dataset, DatasetMeta
 from discover.assets.idgen.dataset import DatasetIDGen
 from discover.container import DiscoverContainer
-from discover.core.data_structure import DataFrameType, NestedNamespace
+from discover.core.data_structure import DataStructure, NestedNamespace
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.task.base import Task, TaskBuilder
 from discover.infra.persistence.repo.dataset import DatasetRepo
@@ -103,11 +103,11 @@ class Stage(ABC):
         self._destination_asset_id = None
 
         # Indicates whether to use pandas, spark, or sparknlp DataFrames
-        self._source_dataframe_type = DataFrameType.from_identifier(
-            self._source_config.dataframe_type_id
+        self._source_data_structure = DataStructure.from_identifier(
+            self._source_config.data_structure
         )
-        self._destination_dataframe_type = DataFrameType.from_identifier(
-            self._destination_config.dataframe_type_id
+        self._destination_data_structure = DataStructure.from_identifier(
+            self._destination_config.data_structure
         )
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -206,7 +206,7 @@ class Stage(ABC):
     def _run(self) -> Dataset:
         """Performs the core logic of the stage, executing tasks in sequence."""
         source_dataset = self._load_dataset(
-            asset_id=self._source_asset_id, dataframe_type=self._source_dataframe_type
+            asset_id=self._source_asset_id, data_structure=self._source_data_structure
         )
         data = source_dataset.content
         for task in self._tasks:
@@ -229,11 +229,11 @@ class Stage(ABC):
         """Updates the endpoint dataset with changes in the source dataset."""
         # Load the source and destination datasets
         source_dataset = self._load_dataset(
-            asset_id=self._source_asset_id, dataframe_type=self._source_dataframe_type
+            asset_id=self._source_asset_id, data_structure=self._source_data_structure
         )
         destination_dataset = self._load_dataset(
             asset_id=self._destination_asset_id,
-            dataframe_type=self._destination_dataframe_type,
+            data_structure=self._destination_data_structure,
         )
         # Obtain the columns to merge
         merge_cols = [
@@ -262,20 +262,20 @@ class Stage(ABC):
 
     def _merge_dataframes(
         self,
-        source: DataFrameType,
-        destination: DataFrameType,
+        source: DataStructure,
+        destination: DataStructure,
         merge_cols: list,
-    ) -> DataFrameType:
+    ) -> DataStructure:
         """Merges two DataFrames of the same type.
 
         Args:
-            source (DataFrameType): The source dataframe.
-            destination (DataFrameType): The destination dataframe.
+            source (DataStructure): The source dataframe.
+            destination (DataStructure): The destination dataframe.
             merge_cols (list): The columns from the destination dataframe to include
                 in the merge.
 
         Returns:
-            DataFrameType: The merged dataframe.
+            DataStructure: The merged dataframe.
 
         Raises:
             TypeError: If the source and destination datasets have incompatible types.
@@ -357,7 +357,7 @@ class Stage(ABC):
     def build(
         cls,
         stage_config: dict,
-        return_dataframe_type_id: str = "pandas",
+        return_data_structure: str = "pandas",
         force: bool = False,
         **kwargs,
     ) -> Stage:
@@ -466,13 +466,13 @@ class Stage(ABC):
     def _load_dataset(
         self,
         asset_id: str,
-        dataframe_type: DataFrameType = DataFrameType.PANDAS,
+        data_structure: DataStructure = DataStructure.PANDAS,
     ) -> Dataset:
         """Loads a dataset from the repository.
 
         Args:
             asset_id (str): The identifier for the dataset asset.
-            dataframe_type (DataFrameType): Configuration for a pandas, spark, or sparknlp DataFrame.
+            data_structure (DataStructure): Configuration for a pandas, spark, or sparknlp DataFrame.
 
         Returns:
             Dataset object
@@ -484,11 +484,11 @@ class Stage(ABC):
         try:
             dataset = self._repo.get(
                 asset_id=asset_id,
-                dataframe_type=dataframe_type,
+                data_structure=data_structure,
             )
 
             if (
-                dataframe_type.distributed
+                data_structure.distributed
                 and "__index_level_0__" in dataset.content.columns
             ):
                 # Rename the pandas index column if it exists in the PySpark DataFrame

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 08:34:14 pm                                            #
-# Modified   : Thursday December 19th 2024 04:48:42 am                                             #
+# Modified   : Thursday December 19th 2024 10:49:10 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from datetime import datetime
 import pytest
 
 from discover.assets.data.factory import DatasetFactory
-from discover.core.data_structure import DataFrameType
+from discover.core.data_structure import DataStructure
 from discover.core.flow import PhaseDef, StageDef
 
 # ------------------------------------------------------------------------------------------------ #
@@ -62,7 +62,7 @@ class TestDatasetFactory:  # pragma: no cover
             stage=STAGE,
             name=name,
             filepath=PARQUET_FILEPATH,
-            dataframe_type=DataFrameType.PANDAS,
+            data_structure=DataStructure.PANDAS,
         )
         assert ds.phase == PHASE
         assert ds.stage == STAGE
@@ -110,7 +110,7 @@ class TestDatasetFactory:  # pragma: no cover
             stage=STAGE,
             name=name,
             data=pandas_df,
-            dataframe_type=DataFrameType.PANDAS,
+            data_structure=DataStructure.PANDAS,
         )
         assert ds.phase == PHASE
         assert ds.stage == STAGE
@@ -150,7 +150,7 @@ class TestDatasetFactory:  # pragma: no cover
             stage=STAGE,
             name=name,
             data=spark_df,
-            dataframe_type=DataFrameType.SPARK,
+            data_structure=DataStructure.SPARK,
         )
         assert ds.phase == PHASE
         assert ds.stage == STAGE

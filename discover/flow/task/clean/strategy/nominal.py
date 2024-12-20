@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Thursday December 19th 2024 01:40:48 pm                                             #
+# Modified   : Thursday December 19th 2024 10:33:04 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Type
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.data_structure import DataFrameType
+from discover.core.data_structure import DataStructure
 from discover.flow.task.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
@@ -76,7 +76,7 @@ class NominalAnomalyDetectStrategy(DetectStrategy):
     which applies the detection logic to the input dataset.
 
     Methods:
-        detect(data: DataFrameType) -> DataFrameType:
+        detect(data: DataStructure) -> DataStructure:
             Abstract method that applies the detection logic to the provided dataset.
 
     Notes:
@@ -97,15 +97,15 @@ class NominalAnomalyDetectStrategy(DetectStrategy):
         self._new_column = new_column
 
     @abstractmethod
-    def detect(self, data: DataFrameType) -> DataFrameType:
+    def detect(self, data: DataStructure) -> DataStructure:
         """
         Applies anomaly detection logic to the provided dataset.
 
         Args:
-            data (DataFrameType): The input dataset to analyze for nominal anomalies.
+            data (DataStructure): The input dataset to analyze for nominal anomalies.
 
         Returns:
-            DataFrameType: The dataset with anomaly detection results added.
+            DataStructure: The dataset with anomaly detection results added.
 
         Raises:
             NotImplementedError: If the method is not implemented in a subclass.

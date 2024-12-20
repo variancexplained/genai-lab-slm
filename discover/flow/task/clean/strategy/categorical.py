@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:33:51 pm                                             #
-# Modified   : Thursday December 19th 2024 01:40:49 pm                                             #
+# Modified   : Thursday December 19th 2024 10:33:04 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from typing import Type
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.data_structure import DataFrameType
+from discover.core.data_structure import DataStructure
 from discover.flow.task.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
@@ -93,7 +93,7 @@ class CategoricalAnomalyDetectStrategy(DetectStrategy):
         self._new_column = new_column
         self._valid_categories = valid_categories
 
-    def detect(self, data: DataFrameType) -> DataFrameType:
+    def detect(self, data: DataStructure) -> DataStructure:
         """
         Detects anomalies in the specified column by validating against the list of valid categories.
 

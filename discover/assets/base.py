@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/base.py                                                             #
+# Filename   : /discover/assets/base.py                                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Wednesday December 18th 2024 10:36:47 pm                                            #
+# Modified   : Friday December 20th 2024 01:04:36 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,17 +25,27 @@ from datetime import datetime
 from typing import Optional
 
 from discover.core.dtypes import IMMUTABLE_TYPES
+from discover.core.flow import PhaseDef, StageDef
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                        ASSET                                                     #
 # ------------------------------------------------------------------------------------------------ #
 class Asset(ABC):
+
     def __init__(
-        self, asset_id, name: str, description: Optional[str] = None, **kwargs
+        self,
+        asset_id,
+        name: str,
+        phase: PhaseDef,
+        stage: StageDef,
+        description: Optional[str] = None,
+        **kwargs,
     ) -> None:
         self._asset_id = asset_id
         self._name = name
+        self._phase = phase
+        self._stage = stage
         self._description = description
         self._created = datetime.now()
 
@@ -144,6 +154,26 @@ class Asset(ABC):
             str: The description of the asset.
         """
         return self._description
+
+    @property
+    def phase(self) -> PhaseDef:
+        """
+        Returns the phase for which the asset was created.
+
+        Returns:
+            PhaseDef: Phase.
+        """
+        return self._phase
+
+    @property
+    def stage(self) -> StageDef:
+        """
+        Returns the stage for which the asset was created.
+
+        Returns:
+            StageDef: Stage.
+        """
+        return self._stage
 
     @property
     def created(self) -> datetime:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 8th 2024 07:31:47 pm                                                #
-# Modified   : Thursday December 19th 2024 05:00:17 am                                             #
+# Modified   : Thursday December 19th 2024 11:47:17 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,16 +20,22 @@
 import logging
 from typing import Optional
 
+import pandas as pd
+import pyspark
+from git import Union
+
 from discover.assets.data.dataset import Dataset
 from discover.assets.workspace.repo import Repo
-from discover.infra.persistence.dal.dao.dataset import DatasetDAL
-from discover.infra.persistence.dal.dao.exception import ObjectNotFoundError
+from discover.core.data_structure import DataStructure
+from discover.infra.data.dal.dataset import DatasetDAO
+from discover.infra.data.fao.pandas import PandasParquetFAO
+from discover.infra.data.fao.spark import SparkParquetFAO
 from discover.infra.persistence.repo.exception import (
     DatasetIOError,
-    DatasetNotFoundError,
     DatasetRemovalError,
 )
-from discover.infra.persistence.repo.fileset import FilesetRepo
+
+DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -41,23 +47,27 @@ class DatasetRepo(Repo):
     a FilesetRepo for managing dataset storage.
 
     Args:
-        dataset_dal (DatasetDAL): Data Access Layer for managing dataset persistence.
+        pandas_fao (DatasetDAL): Data Access Layer for managing dataset persistence.
         fileset_repo (FilesetRepo): Repository for managing dataset file storage.
     """
 
     def __init__(
         self,
-        dataset_dal: DatasetDAL,
-        fileset_repo: FilesetRepo,
+        dataset_dao: DatasetDAO,
+        pandas_fao: PandasParquetFAO,
+        spark_fao: SparkParquetFAO,
     ) -> None:
-        self._dataset_dal = dataset_dal
-        self._fileset_repo = fileset_repo
+        self._dataset_dao = dataset_dao
+        self._pandas_fao = pandas_fao
+        self._spark_fao = spark_fao
+
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def stop_spark(self) -> None:
+        self._spark_fao.stop_spark_session()
 
     def add(self, dataset: Dataset) -> None:
         """Adds a dataset to the repository.
-
-        Persists the dataset using the DatasetDAL.
 
         Args:
             dataset (Dataset): The dataset to add.
@@ -66,13 +76,14 @@ class DatasetRepo(Repo):
             Exception: If an error occurs during the operation.
         """
         try:
-            self._dataset_dal.create(dataset=dataset)
+            self._write(dataset=dataset)
+            self._dataset_dao.create(dataset=dataset)
         except Exception as e:
             msg = f"Exception occurred while saving dataset {dataset.asset_id} to object storage.\n{e}"
             raise Exception(msg)
 
     def get(self, asset_id: str) -> Optional[Dataset]:
-        """Retrieves a dataset by its ID.
+        """Lazily retrieves a dataset object by its ID.
 
         Args:
             asset_id (str): The unique identifier of the dataset.
@@ -85,13 +96,7 @@ class DatasetRepo(Repo):
             DatasetIOError: If an I/O error occurs during the operation.
         """
         try:
-            dataset = self._dataset_dal.read(asset_id=asset_id)
-            dataset.repo = self._fileset_repo
-            return dataset
-        except ObjectNotFoundError:
-            msg = f"Dataset {asset_id} does not exist."
-            self._logger.exception(msg)
-            raise DatasetNotFoundError(msg)
+            return self._dataset_dao.read(asset_id=asset_id)
         except Exception as e:
             msg = f"Exception occurred while reading the dataset {asset_id} object."
             self._logger.exception(msg)
@@ -107,8 +112,10 @@ class DatasetRepo(Repo):
         Raises:
             DatasetRemovalError: If an error occurs during the removal and ignore_errors is False.
         """
+
         try:
-            self._dataset_dal.delete(asset_id=asset_id)
+            dataset = self._dataset_dao.read(asset_id=asset_id)
+            self._dataset_dao.delete(filepath=dataset.filepath)
         except KeyError:
             if ignore_errors:
                 msg = f"Warning: Dataset {asset_id} does not exist."
@@ -135,4 +142,30 @@ class DatasetRepo(Repo):
         Returns:
             bool: True if the dataset exists, False otherwise.
         """
-        return self._dataset_dal.exists(asset_id=asset_id)
+        return self._dataset_dao.exists(asset_id=asset_id)
+
+    def read(self, filepath: str, data_structure: DataStructure) -> Optional[Dataset]:
+        """Reads the designated data structure from file."""
+        if data_structure == DataStructure.PANDAS:
+            return self._pandas_fao.read(filepath=filepath)
+        elif (
+            data_structure == DataStructure.SPARK
+            or data_structure == DataStructure.SPARKNLP
+        ):
+            return self._spark_fao.read(filepath=filepath, nlp=data_structure.nlp)
+        else:
+            ValueError(f"Invalid data_structure value.\n{data_structure}")
+
+    def _write(self, dataset: Dataset) -> None:
+        """Writes a dataset to file."""
+        if dataset.data_structure == DataStructure.PANDAS:
+            self._pandas_fao.write(filepath=dataset.filepath)
+        elif (
+            dataset.data_structure == DataStructure.SPARK
+            or dataset.data_structure == DataStructure.SPARKNLP
+        ):
+            self._spark_fao.write(
+                filepath=dataset.filepath, nlp=dataset.data_structure.nlp
+            )
+        else:
+            ValueError(f"Invalid data_structure value.\n{dataset.data_structure}")

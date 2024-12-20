@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Thursday December 19th 2024 01:40:47 pm                                             #
+# Modified   : Thursday December 19th 2024 10:27:07 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -132,7 +132,7 @@ class DetectOrRepairShortReviewsTask(NumericAnomaly):
         column: str = "review_length",
         new_column: str = "short_review",
         mode: str = "detect",
-        dataframe_type_id: str = "spark",
+        data_structure: str = "spark",
         threshold: float = 4,
         strategy_factory_cls: Type[NumericStrategyFactory] = NumericStrategyFactory,
         detect_less_than_threshold: bool = True,
