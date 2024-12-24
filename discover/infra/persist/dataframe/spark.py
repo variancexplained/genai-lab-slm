@@ -11,19 +11,17 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Monday December 23rd 2024 08:52:19 pm                                               #
+# Modified   : Tuesday December 24th 2024 04:38:09 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Spark File Access Object Module"""
-from typing import Type
+import logging
 
 from pyspark.sql import DataFrame, SparkSession
 
-from discover.asset.dataset.dataset import FileFormat
 from discover.infra.exception.file import FileIOException
-from discover.infra.persist.dataframe.base import FAO
 from discover.infra.persist.dataframe.base import DataFrameReader as BaseDataFrameReader
 from discover.infra.persist.dataframe.base import DataFrameWriter as BaseDataFrameWriter
 
@@ -62,7 +60,9 @@ class DataFrameReader(BaseDataFrameReader):
         """
         super().parquet(filepath=filepath, **kwargs)
         try:
-            return spark.read.parquet(filepath, **kwargs)
+            data = spark.read.parquet(filepath, **kwargs)
+            logging.debug(f"Read Spark DataFrame from parquet file {filepath}")
+            return data
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a Parquet file from {filepath}. File does not exist.\n{e}"
             raise FileNotFoundError(msg)
@@ -91,7 +91,9 @@ class DataFrameReader(BaseDataFrameReader):
         """
         super().csv(filepath=filepath, **kwargs)
         try:
-            return spark.read.csv(filepath, **kwargs)
+            data = spark.read.csv(filepath, **kwargs)
+            logging.debug(f"Read Spark DataFrame from csv file {filepath}")
+            return data
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a CSV file from {filepath}. File does not exist.\n{e}"
             raise FileNotFoundError(msg)
@@ -115,8 +117,9 @@ class DataFrameWriter(BaseDataFrameWriter):
         csv: Writes data to a CSV file.
     """
 
+    @classmethod
     def parquet(
-        self, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
+        cls, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
     ) -> None:
         """
         Writes the data to a Parquet file at the designated filepath.
@@ -142,19 +145,27 @@ class DataFrameWriter(BaseDataFrameWriter):
         try:
             if mode and partition_cols:
                 data.write.mode(mode).partitionBy(partition_cols).parquet(filepath)
+                logging.debug(
+                    f"Writing spark DataFrame to partitioned parquet file at {filepath}"
+                )
             elif mode:
                 data.write.mode(mode).parquet(filepath)
+                logging.debug(f"Writing spark DataFrame to parquet file at {filepath}")
             elif partition_cols:
                 data.write.partitionBy(partition_cols).parquet(filepath)
+                logging.debug(
+                    f"Writing spark DataFrame to partitioned parquet file at {filepath}"
+                )
             else:
                 data.write.parquet(filepath)
+                logging.debug(f"Writing spark DataFrame to parquet file at {filepath}")
         except Exception as e:
-            msg = f"Exception occurred while writing a Parquet file to {filepath}.\nKeyword Arguments: {kwargs}"
-            self._logger.exception(msg)
+            msg = f"Exception occurred while writing a Parquet file at {filepath}.\nKeyword Arguments: {kwargs}"
             raise FileIOException(msg, e) from e
 
+    @classmethod
     def csv(
-        self, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
+        cls, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
     ) -> None:
         """
         Writes the data to a CSV file at the designated filepath.
@@ -170,98 +181,8 @@ class DataFrameWriter(BaseDataFrameWriter):
         """
         super().csv(data=data, filepath=filepath, overwrite=overwrite, **kwargs)
         try:
-            data.write.csv(filepath, **kwargs)
+            data.coalesce(1).write.csv(filepath, **kwargs)
+            logging.debug(f"Writing partitioned spark csv file to {filepath}")
         except Exception as e:
             msg = f"Exception occurred while writing a CSV file to {filepath}.\nKeyword Arguments: {kwargs}"
             raise FileIOException(msg, e) from e
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                       SPARK FAO                                                  #
-# ------------------------------------------------------------------------------------------------ #
-class SparkFAO(FAO):
-    """
-    A File Access Object (FAO) for handling Spark DataFrames.
-
-    This class provides methods to read and write Spark DataFrames in various file formats,
-    including Parquet and CSV. The default `reader` and `writer` classes can be customized
-    by providing subclasses of `DataFrameReader` and `DataFrameWriter`.
-
-    Attributes:
-        _reader (Type[DataFrameReader]): The class responsible for reading data.
-        _writer (Type[DataFrameWriter]): The class responsible for writing data.
-    """
-
-    def __init__(
-        self,
-        reader: Type[DataFrameReader] = DataFrameReader,
-        writer: Type[DataFrameWriter] = DataFrameWriter,
-    ) -> None:
-        """
-        Initializes the SparkFAO with a reader and writer.
-
-        Args:
-            reader (Type[DataFrameReader]): A class implementing the interface for reading data.
-                Defaults to `DataFrameReader`.
-            writer (Type[DataFrameWriter]): A class implementing the interface for writing data.
-                Defaults to `DataFrameWriter`.
-        """
-        self._reader = reader
-        self._writer = writer
-
-    def read(
-        self,
-        filepath: str,
-        spark: SparkSession,
-        file_format: FileFormat = FileFormat.PARQUET,
-        **kwargs,
-    ) -> DataFrame:
-        """
-        Reads data from the specified file into a Spark DataFrame.
-
-        Args:
-            filepath (str): The path to the file to read.
-            spark (SparkSession): The SparkSession instance to use for reading.
-            file_format (FileFormat): The format of the file to read (e.g., CSV, PARQUET).
-                Defaults to `FileFormat.PARQUET`.
-            **kwargs: Additional arguments passed to the reader class.
-
-        Returns:
-            DataFrame: The data read from the file as a Spark DataFrame.
-
-        Raises:
-            ValueError: If the specified `file_format` is not supported.
-        """
-        if file_format == FileFormat.CSV:
-            return self._reader.csv(filepath=filepath, spark=spark, **kwargs)
-        elif file_format == FileFormat.PARQUET:
-            return self._reader.parquet(filepath=filepath, spark=spark, **kwargs)
-        else:
-            raise ValueError(f"Unrecognized file_format: {file_format}")
-
-    def write(
-        self,
-        filepath: str,
-        data: DataFrame,
-        file_format: FileFormat = FileFormat.PARQUET,
-        **kwargs,
-    ) -> None:
-        """
-        Writes a Spark DataFrame to the specified file.
-
-        Args:
-            filepath (str): The path to the file to write.
-            data (DataFrame): The Spark DataFrame to write.
-            file_format (FileFormat): The format of the file to write (e.g., CSV, PARQUET).
-                Defaults to `FileFormat.PARQUET`.
-            **kwargs: Additional arguments passed to the writer class.
-
-        Raises:
-            ValueError: If the specified `file_format` is not supported.
-        """
-        if file_format == FileFormat.CSV:
-            self._writer.csv(filepath=filepath, data=data, **kwargs)
-        elif file_format == FileFormat.PARQUET:
-            return self._writer.parquet(filepath=filepath, data=data, **kwargs)
-        else:
-            raise ValueError(f"Unrecognized file_format: {file_format}")

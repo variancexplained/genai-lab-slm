@@ -11,16 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 11:31:34 am                                               #
-# Modified   : Monday December 23rd 2024 08:23:39 pm                                               #
+# Modified   : Tuesday December 24th 2024 12:38:04 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 
-from dependency_injector.wiring import Provide, inject
-
-from discover.container import DiscoverContainer
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
 from discover.infra.persist.repo.inference import InferenceRepo
@@ -29,16 +26,14 @@ from discover.infra.persist.repo.model import ModelRepo
 
 # ------------------------------------------------------------------------------------------------ #
 class WorkspaceService:
-    @inject
+
     def __init__(
         self,
-        config: str = Provide[DiscoverContainer.config.workspace],
-        dataset_repo: DatasetRepo = Provide[DiscoverContainer.repo.dataset_repo],
-        model_repo: ModelRepo = Provide[DiscoverContainer.repo.model_repo],
-        inference_repo: InferenceRepo = Provide[DiscoverContainer.repo.inference_repo],
-        experiment_repo: ExperimentRepo = Provide[
-            DiscoverContainer.repo.experiment_repo
-        ],
+        config: dict,
+        dataset_repo: DatasetRepo,
+        model_repo: ModelRepo,
+        inference_repo: InferenceRepo,
+        experiment_repo: ExperimentRepo,
     ) -> None:
         self._config = config
         self._location = config["location"]

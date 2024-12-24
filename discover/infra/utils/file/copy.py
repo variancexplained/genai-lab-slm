@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 04:54:28 pm                                            #
-# Modified   : Wednesday December 18th 2024 06:17:15 pm                                            #
+# Modified   : Tuesday December 24th 2024 04:48:50 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,6 +25,14 @@ class Copy:
     """
     A utility class for copying Parquet and CSV files or directories, with validation and optional overwrite functionality.
     """
+
+    def __call__(self, source: str, target: str, overwrite: bool = False):
+        if os.path.isdir(source):
+            self.directory(source=source, target=target, overwrite=overwrite)
+        elif os.path.isfile(source):
+            self.file(source=source, target=target, overwrite=overwrite)
+        else:
+            raise ValueError(f"Path {source} is not a directory or file.")
 
     def directory(self, source: str, target: str, overwrite: bool = False) -> None:
         """
@@ -87,7 +95,7 @@ class Copy:
             ValueError: If the source and target are incompatible (e.g., one is a file and the other is a directory).
         """
         if not overwrite and os.path.exists(target):
-            msg = "File already exists at target"
+            msg = "Target file / directory already exists."
             raise FileExistsError(msg)
         elif (
             os.path.isfile(source)

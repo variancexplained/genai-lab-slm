@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday December 23rd 2024 12:24:43 pm                                               #
+# Modified   : Tuesday December 24th 2024 02:29:06 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,9 +44,7 @@ collect_ignore_glob = []
 def container():
     container = DiscoverContainer()
     container.init_resources()
-    container.wire(
-        modules=["discover.asset.data.factory"],
-    )
+    container.wire(modules=["discover.asset.dataset"])
     return container
 
 

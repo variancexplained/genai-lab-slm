@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Monday December 23rd 2024 10:05:03 pm                                               #
+# Modified   : Monday December 23rd 2024 11:37:53 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ import pyspark
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.asset.dataset.dataset import Dataset, DatasetMeta
+from discover.asset.dataset import Dataset, DatasetMeta
 from discover.asset.idgen.dataset import DatasetIDGen
 from discover.container import DiscoverContainer
 from discover.core.data_structure import DataFrameStructure, NestedNamespace

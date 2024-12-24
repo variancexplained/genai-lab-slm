@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Monday December 23rd 2024 04:04:41 pm                                               #
+# Modified   : Tuesday December 24th 2024 12:25:29 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,6 +38,7 @@ class ShelveDAO(DAO):
     def __init__(self, location: str, db_path: str, asset_type: AssetType):
         self._db_path = os.path.join(location, db_path)
         self._asset_type = asset_type
+        os.makedirs(os.path.dirname(self._db_path), exist_ok=True)
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(self, asset: Asset) -> None:

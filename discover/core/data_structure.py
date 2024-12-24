@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Monday December 23rd 2024 08:30:07 pm                                               #
+# Modified   : Tuesday December 24th 2024 01:21:06 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,22 +27,57 @@ from types import SimpleNamespace
 from typing import Any, Dict, Mapping, Union
 
 import pandas as pd
-from dependency_injector.providers import ConfigurationOption
 
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 
 
 # ------------------------------------------------------------------------------------------------ #
 class NestedNamespace(SimpleNamespace):
-    def __init__(
-        self, dictionary: Union[Mapping[str, Union[int, float]], ConfigurationOption]
-    ) -> None:
+    """
+    A recursive namespace object for handling nested dictionaries.
+    Automatically converts nested dictionaries into NestedNamespace instances.
+    Supports pickling and unpickling.
+    """
+
+    def __init__(self, dictionary: Mapping[str, Any]) -> None:
+        """
+        Initializes the NestedNamespace.
+
+        Args:
+            dictionary (Mapping[str, Any]): The dictionary to convert into a namespace.
+                Nested dictionaries are recursively converted.
+        """
         super().__init__()
         for key, value in dictionary.items():
+            # Recursively convert nested dictionaries to NestedNamespace
             if isinstance(value, dict):
                 self.__setattr__(key, NestedNamespace(value))
             else:
                 self.__setattr__(key, value)
+
+    def __reduce__(self):
+        """
+        Customize pickling behavior to handle nested namespaces properly.
+
+        Returns:
+            tuple: A tuple describing how to pickle and unpickle the object.
+        """
+        return (self.__class__, (self.to_dict(),))
+
+    def to_dict(self) -> dict:
+        """
+        Converts the NestedNamespace back into a dictionary.
+
+        Returns:
+            dict: The dictionary representation of the NestedNamespace.
+        """
+        result = {}
+        for key, value in self.__dict__.items():
+            if isinstance(value, NestedNamespace):
+                result[key] = value.to_dict()
+            else:
+                result[key] = value
+        return result
 
 
 # ------------------------------------------------------------------------------------------------ #

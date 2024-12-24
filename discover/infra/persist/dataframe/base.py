@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
-# Modified   : Monday December 23rd 2024 10:05:03 pm                                               #
+# Modified   : Tuesday December 24th 2024 12:21:43 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -66,8 +66,8 @@ class DataFrameReader(ABC):
     Implementations must handle file-specific options provided via `**kwargs`.
     """
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def csv(cls, filepath: str, **kwargs) -> DataFrame:
         """
         Reads data from a CSV file into a DataFrame.
@@ -85,8 +85,8 @@ class DataFrameReader(ABC):
         """
         pass
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def parquet(cls, filepath: str, **kwargs) -> DataFrame:
         """
         Reads data from a Parquet file into a DataFrame.
@@ -121,8 +121,8 @@ class DataFrameWriter(ABC):
         - PySpark DataFrame
     """
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def csv(
         cls, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
     ) -> None:
@@ -148,8 +148,8 @@ class DataFrameWriter(ABC):
                 f"Overwrite mode is False and a file already exists at {filepath}"
             )
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def parquet(
         cls, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
     ) -> None:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Monday December 23rd 2024 04:20:29 pm                                               #
+# Modified   : Tuesday December 24th 2024 01:08:05 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -84,7 +84,10 @@ class ConfigReader(ABC):
         """
         self._config = self.load_config()
         config = self._config[section] if section else self._config
-        return self.to_namespace(config) if namespace else config
+        if namespace:
+            return self.to_namespace(config)
+        else:
+            return config
 
     @property
     def current_environment(self) -> str:

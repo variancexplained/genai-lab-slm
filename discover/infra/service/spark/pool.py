@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Monday December 23rd 2024 05:21:31 pm                                               #
+# Modified   : Tuesday December 24th 2024 02:05:31 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -102,8 +102,8 @@ class SparkSessionPool:
             self._sparknlp = self.get_or_create(nlp=True)
         return self._sparknlp
 
-    def stop(self, nlp: bool = False) -> None:
-        if nlp and self._sparknlp is not None:
+    def stop(self) -> None:
+        if self._sparknlp is not None:
             self._sparknlp.stop()
             self._sparknlp = None
         elif self._spark is not None:

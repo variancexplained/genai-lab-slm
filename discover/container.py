@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Monday December 23rd 2024 05:42:39 pm                                               #
+# Modified   : Tuesday December 24th 2024 02:23:40 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -113,19 +113,34 @@ class WorkspaceContainer(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
-    dataset_repo = providers.DependenciesContainer()
-    model_repo = providers.DependenciesContainer()
-    inference_repo = providers.DependenciesContainer()
-    experiment_repo = providers.DependenciesContainer()
+    repo = providers.DependenciesContainer()
 
     service = providers.Singleton(
         WorkspaceService,
-        location=config.workspace.location,
-        dataset_repo=dataset_repo,
-        model_repo=model_repo,
-        inference_repo=inference_repo,
-        experiment_repo=experiment_repo,
+        config=config.workspace,
+        dataset_repo=repo.dataset_repo,
+        model_repo=repo.model_repo,
+        inference_repo=repo.inference_repo,
+        experiment_repo=repo.experiment_repo,
     )
+
+
+# # ------------------------------------------------------------------------------------------------ #
+# #                                    FACTORY CONTAINER                                             #
+# # ------------------------------------------------------------------------------------------------ #
+# class FactoryContainer(containers.DeclarativeContainer):
+
+#     config = providers.Configuration()
+
+#     spark = providers.DependenciesContainer()
+#     workspace = providers.DependenciesContainer()
+
+#     dataset_factory = providers.Singleton(
+#         DatasetFactory,
+#         fal_config=config.fal,
+#         workspace_service=workspace.service,
+#         spark_session_pool=spark.session_pool,
+#     )
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -154,8 +169,13 @@ class DiscoverContainer(containers.DeclarativeContainer):
     workspace = providers.Container(
         WorkspaceContainer,
         config=config,
-        dataset_repo=repo.dataset_repo,
-        model_repo=repo.model_repo,
-        inference_repo=repo.inference_repo,
-        experiment_repo=repo.experiment_repo,
+        repo=repo,
     )
+
+    # # Factory Container
+    # factory = providers.Container(
+    #     FactoryContainer,
+    #     config=config,
+    #     spark=spark,
+    #     workspace=workspace,
+    # )

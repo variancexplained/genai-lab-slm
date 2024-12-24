@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Monday December 23rd 2024 08:47:37 pm                                               #
+# Modified   : Tuesday December 24th 2024 03:46:14 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,13 +19,9 @@
 """Pandas File Access Object Module"""
 from __future__ import annotations
 
-from typing import Type
-
 import pandas as pd
 
-from discover.asset.dataset.dataset import FileFormat
 from discover.infra.exception.file import FileIOException
-from discover.infra.persist.dataframe.base import FAO
 from discover.infra.persist.dataframe.base import DataFrameReader as BaseDataFrameReader
 from discover.infra.persist.dataframe.base import DataFrameWriter as BaseDataFrameWriter
 
@@ -158,89 +154,3 @@ class DataFrameWriter(BaseDataFrameWriter):
         except Exception as e:
             msg = f"Exception occurred while creating a CSV file at {filepath}.\n{e}"
             raise FileIOException(msg, e) from e
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                       PANDAS FAO                                                 #
-# ------------------------------------------------------------------------------------------------ #
-class PandasFAO(FAO):
-    """
-    A File Access Object (FAO) for handling Pandas DataFrames.
-
-    This class provides methods to read and write Pandas DataFrames in various file formats,
-    including Parquet and CSV. The default `reader` and `writer` classes can be customized
-    by providing subclasses of `DataFrameReader` and `DataFrameWriter`.
-
-    Attributes:
-        _reader (Type[DataFrameReader]): The class responsible for reading data.
-        _writer (Type[DataFrameWriter]): The class responsible for writing data.
-    """
-
-    def __init__(
-        self,
-        reader: Type[DataFrameReader] = DataFrameReader,
-        writer: Type[DataFrameWriter] = DataFrameWriter,
-    ) -> None:
-        """
-        Initializes the PandasFAO with a reader and writer.
-
-        Args:
-            reader (Type[DataFrameReader]): A class implementing the interface for reading data.
-                Defaults to `DataFrameReader`.
-            writer (Type[DataFrameWriter]): A class implementing the interface for writing data.
-                Defaults to `DataFrameWriter`.
-        """
-        self._reader = reader
-        self._writer = writer
-
-    def read(
-        self, filepath: str, file_format: FileFormat = FileFormat.PARQUET, **kwargs
-    ) -> pd.DataFrame:
-        """
-        Reads data from the specified file into a Pandas DataFrame.
-
-        Args:
-            filepath (str): The path to the file to read.
-            file_format (FileFormat): The format of the file to read (e.g., CSV, PARQUET).
-                Defaults to `FileFormat.PARQUET`.
-            **kwargs: Additional arguments passed to the reader class.
-
-        Returns:
-            pd.DataFrame: The data read from the file as a Pandas DataFrame.
-
-        Raises:
-            ValueError: If the specified `file_format` is not supported.
-        """
-        if file_format == FileFormat.CSV:
-            return self._reader.csv(filepath=filepath, **kwargs)
-        elif file_format == FileFormat.PARQUET:
-            return self._reader.parquet(filepath=filepath, **kwargs)
-        else:
-            raise ValueError(f"Unrecognized file_format: {file_format}")
-
-    def write(
-        self,
-        filepath: str,
-        data: pd.DataFrame,
-        file_format: FileFormat = FileFormat.PARQUET,
-        **kwargs,
-    ) -> None:
-        """
-        Writes a Pandas DataFrame to the specified file.
-
-        Args:
-            filepath (str): The path to the file to write.
-            data (pd.DataFrame): The Pandas DataFrame to write.
-            file_format (FileFormat): The format of the file to write (e.g., CSV, PARQUET).
-                Defaults to `FileFormat.PARQUET`.
-            **kwargs: Additional arguments passed to the writer class.
-
-        Raises:
-            ValueError: If the specified `file_format` is not supported.
-        """
-        if file_format == FileFormat.CSV:
-            self._writer.csv(filepath=filepath, data=data, **kwargs)
-        elif file_format == FileFormat.PARQUET:
-            return self._writer.parquet(filepath=filepath, data=data, **kwargs)
-        else:
-            raise ValueError(f"Unrecognized file_format: {file_format}")
