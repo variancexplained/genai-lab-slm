@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Wednesday December 18th 2024 10:28:40 pm                                            #
+# Modified   : Monday December 23rd 2024 12:24:43 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from pyspark.sql import SparkSession
 
 from discover.container import DiscoverContainer
 from discover.infra.config.app import AppConfigReader
-from discover.infra.persistence.cloud.aws import S3Handler
+from discover.infra.persist.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #

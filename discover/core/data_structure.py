@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Thursday December 19th 2024 10:33:01 pm                                             #
+# Modified   : Monday December 23rd 2024 08:30:07 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -108,66 +108,3 @@ class DataClass(ABC):  # noqa
         """Returns the project in DataFrame format"""
         d = self.as_dict()
         return pd.DataFrame(data=d, index=[0])
-
-
-# ------------------------------------------------------------------------------------------------ #
-class DataStructure(Enum):
-    """
-    Enumeration representing different types of DataFrames and their characteristics.
-
-    Attributes:
-        PANDAS (tuple): Represents a Pandas DataFrame.
-            - `distributed`: False
-            - `nlp`: False
-        SPARK (tuple): Represents a Spark DataFrame.
-            - `distributed`: True
-            - `nlp`: False
-        SPARKNLP (tuple): Represents a Spark DataFrame with NLP capabilities.
-            - `distributed`: True
-            - `nlp`: True
-    """
-
-    PANDAS = ("pandas", False, False)
-    SPARK = ("spark", True, False)
-    SPARKNLP = ("sparknlp", True, True)
-
-    def __new__(cls, value: str, distributed: bool, nlp: bool) -> DataStructure:
-        obj = object.__new__(cls)
-        obj._value_ = value  # Set the Enum value
-        obj._distributed = distributed
-        obj._nlp = nlp
-        return obj
-
-    @property
-    def identifier(self) -> str:
-        """Returns the string identifier of the DataFrame type."""
-        return self._value_
-
-    @property
-    def distributed(self) -> bool:
-        """Indicates if the DataFrame type supports distributed computing."""
-        return self._distributed
-
-    @property
-    def nlp(self) -> bool:
-        """Indicates if the DataFrame type supports NLP-specific functionality."""
-        return self._nlp
-
-    @classmethod
-    def from_identifier(cls, identifier: str) -> DataStructure:
-        """
-        Finds the enum member based on its string identifier.
-
-        Args:
-            identifier (str): The string identifier of the DataFrame type (e.g., "pandas").
-
-        Returns:
-            DataStructure: The matching enum member.
-
-        Raises:
-            ValueError: If no matching enum member is found.
-        """
-        for member in cls:
-            if member._value_ == identifier:  # Compare against the _value_ attribute
-                return member
-        raise ValueError(f"No matching {cls.__name__} for identifier: {identifier}")

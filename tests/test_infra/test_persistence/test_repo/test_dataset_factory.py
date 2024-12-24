@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 08:34:14 pm                                            #
-# Modified   : Thursday December 19th 2024 10:49:10 pm                                             #
+# Modified   : Monday December 23rd 2024 10:05:03 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.assets.data.factory import DatasetFactory
+from discover.asset.dataset.factory import DatasetFactory
 from discover.core.data_structure import DataStructure
 from discover.core.flow import PhaseDef, StageDef
 

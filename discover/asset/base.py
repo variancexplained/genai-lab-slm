@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/assets/base.py                                                            #
+# Filename   : /discover/asset/base.py                                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Friday December 20th 2024 01:04:36 am                                               #
+# Modified   : Monday December 23rd 2024 08:30:01 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,9 +22,11 @@ from __future__ import annotations
 import logging
 from abc import ABC
 from datetime import datetime
-from typing import Optional
+from enum import Enum
+from typing import Any, Dict, Optional, Union
 
-from discover.core.dtypes import IMMUTABLE_TYPES
+from discover.core.asset import AssetType
+from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from discover.core.flow import PhaseDef, StageDef
 
 
@@ -35,19 +37,21 @@ class Asset(ABC):
 
     def __init__(
         self,
-        asset_id,
+        asset_type,
         name: str,
         phase: PhaseDef,
         stage: StageDef,
         description: Optional[str] = None,
         **kwargs,
     ) -> None:
-        self._asset_id = asset_id
+        self._asset_type = asset_type
         self._name = name
         self._phase = phase
         self._stage = stage
         self._description = description
         self._created = datetime.now()
+
+        self._asset_id = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -126,6 +130,16 @@ class Asset(ABC):
         self.__dict__.update(state)
 
     @property
+    def asset_type(self) -> AssetType:
+        """
+        Returns the type of asset
+
+        Returns:
+            AssetType: An AssetType Enum instance.
+        """
+        return self._asset_type
+
+    @property
     def asset_id(self) -> str:
         """
         Returns the unique asset identifier.
@@ -184,3 +198,43 @@ class Asset(ABC):
             datetime: The creation time of the asset.
         """
         return self._created
+
+    def as_dict(self) -> Dict[str, Union[str, int, float, datetime, None]]:
+        """Returns a dictionary representation of the the Config object."""
+        return {
+            k: self._export_config(v)
+            for k, v in self.__dict__.items()
+            if not k.startswith("_")
+        }
+
+    @classmethod
+    def _export_config(cls, v: Any) -> Any:
+        """Returns v with Configs converted to dicts, recursively."""
+        if isinstance(v, IMMUTABLE_TYPES):
+            return v
+        elif isinstance(v, SEQUENCE_TYPES):
+            return type(v)(map(cls._export_config, v))
+        elif isinstance(v, dict):
+            return v
+        elif hasattr(v, "as_dict"):
+            return v.as_dict()
+        elif isinstance(v, Enum):
+            if hasattr(v, "description"):
+                return v.description
+            else:
+                return v.value
+        elif isinstance(v, datetime):
+            return v.isoformat()
+        else:
+            return dict()
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                          FACTORY                                                 #
+# ------------------------------------------------------------------------------------------------ #
+class Factory(ABC):
+
+    def set_asset_id(self, asset: Asset) -> Asset:
+        asset_id = f"{asset.asset_type.value}-{asset.phase.value}-{asset.stage.value}-{asset.name}"
+        setattr(asset, "_asset_id", asset_id)
+        return asset

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday December 19th 2024 10:49:09 pm                                             #
+# Modified   : Monday December 23rd 2024 10:05:03 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,13 +29,13 @@ import pyspark
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.assets.data.dataset import Dataset, DatasetMeta
-from discover.assets.idgen.dataset import DatasetIDGen
+from discover.asset.dataset.dataset import Dataset, DatasetMeta
+from discover.asset.idgen.dataset import DatasetIDGen
 from discover.container import DiscoverContainer
-from discover.core.data_structure import DataStructure, NestedNamespace
+from discover.core.data_structure import DataFrameStructure, NestedNamespace
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.task.base import Task, TaskBuilder
-from discover.infra.persistence.repo.dataset import DatasetRepo
+from discover.infra.persist.repo.asset import DatasetRepo
 from discover.infra.service.logging.stage import stage_logger
 from discover.infra.utils.file.io import IOService
 
@@ -103,11 +103,11 @@ class Stage(ABC):
         self._destination_asset_id = None
 
         # Indicates whether to use pandas, spark, or sparknlp DataFrames
-        self._source_data_structure = DataStructure.from_identifier(
-            self._source_config.data_structure
+        self._source_dataframe_structure = DataFrameStructure.from_identifier(
+            self._source_config.dataframe_structure
         )
-        self._destination_data_structure = DataStructure.from_identifier(
-            self._destination_config.data_structure
+        self._destination_dataframe_structure = DataFrameStructure.from_identifier(
+            self._destination_config.dataframe_structure
         )
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -206,7 +206,8 @@ class Stage(ABC):
     def _run(self) -> Dataset:
         """Performs the core logic of the stage, executing tasks in sequence."""
         source_dataset = self._load_dataset(
-            asset_id=self._source_asset_id, data_structure=self._source_data_structure
+            asset_id=self._source_asset_id,
+            dataframe_structure=self._source_dataframe_structure,
         )
         data = source_dataset.content
         for task in self._tasks:
@@ -229,11 +230,12 @@ class Stage(ABC):
         """Updates the endpoint dataset with changes in the source dataset."""
         # Load the source and destination datasets
         source_dataset = self._load_dataset(
-            asset_id=self._source_asset_id, data_structure=self._source_data_structure
+            asset_id=self._source_asset_id,
+            dataframe_structure=self._source_dataframe_structure,
         )
         destination_dataset = self._load_dataset(
             asset_id=self._destination_asset_id,
-            data_structure=self._destination_data_structure,
+            dataframe_structure=self._destination_dataframe_structure,
         )
         # Obtain the columns to merge
         merge_cols = [
@@ -262,20 +264,20 @@ class Stage(ABC):
 
     def _merge_dataframes(
         self,
-        source: DataStructure,
-        destination: DataStructure,
+        source: DataFrameStructure,
+        destination: DataFrameStructure,
         merge_cols: list,
-    ) -> DataStructure:
+    ) -> DataFrameStructure:
         """Merges two DataFrames of the same type.
 
         Args:
-            source (DataStructure): The source dataframe.
-            destination (DataStructure): The destination dataframe.
+            source (DataFrameStructure): The source dataframe.
+            destination (DataFrameStructure): The destination dataframe.
             merge_cols (list): The columns from the destination dataframe to include
                 in the merge.
 
         Returns:
-            DataStructure: The merged dataframe.
+            DataFrameStructure: The merged dataframe.
 
         Raises:
             TypeError: If the source and destination datasets have incompatible types.
@@ -357,7 +359,7 @@ class Stage(ABC):
     def build(
         cls,
         stage_config: dict,
-        return_data_structure: str = "pandas",
+        return_dataframe_structure: str = "pandas",
         force: bool = False,
         **kwargs,
     ) -> Stage:
@@ -466,13 +468,13 @@ class Stage(ABC):
     def _load_dataset(
         self,
         asset_id: str,
-        data_structure: DataStructure = DataStructure.PANDAS,
+        dataframe_structure: DataFrameStructure = DataFrameStructure.PANDAS,
     ) -> Dataset:
         """Loads a dataset from the repository.
 
         Args:
             asset_id (str): The identifier for the dataset asset.
-            data_structure (DataStructure): Configuration for a pandas, spark, or sparknlp DataFrame.
+            dataframe_structure (DataFrameStructure): Configuration for a pandas, spark, or sparknlp DataFrame.
 
         Returns:
             Dataset object
@@ -484,11 +486,11 @@ class Stage(ABC):
         try:
             dataset = self._repo.get(
                 asset_id=asset_id,
-                data_structure=data_structure,
+                dataframe_structure=dataframe_structure,
             )
 
             if (
-                data_structure.distributed
+                dataframe_structure.distributed
                 and "__index_level_0__" in dataset.content.columns
             ):
                 # Rename the pandas index column if it exists in the PySpark DataFrame

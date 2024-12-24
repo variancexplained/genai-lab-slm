@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/element/repo.py                                                           #
+# Filename   : /discover/asset/workspace/repo.py                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Friday October 11th 2024 09:40:10 pm                                                #
+# Modified   : Monday December 23rd 2024 12:05:37 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,8 @@
 """Repository Interface Module"""
 from abc import ABC, abstractmethod
 from typing import Any, Dict
+
+import pandas as pd
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -124,6 +126,30 @@ class Repo(ABC):
         --------
         bool:
             True if the data exists, False otherwise.
+
+        Raises:
+        -------
+        NotImplementedError
+            If the method is not implemented by a subclass.
+        """
+        pass
+
+    @abstractmethod
+    def list(self, *args: Any, **kwargs: Dict[str, Any]) -> pd.DataFrame:
+        """
+        Lists the items in the repository.
+
+        Parameters:
+        -----------
+        *args : Any
+            Positional arguments specifying the criteria for checking data existence.
+        **kwargs : Dict[str, Any]
+            Keyword arguments specifying additional criteria for the check.
+
+        Returns:
+        --------
+        pd.DataFrame:
+            DataFrame containing a list of items in the repository.
 
         Raises:
         -------

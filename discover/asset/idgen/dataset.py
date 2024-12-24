@@ -4,20 +4,20 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/assets/idgen/dataset.py                                                   #
+# Filename   : /discover/asset/idgen/dataset.py                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 01:36:41 am                                              #
-# Modified   : Thursday December 19th 2024 04:48:40 am                                             #
+# Modified   : Monday December 23rd 2024 12:03:20 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 
-from discover.assets.idgen.base import AssetIDGen
+from discover.asset.idgen.base import AssetIDGen
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
 

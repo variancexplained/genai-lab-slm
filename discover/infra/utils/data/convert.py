@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
-# Filename   : /discover/infra/service/data/conversion.py                                          #
+# Filename   : /discover/infra/utils/data/convert.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:30:01 am                                                 #
-# Modified   : Sunday October 13th 2024 01:57:37 am                                                #
+# Modified   : Monday December 23rd 2024 10:04:55 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pandas as pd
 import psutil  # For system memory info
 from pyspark.sql import DataFrame
 
-from discover.infra.service.spark.session import SparkSessionPool
+from discover.infra.service.spark.pool import SparkSessionPool
 
 
 # ------------------------------------------------------------------------------------------------ #

@@ -11,135 +11,105 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Thursday December 19th 2024 01:40:50 pm                                             #
+# Modified   : Monday December 23rd 2024 04:04:41 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset DAL Module"""
 import logging
+import os
 import shelve
+from typing import Dict
 
-from discover.infra.data.dal.base import DAO
-from discover.infra.data.dal.exception import (
+from discover.asset.base import Asset
+from discover.core.asset import AssetType
+from discover.infra.exception.object import (
     ObjectDatabaseNotFoundError,
     ObjectIOException,
     ObjectNotFoundError,
 )
+from discover.infra.persist.object.base import DAO
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DatasetDAO(DAO):
-    """
-    A Data Access Object (DAL) for managing Dataset objects within a key-value store.
+class ShelveDAO(DAO):
 
-    This class is responsible for interacting with a shelve-based object database to
-    create, read, update, and delete Dataset objects. It manages dataset metadata
-    persistence and provides methods for various operations like checking dataset
-    existence and filtering datasets by specific attributes.
-
-    Args:
-        location_service (LocationService): Service encapsulating persistence locations.
-    """
-
-    def __init__(self, db_path: str):
-        self._db_path = db_path
+    def __init__(self, location: str, db_path: str, asset_type: AssetType):
+        self._db_path = os.path.join(location, db_path)
+        self._asset_type = asset_type
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def create(self, dataset) -> None:
+    def create(self, asset: Asset) -> None:
         try:
             with shelve.open(self._db_path) as db:
-                db[dataset.asset_id] = dataset
+                db[asset.asset_id] = asset
         except FileNotFoundError as e:
-            msg = f"The object database was not found at {self._db_path}.\n{e}"
+            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg)
         except Exception as e:
-            msg = f"Unknown exception occurred while creating dataset {dataset.asset_id}.\n{e}"
+            msg = f"Unknown exception occurred while creating {self._asset_type.value} asset_id: {asset.asset_id}.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def read(self, asset_id: str):
-        """
-        Reads dataset metadata into a Dataset object.
-
-        Args:
-            asset_id (str): The id of the dataset to retrieve.
-
-        Returns:
-            Optional[Dataset]: The retrieved state as a dictionary object or None if not found.
-
-        Raises:
-            ObjectNotFoundError: If the dataset does not exist.
-            ObjectDatabaseNotFoundError: If the database file is not found.
-            Exception: For any other exceptions encountered during the process.
-        """
+    def read(self, asset_id: str) -> Asset:
         try:
             with shelve.open(self._db_path) as db:
                 return db[asset_id]
         except KeyError:
-            msg = f"Dataset object {asset_id} was not found."
+            msg = f"Asset {asset_id} was not found."
             self._logger.error(msg)
             raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
-            msg = f"The object database was not found at {self._db_path}.\n{e}"
+            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while reading dataset {asset_id} from the dataset object database.\n{e}"
+            msg = f"Unknown exception occurred while reading {self._asset_type.value} asset_id: {asset_id} from the object database.\n{e}"
+            self._logger.exception(msg)
+            raise ObjectIOException(msg, e) from e
+
+    def read_all(self) -> Dict[str, Asset]:
+
+        try:
+            with shelve.open(self._db_path) as db:
+                return {k: v for k, v in db.items()}
+        except FileNotFoundError as e:
+            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
+            self._logger.exception(msg)
+            raise ObjectDatabaseNotFoundError(msg, e) from e
+        except Exception as e:
+            msg = f"Unknown exception occurred while reading from {self._asset_type.value} database.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
     def exists(self, asset_id: str) -> bool:
-        """
-        Checks if a dataset with the given id exists in the object database.
-
-        Args:
-            asset_id (str): The id of the dataset to check.
-
-        Returns:
-            bool: True if the dataset exists, False otherwise.
-
-        Raises:
-            ObjectDatabaseNotFoundError: If the database file is not found.
-            Exception: For any other exceptions encountered during the process.
-        """
         try:
             with shelve.open(self._db_path) as db:
                 return asset_id in db
         except FileNotFoundError as e:
-            msg = f"The object database was not found at {self._db_path}.\n{e}"
+            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while checking existence of the {asset_id} dataset."
+            msg = f"Unknown exception occurred while checking existence of {self._asset_type.value} asset_id: {asset_id}."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
     def delete(self, asset_id: str) -> None:
-        """
-        Deletes a dataset by its id from the object database.
-
-        Args:
-            asset_id (str): The id of the dataset to delete.
-
-        Raises:
-            ObjectNotFoundError: If the dataset does not exist.
-            ObjectDatabaseNotFoundError: If the database file is not found.
-            Exception: For any other exceptions encountered during the process.
-        """
         try:
             with shelve.open(self._db_path, writeback=True) as db:
                 del db[asset_id]
         except KeyError:
-            msg = f"Dataset object {asset_id} was not found."
+            msg = f"{self._asset_type.label} asset_id: {asset_id} was not found."
             self._logger.error(msg)
             raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
-            msg = f"The object database was not found at {self._db_path}.\n{e}"
+            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while deleting dataset {asset_id}."
+            msg = f"Unknown exception occurred while deleting {self._asset_type.value} asset_id: {asset_id}."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/service/spark/session.py                                            #
+# Filename   : /discover/infra/service/spark/pool.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Sunday December 15th 2024 12:42:43 am                                               #
+# Modified   : Monday December 23rd 2024 05:21:31 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -86,7 +86,29 @@ class SparkSessionPool:
                 classes if needed.
         """
         self._spark_config = NestedNamespace(spark_config)
+        self._spark = None  # Spark Session
+        self._sparknlp = None  # Spark NLP Session
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    @property
+    def spark(self) -> SparkSession:
+        if self._spark is None:
+            self._spark = self.get_or_create(nlp=False)
+        return self._spark
+
+    @property
+    def sparknlp(self) -> SparkSession:
+        if self._sparknlp is None:
+            self._sparknlp = self.get_or_create(nlp=True)
+        return self._sparknlp
+
+    def stop(self, nlp: bool = False) -> None:
+        if nlp and self._sparknlp is not None:
+            self._sparknlp.stop()
+            self._sparknlp = None
+        elif self._spark is not None:
+            self._spark.stop()
+            self._spark = None
 
     def get_or_create(self, nlp: bool = False) -> SparkSession:
         """

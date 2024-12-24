@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Friday December 20th 2024 01:52:29 am                                               #
+# Modified   : Monday December 23rd 2024 05:42:39 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,23 +25,15 @@ import logging.config
 
 from dependency_injector import containers, providers
 
+from discover.core.asset import AssetType
 from discover.infra.config.app import AppConfigReader
-from discover.infra.data.dal import DatasetDAO
-from discover.infra.data.fao.pandas import PandasParquetFAO
-from discover.infra.data.fao.spark import SparkParquetFAO
-from discover.infra.persistence.repo.dataset import DatasetRepo
-from discover.infra.service.spark.session import SparkSessionPool
-from discover.infra.workspace.base import Workspace
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     WORKSPACE CONTAINER                                          #
-# ------------------------------------------------------------------------------------------------ #
-class WorkspaceContainer(containers.DeclarativeContainer):
-
-    config = providers.Configuration()
-
-    workspace = providers.Singletonw(Workspace, config=config)
+from discover.infra.persist.object.dao import ShelveDAO
+from discover.infra.persist.repo.dataset import DatasetRepo
+from discover.infra.persist.repo.experiment import ExperimentRepo
+from discover.infra.persist.repo.inference import InferenceRepo
+from discover.infra.persist.repo.model import ModelRepo
+from discover.infra.service.spark.pool import SparkSessionPool
+from discover.infra.workspace.service import WorkspaceService
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -68,45 +60,76 @@ class SparkContainer(containers.DeclarativeContainer):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                             DATASET REPOSITORY CONTAINER                                         #
+#                                    REPO CONTAINER                                                #
 # ------------------------------------------------------------------------------------------------ #
-class DatasetRepositoryContainer(containers.DeclarativeContainer):
+class RepoContainer(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
     # -------------------------------------------------------------------------------------------- #
-    # Spark Session Pool
-    spark_session_pool = providers.DependenciesContainer()
-    # -------------------------------------------------------------------------------------------- #
-    # Datasets Data Access Object
-    ds_dao = providers.Singleton(
-        DatasetDAO, workspace=config.workspace, dp_path=config.data.db.datasets
+    dataset_dao = providers.Singleton(
+        ShelveDAO,
+        location=config.workspace.location,
+        db_path=config.workspace.assets.datasets,
+        asset_type=AssetType.DATASET,
     )
+    dataset_repo = providers.Singleton(DatasetRepo, dao=dataset_dao)
+
     # -------------------------------------------------------------------------------------------- #
-    # File Access Objects
-    # -------------------------------------------------------------------------------------------- #
-    # Pandas Parquet File Access Object
-    pandas_parquet = providers.Singleton(
-        PandasParquetFAO, config=config.data.fao.pandas.parquet
+    model_dao = providers.Singleton(
+        ShelveDAO,
+        location=config.workspace.location,
+        db_path=config.workspace.assets.models,
+        asset_type=AssetType.MODEL,
     )
+
+    model_repo = providers.Singleton(ModelRepo, dao=model_dao)
+
     # -------------------------------------------------------------------------------------------- #
-    # Spark Parquet File Access Object
-    spark_parquet = providers.Singleton(
-        SparkParquetFAO, config=config.data.fao.spark.parquet
+    inference_dao = providers.Singleton(
+        ShelveDAO,
+        location=config.workspace.location,
+        db_path=config.workspace.assets.inference,
+        asset_type=AssetType.INFERENCE,
     )
+
+    inference_repo = providers.Singleton(InferenceRepo, dao=inference_dao)
+
     # -------------------------------------------------------------------------------------------- #
-    # Dataset Repo
-    dataset_repo = providers.Singleton(
-        DatasetRepo,
-        dataset_dao=ds_dao,
-        pandas_parquet=pandas_parquet,
-        spark_parquet=spark_parquet,
-        spark_session_pool=spark_session_pool,
+    experiment_dao = providers.Singleton(
+        ShelveDAO,
+        location=config.workspace.location,
+        db_path=config.workspace.assets.experiments,
+        asset_type=AssetType.EXPERIMENT,
+    )
+
+    experiment_repo = providers.Singleton(ExperimentRepo, dao=experiment_dao)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   WORKSPACE CONTAINER                                            #
+# ------------------------------------------------------------------------------------------------ #
+class WorkspaceContainer(containers.DeclarativeContainer):
+
+    config = providers.Configuration()
+
+    dataset_repo = providers.DependenciesContainer()
+    model_repo = providers.DependenciesContainer()
+    inference_repo = providers.DependenciesContainer()
+    experiment_repo = providers.DependenciesContainer()
+
+    service = providers.Singleton(
+        WorkspaceService,
+        location=config.workspace.location,
+        dataset_repo=dataset_repo,
+        model_repo=model_repo,
+        inference_repo=inference_repo,
+        experiment_repo=experiment_repo,
     )
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                    APPLICATION CONTAINER                                         #
+#                                  APPLICATION CONTAINER                                           #
 # ------------------------------------------------------------------------------------------------ #
 class DiscoverContainer(containers.DeclarativeContainer):
 
@@ -122,9 +145,17 @@ class DiscoverContainer(containers.DeclarativeContainer):
     logs = providers.Container(LoggingContainer, config=config)
 
     # Configure spark session pool
-    spark_session_pool = providers.Container(SparkContainer, config=config)
+    spark = providers.Container(SparkContainer, config=config)
 
-    # Dataset Repo
-    repo = providers.Container(
-        DatasetRepositoryContainer, spark_session_pool=spark_session_pool, config=config
+    # Data Access Object Container
+    repo = providers.Container(RepoContainer, config=config)
+
+    # Workspace container
+    workspace = providers.Container(
+        WorkspaceContainer,
+        config=config,
+        dataset_repo=repo.dataset_repo,
+        model_repo=repo.model_repo,
+        inference_repo=repo.inference_repo,
+        experiment_repo=repo.experiment_repo,
     )
