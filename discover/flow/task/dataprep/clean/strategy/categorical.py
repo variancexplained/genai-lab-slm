@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/strategy/categorical.py                                   #
+# Filename   : /discover/flow/task/dataprep/clean/strategy/categorical.py                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:33:51 pm                                             #
-# Modified   : Monday December 23rd 2024 04:20:32 pm                                               #
+# Modified   : Wednesday December 25th 2024 02:31:51 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,8 @@ from typing import Type
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.data_structure import DataFrameStructure
-from discover.flow.task.clean.strategy.factory import (
+from discover.asset.dataset import DataFrameStructure
+from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
     StrategyFactory,
@@ -48,18 +48,18 @@ class CategoricalStrategyFactory(StrategyFactory):
             - "percentile": ThresholdPercentileAnomalyDetectStrategy
         """
         return {
-            "categorical": CategoricalAnomalyDetectStrategy,
+            "categorical": CategoricalAnomalyDetectRepairTaskDetectStrategy,
         }
 
     @property
     def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
         return {
-            "categorical": CategoricalAnomalyRepairStrategy,
+            "categorical": CategoricalAnomalyDetectRepairTaskRepairStrategy,
         }
 
 
 # ------------------------------------------------------------------------------------------------ #
-class CategoricalAnomalyDetectStrategy(DetectStrategy):
+class CategoricalAnomalyDetectRepairTaskDetectStrategy(DetectStrategy):
     """
     A strategy for detecting anomalies in categorical data.
 
@@ -115,7 +115,7 @@ class CategoricalAnomalyDetectStrategy(DetectStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class CategoricalAnomalyRepairStrategy(RepairStrategy):
+class CategoricalAnomalyDetectRepairTaskRepairStrategy(RepairStrategy):
     """
     A strategy for repairing categorical anomalies by removing rows with invalid values.
 
@@ -129,8 +129,8 @@ class CategoricalAnomalyRepairStrategy(RepairStrategy):
             This column will contain `True` for rows with invalid categories and `False` otherwise.
         valid_categories (list, optional): A list of valid categorical values to compare against.
             Defaults to None, which implies no valid categories are defined.
-        detect_strategy (Type[CategoricalAnomalyDetectStrategy], optional): The detection
-            strategy class to use for identifying anomalies. Defaults to `CategoricalAnomalyDetectStrategy`.
+        detect_strategy (Type[CategoricalAnomalyDetectRepairTaskDetectStrategy], optional): The detection
+            strategy class to use for identifying anomalies. Defaults to `CategoricalAnomalyDetectRepairTaskDetectStrategy`.
         **kwargs: Additional keyword arguments for extensibility.
 
     Methods:
@@ -144,8 +144,8 @@ class CategoricalAnomalyRepairStrategy(RepairStrategy):
         new_column: str,
         valid_categories: list = None,
         detect_strategy: Type[
-            CategoricalAnomalyDetectStrategy
-        ] = CategoricalAnomalyDetectStrategy,
+            CategoricalAnomalyDetectRepairTaskDetectStrategy
+        ] = CategoricalAnomalyDetectRepairTaskDetectStrategy,
         **kwargs,
     ) -> None:
         self._column = column

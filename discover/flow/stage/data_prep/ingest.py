@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Thursday December 19th 2024 01:40:48 pm                                             #
+# Modified   : Wednesday December 25th 2024 01:06:24 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,6 @@
 
 
 from discover.core.flow import PhaseDef, StageDef
-from discover.infra.service.logging.stage import stage_logger
 from discover.flow.stage.data_prep.base import DataPrepStage
 
 
@@ -60,35 +59,3 @@ class IngestionStage(DataPrepStage):
             force=force,
             **kwargs,
         )
-
-    @stage_logger
-    def run(self) -> str:
-        """
-        Executes the data ingestion stage by loading the source dataset, applying
-        tasks, and saving the processed result.
-
-        Returns:
-            str: The asset ID of the destination dataset.
-
-        Raises:
-            DatasetNotFoundError: If the source dataset cannot be loaded from the repository.
-            DatasetSaveError: If there is an error saving the processed dataset.
-        """
-        destination_asset_id = self._get_asset_id(config=self._destination_config)
-        endpoint_exists = self._dataset_exists(asset_id=destination_asset_id)
-
-        if self._force or not endpoint_exists:
-            data = self._load_file(filepath=self._source_config.filepath)
-
-            for task in self._tasks:
-                data = task.run(data=data)
-
-            destination_dataset = self._create_dataset(
-                asset_id=destination_asset_id,
-                config=self._destination_config,
-                data=data,
-            )
-            # Persist pipeline stage destination dataset
-            self._save_dataset(dataset=destination_dataset, replace_if_exists=True)
-
-        return destination_asset_id

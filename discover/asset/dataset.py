@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Tuesday December 24th 2024 07:35:36 am                                              #
+# Modified   : Wednesday December 25th 2024 04:10:37 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,6 @@
 """Dataset Module"""
 from __future__ import annotations
 
-import os
 from enum import Enum
 from typing import Optional, Union
 
@@ -28,7 +27,7 @@ from dependency_injector.wiring import Provide, inject
 from pydantic import validate_call
 from pyspark.sql import DataFrame
 
-from discover.asset.base import Asset, Factory
+from discover.asset.base import Asset
 from discover.container import DiscoverContainer
 from discover.core.asset import AssetType
 from discover.core.file import FileFormat
@@ -144,6 +143,35 @@ class DataFrameStructure(Enum):
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                                     DATASET CONFIG                                               #
+# ------------------------------------------------------------------------------------------------ #
+def deserialize_dataset_config(config: dict) -> dict:
+    """Deserializes dataset configuration values into their respective enum objects.
+
+    Args:
+        config (dict): The dataset configuration dictionary.
+
+    Returns:
+        dict: The deserialized configuration dictionary.
+    """
+    try:
+        config["asset_type"] = AssetType.from_value(config.get("asset_type", "dataset"))
+        config["phase"] = PhaseDef.from_value(config.get("phase", "dataprep"))
+        config["stage"] = StageDef.from_value(config["stage"])
+        config["dataframe_structure"] = DataFrameStructure.from_value(
+            config["dataframe_structure"]
+        )
+        config["file_format"] = FileFormat.from_value(config["file_format"])
+        return config
+    except KeyError as e:
+        msg = f"Malformed dataset configuration.\n{config}\n{e}"
+        raise ValueError(msg)
+    except ValueError as e:
+        msg = f"Unable to deserialize the dataset configuration.\n{config}\n{e}"
+        raise ValueError(msg)
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                                        DATASET                                                   #
 # ------------------------------------------------------------------------------------------------ #
 class Dataset(Asset):
@@ -160,8 +188,9 @@ class Dataset(Asset):
         data: Optional[Union[pd.DataFrame, DataFrame]] = None,
         dataframe_structure: Optional[DataFrameStructure] = None,
         file_format: FileFormat = FileFormat.PARQUET,
-        source: str = None,  # Asset id of source
-        parent: str = None,  # Asset id of parent
+        source_dataset_asset_id: Optional[str] = None,
+        parent_dataset_asset_id: Optional[str] = None,
+        **kwargs,
     ) -> None:
         super().__init__(
             asset_type=self.__ASSET_TYPE,
@@ -170,17 +199,13 @@ class Dataset(Asset):
             stage=stage,
             description=description,
         )
-        self._description = (
-            self._description
-            or f"Dataset asset {self._asset_id} - {self.name} created by {source} on {self._created.strftime('%Y-%m-%d')} at {self._created.strftime('H:%M:%S')}"
-        )
 
         self._data = data
         self._dataframe_structure = dataframe_structure
         self._file_format = file_format
 
-        self._source = source
-        self._parent = parent
+        self._source_dataset_asset_id = source_dataset_asset_id
+        self._parent_dataset_asset_id = parent_dataset_asset_id
 
         self._fal_config = fal_config
 
@@ -194,6 +219,11 @@ class Dataset(Asset):
     #                                  DATASET PROPERTIES                                           #
     # --------------------------------------------------------------------------------------------- #
     @property
+    def description(self) -> str:
+        self._description = self._description or self._format_description()
+        return self._description
+
+    @property
     def file_format(self) -> FileFormat:
         return self._file_format
 
@@ -202,12 +232,12 @@ class Dataset(Asset):
         return self._dataframe_structure
 
     @property
-    def source(self) -> Dataset:
-        return self._source
+    def source_dataset_asset_id(self) -> str:
+        return self._source_dataset_asset_id
 
     @property
-    def parent(self) -> Dataset:
-        return self._parent
+    def parent_dataset_asset_id(self) -> str:
+        return self._parent_dataset_asset_id
 
     @property
     def filepath(self) -> str:
@@ -242,7 +272,23 @@ class Dataset(Asset):
         self.__dict__.update(state)
 
     # --------------------------------------------------------------------------------------------- #
-    #                                      EXTRACT DATA                                             #
+    #                                  EXTRACT DATAFRAME                                            #
+    # --------------------------------------------------------------------------------------------- #
+    def as_df(
+        self, dataframe_structure: Optional[DataFrameStructure] = None
+    ) -> Union[pd.DataFrame, DataFrame]:
+
+        dataframe_structure = dataframe_structure or self._dataframe_structure
+        if dataframe_structure == DataFrameStructure.PANDAS:
+            return self.to_pandas()
+        elif dataframe_structure == DataFrameStructure.SPARK:
+            return self.to_spark()
+        elif dataframe_structure == DataFrameStructure.SPARKNLP:
+            return self.to_sparknlp()
+        else:
+            msg = f"Unrecognized value for dataframe_structure: {dataframe_structure}"
+            raise ValueError(msg)
+
     # --------------------------------------------------------------------------------------------- #
     def to_pandas(self) -> pd.DataFrame:
         """Converts (if necessary) and returns the underlying data as a Pandas DataFrame.
@@ -250,33 +296,15 @@ class Dataset(Asset):
         Returns:
             pd.DataFrame: The dataset in Pandas format.
         """
-        if self._dataframe_structure == DataFrameStructure.PANDAS and isinstance(
-            self._data, (pd.DataFrame, pd.core.frame.DataFrame)
-        ):
-            return self._data
-        else:
-            # Reading dataframes is often faster than converting spark to pandas.
-            read_kwargs = self._fal_config["pandas"][self._file_format.value][
-                "read_kwargs"
-            ]
-            try:
-                self._data = self._read_data_pandas(
-                    filepath=self._filepath, **read_kwargs
-                )
-                self._dataframe_structure = DataFrameStructure.PANDAS
-                return self._data
-            except (
-                FileIOException
-            ):  # This can occur if the data is written as a csv directory
-                # Obtain a spark dataframe and convert it
-                data = self.to_spark()
-                self._data = data.toPandas()
-                self._dataframe_structure = DataFrameStructure.PANDAS
-                return self._data
-            except Exception as e:
-                raise Exception(
-                    f"Exception returning data at {self._filepath} as a pandas DataFrame"
-                ) from e
+        try:
+            return self._read_data_pandas(filepath=self._filepath)
+        except FileIOException:
+            data = self.to_spark()
+            return data.toPandas()
+        except Exception as e:
+            raise Exception(
+                f"Exception returning data at {self._filepath} as a pandas DataFrame"
+            ) from e
 
     # --------------------------------------------------------------------------------------------- #
     def to_spark(self) -> DataFrame:
@@ -285,17 +313,7 @@ class Dataset(Asset):
         Returns:
             DataFrame: The dataset in Spark format.
         """
-        if self._dataframe_structure == DataFrameStructure.SPARK and isinstance(
-            self._data, DataFrame
-        ):
-            return self._data
-        else:
-            read_kwargs = self._fal_config["spark"][self._file_format.value][
-                "read_kwargs"
-            ]
-            self._data = self._read_data_spark(filepath=self._filepath, **read_kwargs)
-            self._dataframe_structure = DataFrameStructure.SPARK
-            return self._data
+        return self._read_data_spark(filepath=self._filepath)
 
     # --------------------------------------------------------------------------------------------- #
     def to_sparknlp(self) -> DataFrame:
@@ -304,47 +322,36 @@ class Dataset(Asset):
         Returns:
             DataFrame: The dataset in SparkNLP format.
         """
-        if self._dataframe_structure == DataFrameStructure.SPARKNLP and isinstance(
-            self._data, DataFrame
-        ):
-            return self._data
-        else:
-            read_kwargs = self._fal_config["spark"][self._file_format.value][
-                "read_kwargs"
-            ]
-            self._data = self._read_data_sparknlp(
-                filepath=self._filepath, **read_kwargs
-            )
-            self._dataframe_structure = DataFrameStructure.SPARKNLP
-            return self._data
+        return self._read_data_sparknlp(filepath=self._filepath)
 
     # -------------------------------------------------------------------------------------------- #
     #                                      READ DATA                                               #
     # -------------------------------------------------------------------------------------------- #
-    def _read_data(
-        self,
-        filepath: str,
-        dataframe_structure: DataFrameStructure,
-        **kwargs,
-    ) -> Union[pd.DataFrame, DataFrame]:
-        if dataframe_structure == DataFrameStructure.PANDAS:
-            return self._read_data_pandas(filepath=filepath, **kwargs)
-        elif dataframe_structure == DataFrameStructure.SPARK:
-            return self._read_data_spark(filepath=filepath, **kwargs)
-        elif dataframe_structure == DataFrameStructure.SPARKNLP:
-            return self._read_data_sparknlp(filepath=filepath, **kwargs)
-        else:
-            raise ValueError(f"Unrecognized dataframe_structure: {dataframe_structure}")
+    def _read_data_pandas(self, filepath: str) -> pd.DataFrame:
+        if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame)):
+            return self._data
 
-    # -------------------------------------------------------------------------------------------- #
-    def _read_data_pandas(self, filepath: str, **kwargs) -> pd.DataFrame:
-
-        if self._file_format == FileFormat.CSV:
-            return DataFrameStructure.PANDAS.reader.csv(filepath=filepath, **kwargs)
-        elif self._file_format == FileFormat.PARQUET:
-            return DataFrameStructure.PANDAS.reader.parquet(filepath=filepath, **kwargs)
         else:
-            raise ValueError(f"Invalid file format {self._file_format}")
+            read_kwargs = self._fal_config["pandas"][self._file_format.value][
+                "read_kwargs"
+            ]
+
+            if self._file_format == FileFormat.CSV:
+                df = DataFrameStructure.PANDAS.reader.csv(
+                    filepath=filepath, **read_kwargs
+                )
+
+            elif self._file_format == FileFormat.PARQUET:
+                df = DataFrameStructure.PANDAS.reader.parquet(
+                    filepath=filepath, **read_kwargs
+                )
+            else:
+                raise ValueError(f"Invalid file format {self._file_format}")
+
+            # if the dataframe structure is equal to that of the instance, cache the data.
+            if self._dataframe_structure == DataFrameStructure.PANDAS:
+                self._data = df
+            return df
 
     # -------------------------------------------------------------------------------------------- #
     @inject
@@ -356,17 +363,31 @@ class Dataset(Asset):
         ],
         **kwargs,
     ) -> DataFrame:
-        spark = spark_session_pool.spark
-        if self._file_format == FileFormat.CSV:
-            return DataFrameStructure.SPARK.reader.csv(
-                filepath=filepath, spark=spark, **kwargs
-            )
-        elif self._file_format == FileFormat.PARQUET:
-            return DataFrameStructure.SPARK.reader.parquet(
-                filepath=filepath, spark=spark, **kwargs
-            )
+        if (
+            isinstance(self._data, DataFrame)
+            and self._dataframe_structure == DataFrameStructure.SPARK
+        ):
+            return self._data
         else:
-            raise ValueError(f"Invalid file format {self._file_format}")
+            spark = spark_session_pool.spark
+            read_kwargs = self._fal_config["spark"][self._file_format.value][
+                "read_kwargs"
+            ]
+            if self._file_format == FileFormat.CSV:
+                df = DataFrameStructure.SPARK.reader.csv(
+                    filepath=filepath, spark=spark, **read_kwargs
+                )
+            elif self._file_format == FileFormat.PARQUET:
+                df = DataFrameStructure.SPARK.reader.parquet(
+                    filepath=filepath, spark=spark, **read_kwargs
+                )
+            else:
+                raise ValueError(f"Invalid file format {self._file_format}")
+
+            # if the dataframe structure is equal to that of the instance, cache the data.
+            if self._dataframe_structure == DataFrameStructure.SPARK:
+                self._data = df
+            return df
 
     # -------------------------------------------------------------------------------------------- #
     @inject
@@ -378,23 +399,49 @@ class Dataset(Asset):
         ],
         **kwargs,
     ) -> DataFrame:
-        spark = spark_session_pool.sparknlp
-        if self._file_format == FileFormat.CSV:
-            return DataFrameStructure.SPARKNLP.reader.csv(
-                filepath=filepath, spark=spark, **kwargs
-            )
-        elif self._file_format == FileFormat.PARQUET:
-            return DataFrameStructure.SPARKNLP.reader.parquet(
-                filepath=filepath, spark=spark, **kwargs
-            )
+        if (
+            isinstance(self._data, DataFrame)
+            and self._dataframe_structure == DataFrameStructure.SPARKNLP
+        ):
+            return self._data
         else:
-            raise ValueError(f"Invalid file format {self._file_format}")
+            spark = spark_session_pool.sparknlp
+            read_kwargs = self._fal_config["spark"][self._file_format.value][
+                "read_kwargs"
+            ]
+            if self._file_format == FileFormat.CSV:
+                df = DataFrameStructure.SPARKNLP.reader.csv(
+                    filepath=filepath, spark=spark, **read_kwargs
+                )
+            elif self._file_format == FileFormat.PARQUET:
+                df = DataFrameStructure.SPARKNLP.reader.parquet(
+                    filepath=filepath, spark=spark, **read_kwargs
+                )
+            else:
+                raise ValueError(f"Invalid file format {self._file_format}")
+
+            # if the dataframe structure is equal to that of the instance, cache the data.
+            if self._dataframe_structure == DataFrameStructure.SPARKNLP:
+                self._data = df
+            return df
+
+    # -------------------------------------------------------------------------------------------- #
+    def _format_description(self) -> str:
+        description = ""
+        description += f"Dataset {self.name} created "
+        if self._source_dataset_asset_id:
+            description += f"from {self._source_dataset_asset_id} "
+        if self._created_by:
+            description += f"by {self._created_by} "
+        description += f"in the {self._phase.description} - {self._stage.description} "
+        description += f"on {self._created.strftime('%Y-%m-%d')} at {self._created.strftime('H:%M:%S')}"
+        return description
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                     DATASET FACTORY                                              #
 # ------------------------------------------------------------------------------------------------ #
-class DatasetFactory(Factory):
+class DatasetFactory:
 
     @inject
     def __init__(
@@ -406,17 +453,6 @@ class DatasetFactory(Factory):
     ) -> None:
         self._workspace_service = workspace_service
         self._fal_config = config["fal"]  # File access layer config
-
-    def set_filepath(self, asset: Asset) -> Asset:
-        if asset.asset_id is None:
-            asset = self.set_asset_id(asset=asset)
-        directory = self._workspace_service.files
-        basename = asset.asset_id
-        filext = asset.file_format.value
-        filename = f"{basename}.{filext}"
-        filepath = os.path.join(directory, filename)
-        setattr(asset, "_filepath", filepath)
-        return asset
 
     # -------------------------------------------------------------------------------------------- #
     #                                 FROM PARQUET FILE                                            #
@@ -430,6 +466,8 @@ class DatasetFactory(Factory):
         name: str,
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructure] = None,
+        file_format: FileFormat = FileFormat.PARQUET,
+        **kwargs,
     ) -> Dataset:
         return self._from_file(
             filepath=filepath,
@@ -439,6 +477,7 @@ class DatasetFactory(Factory):
             description=description,
             dataframe_structure=dataframe_structure,
             file_format=FileFormat.PARQUET,
+            **kwargs,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -453,6 +492,8 @@ class DatasetFactory(Factory):
         name: str,
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructure] = None,
+        file_format: FileFormat = FileFormat.CSV,
+        **kwargs,
     ) -> Dataset:
         return self._from_file(
             filepath=filepath,
@@ -462,6 +503,7 @@ class DatasetFactory(Factory):
             description=description,
             dataframe_structure=dataframe_structure,
             file_format=FileFormat.CSV,
+            **kwargs,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -474,6 +516,7 @@ class DatasetFactory(Factory):
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructure] = None,
         file_format: FileFormat = FileFormat.PARQUET,
+        **kwargs,
     ) -> Dataset:
 
         dataset = Dataset(
@@ -484,10 +527,11 @@ class DatasetFactory(Factory):
             fal_config=self._fal_config,
             dataframe_structure=dataframe_structure,
             file_format=file_format,
+            **kwargs,
         )
 
-        dataset = self.set_asset_id(asset=dataset)
-        dataset = self.set_filepath(asset=dataset)
+        dataset = self._workspace_service.set_asset_id(asset=dataset)
+        dataset = self._workspace_service.set_filepath(asset=dataset)
 
         copy = Copy()
         copy(source=filepath, target=dataset.filepath, overwrite=False)
@@ -507,8 +551,10 @@ class DatasetFactory(Factory):
         data: pd.DataFrame,
         description: Optional[str] = None,
         file_format: FileFormat = FileFormat.PARQUET,
+        source_dataset_asset_id: Optional[str] = None,
+        parent_dataset_asset_id: Optional[str] = None,
     ) -> Dataset:
-        return self._from_df(
+        return self.from_df(
             phase=phase,
             stage=stage,
             name=name,
@@ -516,6 +562,8 @@ class DatasetFactory(Factory):
             description=description,
             dataframe_structure=DataFrameStructure.PANDAS,
             file_format=file_format,
+            source_dataset_asset_id=source_dataset_asset_id,
+            parent_dataset_asset_id=parent_dataset_asset_id,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -530,8 +578,10 @@ class DatasetFactory(Factory):
         data: DataFrame,
         description: Optional[str] = None,
         file_format: FileFormat = FileFormat.PARQUET,
+        source_dataset_asset_id: Optional[str] = None,
+        parent_dataset_asset_id: Optional[str] = None,
     ) -> Dataset:
-        return self._from_df(
+        return self.from_df(
             phase=phase,
             stage=stage,
             name=name,
@@ -539,6 +589,8 @@ class DatasetFactory(Factory):
             description=description,
             dataframe_structure=DataFrameStructure.SPARK,
             file_format=file_format,
+            source_dataset_asset_id=source_dataset_asset_id,
+            parent_dataset_asset_id=parent_dataset_asset_id,
         )
 
     # -------------------------------------------------------------------------------------------- #
@@ -553,8 +605,10 @@ class DatasetFactory(Factory):
         data: DataFrame,
         description: Optional[str] = None,
         file_format: FileFormat = FileFormat.PARQUET,
+        source_dataset_asset_id: Optional[str] = None,
+        parent_dataset_asset_id: Optional[str] = None,
     ) -> Dataset:
-        return self._from_df(
+        return self.from_df(
             phase=phase,
             stage=stage,
             name=name,
@@ -562,11 +616,13 @@ class DatasetFactory(Factory):
             description=description,
             dataframe_structure=DataFrameStructure.SPARKNLP,
             file_format=file_format,
+            source_dataset_asset_id=source_dataset_asset_id,
+            parent_dataset_asset_id=parent_dataset_asset_id,
         )
 
     # -------------------------------------------------------------------------------------------- #
     @validate_call(config=dict(arbitrary_types_allowed=True))
-    def _from_df(
+    def from_df(
         self,
         phase: PhaseDef,
         stage: StageDef,
@@ -575,6 +631,8 @@ class DatasetFactory(Factory):
         dataframe_structure: DataFrameStructure,
         description: Optional[str] = None,
         file_format: FileFormat = FileFormat.PARQUET,
+        source_dataset_asset_id: Optional[str] = None,
+        parent_dataset_asset_id: Optional[str] = None,
         **kwargs,
     ) -> Dataset:
         dataset = Dataset(
@@ -586,10 +644,12 @@ class DatasetFactory(Factory):
             fal_config=self._fal_config,
             dataframe_structure=dataframe_structure,
             file_format=file_format,
+            source_dataset_asset_id=source_dataset_asset_id,
+            parent_dataset_asset_id=parent_dataset_asset_id,
         )
 
-        dataset = self.set_asset_id(asset=dataset)
-        dataset = self.set_filepath(asset=dataset)
+        dataset = self._workspace_service.set_asset_id(asset=dataset)
+        dataset = self._workspace_service.set_filepath(asset=dataset)
 
         self._write_data(
             filepath=dataset.filepath,

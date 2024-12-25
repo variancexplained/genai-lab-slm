@@ -11,11 +11,23 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Tuesday December 24th 2024 08:10:27 am                                              #
+# Modified   : Wednesday December 25th 2024 05:00:08 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
+#                                           SETUP                                                  #
+# ------------------------------------------------------------------------------------------------ #
+setup:
+  dataset:
+    asset_type: dataset
+    phase: dataprep
+    stage: raw
+    name: review
+    filepath: data/stage/prod/reviews
+    dataframe_structure: pandas
+    file_format: parquet
 # ------------------------------------------------------------------------------------------------ #
 #                                         WORKSPACE                                                #
 # ------------------------------------------------------------------------------------------------ #
@@ -25,7 +37,6 @@ workspace:
     datasets: assets/datasets
     models: assets/models
     experiments: assets/experiments
-    inference: assets/inference
   files: files
 # ------------------------------------------------------------------------------------------------ #
 #                                          LOGGING                                                 #
@@ -147,12 +158,10 @@ dqa:
       privacy: 0.15
   completeness:
     weights:
-      row: 0.5
-      category: 0.25
-      sentiment: 0.25
+      row: 0.7
+      category: 0.3
     columns:
       category: category
-      sentiment: sa_sentiment
   validity:
     weights:
       rating: 0.2
@@ -174,7 +183,6 @@ dqa:
       - dp_validity_contains_excess_sequence_repetition
       - dp_validity_contains_excess_word_repetition
       - dp_validity_contains_excess_phrase_repetition
-      - dp_validity_low_perplexity
   relevance:
     weights:
       language: 0.4

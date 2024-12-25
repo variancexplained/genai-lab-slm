@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 12:55:53 pm                                              #
-# Modified   : Friday October 18th 2024 07:38:19 am                                                #
+# Modified   : Wednesday December 25th 2024 04:34:23 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -150,7 +150,9 @@ class ThirdDateFormatter:
         elif seconds < 3600:
             minutes = seconds // 60
             remaining_seconds = seconds % 60
-            return f"{minutes} minutes" + (
+            unit = "minute" if minutes < 2 else "minutes"
+
+            return f"{minutes} {unit}" + (
                 f" and {round(remaining_seconds,2)} seconds"
                 if remaining_seconds > 0
                 else ""
@@ -159,9 +161,10 @@ class ThirdDateFormatter:
             hours = seconds // 3600
             minutes = (seconds % 3600) // 60
             remaining_seconds = seconds % 60
+            unit = "minute" if minutes < 2 else "minutes"
             return (
                 f"{hours} hours"
-                + (f" {minutes} minutes" if minutes > 0 else "")
+                + (f" {minutes} {unit}" if minutes > 0 else "")
                 + (
                     f" and {round(remaining_seconds, 2)} seconds"
                     if remaining_seconds > 0

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/strategy/text/distributed.py                              #
+# Filename   : /discover/flow/task/dataprep/clean/strategy/text/distributed.py                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Thursday December 19th 2024 01:40:48 pm                                             #
+# Modified   : Wednesday December 25th 2024 05:11:54 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,16 +25,16 @@ import pandas as pd
 from lingua import Language, LanguageDetectorBuilder
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.functions import pandas_udf, udf
+from pyspark.sql.functions import col, pandas_udf, size, split, udf, when
 from pyspark.sql.types import BooleanType, DoubleType, StringType
 
-from discover.flow.task.clean.strategy.factory import (
+from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
     StrategyFactory,
 )
-from discover.flow.task.clean.strategy.text import SPECIAL_ACCENT_MAP
-from discover.flow.task.clean.strategy.text.pattern import RegexFactory
+from discover.flow.task.dataprep.clean.strategy.text import SPECIAL_ACCENT_MAP
+from discover.flow.task.dataprep.clean.strategy.text.pattern import RegexFactory
 
 # ------------------------------------------------------------------------------------------------ #
 languages = [Language.ENGLISH, Language.SPANISH]
@@ -55,6 +55,7 @@ class TextStrategyFactory(StrategyFactory):
             "regex": RegexDetectStrategy,
             "regex_threshold": RegexThresholdDetectStrategy,
             "non_english": NonEnglishDetectStrategy,
+            "short_review": ShortReviewDetectStrategy,
         }
 
     @property
@@ -68,6 +69,7 @@ class TextStrategyFactory(StrategyFactory):
             "non_ascii": NonAsciiRepairStrategy,
             "non_english": NonEnglishRemovalStrategy,
             "whitespace": ExcessWhitespaceRepairStrategy,
+            "short_review": ShortReviewRemovalStrategy,
         }
 
 
@@ -533,10 +535,6 @@ class CustomRemoveStrategy(RepairStrategy):
         """
         Removes rows from the PySpark DataFrame where anomalies are detected.
 
-        If the detection results column (`new_column`) is not present in the DataFrame,
-        the associated detection strategy is applied to generate it. Rows flagged as
-        anomalies in the detection results column are then filtered out.
-
         Args:
             data (DataFrame): The input PySpark DataFrame to process.
 
@@ -552,13 +550,12 @@ class CustomRemoveStrategy(RepairStrategy):
             raise KeyError(f"Column '{self._column}' does not exist in the DataFrame.")
 
         # Apply detection strategy
-        if self._new_column not in data.columns:
-            strategy = self._detect_strategy(
-                column=self._column,
-                new_column=self._new_column,
-                **self._kwargs,
-            )
-            data = strategy.detect(data)
+        strategy = self._detect_strategy(
+            column=self._column,
+            new_column=self._new_column,
+            **self._kwargs,
+        )
+        data = strategy.detect(data)
 
         # Filter out rows where anomalies are detected
         data = data.filter(~F.col(self._new_column))
@@ -1094,6 +1091,100 @@ class NonEnglishRemovalStrategy(CustomRemoveStrategy):
                 to use for identifying non-English text. Defaults to `NonEnglishDetectStrategy`.
             **kwargs: Additional keyword arguments passed to the parent class or detection strategy.
         """
+        super().__init__(
+            column=column,
+            new_column=new_column,
+            detect_strategy=detect_strategy,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                       SHORT REVIEWS                                              #
+# ------------------------------------------------------------------------------------------------ #
+class ShortReviewDetectStrategy(DetectStrategy):
+    """
+    A strategy to detect short or long reviews based on word count.
+
+    This strategy adds a boolean column to a PySpark DataFrame, indicating whether the
+    length of text content in a specified column (in words) is less than or greater than
+    a given threshold.
+
+    Args:
+        column (str): The name of the column containing text data to analyze.
+        new_column (str, optional): The name of the new column to be added. If not provided,
+            defaults to `<column>_short_review_detected`.
+        threshold (int, optional): The word count threshold for determining short or long reviews. Defaults to 3.
+        detect_less_than_threshold (bool, optional): If True, flags rows with word count less
+            than the threshold. If False, flags rows with word count greater than the threshold. Defaults to True.
+        **kwargs: Additional arguments for extended functionality.
+
+    Methods:
+        detect(data: DataFrame) -> DataFrame:
+            Adds a boolean column to the input DataFrame, flagging rows based on word count.
+    """
+
+    def __init__(
+        self,
+        column: str,
+        new_column: str,
+        threshold: int = 3,
+        detect_less_than_threshold: bool = True,
+        **kwargs,
+    ) -> None:
+        self._column = column
+        self._new_column = new_column
+        self._threshold = threshold
+        self._detect_less_than_threshold = detect_less_than_threshold
+
+    def detect(self, data: DataFrame) -> DataFrame:
+        """
+        Adds a boolean column to the DataFrame indicating if the text content's word count
+        in the specified column is less than or greater than the threshold.
+
+        Args:
+            data (DataFrame): Input PySpark DataFrame containing the column to analyze.
+
+        Returns:
+            DataFrame: A PySpark DataFrame with an additional boolean column indicating
+            whether the word count is less than or greater than the threshold.
+
+        Raises:
+            ValueError: If the specified column does not exist in the DataFrame.
+        """
+        # Add a column with the length of the review in words
+        data = data.withColumn(
+            "review_word_count", size(split(col(self._column), r"\s+"))
+        )
+
+        # Add the detection column based on the threshold
+        if self._detect_less_than_threshold:
+            data = data.withColumn(
+                self._new_column,
+                when(col("review_word_count") < self._threshold, True).otherwise(False),
+            )
+        else:
+            data = data.withColumn(
+                self._new_column,
+                when(col("review_word_count") > self._threshold, True).otherwise(False),
+            )
+
+        # Drop the intermediate column if desired
+        data = data.drop("review_word_count")
+
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+class ShortReviewRemovalStrategy(CustomRemoveStrategy):
+
+    def __init__(
+        self,
+        column: str,
+        new_column: str = None,
+        detect_strategy: Type[DetectStrategy] = ShortReviewDetectStrategy,
+        **kwargs,
+    ) -> None:
         super().__init__(
             column=column,
             new_column=new_column,

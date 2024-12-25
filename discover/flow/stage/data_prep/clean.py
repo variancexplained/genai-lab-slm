@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Thursday December 19th 2024 01:40:48 pm                                             #
+# Modified   : Wednesday December 25th 2024 05:32:57 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,10 +19,11 @@
 """Cleaning Stage Module"""
 import pandas as pd
 
+from discover.asset.dataset import DataFrameStructure
 from discover.core.flow import PhaseDef, StageDef
+from discover.flow.stage.data_prep.base import DataPrepStage
 from discover.infra.utils.data.compare import compare_dataframes
 from discover.infra.utils.data.format import show_thousands_separator
-from discover.flow.stage.data_prep.base import DataPrepStage
 
 # ------------------------------------------------------------------------------------------------ #
 COLUMNS = [
@@ -36,9 +37,6 @@ COLUMNS = [
     "vote_sum",
     "vote_count",
     "date",
-    "review_length",
-    "pa_perplexity",
-    "sa_sentiment",
 ]
 
 
@@ -83,8 +81,14 @@ class DataCleaningStage(DataPrepStage):
 
     def summarize(self) -> None:
         # Reload original and clean datasets
-        orig_df = self._load_dataset(asset_id=self.source_asset_id).content
-        clean_df = self._load_dataset(asset_id=self.destination_asset_id).content
+        orig_df = self._get_data(
+            asset_id=self._source_asset_id,
+            dataframe_structure=DataFrameStructure.PANDAS,
+        )
+        clean_df = self._get_data(
+            asset_id=self._destination_asset_id,
+            dataframe_structure=DataFrameStructure.PANDAS,
+        )
         comparison = compare_dataframes(
             self_df=orig_df,
             other_df=clean_df,
@@ -102,16 +106,6 @@ class DataCleaningStage(DataPrepStage):
                 0,
                 int(comparison.rows_modified),
                 round(comparison.rows_modified / orig_df.shape[0] * 100, 2),
-            ],
-            "Average Review Length": [
-                round(orig_df["review_length"].mean(), 2),
-                round(clean_df["review_length"].mean(), 2),
-                round(
-                    (clean_df["review_length"].mean() - orig_df["review_length"].mean())
-                    / orig_df["review_length"].mean(),
-                    2,
-                )
-                * 100,
             ],
             "Size (Mb)": [
                 int(comparison.self_dataset_size) / 1024 * 1024,

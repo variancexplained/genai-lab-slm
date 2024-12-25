@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Thursday December 19th 2024 01:40:46 pm                                             #
+# Modified   : Wednesday December 25th 2024 06:50:15 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -217,15 +217,7 @@ class ComputeTextQualityTask(Task):
                 ),
             )
 
-            # Step 7: Set quality of non-English reviews to 0
-            data = data.withColumn(
-                "tqa_score",
-                F.when(
-                    F.col("dp_relevance_contains_non_english_text") == True, 0  # noqa
-                ).otherwise(F.col("tqa_score")),
-            )
-
-            # Step 8: Log transform to make the distribution more symmetric
+            # Step 7: Log transform to make the distribution more symmetric
             data = data.withColumn("tqa_score", F.log1p(F.col("tqa_score")))
 
             # # Step 8: Scale scores to [0, 100]

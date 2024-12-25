@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Monday December 23rd 2024 11:37:53 pm                                               #
+# Modified   : Wednesday December 25th 2024 05:01:14 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Optional, Type, Union
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
 
-from discover.analytics.analysis import Analysis
+from discover.analytics.base import Analysis
 from discover.asset.dataset import Dataset
 from discover.infra.config.app import AppConfigReader
 
@@ -41,11 +41,10 @@ class DQA(Analysis):
         dataset: Dataset,
         config_reader_cls: Type[AppConfigReader] = AppConfigReader,
     ) -> None:
-        super().__init__(df=dataset.content)
+        df = dataset.to_pandas()
+        super().__init__(df=df)
         self._config_reader = config_reader_cls()
         self._config = self._config_reader.get_config(section="dqa", namespace=True)
-        # Dataset
-        self._dataset = dataset
         # Nobs
         self._N = self._df.shape[0]
         # Total quality score
@@ -54,7 +53,7 @@ class DQA(Analysis):
         self._completeness = None
         self._row_completeness = None
         self._category_completeness = None
-        self._sentiment_completeness = None
+
         # Validity Measures
         self._validity = None
         self._rating_validity = None
@@ -75,23 +74,6 @@ class DQA(Analysis):
 
         # Privacy Measures
         self._privacy = None
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                   RETURN DATASET                                             #
-    # -------------------------------------------------------------------------------------------- #
-    def get_dataset(self) -> Dataset:
-        return self._dataset
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                      STATE                                                   #
-    # -------------------------------------------------------------------------------------------- #
-    def approve(self) -> None:
-        self._df.drop(
-            columns=[col for col in self._df.columns if col.startswith("dp_")],
-            inplace=True,
-        )
-        self._dataset.content = self._df
-        self._dataset.meta.approve()
 
     # -------------------------------------------------------------------------------------------- #
     #                                 QUALITY SCORE                                                #
@@ -122,12 +104,6 @@ class DQA(Analysis):
         if not self._category_completeness:
             self._category_completeness = self._compute_category_completeness()
         return self._category_completeness
-
-    @property
-    def sentiment_completeness(self) -> float:
-        if not self._sentiment_completeness:
-            self._sentiment_completeness = self._compute_sentiment_completeness()
-        return self._sentiment_completeness
 
     # -------------------------------------------------------------------------------------------- #
     #                                     VALIDITY                                                 #
@@ -257,11 +233,10 @@ class DQA(Analysis):
 
     def summarize_completeness(self) -> pd.DataFrame:
         d = {
-            "Component": ["Row Completeness", "Category Balance", "Sentiment Balance"],
+            "Component": ["Row Completeness", "Category Balance"],
             "Score": [
                 self.row_completeness,
                 self.category_completeness,
-                self.sentiment_completeness,
             ],
         }
         return pd.DataFrame(d)
@@ -270,7 +245,6 @@ class DQA(Analysis):
         self._completeness = (
             self._config.completeness.weights.row * self.row_completeness
             + self._config.completeness.weights.category * self.category_completeness
-            + self._config.completeness.weights.sentiment * self.sentiment_completeness
         )
         return self._completeness
 
@@ -282,11 +256,6 @@ class DQA(Analysis):
         column = self._config.completeness.columns.category
         self._category_completeness = self._compute_class_balance(column=column)
         return self._category_completeness
-
-    def _compute_sentiment_completeness(self) -> float:
-        column = self._config.completeness.columns.sentiment
-        self._sentiment_completeness = self._compute_class_balance(column=column)
-        return self._sentiment_completeness
 
     def _compute_class_balance(self, column: str) -> float:
         # Count the number of records in each class
@@ -629,18 +598,6 @@ class DQA(Analysis):
             order_by_count=True,
             plot_counts=True,
             title=f"Distribution of Category\nClass Balance Score: {round(self.category_completeness,2)}",
-        )
-
-    def plot_sentiment_class_balance(
-        self, df: Optional[pd.DataFrame] = None
-    ) -> pd.DataFrame:
-        df = df if df is not None else self._df
-        viz.countplot(
-            data=df,
-            order_by_count=True,
-            plot_counts=True,
-            x="sa_sentiment",
-            title=f"Distribution of Sentiment Classification\nClass Balance Score: {round(self.sentiment_completeness,2)}",
         )
 
     def plot_privacy(self, df: Optional[pd.DataFrame] = None) -> None:

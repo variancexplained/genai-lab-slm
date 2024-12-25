@@ -11,11 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:33:35 pm                                               #
-# Modified   : Monday December 23rd 2024 02:46:24 pm                                               #
+# Modified   : Wednesday December 25th 2024 01:25:02 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import os
+import shutil
+
 import pandas as pd
 
 from discover.asset.base import Asset
@@ -35,6 +38,8 @@ class AssetRepo(Repo):
         return self._dao.read(asset_id=asset_id)
 
     def remove(self, asset_id: str) -> None:
+        asset = self.get(asset_id=asset_id)
+        self._remove_file(filepath=asset.filepath)
         self._dao.delete(asset_id=asset_id)
 
     def exists(self, asset_id: str):
@@ -46,3 +51,13 @@ class AssetRepo(Repo):
         for k, v in assets.items():
             asset_list.append(v.as_dict())
         return pd.DataFrame(data=asset_list)
+
+    def _remove_file(self, filepath: str) -> None:
+        if os.path.isfile(filepath):
+            os.remove(filepath)
+        elif os.path.isdir(filepath):
+            shutil.rmtree(filepath)
+        else:
+            raise ValueError(
+                f"The filepath argument {filepath} is neither a file nor a directory."
+            )

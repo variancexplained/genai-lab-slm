@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Thursday December 19th 2024 01:40:47 pm                                             #
+# Modified   : Wednesday December 25th 2024 07:04:26 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -85,7 +85,7 @@ class AppAggregationTask(EnrichmentTask):
             F.desc("vote_count")
         )
         window_spec_review_length = Window.partitionBy("app_id").orderBy(
-            F.desc("review_length")
+            F.desc("en_review_length")
         )
 
         # Add columns for the review length, highest vote sum, and highest TQA score review content
@@ -102,15 +102,13 @@ class AppAggregationTask(EnrichmentTask):
             F.count("*").alias("review_count"),
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
-            F.avg("review_length").alias("average_review_length"),
+            F.avg("en_review_length").alias("average_review_length"),
             F.avg("en_review_age").alias("average_review_age"),
             F.sum("vote_sum").alias("total_vote_sum"),
             F.sum("vote_count").alias("total_vote_count"),
             F.min("date").alias("first_review_date"),
             F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
             F.max("date").alias("last_review_date"),
-            F.avg("sa_sentiment").alias("average_sentiment"),
-            F.avg("pa_perplexity").alias("average_perplexity"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
                 "review_highest_vote_sum"
             ),

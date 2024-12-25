@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:47:02 pm                                             #
-# Modified   : Thursday December 19th 2024 01:40:46 pm                                             #
+# Modified   : Wednesday December 25th 2024 06:55:59 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -54,9 +54,6 @@ class ComputeReviewLength(EnrichmentTask):
         self, column: str = "content", new_column: str = "review_length", **kwargs
     ) -> None:
         super().__init__(column=column, new_column=new_column, **kwargs)
-        self._new_column = (
-            new_column  # We override review_length as it shouldn't be prefixed.
-        )
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -104,9 +101,6 @@ class ComputeReviewLengthPS(EnrichmentTask):
         self, column: str = "content", new_column: str = "review_length", **kwargs
     ) -> None:
         super().__init__(column=column, new_column=new_column, **kwargs)
-        self._new_column = (
-            new_column  # We override review_length as it shouldn't be prefixed.
-        )
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:

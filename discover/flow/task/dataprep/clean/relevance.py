@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/dimension/relevance.py                                    #
+# Filename   : /discover/flow/task/dataprep/clean/relevance.py                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Monday December 23rd 2024 04:18:13 pm                                               #
+# Modified   : Wednesday December 25th 2024 04:28:32 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,20 +23,19 @@ import pyspark
 import pyspark.sql
 
 from discover.flow.task.base import Task
-from discover.flow.task.clean.dimension.base import NumericAnomaly, TextAnomaly
-from discover.flow.task.clean.strategy.numeric import NumericStrategyFactory
-from discover.flow.task.clean.strategy.text.distributed import (
+from discover.flow.task.dataprep.clean.base import TextAnomalyDetectRepairTask
+from discover.flow.task.dataprep.clean.strategy.text.distributed import (
     TextStrategyFactory as SparkTextStrategyFactory,
 )
 from discover.infra.service.logging.task import task_logger
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairNonEnglishTask(TextAnomaly):
+class DetectOrRepairNonEnglishTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing non-English text anomalies.
 
-    This class extends the `TextAnomaly` class and provides functionality for identifying
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for identifying
     and repairing non-English content in text columns. It supports detection and repair
     strategies for non-English content, with customizable thresholds for anomaly detection.
 
@@ -94,7 +93,7 @@ class DetectOrRepairNonEnglishTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairShortReviewsTask(NumericAnomaly):
+class DetectOrRepairShortReviewsTask(TextAnomalyDetectRepairTask):
     """
     A task for detecting or repairing short reviews based on numeric thresholds.
 
@@ -123,21 +122,21 @@ class DetectOrRepairShortReviewsTask(NumericAnomaly):
         **kwargs: Additional keyword arguments for advanced configuration or strategy customization.
 
     Methods:
-        Inherits methods from `NumericAnomaly`, including functionality for detecting and
+        Inherits methods from `NumericAnomalyDetectRepairTask`, including functionality for detecting and
         repairing numeric anomalies related to short reviews.
     """
 
     def __init__(
         self,
-        column: str = "review_length",
+        column: str = "content",
         new_column: str = "short_review",
         mode: str = "detect",
         dataframe_structure: str = "spark",
         threshold: float = 4,
-        strategy_factory_cls: Type[NumericStrategyFactory] = NumericStrategyFactory,
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_less_than_threshold: bool = True,
-        detect_strategy: str = "threshold",
-        repair_strategy: str = "threshold",
+        detect_strategy: str = "short_review",
+        repair_strategy: str = "short_review",
         **kwargs,
     ) -> None:
 

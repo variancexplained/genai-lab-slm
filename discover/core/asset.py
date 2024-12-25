@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 12:36:03 pm                                               #
-# Modified   : Monday December 23rd 2024 12:47:32 pm                                               #
+# Modified   : Tuesday December 24th 2024 08:46:00 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -62,6 +62,14 @@ class AssetType(Enum):
         obj._value_ = value  # Set the Enum value
         obj._label = label  # Set the custom label
         return obj
+
+    @classmethod
+    def from_value(cls, value) -> AssetType:
+        """Finds the enum member based on a given value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No matching {cls.__name__} for value: {value}")
 
     @property
     def label(self) -> str:

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/app/analysis.py                                                           #
+# Filename   : /discover/analytics/base.py                                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Friday November 22nd 2024 02:57:52 pm                                               #
+# Modified   : Wednesday December 25th 2024 01:08:00 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -88,7 +88,6 @@ class Analysis(ABC):
         p_repeat_auth = round(n_repeat_auth / n_auth * 100, 2)
         n_apps = self._df["app_id"].nunique()
         n_categories = self._df["category"].nunique()
-        ave_review_len = round(self._df["review_length"].mean(), 2)
         ave_reviews_per_app = round(n / n_apps, 2)
         mem = self._df.memory_usage(deep=True).sum().sum()
         dt_first = self._df["date"].min()
@@ -100,7 +99,6 @@ class Analysis(ABC):
             "Number of Influential Reviewers": f"{n_auth_inf:,} ({p_auth_inf:.1f}%)",
             "Number of Apps": n_apps,
             "Number of Categories": n_categories,
-            "Average Review Length": f"{ave_review_len:.1f}",
             "Average Reviews per App": f"{ave_reviews_per_app:.1f}",
             "Features": p,
             "Memory Size (Mb)": round(mem / (1024 * 1024), 2),

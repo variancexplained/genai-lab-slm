@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday November 19th 2024 06:25:51 am                                              #
-# Modified   : Thursday December 19th 2024 04:48:42 am                                             #
+# Modified   : Tuesday December 24th 2024 11:02:41 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from discover.analytics.analysis import Analysis
+from discover.analytics.base import Analysis
 from discover.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #

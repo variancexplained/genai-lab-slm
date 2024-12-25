@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Tuesday December 24th 2024 02:23:40 am                                              #
+# Modified   : Wednesday December 25th 2024 12:14:10 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,7 +30,6 @@ from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.object.dao import ShelveDAO
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
-from discover.infra.persist.repo.inference import InferenceRepo
 from discover.infra.persist.repo.model import ModelRepo
 from discover.infra.service.spark.pool import SparkSessionPool
 from discover.infra.workspace.service import WorkspaceService
@@ -86,16 +85,6 @@ class RepoContainer(containers.DeclarativeContainer):
     model_repo = providers.Singleton(ModelRepo, dao=model_dao)
 
     # -------------------------------------------------------------------------------------------- #
-    inference_dao = providers.Singleton(
-        ShelveDAO,
-        location=config.workspace.location,
-        db_path=config.workspace.assets.inference,
-        asset_type=AssetType.INFERENCE,
-    )
-
-    inference_repo = providers.Singleton(InferenceRepo, dao=inference_dao)
-
-    # -------------------------------------------------------------------------------------------- #
     experiment_dao = providers.Singleton(
         ShelveDAO,
         location=config.workspace.location,
@@ -120,7 +109,6 @@ class WorkspaceContainer(containers.DeclarativeContainer):
         config=config.workspace,
         dataset_repo=repo.dataset_repo,
         model_repo=repo.model_repo,
-        inference_repo=repo.inference_repo,
         experiment_repo=repo.experiment_repo,
     )
 

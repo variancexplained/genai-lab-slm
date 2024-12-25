@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Monday December 23rd 2024 08:30:01 pm                                               #
+# Modified   : Wednesday December 25th 2024 12:55:07 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -227,14 +227,3 @@ class Asset(ABC):
             return v.isoformat()
         else:
             return dict()
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                          FACTORY                                                 #
-# ------------------------------------------------------------------------------------------------ #
-class Factory(ABC):
-
-    def set_asset_id(self, asset: Asset) -> Asset:
-        asset_id = f"{asset.asset_type.value}-{asset.phase.value}-{asset.stage.value}-{asset.name}"
-        setattr(asset, "_asset_id", asset_id)
-        return asset

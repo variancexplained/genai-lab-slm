@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/strategy/nominal.py                                       #
+# Filename   : /discover/flow/task/dataprep/clean/strategy/nominal.py                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Monday December 23rd 2024 04:20:32 pm                                               #
+# Modified   : Wednesday December 25th 2024 02:31:51 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,8 @@ from typing import Type
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.data_structure import DataFrameStructure
-from discover.flow.task.clean.strategy.factory import (
+from discover.asset.dataset import DataFrameStructure
+from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
     StrategyFactory,
@@ -54,20 +54,20 @@ class NominalStrategyFactory(StrategyFactory):
     @property
     def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
         return {
-            "nominal": NominalAnomalyDetectStrategy,
+            "nominal": NominalAnomalyDetectRepairTaskDetectStrategy,
             "unique": UniquenessAnomalyDetectStrategy,
         }
 
     @property
     def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
         return {
-            "nominal": NominalAnomalyRepairStrategy,
+            "nominal": NominalAnomalyDetectRepairTaskRepairStrategy,
             "unique": UniquenessAnomalyRepairStrategy,
         }
 
 
 # ------------------------------------------------------------------------------------------------ #
-class NominalAnomalyDetectStrategy(DetectStrategy):
+class NominalAnomalyDetectRepairTaskDetectStrategy(DetectStrategy):
     """
     Strategy for detecting nominal anomalies in a dataset.
 
@@ -114,7 +114,7 @@ class NominalAnomalyDetectStrategy(DetectStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class NominalAnomalyRepairStrategy(RepairStrategy):
+class NominalAnomalyDetectRepairTaskRepairStrategy(RepairStrategy):
     """
     Strategy for repairing nominal anomalies in a dataset.
 
@@ -125,7 +125,7 @@ class NominalAnomalyRepairStrategy(RepairStrategy):
     Attributes:
         _column (str): The name of the column containing the data to repair.
         _new_column (str): The name of the column where the repaired data will be stored.
-        _detect_strategy (Type[NominalAnomalyDetectStrategy]): The detection strategy
+        _detect_strategy (Type[NominalAnomalyDetectRepairTaskDetectStrategy]): The detection strategy
             used to identify nominal anomalies.
     """
 
@@ -133,7 +133,7 @@ class NominalAnomalyRepairStrategy(RepairStrategy):
         self,
         column: str,
         new_column: str,
-        detect_strategy: Type[NominalAnomalyDetectStrategy],
+        detect_strategy: Type[NominalAnomalyDetectRepairTaskDetectStrategy],
         **kwargs,
     ) -> None:
         super().__init__()
@@ -159,7 +159,7 @@ class NominalAnomalyRepairStrategy(RepairStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class UniquenessAnomalyDetectStrategy(NominalAnomalyDetectStrategy):
+class UniquenessAnomalyDetectStrategy(NominalAnomalyDetectRepairTaskDetectStrategy):
     """
     Strategy for detecting uniqueness anomalies in a dataset.
 
@@ -215,7 +215,7 @@ class UniquenessAnomalyDetectStrategy(NominalAnomalyDetectStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class UniquenessAnomalyRepairStrategy(NominalAnomalyRepairStrategy):
+class UniquenessAnomalyRepairStrategy(NominalAnomalyDetectRepairTaskRepairStrategy):
     """
     Strategy for repairing uniqueness anomalies in a dataset.
 

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 10:51:29 pm                                             #
-# Modified   : Thursday December 19th 2024 01:40:50 pm                                             #
+# Modified   : Wednesday December 25th 2024 01:58:44 am                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from discover.flow.stage.base import Stage
 # ------------------------------------------------------------------------------------------------ #
 #                           SENTIMENT ANALYSIS MODEL STAGE                                         #
 # ------------------------------------------------------------------------------------------------ #
-class SentimentAnalysisStage(Stage):
+class SentimentClassificationStage(Stage):
     """
     Stage for performing sentiment analysis in a data pipeline.
 

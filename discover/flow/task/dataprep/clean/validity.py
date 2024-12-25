@@ -4,42 +4,44 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/dimension/validity.py                                     #
+# Filename   : /discover/flow/task/dataprep/clean/validity.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Thursday December 19th 2024 01:40:50 pm                                             #
+# Modified   : Tuesday December 24th 2024 07:45:40 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from typing import Literal, Type, Union
 
-from discover.flow.task.clean.dimension.base import (
-    CategoricalAnomaly,
+from discover.flow.task.dataprep.clean.base import (
+    CategoricalAnomalyDetectRepairTask,
     DiscreteAnomaly,
     IntervalAnomaly,
-    NumericAnomaly,
-    TextAnomaly,
+    NumericAnomalyDetectRepairTask,
+    TextAnomalyDetectRepairTask,
 )
-from discover.flow.task.clean.strategy.categorical import CategoricalStrategyFactory
-from discover.flow.task.clean.strategy.discrete import DiscreteStrategyFactory
-from discover.flow.task.clean.strategy.interval import IntervalStrategyFactory
-from discover.flow.task.clean.strategy.numeric import NumericStrategyFactory
-from discover.flow.task.clean.strategy.text.distributed import (
+from discover.flow.task.dataprep.clean.strategy.categorical import (
+    CategoricalStrategyFactory,
+)
+from discover.flow.task.dataprep.clean.strategy.discrete import DiscreteStrategyFactory
+from discover.flow.task.dataprep.clean.strategy.interval import IntervalStrategyFactory
+from discover.flow.task.dataprep.clean.strategy.numeric import NumericStrategyFactory
+from discover.flow.task.dataprep.clean.strategy.text.distributed import (
     TextStrategyFactory as SparkTextStrategyFactory,
 )
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairURLTask(TextAnomaly):
+class DetectOrRepairURLTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing URLs in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting and repairing URLs in text columns, replacing URLs with a specified
     placeholder string during the repair process.
 
@@ -100,11 +102,11 @@ class DetectOrRepairURLTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairEmailAddressTask(TextAnomaly):
+class DetectOrRepairEmailAddressTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing email addresses in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting and repairing email addresses in text columns, replacing email addresses
     with a specified placeholder string during the repair process.
 
@@ -165,11 +167,11 @@ class DetectOrRepairEmailAddressTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairPhoneNumberTask(TextAnomaly):
+class DetectOrRepairPhoneNumberTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing phone numbers in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting and repairing phone numbers in text columns, replacing phone numbers
     with a specified placeholder string during the repair process.
 
@@ -230,11 +232,11 @@ class DetectOrRepairPhoneNumberTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
+class DetectOrRepairExcessiveSpecialCharsTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing excessive special characters in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting excessive special characters in text columns and replacing them with
     a specified placeholder string during the repair process.
 
@@ -296,11 +298,11 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairNonASCIICharsTask(TextAnomaly):
+class DetectOrRepairNonASCIICharsTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing non-ASCII characters in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting non-ASCII characters in text columns and replacing them with a
     specified placeholder string during the repair process.
 
@@ -362,11 +364,11 @@ class DetectOrRepairNonASCIICharsTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairControlCharsTask(TextAnomaly):
+class DetectOrRepairControlCharsTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing control characters in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting control characters in text columns and replacing them with a
     specified placeholder string during the repair process.
 
@@ -428,11 +430,11 @@ class DetectOrRepairControlCharsTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairHTMLCharsTask(TextAnomaly):
+class DetectOrRepairHTMLCharsTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing HTML characters in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting HTML characters in text columns and replacing them with a specified
     placeholder string during the repair process.
 
@@ -494,11 +496,11 @@ class DetectOrRepairHTMLCharsTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
+class DetectOrRepairExcessiveWhitespaceTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing excessive whitespace in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting excessive whitespace in text columns and replacing it with a specified
     placeholder string during the repair process.
 
@@ -560,11 +562,11 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairAccentedCharsTask(TextAnomaly):
+class DetectOrRepairAccentedCharsTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing accented characters in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
     detecting accented characters in text columns and replacing them with a specified
     placeholder string during the repair process.
 
@@ -626,11 +628,11 @@ class DetectOrRepairAccentedCharsTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairElongationTask(TextAnomaly):
+class DetectOrRepairElongationTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing character elongations (repeated characters) in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for detecting
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for detecting
     elongated characters (e.g., repeated letters in a word) and replacing them with a
     specified placeholder string during the repair process.
 
@@ -696,11 +698,11 @@ class DetectOrRepairElongationTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
+class DetectOrRepairRepeatedCharactersTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing excessive repeated characters in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for detecting
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for detecting
     excessive repeated characters (e.g., "aaa") and replacing them with a specified
     placeholder string during the repair process.
 
@@ -766,11 +768,11 @@ class DetectOrRepairRepeatedCharactersTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
+class DetectOrRepairRepeatedSequenceTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing excessive repeated sequences in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for detecting
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for detecting
     sequences of characters or words that are excessively repeated (e.g., "abcabcabc")
     and replacing them with a specified placeholder string during the repair process.
 
@@ -840,11 +842,11 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedWordsTask(TextAnomaly):
+class DetectOrRepairRepeatedWordsTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing excessive repeated words in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for detecting
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for detecting
     repeated words (e.g., "hello hello") and replacing them with a specified placeholder
     string during the repair process.
 
@@ -910,11 +912,11 @@ class DetectOrRepairRepeatedWordsTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
+class DetectOrRepairRepeatedPhraseTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing excessive repeated phrases in text data.
 
-    This class extends the `TextAnomaly` class and provides functionality for detecting
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for detecting
     repeated phrases (e.g., "hello world hello world") and replacing them with a specified
     placeholder string during the repair process.
 
@@ -980,11 +982,11 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairGibberishTask(NumericAnomaly):
+class DetectOrRepairGibberishTask(NumericAnomalyDetectRepairTask):
     """
     Class for detecting or repairing gibberish in numeric data based on a threshold.
 
-    This class extends the `NumericAnomaly` class and provides functionality for detecting
+    This class extends the `NumericAnomalyDetectRepairTask` class and provides functionality for detecting
     gibberish in numeric data (e.g., perplexity scores) based on a threshold, and optionally
     repairing the detected anomalies by setting them to a default value.
 
@@ -1038,11 +1040,11 @@ class DetectOrRepairGibberishTask(NumericAnomaly):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairCategoryAnomalyTask(CategoricalAnomaly):
+class DetectOrRepairCategoryAnomalyTask(CategoricalAnomalyDetectRepairTask):
     """
     Class for detecting or repairing category anomalies in categorical data.
 
-    This class extends the `CategoricalAnomaly` class and provides functionality for detecting
+    This class extends the `CategoricalAnomalyDetectRepairTask` class and provides functionality for detecting
     and optionally repairing anomalies in categorical data based on a list of valid categories.
 
     Args:

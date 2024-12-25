@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/strategy/text/local.py                                    #
+# Filename   : /discover/flow/task/dataprep/clean/strategy/text/local.py                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:34:06 am                                             #
-# Modified   : Thursday December 19th 2024 01:40:48 pm                                             #
+# Modified   : Tuesday December 24th 2024 07:45:42 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,12 +22,12 @@ from typing import Literal, Type, Union
 
 import pandas as pd
 
-from discover.flow.task.clean.strategy.factory import (
+from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
     StrategyFactory,
 )
-from discover.flow.task.clean.strategy.text.pattern import Regex, RegexFactory
+from discover.flow.task.dataprep.clean.strategy.text.pattern import Regex, RegexFactory
 
 
 # ------------------------------------------------------------------------------------------------ #

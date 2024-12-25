@@ -4,30 +4,30 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/dimension/unique.py                                       #
+# Filename   : /discover/flow/task/dataprep/clean/unique.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 22nd 2024 01:08:57 am                                               #
-# Modified   : Thursday December 19th 2024 01:40:50 pm                                             #
+# Modified   : Tuesday December 24th 2024 07:45:40 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from typing import Literal, Type, Union
 
-from discover.flow.task.clean.dimension.base import NominalAnomaly
-from discover.flow.task.clean.strategy.nominal import NominalStrategyFactory
+from discover.flow.task.dataprep.clean.base import NominalAnomalyDetectRepairTask
+from discover.flow.task.dataprep.clean.strategy.nominal import NominalStrategyFactory
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairUniquenessTask(NominalAnomaly):
+class DetectOrRepairUniquenessTask(NominalAnomalyDetectRepairTask):
     """
     Class for detecting or repairing uniqueness anomalies in nominal data.
 
-    This class extends the `NominalAnomaly` class and provides functionality for
+    This class extends the `NominalAnomalyDetectRepairTask` class and provides functionality for
     detecting and repairing uniqueness anomalies in nominal columns, ensuring that
     values in the specified column are unique or meet certain uniqueness criteria.
 
