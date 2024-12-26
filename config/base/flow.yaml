@@ -11,17 +11,20 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Wednesday December 25th 2024 07:01:43 am                                            #
+# Modified   : Wednesday December 25th 2024 01:35:10 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 phases:
+# ================================================================================================ #
+#                                 Data Preparation Phase                                           #
+# ================================================================================================ #
   dataprep:
     stages:
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
 #                               DATA INGESTION STAGE PIPELINE                                      #
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
       ingest:
         phase: dataprep
         stage: ingest
@@ -65,9 +68,9 @@ phases:
             params:
               column: content
 
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
 #                             DATA QUALITY DETECTION STAGE PIPELINE                                #
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
       dqd:
         phase: dataprep
         stage: dqd
@@ -90,61 +93,61 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_url
+              new_column: dqa_privacy_contains_url
               mode: detect
           - class_name: DetectOrRepairEmailAddressTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_email
+              new_column: dqa_privacy_contains_email
               mode: detect
           - class_name: DetectOrRepairPhoneNumberTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_phone
+              new_column: dqa_privacy_contains_phone
               mode: detect
           - class_name: DetectOrRepairControlCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_ctrl_chars
+              new_column: dqa_validity_contains_ctrl_chars
               mode: detect
           - class_name: DetectOrRepairAccentedCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_accents
+              new_column: dqa_validity_contains_accents
               mode: detect
           - class_name: DetectOrRepairHTMLCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_html_chars
+              new_column: dqa_validity_contains_html_chars
               mode: detect
           - class_name: DetectOrRepairExcessiveWhitespaceTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_whitespace
+              new_column: dqa_validity_contains_excess_whitespace
               mode: detect
           - class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: app_name
-              new_column: relevance_contains_non_english_app_name
+              new_column: dqa_relevance_contains_non_english_app_name
               mode: detect
           - class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: content
-              new_column: relevance_contains_non_english_text
+              new_column: dqa_relevance_contains_non_english_text
               mode: detect
           - class_name: DetectOrRepairExcessiveSpecialCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_special_chars
+              new_column: dqa_validity_contains_excess_special_chars
               threshold: 0.35
               threshold_type: proportion
               unit: character
@@ -163,14 +166,14 @@ phases:
                 - vote_sum
                 - vote_count
                 - date
-              new_column: uniqueness_duplicate_row
+              new_column: dqa_uniqueness_duplicate_row
               mode: detect
           - class_name: DetectOrRepairUniquenessTask
             module: discover.flow.task.dataprep.clean.unique
             params:
               column:
                 - id
-              new_column: uniqueness_duplicate_review_id
+              new_column: dqa_uniqueness_duplicate_review_id
               mode: detect
           - class_name: DetectOrRepairUniquenessTask
             module: discover.flow.task.dataprep.clean.unique
@@ -179,7 +182,7 @@ phases:
                 - app_id
                 - author
                 - content
-              new_column: uniqueness_duplicate_review
+              new_column: dqa_uniqueness_duplicate_review
               mode: detect
           - class_name: DetectOrRepairElongationTask
             module: discover.flow.task.dataprep.clean.validity
@@ -187,7 +190,7 @@ phases:
               column: content
               threshold: 4
               max_elongation: 3
-              new_column: validity_contains_elongation
+              new_column: dqa_validity_contains_elongation
               mode: detect
           - class_name: DetectOrRepairRepeatedSequenceTask
             module: discover.flow.task.dataprep.clean.validity
@@ -198,20 +201,20 @@ phases:
               threshold: 3
               theshold_type: count
               unit: character
-              new_column: validity_contains_excess_sequence_repetition
+              new_column: dqa_validity_contains_excess_sequence_repetition
               mode: detect
           - class_name: DetectOrRepairRepeatedCharactersTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_character_repetition
+              new_column: dqa_validity_contains_excess_character_repetition
               min_repetitions: 4
               mode: detect
           - class_name: DetectOrRepairRepeatedWordsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_word_repetition
+              new_column: dqa_validity_contains_excess_word_repetition
               threshold: 1
               threshold_type: count
               min_repetitions: 3
@@ -220,7 +223,7 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_phrase_repetition
+              new_column: dqa_validity_contains_excess_phrase_repetition
               threshold: 1
               threshold_type: count
               min_repetitions: 2
@@ -229,7 +232,7 @@ phases:
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: content
-              new_column: relevance_short_review
+              new_column: dqa_relevance_short_review
               threshold: 3
               detect_less_than_threshold: True
               mode: detect
@@ -237,7 +240,7 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: category
-              new_column: validity_invalid_category
+              new_column: dqa_validity_invalid_category
               mode: detect
               valid_categories:
                 - 'Book'
@@ -258,7 +261,7 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: rating
-              new_column: validity_invalid_rating
+              new_column: dqa_validity_invalid_rating
               mode: detect
               range_min: 1
               range_max: 5
@@ -266,14 +269,14 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: date
-              new_column: validity_invalid_review_date
+              new_column: dqa_validity_invalid_review_date
               mode: detect
               range_min: 2020
               range_max: 2024
               range_type: year
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
 #                           DATA SEMI-CLEANING STAGE PIPELINE                                      #
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
       semiclean:
         phase: dataprep
         stage: semiclean
@@ -297,61 +300,61 @@ phases:
             params:
               column:
                 - id
-              new_column: uniqueness_duplicate_review_id
+              new_column: dqa_uniqueness_duplicate_review_id
               mode: repair
           - class_name: DetectOrRepairControlCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_ctrl_chars
+              new_column: dqa_validity_contains_ctrl_chars
               mode: repair
           - class_name: DetectOrRepairURLTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_url
+              new_column: dqa_privacy_contains_url
               mode: repair
           - class_name: DetectOrRepairEmailAddressTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_email
+              new_column: dqa_privacy_contains_email
               mode: repair
           - class_name: DetectOrRepairPhoneNumberTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_phone
+              new_column: dqa_privacy_contains_phone
               mode: repair
           - class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: app_name
-              new_column: relevance_contains_non_english_app_name
+              new_column: dqa_relevance_contains_non_english_app_name
               mode: repair
           - class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: content
-              new_column: relevance_contains_non_english_text
+              new_column: dqa_relevance_contains_non_english_text
               mode: repair
           - class_name: DetectOrRepairHTMLCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_html_chars
+              new_column: dqa_validity_contains_html_chars
               mode: repair
           - class_name: DetectOrRepairAccentedCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_accents
+              new_column: dqa_validity_contains_accents
               mode: repair
           - class_name: DetectOrRepairRepeatedCharactersTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_excess_character_repetition
+              new_column: dqa_validity_excess_character_repetition
               min_repetitions: 4
               mode: repair
           - class_name: DetectOrRepairRepeatedSequenceTask
@@ -363,13 +366,13 @@ phases:
               threshold: 3
               theshold_type: count
               unit: character
-              new_column: validity_contains_excess_sequence_repetition
+              new_column: dqa_validity_contains_excess_sequence_repetition
               mode: repair
           - class_name: DetectOrRepairRepeatedWordsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_excess_word_repetition
+              new_column: dqa_validity_excess_word_repetition
               threshold: 1
               threshold_type: count
               min_repetitions: 3
@@ -378,7 +381,7 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_excess_phrase_repetition
+              new_column: dqa_validity_excess_phrase_repetition
               threshold: 1
               threshold_type: count
               min_repetitions: 2
@@ -387,7 +390,7 @@ phases:
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: content
-              new_column: relevance_short_review
+              new_column: dqa_relevance_short_review
               threshold: 4
               detect_less_than_threshold: True
               mode: repair
@@ -397,27 +400,27 @@ phases:
               column: content
               threshold: 4
               max_elongation: 3
-              new_column: validity_contains_elongation
+              new_column: dqa_validity_contains_elongation
               mode: repair
           - class_name: DetectOrRepairExcessiveWhitespaceTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_whitespace
+              new_column: dqa_validity_contains_excess_whitespace
               mode: repair
           - class_name: DetectOrRepairExcessiveSpecialCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_special_chars
+              new_column: dqa_validity_contains_excess_special_chars
               threshold: 0.35
               threshold_type: proportion
               unit: character
               mode: repair
 
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
 #                               Data Quality Verification Stage Pipeline                           #
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
       dqv:
         phase: dataprep
         stage: dqv
@@ -440,61 +443,61 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_url
+              new_column: dqa_privacy_contains_url
               mode: detect
           - class_name: DetectOrRepairEmailAddressTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_email
+              new_column: dqa_privacy_contains_email
               mode: detect
           - class_name: DetectOrRepairPhoneNumberTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: privacy_contains_phone
+              new_column: dqa_privacy_contains_phone
               mode: detect
           - class_name: DetectOrRepairControlCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_ctrl_chars
+              new_column: dqa_validity_contains_ctrl_chars
               mode: detect
           - class_name: DetectOrRepairAccentedCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_accents
+              new_column: dqa_validity_contains_accents
               mode: detect
           - class_name: DetectOrRepairHTMLCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_html_chars
+              new_column: dqa_validity_contains_html_chars
               mode: detect
           - class_name: DetectOrRepairExcessiveWhitespaceTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_whitespace
+              new_column: dqa_validity_contains_excess_whitespace
               mode: detect
           - class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: app_name
-              new_column: relevance_contains_non_english_app_name
+              new_column: dqa_relevance_contains_non_english_app_name
               mode: detect
           - class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: content
-              new_column: relevance_contains_non_english_text
+              new_column: dqa_relevance_contains_non_english_text
               mode: detect
           - class_name: DetectOrRepairExcessiveSpecialCharsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_special_chars
+              new_column: dqa_validity_contains_excess_special_chars
               threshold: 0.35
               threshold_type: proportion
               unit: character
@@ -513,14 +516,14 @@ phases:
                 - vote_sum
                 - vote_count
                 - date
-              new_column: uniqueness_duplicate_row
+              new_column: dqa_uniqueness_duplicate_row
               mode: detect
           - class_name: DetectOrRepairUniquenessTask
             module: discover.flow.task.dataprep.clean.unique
             params:
               column:
                 - id
-              new_column: uniqueness_duplicate_review_id
+              new_column: dqa_uniqueness_duplicate_review_id
               mode: detect
           - class_name: DetectOrRepairUniquenessTask
             module: discover.flow.task.dataprep.clean.unique
@@ -529,7 +532,7 @@ phases:
                 - app_id
                 - author
                 - content
-              new_column: uniqueness_duplicate_review
+              new_column: dqa_uniqueness_duplicate_review
               mode: detect
           - class_name: DetectOrRepairElongationTask
             module: discover.flow.task.dataprep.clean.validity
@@ -537,7 +540,7 @@ phases:
               column: content
               threshold: 4
               max_elongation: 3
-              new_column: validity_contains_elongation
+              new_column: dqa_validity_contains_elongation
               mode: detect
           - class_name: DetectOrRepairRepeatedSequenceTask
             module: discover.flow.task.dataprep.clean.validity
@@ -548,20 +551,20 @@ phases:
               threshold: 3
               theshold_type: count
               unit: character
-              new_column: validity_contains_excess_sequence_repetition
+              new_column: dqa_validity_contains_excess_sequence_repetition
               mode: detect
           - class_name: DetectOrRepairRepeatedCharactersTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_character_repetition
+              new_column: dqa_validity_contains_excess_character_repetition
               min_repetitions: 4
               mode: detect
           - class_name: DetectOrRepairRepeatedWordsTask
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_word_repetition
+              new_column: dqa_validity_contains_excess_word_repetition
               threshold: 1
               threshold_type: count
               min_repetitions: 3
@@ -570,7 +573,7 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: content
-              new_column: validity_contains_excess_phrase_repetition
+              new_column: dqa_validity_contains_excess_phrase_repetition
               threshold: 1
               threshold_type: count
               min_repetitions: 2
@@ -579,7 +582,7 @@ phases:
             module: discover.flow.task.dataprep.clean.relevance
             params:
               column: content
-              new_column: relevance_short_review
+              new_column: dqa_relevance_short_review
               threshold: 4
               detect_less_than_threshold: True
               mode: detect
@@ -587,7 +590,7 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: category
-              new_column: validity_invalid_category
+              new_column: dqa_validity_invalid_category
               mode: detect
               valid_categories:
                 - 'Book'
@@ -608,7 +611,7 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: rating
-              new_column: validity_invalid_rating
+              new_column: dqa_validity_invalid_rating
               mode: detect
               range_min: 1
               range_max: 5
@@ -616,14 +619,14 @@ phases:
             module: discover.flow.task.dataprep.clean.validity
             params:
               column: date
-              new_column: validity_invalid_review_date
+              new_column: dqa_validity_invalid_review_date
               mode: detect
               range_min: 2020
               range_max: 2024
               range_type: year
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
 #                                 Data Cleaning Stage Pipeline                                     #
-# ================================================================================================ #
+# ------------------------------------------------------------------------------------------------ #
       clean:
         phase: dataprep
         stage: clean
@@ -647,24 +650,52 @@ phases:
             params:
               columns: []
               prefix:
-                - dp_
+                - dqa_
 # ================================================================================================ #
-#                                 Data Enrichment Stage Pipeline                                   #
+#                                 Data Enrichment Phase                                            #
 # ================================================================================================ #
-      enrich_review:
-        phase: dataprep
-        stage: enrich_review
+  enrichment:
+    stages:
+      sentiment:
+        phase: enrichment
+        stage: sentiment
         source_config:
           asset_type: dataset
           phase: dataprep
           stage: clean
           name: review
+          dataframe_structure: pandas
+          file_format: parquet
+        destination_config:
+          asset_type: dataset
+          phase: enrichment
+          stage: sentiment
+          name: review
+          dataframe_structure: pandas
+          file_format: parquet
+        tasks:
+          - class_name: SentimentClassificationTask
+            module: discover.flow.task.model.sentiment
+            params:
+              column: content
+              new_column: en_sentiment
+              model_name: tabularisai/robust-sentiment-analysis
+              cache_filepath: models/sentiment/inference/sentiments_prod.csv
+              device_local: False
+      quantitative:
+        phase: enrichment
+        stage: quantitative
+        source_config:
+          asset_type: dataset
+          phase: enrichment
+          stage: sentiment
+          name: review
           dataframe_structure: sparknlp
           file_format: parquet
         destination_config:
           asset_type: dataset
-          phase: dataprep
-          stage: enrich_review
+          phase: enrichment
+          stage: quantitative
           name: review
           dataframe_structure: sparknlp
           file_format: parquet
@@ -686,56 +717,57 @@ phases:
             module: discover.flow.task.enrich.review
             params:
               column: content
-              new_column: review_length
+              new_column: en_review_length
           - class_name: ComputeReviewAgeTask
             module: discover.flow.task.enrich.review
             params:
               column: date
-              new_column: review_age
+              new_column: en_review_age
           - class_name: ComputeReviewMonthTask
             module: discover.flow.task.enrich.review
             params:
               column: date
-              new_column: review_month
+              new_column: en_review_month
           - class_name: ComputeReviewDayofWeekTask
             module: discover.flow.task.enrich.review
             params:
               column: date
-              new_column: review_day_of_week
+              new_column: en_review_day_of_week
           - class_name: ComputeReviewHourTask
             module: discover.flow.task.enrich.review
             params:
               column: date
-              new_column: review_hour
+              new_column: en_review_hour
           - class_name: ComputePercentDeviationTask
             module: discover.flow.task.enrich.review
             params:
               by: category
               column: rating
+              new_column: en_rating_pct_deviation
           - class_name: ComputePercentDeviationTask
             module: discover.flow.task.enrich.review
             params:
               by: category
-              column: en_review_length
+              column: en_review_length_pct_deviation
           - class_name: ComputePercentDeviationTask
             module: discover.flow.task.enrich.review
             params:
               by: category
               column: en_review_age
-      enrich_app:
-        phase: dataprep
-        stage: enrich_app
+      app:
+        phase: enrichment
+        stage: app
         source_config:
           asset_type: dataset
-          phase: dataprep
-          stage: enrich_review
+          phase: enrichment
+          stage: quantitative
           name: review
           dataframe_structure: spark
           file_format: parquet
         destination_config:
           asset_type: dataset
-          phase: dataprep
-          stage: enrich_app
+          phase: enrichment
+          stage: app
           name: app
           dataframe_structure: spark
           file_format: parquet
@@ -743,20 +775,20 @@ phases:
           - class_name: AppAggregationTask
             module: discover.flow.task.enrich.app
             params: {}
-      enrich_category:
-        phase: dataprep
-        stage: enrich_category
+      category:
+        phase: enrichment
+        stage: category
         source_config:
           asset_type: dataset
-          phase: dataprep
-          stage: enrich_review
+          phase: enrichment
+          stage: quantitative
           name: review
           dataframe_structure: spark
           file_format: parquet
         destination_config:
           asset_type: dataset
-          phase: dataprep
-          stage: enrich_category
+          phase: enrichment
+          stage: category
           name: category
           dataframe_structure: spark
           file_format: parquet
@@ -764,3 +796,4 @@ phases:
           - class_name: CategoryAggregationTask
             module: discover.flow.task.enrich.category
             params: {}
+

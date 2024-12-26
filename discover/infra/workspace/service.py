@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 11:31:34 am                                               #
-# Modified   : Wednesday December 25th 2024 12:14:32 am                                            #
+# Modified   : Wednesday December 25th 2024 07:00:19 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@ import os
 
 from discover.asset.base import Asset
 from discover.core.asset import AssetType
-from discover.core.flow import PhaseDef, StageDef
+from discover.core.flow import PhaseEnum, StageEnum
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
 from discover.infra.persist.repo.model import ModelRepo
@@ -66,12 +66,12 @@ class WorkspaceService:
     def get_asset_id(
         self,
         asset_type: AssetType,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: StageEnum,
         name: str,
         **kwargs,
     ) -> str:
-        return f"{asset_type.value}-{phase.value}-{stage.value}-{name}"
+        return f"{asset_type.value}-{phase.directory}-{stage.directory}-{name}"
 
     def set_asset_id(self, asset: Asset) -> Asset:
         asset_id = self.get_asset_id(

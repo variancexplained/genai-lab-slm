@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 01:36:41 am                                              #
-# Modified   : Monday December 23rd 2024 12:03:20 pm                                               #
+# Modified   : Wednesday December 25th 2024 06:51:34 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 
 from discover.asset.idgen.base import AssetIDGen
-from discover.core.flow import PhaseDef, StageDef
+from discover.core.flow import DataPrepStageEnum
 from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
@@ -37,8 +37,8 @@ class DatasetIDGen(AssetIDGen):
 
     @staticmethod
     def generate_asset_id(
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
     ) -> str:
         """Generates a dataset asset ID for the data preparation phase.

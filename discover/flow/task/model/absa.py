@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Thursday December 19th 2024 01:40:46 pm                                             #
+# Modified   : Wednesday December 25th 2024 01:35:33 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,7 +36,7 @@ tqdm.pandas()
 
 
 # ------------------------------------------------------------------------------------------------ #
-class SentimentAnalysisTask(Task):
+class SentimentClassificationTask(Task):
     """
     Task for performing sentiment analysis on text data in a specified column of a Pandas DataFrame.
 
@@ -77,7 +77,7 @@ class SentimentAnalysisTask(Task):
     ):
         super().__init__(**kwargs)
         self._column = column
-        self._new_column = f"{self.stage.id}_{new_column}"
+        self._new_column = new_column
         self._model_name = model_name
         self._cache_filepath = cache_filepath
         self._device_local = device_local

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 10:41:20 pm                                               #
-# Modified   : Tuesday December 24th 2024 07:36:37 am                                              #
+# Modified   : Wednesday December 25th 2024 06:55:14 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import pytest
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DataFrameStructure, DatasetFactory, FileFormat
-from discover.core.flow import PhaseDef, StageDef
+from discover.core.flow import DataPrepStageEnum
 from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
@@ -79,8 +79,8 @@ class TestPandasDataset:  # pragma: no cover
         factory = DatasetFactory()
         dataset = factory.from_parquet_file(
             filepath=FP,
-            phase=PhaseDef.DATAPREP,
-            stage=StageDef.CLEAN,
+            phase=PhaseEnum.DATAPREP,
+            stage=DataPrepStageEnum.CLEAN,
             name="test_from_parquet_to_pandas",
             dataframe_structure=DataFrameStructure.PANDAS,
         )
@@ -91,8 +91,8 @@ class TestPandasDataset:  # pragma: no cover
             dataset.filepath
             == "workspace/test/files/dataset-dataprep-clean-test_from_parquet_to_pandas.parquet"
         )
-        assert dataset.phase == PhaseDef.DATAPREP
-        assert dataset.stage == StageDef.CLEAN
+        assert dataset.phase == PhaseEnum.DATAPREP
+        assert dataset.stage == DataPrepStageEnum.CLEAN
         assert isinstance(dataset.to_pandas(), pd.DataFrame)
         assert isinstance(dataset.to_spark(), DataFrame)
         assert isinstance(dataset.to_sparknlp(), DataFrame)
@@ -126,8 +126,8 @@ class TestPandasDataset:  # pragma: no cover
         factory = DatasetFactory()
         dataset = factory.from_csv_file(
             filepath=FP,
-            phase=PhaseDef.DATAPREP,
-            stage=StageDef.CLEAN,
+            phase=PhaseEnum.DATAPREP,
+            stage=DataPrepStageEnum.CLEAN,
             name="test_from_csv_to_pandas",
             dataframe_structure=DataFrameStructure.PANDAS,
         )
@@ -138,8 +138,8 @@ class TestPandasDataset:  # pragma: no cover
             dataset.filepath
             == "workspace/test/files/dataset-dataprep-clean-test_from_csv_to_pandas.csv"
         )
-        assert dataset.phase == PhaseDef.DATAPREP
-        assert dataset.stage == StageDef.CLEAN
+        assert dataset.phase == PhaseEnum.DATAPREP
+        assert dataset.stage == DataPrepStageEnum.CLEAN
         assert isinstance(dataset.to_pandas(), pd.DataFrame)
         assert isinstance(dataset.to_spark(), DataFrame)
         assert isinstance(dataset.to_sparknlp(), DataFrame)
@@ -174,8 +174,8 @@ class TestPandasDataset:  # pragma: no cover
         factory = DatasetFactory()
         dataset = factory.from_pandas_dataframe(
             data=df,
-            phase=PhaseDef.DATAPREP,
-            stage=StageDef.CLEAN,
+            phase=PhaseEnum.DATAPREP,
+            stage=DataPrepStageEnum.CLEAN,
             name="test_from_pandas_to_parquet",
             file_format=FileFormat.PARQUET,
         )
@@ -186,8 +186,8 @@ class TestPandasDataset:  # pragma: no cover
             dataset.filepath
             == "workspace/test/files/dataset-dataprep-clean-test_from_pandas_to_parquet.parquet"
         )
-        assert dataset.phase == PhaseDef.DATAPREP
-        assert dataset.stage == StageDef.CLEAN
+        assert dataset.phase == PhaseEnum.DATAPREP
+        assert dataset.stage == DataPrepStageEnum.CLEAN
         assert isinstance(dataset.to_pandas(), pd.DataFrame)
         assert isinstance(dataset.to_spark(), DataFrame)
         assert isinstance(dataset.to_sparknlp(), DataFrame)
@@ -222,8 +222,8 @@ class TestPandasDataset:  # pragma: no cover
         factory = DatasetFactory()
         dataset = factory.from_pandas_dataframe(
             data=df,
-            phase=PhaseDef.DATAPREP,
-            stage=StageDef.CLEAN,
+            phase=PhaseEnum.DATAPREP,
+            stage=DataPrepStageEnum.CLEAN,
             name="test_from_pandas_to_csv",
             file_format=FileFormat.CSV,
         )
@@ -234,8 +234,8 @@ class TestPandasDataset:  # pragma: no cover
             dataset.filepath
             == "workspace/test/files/dataset-dataprep-clean-test_from_pandas_to_csv.csv"
         )
-        assert dataset.phase == PhaseDef.DATAPREP
-        assert dataset.stage == StageDef.CLEAN
+        assert dataset.phase == PhaseEnum.DATAPREP
+        assert dataset.stage == DataPrepStageEnum.CLEAN
         assert isinstance(dataset.to_pandas(), pd.DataFrame)
         assert isinstance(dataset.to_spark(), DataFrame)
         assert isinstance(dataset.to_sparknlp(), DataFrame)

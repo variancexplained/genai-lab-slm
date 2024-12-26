@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Monday December 23rd 2024 04:20:29 pm                                               #
+# Modified   : Wednesday December 25th 2024 06:50:39 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,27 +25,27 @@ from typing import Optional, Union
 
 from discover.core.data_structure import DataClass
 from discover.core.flow import (
-    EDAStageDef,
-    ModelingStageDef,
-    OpportunityStageDef,
-    PhaseDef,
-    SentimentStageDef,
-    StageDef,
+    DataPrepStageEnum,
+    EDADataPrepStageEnum,
+    ModelingDataPrepStageEnum,
+    OpportunityDataPrepStageEnum,
+    Phase,
+    SentimentDataPrepStageEnum,
 )
 
 
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class Profile(DataClass):
-    phase: PhaseDef  # PhaseDef i.e. DataPrep, Analysis
+    phase: Phase  # Phase i.e. DataPrep, Analysis
     stage: Union[
-        StageDef,
-        PhaseDef,
-        EDAStageDef,
-        ModelingStageDef,
-        SentimentStageDef,
-        OpportunityStageDef,
-    ]  # Stage within PhaseDef, i.e. DQA
+        DataPrepStageEnum,
+        Phase,
+        EDADataPrepStageEnum,
+        ModelingDataPrepStageEnum,
+        SentimentDataPrepStageEnum,
+        OpportunityDataPrepStageEnum,
+    ]  # Stage within Phase, i.e. DQA
     task: str  # Class name for the task to which the context applies.
     start_time: datetime  # Task start time
     end_time: datetime  # Task end time

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Wednesday December 25th 2024 01:46:26 am                                            #
+# Modified   : Wednesday December 25th 2024 07:44:43 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,9 @@ import sys
 
 from dependency_injector.wiring import Provide, inject
 
-from discover.asset.dataset import DatasetFactory, deserialize_dataset_config
+from discover.asset.dataset import DatasetFactory
 from discover.container import DiscoverContainer
+from discover.flow.stage.base import deserialize_dataset_config
 from discover.infra.config.app import AppConfigReader
 from discover.infra.workspace.service import WorkspaceService
 

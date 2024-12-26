@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Wednesday December 25th 2024 04:10:37 am                                            #
+# Modified   : Wednesday December 25th 2024 07:43:45 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,7 +31,7 @@ from discover.asset.base import Asset
 from discover.container import DiscoverContainer
 from discover.core.asset import AssetType
 from discover.core.file import FileFormat
-from discover.core.flow import PhaseDef, StageDef
+from discover.core.flow import DataPrepStageEnum, PhaseEnum
 from discover.infra.exception.file import FileIOException
 from discover.infra.persist.dataframe.base import DataFrameReader, DataFrameWriter
 from discover.infra.persist.dataframe.pandas import (
@@ -143,35 +143,6 @@ class DataFrameStructure(Enum):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                     DATASET CONFIG                                               #
-# ------------------------------------------------------------------------------------------------ #
-def deserialize_dataset_config(config: dict) -> dict:
-    """Deserializes dataset configuration values into their respective enum objects.
-
-    Args:
-        config (dict): The dataset configuration dictionary.
-
-    Returns:
-        dict: The deserialized configuration dictionary.
-    """
-    try:
-        config["asset_type"] = AssetType.from_value(config.get("asset_type", "dataset"))
-        config["phase"] = PhaseDef.from_value(config.get("phase", "dataprep"))
-        config["stage"] = StageDef.from_value(config["stage"])
-        config["dataframe_structure"] = DataFrameStructure.from_value(
-            config["dataframe_structure"]
-        )
-        config["file_format"] = FileFormat.from_value(config["file_format"])
-        return config
-    except KeyError as e:
-        msg = f"Malformed dataset configuration.\n{config}\n{e}"
-        raise ValueError(msg)
-    except ValueError as e:
-        msg = f"Unable to deserialize the dataset configuration.\n{config}\n{e}"
-        raise ValueError(msg)
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                        DATASET                                                   #
 # ------------------------------------------------------------------------------------------------ #
 class Dataset(Asset):
@@ -180,8 +151,8 @@ class Dataset(Asset):
 
     def __init__(
         self,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         fal_config: dict,
         description: Optional[str] = None,
@@ -461,8 +432,8 @@ class DatasetFactory:
     def from_parquet_file(
         self,
         filepath: str,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructure] = None,
@@ -487,8 +458,8 @@ class DatasetFactory:
     def from_csv_file(
         self,
         filepath: str,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructure] = None,
@@ -510,8 +481,8 @@ class DatasetFactory:
     def _from_file(
         self,
         filepath: str,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructure] = None,
@@ -545,8 +516,8 @@ class DatasetFactory:
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def from_pandas_dataframe(
         self,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         data: pd.DataFrame,
         description: Optional[str] = None,
@@ -572,8 +543,8 @@ class DatasetFactory:
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def from_spark_dataframe(
         self,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         data: DataFrame,
         description: Optional[str] = None,
@@ -599,8 +570,8 @@ class DatasetFactory:
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def from_sparknlp_dataframe(
         self,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         data: DataFrame,
         description: Optional[str] = None,
@@ -624,8 +595,8 @@ class DatasetFactory:
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def from_df(
         self,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         name: str,
         data: Union[pd.DataFrame, DataFrame],
         dataframe_structure: DataFrameStructure,

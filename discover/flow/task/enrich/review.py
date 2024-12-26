@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:47:02 pm                                             #
-# Modified   : Wednesday December 25th 2024 06:55:59 am                                            #
+# Modified   : Wednesday December 25th 2024 01:20:49 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -309,8 +309,9 @@ class ComputePercentDeviationTask(EnrichmentTask):
         by (str): The level by which the average is computed for the deviation calculation.
     """
 
-    def __init__(self, column: str, by: str = "category", **kwargs) -> None:
-        new_column = f"{column}_deviation_from_average"
+    def __init__(
+        self, column: str, new_column: str, by: str = "category", **kwargs
+    ) -> None:
         super().__init__(column=column, new_column=new_column, **kwargs)
         self._by = by
 

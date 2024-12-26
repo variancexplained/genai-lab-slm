@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 22nd 2024 12:15:07 am                                               #
-# Modified   : Wednesday December 25th 2024 02:35:49 am                                            #
+# Modified   : Wednesday December 25th 2024 07:34:18 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Stage Module"""
-from discover.core.flow import PhaseDef, StageDef
-from discover.flow.stage.data_prep.base import DataPrepStage
+from discover.core.flow import DataPrepStageEnum, PhaseEnum
+from discover.flow.stage.base import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -26,13 +26,13 @@ class DataQualityStage(DataPrepStage):
     """
     Stage for cleaning data in the data preparation pipeline.
 
-    This class inherits from `DataPrepStage` and focuses on data cleaning tasks
+    This class inherits from `DataPrepStageEnum` and focuses on data cleaning tasks
     to ensure data quality and consistency before further processing. It sets up
     the configuration and execution logic needed for data cleaning.
 
     Args:
-        phase (PhaseDef): The phase of the data pipeline.
-        stage (StageDef): The specific stage within the data pipeline.
+        phase (PhaseEnum): The phase of the data pipeline.
+        stage (DataPrepStageEnum): The specific stage within the data pipeline.
         source_config (dict): Configuration for the data source.
         destination_config (dict): Configuration for the data destination.
         force (bool, optional): Whether to force execution, even if the output already
@@ -42,8 +42,8 @@ class DataQualityStage(DataPrepStage):
 
     def __init__(
         self,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         source_config: dict,
         destination_config: dict,
         force: bool = False,

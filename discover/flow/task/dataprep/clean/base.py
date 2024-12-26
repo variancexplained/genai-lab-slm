@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:27:43 am                                             #
-# Modified   : Wednesday December 25th 2024 02:31:51 am                                            #
+# Modified   : Wednesday December 25th 2024 12:12:06 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -67,7 +67,7 @@ class AnomalyDetectRepairTask(Task):
         super().__init__(phase=kwargs["phase"], stage=kwargs["stage"])
         self._column = column
         self._mode = mode
-        self._new_column = f"{self.stage.id}_{new_column}"
+        self._new_column = new_column
         self._detect_strategy = detect_strategy
         self._repair_strategy = repair_strategy
         self._strategy_factory = strategy_factory_cls()

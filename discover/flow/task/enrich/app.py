@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 8th 2024 12:06:29 am                                                #
-# Modified   : Wednesday December 25th 2024 07:04:26 am                                            #
+# Modified   : Wednesday December 25th 2024 02:31:23 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -102,12 +102,18 @@ class AppAggregationTask(EnrichmentTask):
             F.count("*").alias("review_count"),
             F.approx_count_distinct("author").alias("author_count"),
             F.avg("rating").alias("average_rating"),
-            F.avg("en_review_length").alias("average_review_length"),
-            F.avg("en_review_age").alias("average_review_age"),
-            F.sum("vote_sum").alias("total_vote_sum"),
-            F.sum("vote_count").alias("total_vote_count"),
+            F.median("en_review_length").alias("review_length_median"),
+            F.stddev("en_review_length").alias("review_length_std"),
+            F.median("en_review_age").alias("review_age_median"),
+            F.stddev("en_review_age").alias("review_age_std"),
+            F.sum("vote_sum").alias("vote_sum_total"),
+            F.median("vote_sum").alias("vote_sum_median"),
+            F.stddev("vote_sum").alias("vote_sum_std"),
+            F.count("vote_count").alias("vote_count_total"),
+            F.median("vote_count").alias("vote_count_median"),
+            F.stddev("vote_count").alias("vote_count_std"),
             F.min("date").alias("first_review_date"),
-            F.avg(F.unix_timestamp("date")).alias("avg_review_date"),
+            F.median(F.unix_timestamp("date")).alias("review_date_median"),
             F.max("date").alias("last_review_date"),
             F.first(F.when(F.col("rank_vote_sum") == 1, F.col("content"))).alias(
                 "review_highest_vote_sum"

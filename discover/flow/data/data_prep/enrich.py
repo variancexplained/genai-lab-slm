@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 22nd 2024 12:15:07 am                                               #
-# Modified   : Thursday December 19th 2024 01:40:48 pm                                             #
+# Modified   : Wednesday December 25th 2024 07:33:03 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Enrichment Stage Module"""
-from discover.core.flow import PhaseDef, StageDef
-from discover.flow.stage.data_prep.base import DataPrepStage
+from discover.core.flow import DataEnrichmentStageEnum, PhaseEnum
+from discover.flow.stage.base import DataPrepStage
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -28,8 +28,8 @@ class DataEnrichmentStage(DataPrepStage):
     new features or transformations to enhance downstream analysis.
 
     Args:
-        phase (PhaseDef): The phase of the pipeline to which this stage belongs.
-        stage (StageDef): The specific stage identifier within the phase.
+        phase (PhaseEnum): The phase of the pipeline to which this stage belongs.
+        stage (DataPrepStageEnum): The specific stage identifier within the phase.
         source_config (dict): Configuration for the source dataset, including input paths and schema details.
         destination_config (dict): Configuration for the destination dataset, specifying where enriched data will be saved.
         force (bool, optional): If True, forces the stage to re-run even if outputs already exist. Defaults to False.
@@ -39,8 +39,8 @@ class DataEnrichmentStage(DataPrepStage):
 
     def __init__(
         self,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataEnrichmentStageEnum,
         source_config: dict,
         destination_config: dict,
         force: bool = False,

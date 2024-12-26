@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 04:49:44 pm                                             #
-# Modified   : Tuesday November 26th 2024 03:39:42 pm                                              #
+# Modified   : Wednesday December 25th 2024 06:52:28 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import Any
 
-from discover.core.flow import PhaseDef, StageDef
+from discover.core.flow import DataPrepStageEnum
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -37,8 +37,8 @@ class Task(ABC):
     `name` property based on the class name.
 
     Args:
-        phase (PhaseDef): The phase of the data pipeline.
-        stage (StageDef): The specific stage within the data pipeline.
+        phase (PhaseEnum): The phase of the data pipeline.
+        stage (DataPrepStageEnum): The specific stage within the data pipeline.
 
     Methods:
     --------
@@ -51,7 +51,7 @@ class Task(ABC):
         and outputs.
     """
 
-    def __init__(self, phase: PhaseDef, stage: StageDef):
+    def __init__(self, phase: PhaseEnum, stage: DataPrepStageEnum):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._phase = phase
         self._stage = stage
@@ -69,12 +69,12 @@ class Task(ABC):
         return self.__class__.__name__
 
     @property
-    def phase(self) -> PhaseDef:
+    def phase(self) -> PhaseEnum:
         """Returns the phase of the pipeline."""
         return self._phase
 
     @property
-    def stage(self) -> StageDef:
+    def stage(self) -> DataPrepStageEnum:
         """Returns the specific stage within the pipeline."""
         return self._stage
 
@@ -147,7 +147,7 @@ class TaskBuilder:
     """
 
     @staticmethod
-    def build(phase: PhaseDef, stage: StageDef, task_config: dict):
+    def build(phase: PhaseEnum, stage: DataPrepStageEnum, task_config: dict):
         """
         Constructs a task instance based on the given configuration.
 

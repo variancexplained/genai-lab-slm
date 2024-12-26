@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Wednesday December 25th 2024 12:55:07 am                                            #
+# Modified   : Wednesday December 25th 2024 06:55:14 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from typing import Any, Dict, Optional, Union
 
 from discover.core.asset import AssetType
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
-from discover.core.flow import PhaseDef, StageDef
+from discover.core.flow import DataPrepStageEnum
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -39,8 +39,8 @@ class Asset(ABC):
         self,
         asset_type,
         name: str,
-        phase: PhaseDef,
-        stage: StageDef,
+        phase: PhaseEnum,
+        stage: DataPrepStageEnum,
         description: Optional[str] = None,
         **kwargs,
     ) -> None:
@@ -170,22 +170,22 @@ class Asset(ABC):
         return self._description
 
     @property
-    def phase(self) -> PhaseDef:
+    def phase(self) -> PhaseEnum:
         """
         Returns the phase for which the asset was created.
 
         Returns:
-            PhaseDef: Phase.
+            PhaseEnum: PhaseEnum.
         """
         return self._phase
 
     @property
-    def stage(self) -> StageDef:
+    def stage(self) -> DataPrepStageEnum:
         """
         Returns the stage for which the asset was created.
 
         Returns:
-            StageDef: Stage.
+            DataPrepStageEnum: Stage.
         """
         return self._stage
 

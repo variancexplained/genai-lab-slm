@@ -4,27 +4,27 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/stage/data_prep/base.py                                              #
+# Filename   : /discover/flow/stage/enrich/sentiment.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday November 22nd 2024 12:15:07 am                                               #
-# Modified   : Wednesday December 25th 2024 08:49:56 pm                                            #
+# Created    : Wednesday December 25th 2024 06:17:19 pm                                            #
+# Modified   : Wednesday December 25th 2024 06:57:25 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Data Enrichment Stage Module"""
-from discover.core.flow import DataPrepStageEnum, PhaseEnum
-from discover.flow.stage.base import Stage
+"""Sentiment Classification Stage Module"""
+from discover.core.flow import DataEnrichmentStageEnum, PhaseEnum
+from discover.flow.stage.enrich.base import DataEnrichmentStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataPrepStage(Stage):
+class SentimentClassificationStage(DataEnrichmentStage):
     """
-    Base class for data prep stages.
+    The sentiment classification stage in the data enrichment phase.
 
     Args:
         phase (PhaseEnum): The phase of the pipeline to which this stage belongs.
@@ -38,7 +38,7 @@ class DataPrepStage(Stage):
     def __init__(
         self,
         phase: PhaseEnum,
-        stage: DataPrepStageEnum,
+        stage: DataEnrichmentStageEnum,
         source_config: dict,
         destination_config: dict,
         force: bool = False,
