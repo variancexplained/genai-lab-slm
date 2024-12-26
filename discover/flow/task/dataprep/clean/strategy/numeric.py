@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 02:58:58 pm                                             #
-# Modified   : Wednesday December 25th 2024 02:31:51 am                                            #
+# Modified   : Thursday December 26th 2024 01:45:32 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Optional, Type, Union
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.asset.dataset import DataFrameStructure
+from discover.core.data_structure import DataFrameStructureEnum
 from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
@@ -103,7 +103,7 @@ class NumericDetectStrategy(DetectStrategy):
         self._detect_less_than_threshold = detect_less_than_threshold
 
     @abstractmethod
-    def detect(self, data: DataFrameStructure) -> DataFrameStructure:
+    def detect(self, data: DataFrameStructureEnum) -> DataFrameStructureEnum:
         """
         Detects anomalies in the provided data.
 
@@ -139,7 +139,7 @@ class NumericRepairStrategy(RepairStrategy):
         self._detect_less_than_threshold = detect_less_than_threshold
 
     @abstractmethod
-    def repair(self, data: DataFrameStructure) -> DataFrameStructure:
+    def repair(self, data: DataFrameStructureEnum) -> DataFrameStructureEnum:
         """
         Detects anomalies in the provided data.
 

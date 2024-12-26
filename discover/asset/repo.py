@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/workspace/repo.py                                                   #
+# Filename   : /discover/asset/repo.py                                                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Monday December 23rd 2024 12:05:37 pm                                               #
+# Modified   : Thursday December 26th 2024 05:48:14 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,8 +19,6 @@
 """Repository Interface Module"""
 from abc import ABC, abstractmethod
 from typing import Any, Dict
-
-import pandas as pd
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -135,25 +133,11 @@ class Repo(ABC):
         pass
 
     @abstractmethod
-    def list(self, *args: Any, **kwargs: Dict[str, Any]) -> pd.DataFrame:
-        """
-        Lists the items in the repository.
-
-        Parameters:
-        -----------
-        *args : Any
-            Positional arguments specifying the criteria for checking data existence.
-        **kwargs : Dict[str, Any]
-            Keyword arguments specifying additional criteria for the check.
+    def get_all(self, *args: Any, **kwargs: Dict[str, Any]) -> dict:
+        """Retrieves all assets in the repository.
 
         Returns:
-        --------
-        pd.DataFrame:
-            DataFrame containing a list of items in the repository.
-
-        Raises:
-        -------
-        NotImplementedError
-            If the method is not implemented by a subclass.
+            Dict[str, Asset]: A dictionary of all assets, where keys are asset IDs
+            and values are Asset objects.
         """
         pass

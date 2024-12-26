@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:27:43 am                                             #
-# Modified   : Wednesday December 25th 2024 12:12:06 pm                                            #
+# Modified   : Thursday December 26th 2024 01:45:31 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 """Data Prep Cleaning Task Base Module"""
 from typing import Literal, Type, Union
 
-from discover.asset.dataset import DataFrameStructure
+from discover.core.data_structure import DataFrameStructureEnum
 from discover.flow.task.base import Task
 from discover.flow.task.dataprep.clean.strategy.categorical import (
     CategoricalStrategyFactory,
@@ -78,30 +78,30 @@ class AnomalyDetectRepairTask(Task):
         self._kwargs = kwargs
 
     @task_logger
-    def run(self, data: DataFrameStructure) -> DataFrameStructure:
+    def run(self, data: DataFrameStructureEnum) -> DataFrameStructureEnum:
         """
         Executes the specified mode of the anomaly task.
 
         Args:
-            data (DataFrameStructure): The dataset to process.
+            data (DataFrameStructureEnum): The dataset to process.
 
         Returns:
-            DataFrameStructure: The processed dataset after running the specified mode.
+            DataFrameStructureEnum: The processed dataset after running the specified mode.
 
         Raises:
             KeyError: If the mode is not supported or improperly mapped.
         """
         return self._mode_map[self._mode](data=data)
 
-    def detect(self, data: DataFrameStructure) -> DataFrameStructure:
+    def detect(self, data: DataFrameStructureEnum) -> DataFrameStructureEnum:
         """
         Detects anomalies in the dataset.
 
         Args:
-            data (DataFrameStructure): The dataset to analyze for anomalies.
+            data (DataFrameStructureEnum): The dataset to analyze for anomalies.
 
         Returns:
-            DataFrameStructure: The dataset with anomalies flagged in the detection column.
+            DataFrameStructureEnum: The dataset with anomalies flagged in the detection column.
 
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
@@ -114,15 +114,15 @@ class AnomalyDetectRepairTask(Task):
         )
         return strategy.detect(data=data)
 
-    def repair(self, data: DataFrameStructure) -> DataFrameStructure:
+    def repair(self, data: DataFrameStructureEnum) -> DataFrameStructureEnum:
         """
         Repairs anomalies in the dataset.
 
         Args:
-            data (DataFrameStructure): The dataset with detected anomalies to repair.
+            data (DataFrameStructureEnum): The dataset with detected anomalies to repair.
 
         Returns:
-            DataFrameStructure: The dataset with anomalies repaired.
+            DataFrameStructureEnum: The dataset with anomalies repaired.
 
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.

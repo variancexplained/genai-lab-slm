@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 10:41:20 pm                                               #
-# Modified   : Wednesday December 25th 2024 06:55:14 pm                                            #
+# Modified   : Thursday December 26th 2024 05:30:31 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,10 @@ import pandas as pd
 import pytest
 from pyspark.sql import DataFrame
 
-from discover.asset.dataset import DataFrameStructure, DatasetFactory, FileFormat
-from discover.core.flow import DataPrepStageEnum
+from discover.asset.dataset import DatasetFactory
+from discover.core.data_structure import DataFrameStructureEnum
+from discover.core.file import FileFormat
+from discover.core.flow import DataPrepStageEnum, PhaseEnum
 from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
@@ -82,14 +84,17 @@ class TestPandasDataset:  # pragma: no cover
             phase=PhaseEnum.DATAPREP,
             stage=DataPrepStageEnum.CLEAN,
             name="test_from_parquet_to_pandas",
-            dataframe_structure=DataFrameStructure.PANDAS,
+            dataframe_structure=DataFrameStructureEnum.PANDAS,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.PANDAS
+        assert dataset.dataframe_structure == DataFrameStructureEnum.PANDAS
         assert dataset.file_format == FileFormat.PARQUET
-        assert dataset.asset_id == "dataset-dataprep-clean-test_from_parquet_to_pandas"
+        assert (
+            dataset.asset_id
+            == "dataset-00_dataprep-05_clean-test_from_parquet_to_pandas"
+        )
         assert (
             dataset.filepath
-            == "workspace/test/files/dataset-dataprep-clean-test_from_parquet_to_pandas.parquet"
+            == "workspace/test/files/dataset-00_dataprep-05_clean-test_from_parquet_to_pandas.parquet"
         )
         assert dataset.phase == PhaseEnum.DATAPREP
         assert dataset.stage == DataPrepStageEnum.CLEAN
@@ -129,14 +134,16 @@ class TestPandasDataset:  # pragma: no cover
             phase=PhaseEnum.DATAPREP,
             stage=DataPrepStageEnum.CLEAN,
             name="test_from_csv_to_pandas",
-            dataframe_structure=DataFrameStructure.PANDAS,
+            dataframe_structure=DataFrameStructureEnum.PANDAS,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.PANDAS
+        assert dataset.dataframe_structure == DataFrameStructureEnum.PANDAS
         assert dataset.file_format == FileFormat.CSV
-        assert dataset.asset_id == "dataset-dataprep-clean-test_from_csv_to_pandas"
+        assert (
+            dataset.asset_id == "dataset-00_dataprep-05_clean-test_from_csv_to_pandas"
+        )
         assert (
             dataset.filepath
-            == "workspace/test/files/dataset-dataprep-clean-test_from_csv_to_pandas.csv"
+            == "workspace/test/files/dataset-00_dataprep-05_clean-test_from_csv_to_pandas.csv"
         )
         assert dataset.phase == PhaseEnum.DATAPREP
         assert dataset.stage == DataPrepStageEnum.CLEAN
@@ -179,12 +186,15 @@ class TestPandasDataset:  # pragma: no cover
             name="test_from_pandas_to_parquet",
             file_format=FileFormat.PARQUET,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.PANDAS
+        assert dataset.dataframe_structure == DataFrameStructureEnum.PANDAS
         assert dataset.file_format == FileFormat.PARQUET
-        assert dataset.asset_id == "dataset-dataprep-clean-test_from_pandas_to_parquet"
+        assert (
+            dataset.asset_id
+            == "dataset-00_dataprep-05_clean-test_from_pandas_to_parquet"
+        )
         assert (
             dataset.filepath
-            == "workspace/test/files/dataset-dataprep-clean-test_from_pandas_to_parquet.parquet"
+            == "workspace/test/files/dataset-00_dataprep-05_clean-test_from_pandas_to_parquet.parquet"
         )
         assert dataset.phase == PhaseEnum.DATAPREP
         assert dataset.stage == DataPrepStageEnum.CLEAN
@@ -227,12 +237,14 @@ class TestPandasDataset:  # pragma: no cover
             name="test_from_pandas_to_csv",
             file_format=FileFormat.CSV,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.PANDAS
+        assert dataset.dataframe_structure == DataFrameStructureEnum.PANDAS
         assert dataset.file_format == FileFormat.CSV
-        assert dataset.asset_id == "dataset-dataprep-clean-test_from_pandas_to_csv"
+        assert (
+            dataset.asset_id == "dataset-00_dataprep-05_clean-test_from_pandas_to_csv"
+        )
         assert (
             dataset.filepath
-            == "workspace/test/files/dataset-dataprep-clean-test_from_pandas_to_csv.csv"
+            == "workspace/test/files/dataset-00_dataprep-05_clean-test_from_pandas_to_csv.csv"
         )
         assert dataset.phase == PhaseEnum.DATAPREP
         assert dataset.stage == DataPrepStageEnum.CLEAN

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:26:38 pm                                            #
-# Modified   : Wednesday December 25th 2024 11:57:43 pm                                            #
+# Modified   : Thursday December 26th 2024 05:36:12 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,8 @@ from datetime import datetime
 
 import pytest
 
-from discover.asset.dataset import DataFrameStructure, DatasetFactory
+from discover.asset.dataset import DatasetFactory
+from discover.core.data_structure import DataFrameStructureEnum
 from discover.core.file import FileFormat
 from discover.core.flow import DataEnrichmentStageEnum, PhaseEnum
 
@@ -41,6 +42,25 @@ single_line = f"\n{100 * '-'}"
 @pytest.mark.dataset
 class TestDatasetRepo:  # pragma: no cover
     # ============================================================================================ #
+    def test_setup(self, container, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        repo = container.repo.dataset_repo
+        repo.reset()
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
     def test_add(self, container, pandas_df, caplog) -> None:
         start = datetime.now()
         logger.info(
@@ -50,7 +70,7 @@ class TestDatasetRepo:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         phase = PhaseEnum.ENRICHMENT
         stage = DataEnrichmentStageEnum.SENTIMENT
-        dataframe_structure = DataFrameStructure.PANDAS
+        dataframe_structure = DataFrameStructureEnum.PANDAS
         file_format = FileFormat.CSV
         for i in range(5):
             name = f"test_dataset_repo-test_add-{i}"
@@ -60,7 +80,11 @@ class TestDatasetRepo:  # pragma: no cover
                 name=name,
                 data=pandas_df,
                 file_format=file_format,
+                dataframe_structure=dataframe_structure,
             )
+
+        repo = container.repo.dataset_repo
+        assert repo.count == 5
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

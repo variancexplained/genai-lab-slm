@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Wednesday December 25th 2024 09:35:24 pm                                            #
+# Modified   : Thursday December 26th 2024 01:45:31 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,9 +27,9 @@ import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.asset.dataset import DataFrameStructure, Dataset, DatasetFactory
 from discover.container import DiscoverContainer
 from discover.core.asset import AssetType
+from discover.core.data_structure import DataFrameStructureEnum, Dataset, DatasetFactory
 from discover.core.file import FileFormat
 from discover.core.flow import (
     DataEnrichmentStageEnum,
@@ -252,7 +252,7 @@ class Stage(ABC):
             ) from e
 
     def _get_data(
-        self, asset_id: str, dataframe_structure: DataFrameStructure
+        self, asset_id: str, dataframe_structure: DataFrameStructureEnum
     ) -> Union[pd.DataFrame, DataFrame]:
         # Obtain the source dataset and extract the DataFrame in the specified structure.
         dataset = self._workspace_service.dataset_repo.get(asset_id=asset_id)
@@ -341,8 +341,8 @@ class ConfigDeserializer:
             config_deserialized["stage"] = cls.deserialize_stage(
                 phase=config["phase"], stage=config["stage"]
             )
-            config_deserialized["dataframe_structure"] = DataFrameStructure.from_value(
-                value=config["dataframe_structure"]
+            config_deserialized["dataframe_structure"] = (
+                DataFrameStructureEnum.from_value(value=config["dataframe_structure"])
             )
             config_deserialized["file_format"] = FileFormat.from_value(
                 value=config["file_format"]

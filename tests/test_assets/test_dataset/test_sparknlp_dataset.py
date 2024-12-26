@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 10:41:20 pm                                               #
-# Modified   : Wednesday December 25th 2024 06:55:14 pm                                            #
+# Modified   : Thursday December 26th 2024 05:35:19 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,10 @@ import pandas as pd
 import pytest
 from pyspark.sql import DataFrame
 
-from discover.asset.dataset import DataFrameStructure, DatasetFactory, FileFormat
-from discover.core.flow import DataPrepStageEnum
+from discover.asset.dataset import DatasetFactory
+from discover.core.data_structure import DataFrameStructureEnum
+from discover.core.file import FileFormat
+from discover.core.flow import DataPrepStageEnum, PhaseEnum
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -81,9 +83,9 @@ class TestSparkNLPDataset:  # pragma: no cover
             phase=PhaseEnum.DATAPREP,
             stage=DataPrepStageEnum.CLEAN,
             name="test_from_parquet_to_sparknlp",
-            dataframe_structure=DataFrameStructure.SPARKNLP,
+            dataframe_structure=DataFrameStructureEnum.SPARKNLP,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.SPARKNLP
+        assert dataset.dataframe_structure == DataFrameStructureEnum.SPARKNLP
         assert dataset.file_format == FileFormat.PARQUET
         assert (
             dataset.asset_id == "dataset-dataprep-clean-test_from_parquet_to_sparknlp"
@@ -130,9 +132,9 @@ class TestSparkNLPDataset:  # pragma: no cover
             phase=PhaseEnum.DATAPREP,
             stage=DataPrepStageEnum.CLEAN,
             name="test_from_csv_to_sparknlp",
-            dataframe_structure=DataFrameStructure.SPARKNLP,
+            dataframe_structure=DataFrameStructureEnum.SPARKNLP,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.SPARKNLP
+        assert dataset.dataframe_structure == DataFrameStructureEnum.SPARKNLP
         assert dataset.file_format == FileFormat.CSV
         assert dataset.asset_id == "dataset-dataprep-clean-test_from_csv_to_sparknlp"
         assert (
@@ -183,7 +185,7 @@ class TestSparkNLPDataset:  # pragma: no cover
             name="test_from_sparknlp_to_parquet",
             file_format=FileFormat.PARQUET,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.SPARKNLP
+        assert dataset.dataframe_structure == DataFrameStructureEnum.SPARKNLP
         assert dataset.file_format == FileFormat.PARQUET
         assert (
             dataset.asset_id == "dataset-dataprep-clean-test_from_sparknlp_to_parquet"
@@ -236,7 +238,7 @@ class TestSparkNLPDataset:  # pragma: no cover
             name="test_from_sparknlp_to_csv",
             file_format=FileFormat.CSV,
         )
-        assert dataset.dataframe_structure == DataFrameStructure.SPARKNLP
+        assert dataset.dataframe_structure == DataFrameStructureEnum.SPARKNLP
         assert dataset.file_format == FileFormat.CSV
         assert dataset.asset_id == "dataset-dataprep-clean-test_from_sparknlp_to_csv"
         assert (

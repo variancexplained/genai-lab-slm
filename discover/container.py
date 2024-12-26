@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Wednesday December 25th 2024 12:14:10 am                                            #
+# Modified   : Thursday December 26th 2024 06:40:49 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,6 +27,8 @@ from dependency_injector import containers, providers
 
 from discover.core.asset import AssetType
 from discover.infra.config.app import AppConfigReader
+from discover.infra.persist.file.pandas import PandasFAO
+from discover.infra.persist.file.spark import SparkFAO
 from discover.infra.persist.object.dao import ShelveDAO
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
@@ -64,6 +66,7 @@ class SparkContainer(containers.DeclarativeContainer):
 class RepoContainer(containers.DeclarativeContainer):
 
     config = providers.Configuration()
+    spark = providers.DependenciesContainer()
 
     # -------------------------------------------------------------------------------------------- #
     dataset_dao = providers.Singleton(
@@ -72,7 +75,26 @@ class RepoContainer(containers.DeclarativeContainer):
         db_path=config.workspace.assets.datasets,
         asset_type=AssetType.DATASET,
     )
-    dataset_repo = providers.Singleton(DatasetRepo, dao=dataset_dao)
+    pandas_fao = providers.Singleton(
+        PandasFAO,
+        workspace_location=config.workspace.location,
+        directory=config.workspace.files,
+        fao_config=config.fao.pandas,
+    )
+
+    spark_fao = providers.Singleton(
+        SparkFAO,
+        workspace_location=config.workspace.location,
+        directory=config.workspace.files,
+        fao_config=config.fao.spark,
+    )
+
+    dataset_repo = providers.Singleton(
+        DatasetRepo,
+        dao=dataset_dao,
+        pandas_fao=pandas_fao,
+        spark_fao=spark_fao,
+    )
 
     # -------------------------------------------------------------------------------------------- #
     model_dao = providers.Singleton(
@@ -151,7 +173,7 @@ class DiscoverContainer(containers.DeclarativeContainer):
     spark = providers.Container(SparkContainer, config=config)
 
     # Data Access Object Container
-    repo = providers.Container(RepoContainer, config=config)
+    repo = providers.Container(RepoContainer, config=config, spark=spark)
 
     # Workspace container
     workspace = providers.Container(
