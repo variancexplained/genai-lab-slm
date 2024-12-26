@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Thursday December 26th 2024 02:09:16 am                                             #
+# Modified   : Thursday December 26th 2024 08:00:52 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -62,7 +62,7 @@ class ShelveDAO(DAO):
         Returns:
             int: Number of assets in the database.
         """
-        return len(self.read_all)
+        return len(self.read_all())
 
     @property
     def size(self) -> int:
@@ -212,14 +212,14 @@ class ShelveDAO(DAO):
             Info: Logs information if the reset operation is aborted.
         """
         if verified:
-            shutil.rmtree(self._db_path)
+            shutil.rmtree(os.path.dirname(self._db_path))
             self._logger.warning(f"{self.__class__.__name__} has been reset.")
         else:
             proceed = input(
                 f"Resetting the {self.__class__.__name__} object database is irreversible. To proceed, type 'YES'."
             )
             if proceed == "YES":
-                shutil.rmtree(self._db_path)
+                shutil.rmtree(os.path.dirname(self._db_path))
                 self._logger.warning(f"{self.__class__.__name__} has been reset.")
             else:
                 self._logger.info(f"{self.__class__.__name__} reset has been aborted.")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:26:38 pm                                            #
-# Modified   : Thursday December 26th 2024 05:36:12 am                                             #
+# Modified   : Thursday December 26th 2024 07:40:47 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -49,7 +49,7 @@ class TestDatasetRepo:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        repo = container.repo.dataset_repo
+        repo = container.repo.dataset_repo()
         repo.reset()
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -83,7 +83,7 @@ class TestDatasetRepo:  # pragma: no cover
                 dataframe_structure=dataframe_structure,
             )
 
-        repo = container.repo.dataset_repo
+        repo = container.repo.dataset_repo()
         assert repo.count == 5
 
         # ---------------------------------------------------------------------------------------- #

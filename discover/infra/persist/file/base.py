@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
-# Modified   : Thursday December 26th 2024 03:55:03 am                                             #
+# Modified   : Thursday December 26th 2024 07:54:01 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -152,14 +152,17 @@ class FAO(ABC):
         Logs:
             Error: If the filepath is invalid.
         """
-        if os.path.isfile(filepath):
+        try:
             os.remove(filepath)
-        elif os.path.isdir(filepath):
+        except FileNotFoundError:
+            msg = f"File {filepath} not found."
+            self._logger.warning(msg)
+        except OSError:
             shutil.rmtree(filepath)
-        else:
-            msg = f"Invalid filepath: {filepath}. It is neither a file nor a directory."
+        except Exception as e:
+            msg = f"Unexpected exception occurred.\n{e}"
             self._logger.error(msg)
-            raise ValueError(msg)
+            raise Exception(msg)
 
     def reset(self, verified: bool = False) -> None:
         if verified:
