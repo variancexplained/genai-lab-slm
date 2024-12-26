@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Wednesday December 25th 2024 09:22:53 pm                                            #
+# Modified   : Wednesday December 25th 2024 09:35:24 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -91,12 +91,16 @@ class Stage(ABC):
         force: bool = False,
         **kwargs,
     ) -> None:
-        super().__init__(phase=phase, stage=stage, force=force, **kwargs)
-        # Deserialize source and destination dataset config.
-        self._source_config = self._deserialize_dataset_config(source_config)
-        self._destination_config = self._deserialize_dataset_config(destination_config)
+        self._phase = phase
+        self._stage = stage
+        self._force = force
+
+        self._source_config = source_config
+        self._destination_config = destination_config
 
         self._dataset_factory = dataset_factory_cls()
+
+        self._workspace_service = workspace_service
 
         # Obtain asset IDs for the source and destination datasets.
         self._source_asset_id = self._workspace_service.get_asset_id(
@@ -105,6 +109,8 @@ class Stage(ABC):
         self._destination_asset_id = self._workspace_service.get_asset_id(
             **self._destination_config
         )
+
+        self._tasks = []
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -325,7 +331,7 @@ class ConfigDeserializer:
         Raises:
             DatasetConfigurationException: If the configuration is malformed or an error occurs during deserialization.
         """
-        config_deserialized = config
+        config_deserialized = config.copy()
 
         try:
             config_deserialized["asset_type"] = AssetType.from_value(
@@ -367,7 +373,7 @@ class ConfigDeserializer:
         Raises:
             StageConfigurationException: If the stage configuration is malformed or an error occurs during deserialization.
         """
-        stage_config_deserialized = stage_config
+        stage_config_deserialized = stage_config.copy()
 
         try:
             stage_config_deserialized["phase"] = PhaseEnum.from_value(

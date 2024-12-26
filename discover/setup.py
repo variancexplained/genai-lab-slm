@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Wednesday December 25th 2024 07:44:43 pm                                            #
+# Modified   : Wednesday December 25th 2024 09:25:13 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from dependency_injector.wiring import Provide, inject
 
 from discover.asset.dataset import DatasetFactory
 from discover.container import DiscoverContainer
-from discover.flow.stage.base import deserialize_dataset_config
+from discover.flow.stage.base import ConfigDeserializer
 from discover.infra.config.app import AppConfigReader
 from discover.infra.workspace.service import WorkspaceService
 
@@ -39,7 +39,9 @@ def load_data(
     """Loads raw data into the workspace"""
     # Obtain and deserialize the raw dataset configuration
     setup_config = AppConfigReader().get_config("setup", namespace=False)
-    dataset_config = deserialize_dataset_config(setup_config["dataset"])
+    dataset_config = ConfigDeserializer.deserialize_dataset_config(
+        config=setup_config["dataset"]
+    )
 
     # Create dataset if it doesn't already exist.
     asset_id = workspace_service.get_asset_id(**dataset_config)

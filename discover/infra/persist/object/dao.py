@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Tuesday December 24th 2024 12:25:29 am                                              #
+# Modified   : Wednesday December 25th 2024 09:54:01 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@
 import logging
 import os
 import shelve
+import shutil
 from typing import Dict
 
 from discover.asset.base import Asset
@@ -75,7 +76,7 @@ class ShelveDAO(DAO):
 
         try:
             with shelve.open(self._db_path) as db:
-                return {k: v for k, v in db.items()}
+                return dict(db.items())
         except FileNotFoundError as e:
             msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
@@ -114,3 +115,6 @@ class ShelveDAO(DAO):
             msg = f"Unknown exception occurred while deleting {self._asset_type.value} asset_id: {asset_id}."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
+
+    def reset(self) -> None:
+        shutil.rmtree(self._db_path)

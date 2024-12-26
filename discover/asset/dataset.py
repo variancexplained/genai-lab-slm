@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Wednesday December 25th 2024 07:43:45 pm                                            #
+# Modified   : Wednesday December 25th 2024 09:27:52 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -402,8 +402,6 @@ class Dataset(Asset):
         description += f"Dataset {self.name} created "
         if self._source_dataset_asset_id:
             description += f"from {self._source_dataset_asset_id} "
-        if self._created_by:
-            description += f"by {self._created_by} "
         description += f"in the {self._phase.description} - {self._stage.description} "
         description += f"on {self._created.strftime('%Y-%m-%d')} at {self._created.strftime('H:%M:%S')}"
         return description
