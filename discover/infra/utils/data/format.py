@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday June 2nd 2024 09:35:10 pm                                                    #
-# Modified   : Sunday December 15th 2024 02:03:50 pm                                               #
+# Modified   : Wednesday December 25th 2024 11:43:46 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -50,3 +50,24 @@ def is_numeric(x) -> bool:
         return True
     except Exception:
         return False
+
+
+# ------------------------------------------------------------------------------------------------ #
+def format_size(size_in_bytes: int) -> str:
+    """Formats the size in bytes into a human-readable string with appropriate units.
+
+    Args:
+        size_in_bytes (int): The size in bytes.
+
+    Returns:
+        str: The formatted size string (e.g., '1.23 MB').
+    """
+    units = ["B", "KB", "MB", "GB", "TB"]
+    size = float(size_in_bytes)
+    unit_index = 0
+
+    while size >= 1024 and unit_index < len(units) - 1:
+        size /= 1024
+        unit_index += 1
+
+    return f"{size:.2f} {units[unit_index]}"

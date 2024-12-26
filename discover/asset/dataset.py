@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Wednesday December 25th 2024 09:27:52 pm                                            #
+# Modified   : Wednesday December 25th 2024 11:48:36 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -48,6 +48,7 @@ from discover.infra.persist.dataframe.spark import (
 )
 from discover.infra.service.spark.pool import SparkSessionPool
 from discover.infra.utils.file.copy import Copy
+from discover.infra.utils.file.stats import FileStats
 from discover.infra.workspace.service import WorkspaceService
 
 
@@ -184,6 +185,8 @@ class Dataset(Asset):
         self._asset_id = None
         self._filepath = None
 
+        self._size = None
+
         self._is_composite = False
 
     # --------------------------------------------------------------------------------------------- #
@@ -213,6 +216,12 @@ class Dataset(Asset):
     @property
     def filepath(self) -> str:
         return self._filepath
+
+    @property
+    def size(self) -> str:
+        if not self._size:
+            self._size = FileStats.get_size(path=self._filepath)
+        return self._size
 
     # --------------------------------------------------------------------------------------------- #
     #                                      SERIALIZATION                                            #

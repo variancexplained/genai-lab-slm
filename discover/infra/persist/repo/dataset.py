@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Wednesday December 25th 2024 10:25:22 pm                                            #
+# Modified   : Wednesday December 25th 2024 11:51:36 pm                                            #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,6 +39,10 @@ class DatasetRepo(AssetRepo):
 
     def __init__(self, dao: DAO) -> None:
         super().__init__(dao=dao)
+
+    @property
+    def count(self) -> int:
+        return self._dao.count
 
     def remove(self, asset_id: str) -> None:
         """Removes a dataset and its associated file from the repository.
