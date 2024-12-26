@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Thursday December 26th 2024 06:36:49 am                                             #
+# Modified   : Thursday December 26th 2024 07:09:29 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from typing import Optional, Union
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pydantic import validate_call
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.base import Asset
 from discover.container import DiscoverContainer
@@ -159,6 +159,7 @@ class Dataset(Asset):
     # --------------------------------------------------------------------------------------------- #
     #                                  EXTRACT DATAFRAME                                            #
     # --------------------------------------------------------------------------------------------- #
+
     def as_df(self) -> Union[pd.DataFrame, DataFrame]:
         """Returns the dataset in its canonical format.
 
@@ -167,11 +168,16 @@ class Dataset(Asset):
         Returns:
             Union[pd.DataFrame, DataFrame]: The dataset in its canonical format.
         """
+
         if self._data is None:
+            spark = self._get_spark_session(
+                dataframe_structure=self._dataframe_structure
+            )
             self._data = self._repo.get_file(
                 filepath=self._filepath,
                 file_format=self._file_format,
                 dataframe_structure=self._dataframe_structure,
+                spark=spark,
             )
         return self._data
 
@@ -190,13 +196,7 @@ class Dataset(Asset):
                 dataframe_structure=DataFrameStructureEnum.PANDAS,
             )
 
-    @inject
-    def to_spark(
-        self,
-        spark_session_pool: SparkSessionPool = Provide[
-            DiscoverContainer.spark.session_pool
-        ],
-    ) -> DataFrame:
+    def to_spark(self) -> DataFrame:
         """Returns the dataset as a Spark DataFrame.
 
         Returns:
@@ -205,20 +205,17 @@ class Dataset(Asset):
         if self._dataframe_structure == DataFrameStructureEnum.SPARK:
             return self.as_df()
         else:
+            spark = self._get_spark_session(
+                dataframe_structure=DataFrameStructureEnum.SPARK
+            )
             return self._repo.get_file(
                 filepath=self._filepath,
                 file_format=self._file_format,
                 dataframe_structure=DataFrameStructureEnum.SPARK,
-                spark=spark_session_pool.spark,
+                spark=spark,
             )
 
-    @inject
-    def to_sparknlp(
-        self,
-        spark_session_pool: SparkSessionPool = Provide[
-            DiscoverContainer.spark.session_pool
-        ],
-    ) -> DataFrame:
+    def to_sparknlp(self) -> DataFrame:
         """Returns the dataset as a SparkNLP DataFrame.
 
         Returns:
@@ -227,12 +224,30 @@ class Dataset(Asset):
         if self._dataframe_structure == DataFrameStructureEnum.SPARKNLP:
             return self.as_df()
         else:
+            spark = self._get_spark_session(
+                dataframe_structure=DataFrameStructureEnum.SPARKNLP
+            )
             return self._repo.get_file(
                 filepath=self._filepath,
                 file_format=self._file_format,
                 dataframe_structure=DataFrameStructureEnum.SPARKNLP,
-                spark=spark_session_pool.sparknlp,
+                spark=spark,
             )
+
+    @inject
+    def _get_spark_session(
+        self,
+        dataframe_structure: DataFrameStructureEnum,
+        spark_session_pool: SparkSessionPool = Provide[
+            DiscoverContainer.spark.session_pool
+        ],
+    ) -> Optional[SparkSession]:
+        spark = None
+        if dataframe_structure == DataFrameStructureEnum.SPARK:
+            spark = spark_session_pool.spark
+        elif dataframe_structure == DataFrameStructureEnum.SPARKNLP:
+            spark = spark_session_pool.sparknlp
+        return spark
 
     # --------------------------------------------------------------------------------------------- #
     #                                      SERIALIZATION                                            #

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Thursday December 26th 2024 03:56:32 am                                             #
+# Modified   : Thursday December 26th 2024 07:17:34 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -185,7 +185,7 @@ class DataFrameWriter(BaseDataFrameWriter):
         """
         super().csv(data=data, filepath=filepath, overwrite=overwrite, **kwargs)
         try:
-            data.coalesce(1).write.csv(filepath, **kwargs)
+            data.repartition(1).write.csv(filepath, **kwargs)
             logging.debug(f"Writing partitioned spark csv file to {filepath}")
         except Exception as e:
             msg = f"Exception occurred while writing a CSV file to {filepath}.\nKeyword Arguments: {kwargs}"
