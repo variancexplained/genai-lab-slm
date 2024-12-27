@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Wednesday December 25th 2024 06:55:14 pm                                            #
+# Modified   : Friday December 27th 2024 05:30:22 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,11 +23,10 @@ import logging
 from abc import ABC
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Union
 
-from discover.core.asset import AssetType
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
-from discover.core.flow import DataPrepStageEnum
+from discover.core.identity import Passport
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -37,21 +36,10 @@ class Asset(ABC):
 
     def __init__(
         self,
-        asset_type,
-        name: str,
-        phase: PhaseEnum,
-        stage: DataPrepStageEnum,
-        description: Optional[str] = None,
+        passport: Passport,
         **kwargs,
     ) -> None:
-        self._asset_type = asset_type
-        self._name = name
-        self._phase = phase
-        self._stage = stage
-        self._description = description
-        self._created = datetime.now()
-
-        self._asset_id = None
+        self._passport = passport
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -126,78 +114,16 @@ class Asset(ABC):
 
         Args:
             state (dict): The state dictionary to restore.
+
+        Raises:
+            ValueError: If an attempt is made to set invalid attributes.
         """
-        self.__dict__.update(state)
+        for key, value in state.items():
+            object.__setattr__(self, key, value)
 
     @property
-    def asset_type(self) -> AssetType:
-        """
-        Returns the type of asset
-
-        Returns:
-            AssetType: An AssetType Enum instance.
-        """
-        return self._asset_type
-
-    @property
-    def asset_id(self) -> str:
-        """
-        Returns the unique asset identifier.
-
-        Returns:
-            str: The asset ID.
-        """
-        return self._asset_id
-
-    @property
-    def name(self) -> str:
-        """
-        Returns the name of the asset.
-
-        Returns:
-            str: The name of the asset.
-        """
-        return self._name
-
-    @property
-    def description(self) -> str:
-        """
-        Custom description functionality defined in subclasses.
-
-        Returns:
-            str: The description of the asset.
-        """
-        return self._description
-
-    @property
-    def phase(self) -> PhaseEnum:
-        """
-        Returns the phase for which the asset was created.
-
-        Returns:
-            PhaseEnum: PhaseEnum.
-        """
-        return self._phase
-
-    @property
-    def stage(self) -> DataPrepStageEnum:
-        """
-        Returns the stage for which the asset was created.
-
-        Returns:
-            DataPrepStageEnum: Stage.
-        """
-        return self._stage
-
-    @property
-    def created(self) -> datetime:
-        """
-        Returns the creation timestamp of the asset.
-
-        Returns:
-            datetime: The creation time of the asset.
-        """
-        return self._created
+    def passport(self) -> Passport:
+        return self._passport
 
     def as_dict(self) -> Dict[str, Union[str, int, float, datetime, None]]:
         """Returns a dictionary representation of the the Config object."""

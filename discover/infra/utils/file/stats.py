@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Thursday December 26th 2024 04:24:17 am                                             #
+# Modified   : Friday December 27th 2024 08:52:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,7 @@
 """File / Directory Stats Module"""
 import os
 from datetime import datetime
+from typing import Union
 
 from discover.infra.utils.data.format import format_size
 from discover.infra.utils.date_time.format import ThirdDateFormatter
@@ -100,14 +101,16 @@ class FileStats:
         return d84mtr.to_HTTP_format(dt=mtime)
 
     @classmethod
-    def get_size(cls, path: str) -> str:
+    def get_size(cls, path: str, in_bytes: bool = True) -> Union[int, str]:
         """Gets the size of the specified file or directory in a human-readable format.
 
         Args:
             path (str): The path to the file or directory.
+            in_bytes (bool): Whether to return size in bytes as integer.
 
         Returns:
-            str: The size of the file or directory in a formatted string (e.g., '1.23 MB').
+            Union[int,str]: The size of the file or directory in a formatted string (e.g., '1.23 MB')
+                if in_bytes is False, otherwise an integer is returned.
 
         Raises:
             ValueError: If the path is neither a file nor a directory.
@@ -118,7 +121,10 @@ class FileStats:
             size = cls._get_directory_size(directory=path)
         else:
             raise ValueError(f"The path {path} is not valid.")
-        return format_size(size_in_bytes=size)
+        if in_bytes:
+            return size
+        else:
+            return format_size(size_in_bytes=size)
 
     @classmethod
     def _get_file_size(cls, filepath: str) -> int:

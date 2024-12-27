@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Thursday December 26th 2024 06:34:59 pm                                             #
+# Modified   : Friday December 27th 2024 10:17:06 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,6 +25,15 @@ import logging.config
 
 from dependency_injector import containers, providers
 
+from discover.asset.dataset.base import DatasetBuilder
+from discover.asset.dataset.ops import (
+    ConvertOperator,
+    DatasetOps,
+    MergeOperator,
+    SampleOperator,
+    SelectOperator,
+    SplitOperator,
+)
 from discover.core.asset import AssetType
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
@@ -34,7 +43,7 @@ from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
 from discover.infra.persist.repo.model import ModelRepo
 from discover.infra.service.spark.pool import SparkSessionPool
-from discover.infra.workspace.service import WorkspaceService
+from discover.infra.workspace.service import Workspace
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -117,7 +126,7 @@ class WorkspaceContainer(containers.DeclarativeContainer):
     repo = providers.DependenciesContainer()
 
     service = providers.Singleton(
-        WorkspaceService,
+        Workspace,
         config=config.workspace,
         dataset_repo=repo.dataset_repo,
         model_repo=repo.model_repo,
@@ -125,22 +134,50 @@ class WorkspaceContainer(containers.DeclarativeContainer):
     )
 
 
-# # ------------------------------------------------------------------------------------------------ #
-# #                                    FACTORY CONTAINER                                             #
-# # ------------------------------------------------------------------------------------------------ #
-# class FactoryContainer(containers.DeclarativeContainer):
+# ------------------------------------------------------------------------------------------------ #
+#                                DATASET OPERATORS CONTAINER                                       #
+# ------------------------------------------------------------------------------------------------ #
+class DatasetOperatorContainer(containers.DeclarativeContainer):
 
-#     config = providers.Configuration()
+    config = providers.Configuration()
+    spark = providers.DependenciesContainer()
+    repo = providers.DependenciesContainer()
 
-#     spark = providers.DependenciesContainer()
-#     workspace = providers.DependenciesContainer()
+    converter = providers.Singleton(
+        ConvertOperator,
+        config=config.ops.convert,
+        fao=repo.fao,
+        spark_session_pool=spark.session_pool,
+    )
 
-#     dataset_factory = providers.Singleton(
-#         DatasetFactory,
-#         fal_config=config.fal,
-#         workspace_service=workspace.service,
-#         spark_session_pool=spark.session_pool,
-#     )
+    merger = providers.Singleton(MergeOperator)
+    splitter = providers.Singleton(SplitOperator)
+    sampler = providers.Singleton(SampleOperator)
+    selector = providers.Singleton(SelectOperator)
+
+    ops = providers.Singleton(
+        DatasetOps,
+        converter=converter,
+        merger=merger,
+        splitter=splitter,
+        sampler=sampler,
+        selector=selector,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                DATASET BUILDER CONTAINER                                         #
+# ------------------------------------------------------------------------------------------------ #
+class BuilderContainer(containers.DeclarativeContainer):
+
+    config = providers.Configuration()
+
+    workspace = providers.DependenciesContainer()
+    ops = providers.DependenciesContainer()
+
+    dataset_builder = providers.Singleton(
+        DatasetBuilder, workspace=workspace.service, ops=ops.ops
+    )
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -172,10 +209,10 @@ class DiscoverContainer(containers.DeclarativeContainer):
         repo=repo,
     )
 
-    # # Factory Container
-    # factory = providers.Container(
-    #     FactoryContainer,
-    #     config=config,
-    #     spark=spark,
-    #     workspace=workspace,
-    # )
+    # Dataset Operations container
+    ops = providers.Container(DatasetOps, config=config, repo=repo, spark=spark)
+
+    # Dataset Builder Container
+    builder = providers.Container(
+        BuilderContainer, config=config, workspace=workspace, ops=ops
+    )

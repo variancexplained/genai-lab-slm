@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 02:58:58 pm                                             #
-# Modified   : Thursday December 26th 2024 01:45:32 am                                             #
+# Modified   : Friday December 27th 2024 10:35:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Optional, Type, Union
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.data_structure import DataFrameStructureEnum
+from discover.core.dataset import DataFrameStructureEnum
 from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,

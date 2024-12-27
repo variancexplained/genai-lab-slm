@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Thursday December 26th 2024 01:45:32 am                                             #
+# Modified   : Friday December 27th 2024 10:35:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 
 import pandas as pd
 
-from discover.core.data_structure import DataFrameStructureEnum
+from discover.core.dataset import DataFrameStructureEnum
 from discover.core.flow import DataPrepStageEnum, PhaseEnum
 from discover.flow.stage.base import DataPrepStage
 from discover.infra.utils.data.compare import compare_dataframes

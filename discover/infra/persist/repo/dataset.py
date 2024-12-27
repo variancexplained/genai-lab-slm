@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Thursday December 26th 2024 07:35:32 pm                                             #
+# Modified   : Friday December 27th 2024 09:21:46 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,7 @@ from typing import Optional
 from pyspark.sql import SparkSession
 
 from discover.asset.base import Asset
-from discover.core.data_structure import DataFrameStructureEnum
-from discover.core.file import FileFormat
+from discover.core.data_structure import DataEnvelopeConfig
 from discover.infra.persist.dataframe.base import DataFrame
 from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.base import DAO
@@ -69,6 +68,7 @@ class DatasetRepo(AssetRepo):
         """
         # Persist the underlying data to file.
         self._fao.create(
+            data_envelope=asset.data_envelope,
             filepath=asset.filepath,
             data=asset.as_df(),
             dataframe_structure=asset.dataframe_structure,
@@ -80,9 +80,7 @@ class DatasetRepo(AssetRepo):
 
     def get_data(
         self,
-        filepath: str,
-        file_format: FileFormat = FileFormat.PARQUET,
-        dataframe_structure: DataFrameStructureEnum = DataFrameStructureEnum.PANDAS,
+        data_envelope_config: DataEnvelopeConfig,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
         """Retrieves a file from the repository using the specified data structure and format.
@@ -99,14 +97,9 @@ class DatasetRepo(AssetRepo):
         Raises:
             ValueError: If an unsupported data structure is specified.
         """
-        # Inspect arguments
-        msg = f"\n\nDatasetRepo.get_data arguments:\n File Format: {file_format.value}\nDataFrame Structure: {dataframe_structure.value}\nSpark: {spark}"
-        self._logger.debug(msg)
 
         return self._fao.read(
-            filepath=filepath,
-            dataframe_structure=dataframe_structure,
-            file_format=file_format,
+            datasetframe_config=data_envelope_config,
             spark=spark,
         )
 

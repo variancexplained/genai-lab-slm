@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Thursday December 26th 2024 01:43:59 am                                             #
+# Modified   : Friday December 27th 2024 10:35:16 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,16 +29,6 @@ from typing import Any, Dict, Mapping, Union
 import pandas as pd
 
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                  DATAFRAME STRUCTURE                                             #
-# ------------------------------------------------------------------------------------------------ #
-class DataFrameStructureEnum(Enum):
-
-    PANDAS = "pandas"
-    SPARK = "spark"
-    SPARKNLP = "sparknlp"
 
 
 # ------------------------------------------------------------------------------------------------ #

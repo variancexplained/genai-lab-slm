@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Wednesday December 25th 2024 09:25:13 pm                                            #
+# Modified   : Friday December 27th 2024 05:36:52 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from discover.asset.dataset import DatasetFactory
 from discover.container import DiscoverContainer
 from discover.flow.stage.base import ConfigDeserializer
 from discover.infra.config.app import AppConfigReader
-from discover.infra.workspace.service import WorkspaceService
+from discover.infra.workspace.service import Workspace
 
 # ------------------------------------------------------------------------------------------------ #
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
 @inject
 def load_data(
-    workspace_service: WorkspaceService = Provide[DiscoverContainer.workspace.service],
+    workspace: Workspace = Provide[DiscoverContainer.workspace.service],
 ):
     """Loads raw data into the workspace"""
     # Obtain and deserialize the raw dataset configuration
@@ -44,8 +44,8 @@ def load_data(
     )
 
     # Create dataset if it doesn't already exist.
-    asset_id = workspace_service.get_asset_id(**dataset_config)
-    if not workspace_service.dataset_repo.exists(asset_id=asset_id):
+    asset_id = workspace.get_asset_id(**dataset_config)
+    if not workspace.dataset_repo.exists(asset_id=asset_id):
         dataset = DatasetFactory().from_parquet_file(**dataset_config)
         print(f"Dataset {dataset.asset_id} | {dataset.description} created.")
 

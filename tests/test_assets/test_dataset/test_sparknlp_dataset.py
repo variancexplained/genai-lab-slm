@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 10:41:20 pm                                               #
-# Modified   : Thursday December 26th 2024 07:33:27 am                                             #
+# Modified   : Friday December 27th 2024 10:35:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import pytest
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DatasetFactory
-from discover.core.data_structure import DataFrameStructureEnum
+from discover.core.dataset import DataFrameStructureEnum
 from discover.core.file import FileFormat
 from discover.core.flow import DataPrepStageEnum, PhaseEnum
 
@@ -102,8 +102,8 @@ class TestSparkNLPDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence
@@ -151,8 +151,8 @@ class TestSparkNLPDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence
@@ -176,8 +176,8 @@ class TestSparkNLPDataset:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         asset_id = "dataset-00_dataprep-05_clean-test_from_parquet_to_sparknlp"
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=asset_id)
         df = ds.to_sparknlp()
 
         factory = DatasetFactory()
@@ -205,8 +205,8 @@ class TestSparkNLPDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence
@@ -230,8 +230,8 @@ class TestSparkNLPDataset:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         asset_id = "dataset-00_dataprep-05_clean-test_from_csv_to_sparknlp"
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=asset_id)
         df = ds.to_spark()
 
         factory = DatasetFactory()
@@ -258,8 +258,8 @@ class TestSparkNLPDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence

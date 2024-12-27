@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 10:41:20 pm                                               #
-# Modified   : Thursday December 26th 2024 05:30:31 am                                             #
+# Modified   : Friday December 27th 2024 10:35:09 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import pytest
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DatasetFactory
-from discover.core.data_structure import DataFrameStructureEnum
+from discover.core.dataset import DataFrameStructureEnum
 from discover.core.file import FileFormat
 from discover.core.flow import DataPrepStageEnum, PhaseEnum
 from discover.infra.utils.file.io import IOService
@@ -103,8 +103,8 @@ class TestPandasDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence
@@ -152,8 +152,8 @@ class TestPandasDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence
@@ -203,8 +203,8 @@ class TestPandasDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence
@@ -253,8 +253,8 @@ class TestPandasDataset:  # pragma: no cover
         assert isinstance(dataset.to_sparknlp(), DataFrame)
 
         # Test registration in workspace
-        workspace_service = container.workspace.service()
-        ds = workspace_service.dataset_repo.get(asset_id=dataset.asset_id)
+        workspace = container.workspace.service()
+        ds = workspace.dataset_repo.get(asset_id=dataset.asset_id)
         assert ds == dataset
 
         # Confirm file persistence

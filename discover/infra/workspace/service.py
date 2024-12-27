@@ -11,15 +11,15 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 11:31:34 am                                               #
-# Modified   : Wednesday December 25th 2024 07:00:19 pm                                            #
+# Modified   : Friday December 27th 2024 05:57:44 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 
-from discover.asset.base import Asset
 from discover.core.asset import AssetType
+from discover.core.file import FileFormat
 from discover.core.flow import PhaseEnum, StageEnum
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
@@ -27,7 +27,34 @@ from discover.infra.persist.repo.model import ModelRepo
 
 
 # ------------------------------------------------------------------------------------------------ #
-class WorkspaceService:
+class Workspace:
+    """
+    Represents a workspace for managing datasets, models, and experiments.
+
+    The Workspace class provides a centralized interface to access and manage
+    repositories for datasets, models, and experiments. It also handles file
+    organization, temporary directories, and asset identification.
+
+    Attributes:
+        _config (dict): Configuration dictionary containing workspace details.
+        _location (str): The base location of the workspace.
+        _files (str): The directory where asset files are stored.
+        _dataset_repo (DatasetRepo): Repository for managing datasets.
+        _model_repo (ModelRepo): Repository for managing models.
+        _experiment_repo (ExperimentRepo): Repository for managing experiments.
+
+    Properties:
+        dataset_repo (DatasetRepo): Access the dataset repository.
+        model_repo (ModelRepo): Access the model repository.
+        experiment_repo (ExperimentRepo): Access the experiment repository.
+        location (str): The base location of the workspace.
+        files (str): The directory for storing files.
+        tempdir (str): Temporary directory for the workspace.
+
+    Methods:
+        get_asset_id(asset_type, phase, stage, name): Generates a unique asset ID.
+        get_filepath(asset_id, file_format): Constructs a file path for an asset.
+    """
 
     def __init__(
         self,
@@ -36,32 +63,83 @@ class WorkspaceService:
         model_repo: ModelRepo,
         experiment_repo: ExperimentRepo,
     ) -> None:
+        """
+        Initializes the Workspace object with configuration and repositories.
+
+        Args:
+            config (dict): Configuration dictionary containing workspace details such
+                as location and file directories.
+            dataset_repo (DatasetRepo): Repository instance for managing datasets.
+            model_repo (ModelRepo): Repository instance for managing models.
+            experiment_repo (ExperimentRepo): Repository instance for managing experiments.
+        """
         self._config = config
         self._location = config["location"]
         self._files = os.path.join(self._location, config["files"])
+
         self._dataset_repo = dataset_repo
         self._model_repo = model_repo
         self._experiment_repo = experiment_repo
 
     @property
     def dataset_repo(self) -> DatasetRepo:
+        """
+        Access the dataset repository.
+
+        Returns:
+            DatasetRepo: The dataset repository instance.
+        """
         return self._dataset_repo
 
     @property
     def model_repo(self) -> ModelRepo:
+        """
+        Access the model repository.
+
+        Returns:
+            ModelRepo: The model repository instance.
+        """
         return self._model_repo
 
     @property
     def experiment_repo(self) -> ExperimentRepo:
+        """
+        Access the experiment repository.
+
+        Returns:
+            ExperimentRepo: The experiment repository instance.
+        """
         return self._experiment_repo
 
     @property
     def location(self) -> str:
+        """
+        Access the base location of the workspace.
+
+        Returns:
+            str: The base location path.
+        """
         return self._location
 
     @property
     def files(self) -> str:
+        """
+        Access the file storage directory.
+
+        Returns:
+            str: The file directory path.
+        """
         return self._files
+
+    @property
+    def tempdir(self) -> str:
+        """
+        Access the temporary directory for the workspace.
+
+        Returns:
+            str: The temporary directory path.
+        """
+        return self._tempdir
 
     def get_asset_id(
         self,
@@ -69,27 +147,37 @@ class WorkspaceService:
         phase: PhaseEnum,
         stage: StageEnum,
         name: str,
-        **kwargs,
     ) -> str:
+        """
+        Generates a unique identifier for an asset.
+
+        Args:
+            asset_type (AssetType): The type of the asset (e.g., DATASET, MODEL).
+            phase (PhaseEnum): The lifecycle phase of the asset (e.g., TRAINING, EVALUATION).
+            stage (StageEnum): The processing stage of the asset (e.g., RAW, PROCESSED).
+            name (str): A human-readable name for the asset.
+
+        Returns:
+            str: A unique asset identifier string.
+        """
         return f"{asset_type.value}-{phase.directory}-{stage.directory}-{name}"
 
-    def set_asset_id(self, asset: Asset) -> Asset:
-        asset_id = self.get_asset_id(
-            asset_type=asset.asset_type,
-            phase=asset.phase,
-            stage=asset.stage,
-            name=asset.name,
-        )
-        setattr(asset, "_asset_id", asset_id)
-        return asset
+    def get_filepath(
+        self, asset_id: str, file_format: FileFormat = FileFormat.PARQUET
+    ) -> str:
+        """
+        Constructs the file path for a given asset.
 
-    def set_filepath(self, asset: Asset) -> Asset:
-        if asset.asset_id is None:
-            asset = self.set_asset_id(asset=asset)
+        Args:
+            asset_id (str): The unique identifier for the asset.
+            file_format (FileFormat): The file format of the asset (e.g., PARQUET, CSV).
+                Defaults to PARQUET.
+
+        Returns:
+            str: The full file path for the asset.
+        """
         directory = self._files
-        basename = asset.asset_id
-        filext = asset.file_format.value
+        basename = asset_id
+        filext = file_format.value
         filename = f"{basename}.{filext}"
-        filepath = os.path.join(directory, filename)
-        setattr(asset, "_filepath", filepath)
-        return asset
+        return os.path.join(directory, filename)

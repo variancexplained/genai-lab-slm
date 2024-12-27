@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Thursday December 26th 2024 09:19:34 pm                                             #
+# Modified   : Friday December 27th 2024 09:21:46 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,11 @@ import pandas as pd
 import pyspark
 from pyspark.sql import SparkSession
 
-from discover.core.data_structure import DataFrameStructureEnum
-from discover.core.file import FileFormat
+from discover.core.data_structure import (
+    DataEnvelope,
+    DataEnvelopeConfig,
+    DataFrameStructureEnum,
+)
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 
 DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
@@ -37,11 +40,25 @@ DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
 #                                           FAO                                                    #
 # ------------------------------------------------------------------------------------------------ #
 class FAO:
-    """File Access Object (FAO) for reading, writing, and managing data files.
+    """
+    File Access Object (FAO) for managing dataset file operations such as creation,
+    reading, deletion, and validation.
 
-    Args:
-        fao_config (dict): Configuration dictionary containing settings read/write operations.
-        io_factory (IOFactory): IOFactory providing readers and writers
+    This class uses an IO factory to dynamically select appropriate readers and writers
+    based on the dataset's structure and format.
+
+    Attributes:
+        _fao_config (dict): Configuration for file access operations, including arguments
+            for readers and writers.
+        _io_factory (DataFrameIOFactory): Factory for creating appropriate readers and writers.
+        _logger (logging.Logger): Logger instance for the FAO class.
+
+    Methods:
+        create(data_envelope, overwrite): Writes a dataset to a file.
+        read(data_envelope_config, spark): Reads a dataset from a file.
+        exists(filepath): Checks if a file exists.
+        delete(filepath): Deletes a file or directory.
+        reset(verified): Resets the FAO database directory.
     """
 
     def __init__(
@@ -49,117 +66,109 @@ class FAO:
         fao_config: dict,
         io_factory: DataFrameIOFactory,
     ):
+        """
+        Initializes the FAO object with configuration and IO factory.
+
+        Args:
+            fao_config (dict): Configuration for file access operations, including read/write
+                arguments for various dataframe structures and formats.
+            io_factory (DataFrameIOFactory): Factory instance for obtaining readers and writers.
+        """
         self._fao_config = fao_config
         self._io_factory = io_factory
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(
         self,
-        filepath: str,
-        data: DataFrame,
-        dataframe_structure: DataFrameStructureEnum,
-        file_format: FileFormat = FileFormat.PARQUET,
+        data_envelope: DataEnvelope,
         overwrite: bool = False,
     ) -> None:
-        """Creates a file for the designated dataframe structure and file format.
+        """
+        Writes a dataset to a file using the appropriate writer from the IO factory.
 
         Args:
-            filepath (str): Path where the file should be created.
-            data (DataFrame): The data to be written to the file.
-            dataframe_structure (DataFrameStructureEnum): The Enum for pandas, spark, or sparknlp dataframes.
-            file_format (FileFormat): The format of the file to create (default is Parquet).
-            overwrite (bool): Whether existing files can be overwritten.
+            data_envelope (DataEnvelope): The dataset to be written, including its data,
+                file path, structure, and format.
+            overwrite (bool): Whether to overwrite the file if it exists. Defaults to False.
 
         Raises:
-            ValueError: If an unsupported file format or dataframe structure is provided.
-
-        Logs:
-            Error: If an invalid file format is specified.
+            Exception: If the writer encounters an error during the write operation.
         """
         writer = self._io_factory.get_writer(
-            dataframe_structure=dataframe_structure, file_format=file_format
+            dataframe_structure=data_envelope.dataframe_structure,
+            file_format=data_envelope.file_format,
         )
         writer.write(
-            data=data,
-            filepath=filepath,
+            data=data_envelope.data,
+            filepath=data_envelope.filepath,
             overwrite=overwrite,
-            **self._fao_config[dataframe_structure.value][file_format.value][
-                "write_kwargs"
-            ],
+            **self._fao_config[data_envelope.dataframe_structure.value][
+                data_envelope.file_format.value
+            ]["write_kwargs"],
         )
 
     def read(
         self,
-        filepath: str,
-        dataframe_structure: DataFrameStructureEnum,
-        file_format: FileFormat = FileFormat.PARQUET,
+        data_envelope_config: DataEnvelopeConfig,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
-        """Reads a data file in the specified dataframe structure and file format.
+        """
+        Reads a dataset from a file using the appropriate reader from the IO factory.
 
         Args:
-            filepath (str): Path to the file to read.
-            dataframe_structure (DataFrameStructureEnum): The Enum for pandas, spark, or sparknlp dataframes.
-            file_format (FileFormat): The format of the file to read (default is Parquet).
+            data_envelope_config (DataEnvelopeConfig): Configuration specifying the dataset's
+                file path, structure, and format.
+            spark (Optional[SparkSession]): Spark session required for reading Spark DataFrames.
+                Defaults to None.
 
         Returns:
-            DataFrame: The data read from the file.
+            DataFrame: The loaded dataset as a Pandas or Spark DataFrame.
 
         Raises:
-            ValueError: If an unsupported file format is provided.
-
-        Logs:
-            Error: If an invalid file format is specified.
+            Exception: If the reader encounters an error during the read operation.
         """
-        # Inspect arguments.
-        msg = f"\n\nFAO read arguments:\ndataframe_structure: {dataframe_structure.value}\nfile_format: {file_format.value}"
-        self._logger.debug(msg)
-
         reader = self._io_factory.get_reader(
-            dataframe_structure=dataframe_structure, file_format=file_format
+            dataframe_structure=data_envelope_config.dataframe_structure,
+            file_format=data_envelope_config.file_format,
         )
 
-        msg = f"Returned {reader.__class__.__name__} from DataFrameIOFActory"
-        self._logger.debug(msg)
-
-        if dataframe_structure == DataFrameStructureEnum.PANDAS:
+        if data_envelope_config.dataframe_structure == DataFrameStructureEnum.PANDAS:
             return reader.read(
-                filepath=filepath,
-                **self._fao_config[dataframe_structure.value][file_format.value][
-                    "read_kwargs"
-                ],
+                filepath=data_envelope_config.filepath,
+                **self._fao_config[data_envelope_config.dataframe_structure.value][
+                    data_envelope_config.file_format.value
+                ]["read_kwargs"],
             )
         else:
             return reader.read(
-                filepath=filepath,
+                filepath=data_envelope_config.filepath,
                 spark=spark,
-                **self._fao_config[dataframe_structure.value][file_format.value][
-                    "read_kwargs"
-                ],
+                **self._fao_config[data_envelope_config.dataframe_structure.value][
+                    data_envelope_config.file_format.value
+                ]["read_kwargs"],
             )
 
     def exists(self, filepath: str) -> bool:
-        """Checks if a file or directory exists at the given path.
+        """
+        Checks whether a file exists at the specified file path.
 
         Args:
-            filepath (str): The path to check for existence.
+            filepath (str): The path to the file.
 
         Returns:
-            bool: True if the file or directory exists, False otherwise.
+            bool: True if the file exists, False otherwise.
         """
         return os.path.exists(filepath)
 
     def delete(self, filepath: str) -> None:
-        """Deletes a file or directory at the specified path.
+        """
+        Deletes a file or directory at the specified file path.
 
         Args:
-            filepath (str): The path to the file or directory to delete.
+            filepath (str): The path to the file or directory.
 
         Raises:
-            ValueError: If the filepath is neither a valid file nor directory.
-
-        Logs:
-            Error: If the filepath is invalid.
+            Exception: If an unexpected error occurs during deletion.
         """
         try:
             os.remove(filepath)
@@ -174,6 +183,16 @@ class FAO:
             raise Exception(msg)
 
     def reset(self, verified: bool = False) -> None:
+        """
+        Resets the FAO database directory by deleting all files.
+
+        Args:
+            verified (bool): Whether the reset action is pre-approved. If False, prompts
+                for confirmation before proceeding.
+
+        Raises:
+            Exception: If an unexpected error occurs during reset.
+        """
         if verified:
             shutil.rmtree(self._basedir)
             self._logger.warning(f"{self.__class__.__name__} has been reset.")

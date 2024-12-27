@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday December 26th 2024 01:45:31 am                                             #
+# Modified   : Friday December 27th 2024 10:35:08 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from pyspark.sql import DataFrame
 
 from discover.container import DiscoverContainer
 from discover.core.asset import AssetType
-from discover.core.data_structure import DataFrameStructureEnum, Dataset, DatasetFactory
+from discover.core.dataset import DataFrameStructureEnum, Dataset, DatasetFactory
 from discover.core.file import FileFormat
 from discover.core.flow import (
     DataEnrichmentStageEnum,
@@ -45,7 +45,7 @@ from discover.infra.exception.config import (
     StageConfigurationException,
 )
 from discover.infra.service.logging.stage import stage_logger
-from discover.infra.workspace.service import WorkspaceService
+from discover.infra.workspace.service import Workspace
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -85,9 +85,7 @@ class Stage(ABC):
         source_config: dict,
         destination_config: dict,
         dataset_factory_cls: Type[DatasetFactory] = DatasetFactory,
-        workspace_service: WorkspaceService = Provide[
-            DiscoverContainer.workspace.service
-        ],
+        workspace: Workspace = Provide[DiscoverContainer.workspace.service],
         force: bool = False,
         **kwargs,
     ) -> None:
@@ -100,13 +98,11 @@ class Stage(ABC):
 
         self._dataset_factory = dataset_factory_cls()
 
-        self._workspace_service = workspace_service
+        self._workspace = workspace
 
         # Obtain asset IDs for the source and destination datasets.
-        self._source_asset_id = self._workspace_service.get_asset_id(
-            **self._source_config
-        )
-        self._destination_asset_id = self._workspace_service.get_asset_id(
+        self._source_asset_id = self._workspace.get_asset_id(**self._source_config)
+        self._destination_asset_id = self._workspace.get_asset_id(
             **self._destination_config
         )
 
@@ -158,14 +154,10 @@ class Stage(ABC):
             Dataset: The resulting dataset after executing the stage.
         """
         if (
-            self._workspace_service.dataset_repo.exists(
-                asset_id=self._destination_asset_id
-            )
+            self._workspace.dataset_repo.exists(asset_id=self._destination_asset_id)
             and not self._force
         ):
-            return self._workspace_service.dataset_repo.get(
-                asset_id=self._destination_asset_id
-            )
+            return self._workspace.dataset_repo.get(asset_id=self._destination_asset_id)
         else:
             return self._run()
 
@@ -255,7 +247,7 @@ class Stage(ABC):
         self, asset_id: str, dataframe_structure: DataFrameStructureEnum
     ) -> Union[pd.DataFrame, DataFrame]:
         # Obtain the source dataset and extract the DataFrame in the specified structure.
-        dataset = self._workspace_service.dataset_repo.get(asset_id=asset_id)
+        dataset = self._workspace.dataset_repo.get(asset_id=asset_id)
         return dataset.as_df(dataframe_structure=dataframe_structure)
 
     def _create_destination_dataset(
@@ -263,12 +255,8 @@ class Stage(ABC):
     ) -> Dataset:
 
         # Delete existing destination dataset, if it exists.
-        if self._workspace_service.dataset_repo.exists(
-            asset_id=self._destination_asset_id
-        ):
-            self._workspace_service.dataset_repo.remove(
-                asset_id=self._destination_asset_id
-            )
+        if self._workspace.dataset_repo.exists(asset_id=self._destination_asset_id):
+            self._workspace.dataset_repo.remove(asset_id=self._destination_asset_id)
 
         # Create the new destination dataset and return it.
         return self._dataset_factory.from_df(
