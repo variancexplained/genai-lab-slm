@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Thursday December 26th 2024 08:45:58 pm                                             #
+# Modified   : Thursday December 26th 2024 09:15:46 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -123,7 +123,7 @@ class SparkDataFrameParquetWriter(BaseDataFrameWriter):
         Raises:
             FileIOException: If an error occurs while writing the Parquet file.
         """
-        super().validate_write(filepath=filepath, overwrite=overwrite, **kwargs)
+        super().validate_write(filepath=filepath, overwrite=overwrite)
         # Extract arguments from kwargs
         mode = kwargs.get("mode", None)
         partition_cols = kwargs.get("partitionBy", None)
@@ -171,7 +171,7 @@ class SparkDataFrameCSVWriter(BaseDataFrameWriter):
         Raises:
             FileIOException: If an error occurs while writing the CSV file.
         """
-        cls.validate_write()
+        cls.validate_write(filepath=filepath, overwrite=overwrite)
         try:
             data.repartition(1).write.csv(filepath, **kwargs)
             logging.debug(f"Writing partitioned spark csv file to {filepath}")

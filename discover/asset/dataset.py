@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Thursday December 26th 2024 08:01:35 pm                                             #
+# Modified   : Thursday December 26th 2024 09:30:25 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from typing import Optional, Union
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pydantic import validate_call
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.base import Asset
 from discover.container import DiscoverContainer
@@ -187,17 +187,30 @@ class Dataset(Asset):
         Returns:
             pd.DataFrame: The dataset in Pandas format.
         """
+
+        # If the canonical structure of the data is pandas and the data are available return it.
         if (
             isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
             and self._dataframe_structure == DataFrameStructureEnum.PANDAS
         ):
             return self._data
         else:
-            data = self._repo.get_data(
-                filepath=self._filepath,
-                file_format=self._file_format,
-                dataframe_structure=DataFrameStructureEnum.PANDAS,
-            )
+            # Otherwise read the data from the repository
+            try:
+                data = self._repo.get_data(
+                    filepath=self._filepath,
+                    file_format=self._file_format,
+                    dataframe_structure=DataFrameStructureEnum.PANDAS,
+                )
+            except (IsADirectoryError, Exception):
+                # This error implies a csv file written by spark as a directory.
+                # Read the data into a spark dataframe then convert it.
+                data = self.to_spark()
+                data = data.toPandas()
+            except Exception as e:
+                msg = f"An exception occurred while returning the data as a pandas dataframe.\n{e}"
+                self._logger.error(msg)
+                raise RuntimeError(msg)
             # If the canonical dataframe_structure is pandas, updated the dataset
             if self._dataframe_structure == DataFrameStructureEnum.PANDAS:
                 self._data = data
@@ -218,12 +231,14 @@ class Dataset(Asset):
         Returns:
             DataFrame: The dataset in Spark format.
         """
+        # If the canonical structure of the data is spark and the data are available return it.
         if (
             isinstance(self._data, DataFrame)
             and self._dataframe_structure == DataFrameStructureEnum.SPARK
         ):
             return self._data
         else:
+            # Otherwise read the data from the repository
             data = self._repo.get_data(
                 filepath=self._filepath,
                 file_format=self._file_format,
@@ -247,12 +262,14 @@ class Dataset(Asset):
         Returns:
             DataFrame: The dataset in SparkNLP format.
         """
+        # If the canonical structure of the data is sparknlp and the data are available return it.
         if (
             isinstance(self._data, DataFrame)
             and self._dataframe_structure == DataFrameStructureEnum.SPARKNLP
         ):
             return self._data
         else:
+            # Otherwise read the data from the repository
             data = self._repo.get_data(
                 filepath=self._filepath,
                 file_format=self._file_format,
@@ -328,9 +345,13 @@ class DatasetFactory:
             DiscoverContainer.workspace.service
         ],
         io_factory: DataFrameIOFactory = DataFrameIOFactory,
+        spark_session_pool: SparkSessionPool = Provide[
+            DiscoverContainer.spark.session_pool
+        ],
     ) -> None:
         self._workspace_service = workspace_service
         self._io_factory = io_factory
+        self._spark_session_pool = spark_session_pool
 
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def from_parquet_file(
@@ -424,12 +445,25 @@ class DatasetFactory:
         Returns:
             Dataset: The created dataset instance.
         """
-        # Raad the data from file.
-        data = self._workspace_service.dataset_repo.get_data(
-            filepath=filepath,
-            file_format=file_format,
-            dataframe_structure=dataframe_structure,
-        )
+        # Obtain spark session for spark dataframes
+        if dataframe_structure in (
+            DataFrameStructureEnum.SPARK,
+            DataFrameStructureEnum.SPARKNLP,
+        ):
+            # Raad the data from file into a Spark DataFrame.
+            data = self._workspace_service.dataset_repo.get_data(
+                filepath=filepath,
+                file_format=file_format,
+                dataframe_structure=dataframe_structure,
+                spark=self._get_spark_session(dataframe_structure=dataframe_structure),
+            )
+        else:
+            # Raad the data from file into a Pandas DataFrame.
+            data = self._workspace_service.dataset_repo.get_data(
+                filepath=filepath,
+                file_format=file_format,
+                dataframe_structure=dataframe_structure,
+            )
 
         dataset = Dataset(
             phase=phase,
@@ -580,3 +614,13 @@ class DatasetFactory:
             dataset (Dataset): The dataset instance to register.
         """
         self._workspace_service.dataset_repo.add(asset=dataset)
+
+    def _get_spark_session(
+        self, dataframe_structure: DataFrameStructureEnum
+    ) -> Union[SparkSession, None]:
+        spark = None
+        if dataframe_structure == DataFrameStructureEnum.SPARK:
+            spark = self._spark_session_pool.spark
+        elif dataframe_structure == DataFrameStructureEnum.SPARKNLP:
+            spark = self._spark_session_pool.sparknlp
+        return spark
