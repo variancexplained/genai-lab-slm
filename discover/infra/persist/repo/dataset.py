@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Thursday December 26th 2024 06:38:26 am                                             #
+# Modified   : Thursday December 26th 2024 07:35:32 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,9 +25,8 @@ from pyspark.sql import SparkSession
 from discover.asset.base import Asset
 from discover.core.data_structure import DataFrameStructureEnum
 from discover.core.file import FileFormat
-from discover.infra.persist.file.base import DataFrame
-from discover.infra.persist.file.pandas import PandasFAO
-from discover.infra.persist.file.spark import SparkFAO
+from discover.infra.persist.dataframe.base import DataFrame
+from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.base import DAO
 from discover.infra.persist.repo.base import AssetRepo
 
@@ -49,15 +48,9 @@ class DatasetRepo(AssetRepo):
         spark_fao (SparkFAO): Spark file access object used for managing Spark DataFrames.
     """
 
-    def __init__(
-        self,
-        dao: DAO,
-        pandas_fao: PandasFAO,
-        spark_fao: SparkFAO,
-    ) -> None:
+    def __init__(self, dao: DAO, fao: FAO) -> None:
         super().__init__(dao=dao)
-        self._pandas_fao = pandas_fao
-        self._spark_fao = spark_fao
+        self._fao = fao
 
     @property
     def count(self) -> int:
@@ -74,33 +67,18 @@ class DatasetRepo(AssetRepo):
         Args:
             asset (Dataset): The dataset object to be added to the repository.
         """
+        # Persist the underlying data to file.
+        self._fao.create(
+            filepath=asset.filepath,
+            data=asset.as_df(),
+            dataframe_structure=asset.dataframe_structure,
+            file_format=asset.file_format,
+            overwrite=False,
+        )
+        # Save the Dataset object.
         self._dao.create(asset=asset)
 
-    def add_file(
-        self,
-        filepath: str,
-        data: DataFrame,
-        file_format: FileFormat = FileFormat.PARQUET,
-        dataframe_structure: DataFrameStructureEnum = DataFrameStructureEnum.PANDAS,
-    ) -> None:
-        """Adds a file to the repository using the specified data structure and format.
-
-        Args:
-            filepath (str): Path where the file should be created.
-            data (DataFrame): The data to be written to the file.
-            file_format (FileFormat): The format of the file (default is Parquet).
-            dataframe_structure (DataFrameStructureEnum): The data structure (default is Pandas).
-            spark (SparkSession): Spark session. Optional. Default = None,
-        """
-        if dataframe_structure == DataFrameStructureEnum.PANDAS:
-            self._add_file_pandas(filepath=filepath, data=data, file_format=file_format)
-        elif dataframe_structure in (
-            DataFrameStructureEnum.SPARK,
-            DataFrameStructureEnum.SPARKNLP,
-        ):
-            self._add_file_spark(filepath=filepath, data=data, file_format=file_format)
-
-    def get_file(
+    def get_data(
         self,
         filepath: str,
         file_format: FileFormat = FileFormat.PARQUET,
@@ -113,6 +91,7 @@ class DatasetRepo(AssetRepo):
             filepath (str): Path to the file to retrieve.
             file_format (FileFormat): The format of the file (default is Parquet).
             dataframe_structure (DataFrameStructureEnum): The data structure (default is Pandas).
+            spark (Optional[SparkSession]): Optional spark session for returning spark DataFrames.
 
         Returns:
             DataFrame: The data read from the file.
@@ -120,24 +99,16 @@ class DatasetRepo(AssetRepo):
         Raises:
             ValueError: If an unsupported data structure is specified.
         """
-        if dataframe_structure == DataFrameStructureEnum.PANDAS:
-            return self._get_file_pandas(filepath=filepath, file_format=file_format)
-        elif dataframe_structure == DataFrameStructureEnum.SPARK:
-            return self._get_file_spark(
-                filepath=filepath,
-                spark=spark,
-                file_format=file_format,
-            )
-        elif dataframe_structure == DataFrameStructureEnum.SPARKNLP:
-            return self._get_file_spark(
-                filepath=filepath,
-                spark=spark,
-                file_format=file_format,
-            )
-        else:
-            msg = f"Invalid dataframe_structure: {dataframe_structure}. Currently supporting Pandas, Spark, and SparkNLP"
-            self._logger.error(msg)
-            raise ValueError(msg)
+        # Inspect arguments
+        msg = f"\n\nDatasetRepo.get_data arguments:\n File Format: {file_format.value}\nDataFrame Structure: {dataframe_structure.value}\nSpark: {spark}"
+        self._logger.debug(msg)
+
+        return self._fao.read(
+            filepath=filepath,
+            dataframe_structure=dataframe_structure,
+            file_format=file_format,
+            spark=spark,
+        )
 
     def remove(self, asset_id: str) -> None:
         """Removes a dataset and its associated file from the repository.
@@ -153,7 +124,7 @@ class DatasetRepo(AssetRepo):
             does not exist or cannot be identified.
         """
         asset = self.get(asset_id=asset_id)
-        self._pandas_fao.delete(filepath=asset.filepath)
+        self._fao.delete(filepath=asset.filepath)
         self._dao.delete(asset_id=asset_id)
         self._logger.info(
             f"Dataset {asset.asset_id}, including its file at {asset.filepath} has been removed from the repository."
@@ -177,72 +148,8 @@ class DatasetRepo(AssetRepo):
         if proceed == "YES":
             assets = self.get_all()
             for asset_id, asset in assets.items():
-                self._pandas_fao.delete(filepath=asset.filepath)
+                self._fao.delete(filepath=asset.filepath)
             self._dao.reset(verified=True)
             self._logger.warning(f"{self.__class__.__name__} has been reset.")
         else:
             self._logger.info(f"{self.__class__.__name__} reset has been aborted.")
-
-    def _add_file_pandas(
-        self,
-        filepath: str,
-        data: DataFrame,
-        file_format: FileFormat = FileFormat.PARQUET,
-    ) -> None:
-        """Adds a Pandas DataFrame to the repository.
-
-        Args:
-            filepath (str): Path where the file should be created.
-            data (DataFrame): The Pandas DataFrame to be written.
-            file_format (FileFormat): The format of the file (default is Parquet).
-        """
-        self._pandas_fao.create(filepath=filepath, data=data, file_format=file_format)
-
-    def _add_file_spark(
-        self,
-        filepath: str,
-        data: DataFrame,
-        file_format: FileFormat = FileFormat.PARQUET,
-    ) -> None:
-        """Adds a Spark DataFrame to the repository.
-
-        Args:
-            filepath (str): Path where the file should be created.
-            data (DataFrame): The Spark DataFrame to be written.
-            file_format (FileFormat): The format of the file (default is Parquet).
-        """
-        self._spark_fao.create(filepath=filepath, data=data, file_format=file_format)
-
-    def _get_file_pandas(
-        self, filepath: str, file_format: FileFormat = FileFormat.PARQUET
-    ) -> DataFrame:
-        """Retrieves a Pandas DataFrame from the repository.
-
-        Args:
-            filepath (str): Path to the file to retrieve.
-            file_format (FileFormat): The format of the file (default is Parquet).
-
-        Returns:
-            DataFrame: The Pandas DataFrame read from the file.
-        """
-        return self._pandas_fao.read(filepath=filepath, file_format=file_format)
-
-    def _get_file_spark(
-        self,
-        filepath: str,
-        spark: SparkSession,
-        file_format: FileFormat = FileFormat.PARQUET,
-    ) -> DataFrame:
-        """Retrieves a Spark DataFrame from the repository.
-
-        Args:
-            filepath (str): Path to the file to retrieve.
-            spark (SparkSession): The Spark session to use for reading the file.
-            file_format (FileFormat): The format of the file (default is Parquet).
-
-        Returns:
-            DataFrame: The Spark DataFrame read from the file.
-        """
-        return self._spark_fao.read(
-            filepath=filepath, spark=spark, file_format=file_format
-        )

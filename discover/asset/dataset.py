@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Thursday December 26th 2024 07:09:29 am                                             #
+# Modified   : Thursday December 26th 2024 08:01:35 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,7 +24,7 @@ from typing import Optional, Union
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pydantic import validate_call
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 
 from discover.asset.base import Asset
 from discover.container import DiscoverContainer
@@ -37,9 +37,9 @@ from discover.core.flow import (
     ModelStageEnum,
     PhaseEnum,
 )
+from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.service.spark.pool import SparkSessionPool
-from discover.infra.utils.file.copy import Copy
 from discover.infra.utils.file.stats import FileStats
 from discover.infra.workspace.service import WorkspaceService
 
@@ -84,7 +84,6 @@ class Dataset(Asset):
         file_format: FileFormat = FileFormat.PARQUET,
         source_dataset_asset_id: Optional[str] = None,
         parent_dataset_asset_id: Optional[str] = None,
-        **kwargs,
     ) -> None:
         super().__init__(
             asset_type=self.__ASSET_TYPE,
@@ -163,23 +162,24 @@ class Dataset(Asset):
     def as_df(self) -> Union[pd.DataFrame, DataFrame]:
         """Returns the dataset in its canonical format.
 
-        If the data is not already loaded, it will be retrieved from the repository.
+        If the data is not already loaded, operations will be delegated to the to_* method
+        associated with the dataframe_structure.
 
         Returns:
             Union[pd.DataFrame, DataFrame]: The dataset in its canonical format.
         """
-
-        if self._data is None:
-            spark = self._get_spark_session(
-                dataframe_structure=self._dataframe_structure
+        if self._data is not None:
+            return self._data
+        elif self._dataframe_structure == DataFrameStructureEnum.PANDAS:
+            return self.to_pandas()
+        elif self._dataframe_structure == DataFrameStructureEnum.SPARK:
+            return self.to_spark()
+        elif self._dataframe_structure == DataFrameStructureEnum.SPARKNLP:
+            return self.to_sparknlp()
+        else:
+            ValueError(
+                f"Unsupported dataframe_structure: {self._dataframe_structure}. Unable to data from the repository."
             )
-            self._data = self._repo.get_file(
-                filepath=self._filepath,
-                file_format=self._file_format,
-                dataframe_structure=self._dataframe_structure,
-                spark=spark,
-            )
-        return self._data
 
     def to_pandas(self) -> pd.DataFrame:
         """Returns the dataset as a Pandas DataFrame.
@@ -187,67 +187,82 @@ class Dataset(Asset):
         Returns:
             pd.DataFrame: The dataset in Pandas format.
         """
-        if self._dataframe_structure == DataFrameStructureEnum.PANDAS:
-            return self.as_df()
+        if (
+            isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
+            and self._dataframe_structure == DataFrameStructureEnum.PANDAS
+        ):
+            return self._data
         else:
-            return self._repo.get_file(
+            data = self._repo.get_data(
                 filepath=self._filepath,
                 file_format=self._file_format,
                 dataframe_structure=DataFrameStructureEnum.PANDAS,
             )
+            # If the canonical dataframe_structure is pandas, updated the dataset
+            if self._dataframe_structure == DataFrameStructureEnum.PANDAS:
+                self._data = data
+            return data
 
-    def to_spark(self) -> DataFrame:
+    @inject
+    def to_spark(
+        self,
+        spark_session_pool: SparkSessionPool = Provide[
+            DiscoverContainer.spark.session_pool
+        ],
+    ) -> DataFrame:
         """Returns the dataset as a Spark DataFrame.
+
+        Args:
+            spark_session_pool (SparkSessionPool): Spark and SparkNLP session pool.
 
         Returns:
             DataFrame: The dataset in Spark format.
         """
-        if self._dataframe_structure == DataFrameStructureEnum.SPARK:
-            return self.as_df()
+        if (
+            isinstance(self._data, DataFrame)
+            and self._dataframe_structure == DataFrameStructureEnum.SPARK
+        ):
+            return self._data
         else:
-            spark = self._get_spark_session(
-                dataframe_structure=DataFrameStructureEnum.SPARK
-            )
-            return self._repo.get_file(
+            data = self._repo.get_data(
                 filepath=self._filepath,
                 file_format=self._file_format,
                 dataframe_structure=DataFrameStructureEnum.SPARK,
-                spark=spark,
+                spark=spark_session_pool.spark,
             )
+            # If the canonical dataframe_structure is spark, updated the dataset
+            if self._dataframe_structure == DataFrameStructureEnum.SPARK:
+                self._data = data
+            return data
 
-    def to_sparknlp(self) -> DataFrame:
+    @inject
+    def to_sparknlp(
+        self,
+        spark_session_pool: SparkSessionPool = Provide[
+            DiscoverContainer.spark.session_pool
+        ],
+    ) -> DataFrame:
         """Returns the dataset as a SparkNLP DataFrame.
 
         Returns:
             DataFrame: The dataset in SparkNLP format.
         """
-        if self._dataframe_structure == DataFrameStructureEnum.SPARKNLP:
-            return self.as_df()
+        if (
+            isinstance(self._data, DataFrame)
+            and self._dataframe_structure == DataFrameStructureEnum.SPARKNLP
+        ):
+            return self._data
         else:
-            spark = self._get_spark_session(
-                dataframe_structure=DataFrameStructureEnum.SPARKNLP
-            )
-            return self._repo.get_file(
+            data = self._repo.get_data(
                 filepath=self._filepath,
                 file_format=self._file_format,
                 dataframe_structure=DataFrameStructureEnum.SPARKNLP,
-                spark=spark,
+                spark=spark_session_pool.sparknlp,
             )
-
-    @inject
-    def _get_spark_session(
-        self,
-        dataframe_structure: DataFrameStructureEnum,
-        spark_session_pool: SparkSessionPool = Provide[
-            DiscoverContainer.spark.session_pool
-        ],
-    ) -> Optional[SparkSession]:
-        spark = None
-        if dataframe_structure == DataFrameStructureEnum.SPARK:
-            spark = spark_session_pool.spark
-        elif dataframe_structure == DataFrameStructureEnum.SPARKNLP:
-            spark = spark_session_pool.sparknlp
-        return spark
+            # If the canonical dataframe_structure is sparknlp, updated the dataset
+            if self._dataframe_structure == DataFrameStructureEnum.SPARKNLP:
+                self._data = data
+            return data
 
     # --------------------------------------------------------------------------------------------- #
     #                                      SERIALIZATION                                            #
@@ -301,7 +316,7 @@ class DatasetFactory:
     with a workspace service to handle metadata registration, file path resolution, and persistence.
 
     Args:
-        config (dict): Configuration dictionary, including the file access layer (FAL) settings.
+        fal_config (dict): File access configuration dictionary, including read and write kwargs.
         workspace_service (WorkspaceService): Service for managing workspace operations,
             including dataset repositories and asset metadata.
     """
@@ -309,12 +324,13 @@ class DatasetFactory:
     @inject
     def __init__(
         self,
-        config: dict = Provide[DiscoverContainer.config],
         workspace_service: WorkspaceService = Provide[
             DiscoverContainer.workspace.service
         ],
+        io_factory: DataFrameIOFactory = DataFrameIOFactory,
     ) -> None:
         self._workspace_service = workspace_service
+        self._io_factory = io_factory
 
     @validate_call(config=dict(arbitrary_types_allowed=True))
     def from_parquet_file(
@@ -325,8 +341,6 @@ class DatasetFactory:
         name: str,
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructureEnum] = None,
-        file_format: FileFormat = FileFormat.PARQUET,
-        **kwargs,
     ) -> Dataset:
         """Creates a `Dataset` instance from a Parquet file.
 
@@ -338,7 +352,6 @@ class DatasetFactory:
             description (Optional[str]): Description of the dataset.
             dataframe_structure (Optional[DataFrameStructureEnum]): The structure of the dataset (e.g., Pandas, Spark).
             file_format (FileFormat): File format (default: PARQUET).
-            **kwargs: Additional keyword arguments.
 
         Returns:
             Dataset: The created dataset instance.
@@ -350,8 +363,7 @@ class DatasetFactory:
             name=name,
             description=description,
             dataframe_structure=dataframe_structure,
-            file_format=file_format,
-            **kwargs,
+            file_format=FileFormat.PARQUET,
         )
 
     @validate_call(config=dict(arbitrary_types_allowed=True))
@@ -363,8 +375,6 @@ class DatasetFactory:
         name: str,
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructureEnum] = None,
-        file_format: FileFormat = FileFormat.CSV,
-        **kwargs,
     ) -> Dataset:
         """Creates a `Dataset` instance from a CSV file.
 
@@ -376,7 +386,6 @@ class DatasetFactory:
             description (Optional[str]): Description of the dataset.
             dataframe_structure (Optional[DataFrameStructureEnum]): The structure of the dataset (e.g., Pandas, Spark).
             file_format (FileFormat): File format (default: CSV).
-            **kwargs: Additional keyword arguments.
 
         Returns:
             Dataset: The created dataset instance.
@@ -388,8 +397,7 @@ class DatasetFactory:
             name=name,
             description=description,
             dataframe_structure=dataframe_structure,
-            file_format=file_format,
-            **kwargs,
+            file_format=FileFormat.CSV,
         )
 
     def _from_file(
@@ -401,7 +409,6 @@ class DatasetFactory:
         description: Optional[str] = None,
         dataframe_structure: Optional[DataFrameStructureEnum] = None,
         file_format: FileFormat = FileFormat.PARQUET,
-        **kwargs,
     ) -> Dataset:
         """Internal method for creating a `Dataset` instance from a file.
 
@@ -413,27 +420,30 @@ class DatasetFactory:
             description (Optional[str]): Description of the dataset.
             dataframe_structure (Optional[DataFrameStructureEnum]): The structure of the dataset (e.g., Pandas, Spark).
             file_format (FileFormat): File format (default: PARQUET).
-            **kwargs: Additional keyword arguments.
 
         Returns:
             Dataset: The created dataset instance.
         """
+        # Raad the data from file.
+        data = self._workspace_service.dataset_repo.get_data(
+            filepath=filepath,
+            file_format=file_format,
+            dataframe_structure=dataframe_structure,
+        )
+
         dataset = Dataset(
             phase=phase,
             stage=stage,
             name=name,
+            data=data,
             repo=self._workspace_service.dataset_repo,
             description=description,
             dataframe_structure=dataframe_structure,
             file_format=file_format,
-            **kwargs,
         )
 
         dataset = self._workspace_service.set_asset_id(asset=dataset)
         dataset = self._workspace_service.set_filepath(asset=dataset)
-
-        copy = Copy()
-        copy(source=filepath, target=dataset.filepath, overwrite=False)
 
         self._register_dataset(dataset=dataset)
         return dataset
@@ -527,7 +537,6 @@ class DatasetFactory:
         file_format: FileFormat = FileFormat.PARQUET,
         source_dataset_asset_id: Optional[str] = None,
         parent_dataset_asset_id: Optional[str] = None,
-        **kwargs,
     ) -> Dataset:
         """Creates a `Dataset` instance from an in-memory DataFrame.
 
@@ -541,7 +550,6 @@ class DatasetFactory:
             file_format (FileFormat): File format (default: PARQUET).
             source_dataset_asset_id (Optional[str]): Asset ID of the source dataset.
             parent_dataset_asset_id (Optional[str]): Asset ID of the parent dataset.
-            **kwargs: Additional keyword arguments.
 
         Returns:
             Dataset: The created dataset instance.
@@ -561,13 +569,6 @@ class DatasetFactory:
 
         dataset = self._workspace_service.set_asset_id(asset=dataset)
         dataset = self._workspace_service.set_filepath(asset=dataset)
-
-        self._workspace_service.dataset_repo.add_file(
-            filepath=dataset.filepath,
-            data=data,
-            dataframe_structure=dataframe_structure,
-            file_format=file_format,
-        )
 
         self._register_dataset(dataset=dataset)
         return dataset
