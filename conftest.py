@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday December 28th 2024 01:08:23 am                                             #
+# Modified   : Saturday December 28th 2024 03:42:02 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,14 +24,12 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
-from discover.asset.core import AssetType
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
-from discover.infra.workspace.service import Workspace
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -144,28 +142,15 @@ def workspace(container):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                    DATASET BUILDER                                               #
+#                                         PASSPORT                                                 #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def dataset_builder(workspace):
-    class MockDatasetBuilder:
-        def __init__(self, workspace: Workspace):
-            self._workspace = workspace
-
-        @property
-        @staticmethod
-        def passport_ref():
-            return DatasetPassport(
-                asset_id="test_asset_id",
-                phase=PhaseDef.DATAPREP,
-                stage=DataPrepStageDef.CLEAN,
-                name="test_df_io_spec",
-                asset_type=AssetType.DATASET,
-                created=datetime.now(),
-            )
-
-        @property
-        def workspace(self):
-            return self._workspace
-
-    return MockDatasetBuilder(workspace=workspace)
+def ds_passport(workspace):
+    return DatasetPassport(
+        asset_id="test_dataset-0_dataprep-02_clean-test_dataset_passport",
+        phase=PhaseDef.ENRICHMENT,
+        stage=DataPrepStageDef.INGEST,
+        asset_type="dataset",
+        name="test_dataset_passport",
+        created=datetime.now(),
+    )

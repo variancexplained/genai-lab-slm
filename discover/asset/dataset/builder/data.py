@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday December 28th 2024 02:38:48 pm                                             #
+# Modified   : Saturday December 28th 2024 06:51:26 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,18 +20,17 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
 from typing import Union
 
 import pandas as pd
-from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DFType, FileFormat
 from discover.asset.dataset.base import DatasetComponentBuilder
 from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
-from discover.container import DiscoverContainer
 from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
 from discover.infra.utils.file.copy import Copy
@@ -39,9 +38,103 @@ from discover.infra.workspace.service import Workspace
 
 
 # ------------------------------------------------------------------------------------------------ #
+#                               DATA COMPONENT BUILDER                                             #
+# ------------------------------------------------------------------------------------------------ #
+class DataComponentBuilder(DatasetComponentBuilder):
+
+    def __init__(self, passport: DatasetPassport, workspace: Workspace):
+        self._passport = passport
+        self._workspace = workspace
+        self._data = None
+        self._data_component = None
+        self._dftype = None
+        self._file_format = None
+        self._filepath = None
+        self._created = None
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def _validate(self) -> None:
+        """
+        Validates the builder's current state to ensure consistency and integrity.
+
+        """
+        # Filepath Validation
+        if not isinstance(self._filepath, str):
+            msg = f"File path `filepath` is missing or not a valid string. Filepath type: {type(self._filepath)}."
+            self._logger.error(msg)
+            self.reset()
+            raise TypeError(msg)
+
+        # File format validation or infer if not provided.
+        if not self._file_format:
+            if "csv" in self._filepath:
+                self._file_format = FileFormat.CSV
+                self._logger.warning(
+                    f"File format `file_format` was inferred from the filepath as {self._file_format.value}"
+                )
+            else:
+                self._file_format = FileFormat.PARQUET
+                self._logger.warning(
+                    f"File format `file_format` was inferred from the filepath as {self._file_format.value}"
+                )
+        else:
+            if self._file_format != FileFormat.CSV and "csv" in self._filepath:
+                msg = f"Incompatiable file_format: {self._file_format.value} and filepath {os.path.basename(self._filepath)}. Expected FileFormat.CSV"
+                self._logger.error(msg)
+                self.reset()
+                raise ValueError(msg)
+            elif self._file_format == FileFormat.CSV and "parquet" in self._filepath:
+                msg = f"Incompatiable file_format: {self._file_format.value} and filepath {os.path.basename(self._filepath)}. Expected FileFormat.PARQUET"
+                self._logger.error(msg)
+                self.reset()
+                raise ValueError(msg)
+
+        # DataFrame Type Validation
+        if self._data is not None:
+            if not isinstance(
+                self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+            ):
+                msg = f"TypeError: `data` is type {type(self._data)}. Expected a pandas or spark DataFrame"
+                self._logger.error(msg)
+                self.reset()
+                raise TypeError(msg)
+
+        # Validate or infer Dataframe Type `dftype`
+        if self._dftype is None:
+            if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame)):
+                self._dftype = DFType.PANDAS
+                self._logger.warning(
+                    f"DataFrame type `dftype` has been inferred from the data as {self._dftype.value}"
+                )
+            elif isinstance(self._data, DataFrame):
+                self._dftype = DFType.SPARK
+                self._logger.warning(
+                    f"DataFrame type `dftype` has been inferred from the data as {self._dftype.value}"
+                )
+            else:
+                msg = "ValueErrror: DataFrame type `dftype` is None and could not be inferred from the data."
+                self._logger.error(msg)
+                self.reset()
+                raise ValueError(msg)
+        else:
+            if (
+                isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
+                and self._dftype != DFType.PANDAS
+            ) or (
+                not isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
+                and self._dftype == DFType.PANDAS
+            ):
+                msg = f"DataIntegrityError: Data and DataFrame type are not compatible.\nDataFrame is type {type(self._data)} and `dftype` is {self._dftype.value}."
+                self._logger.error(msg)
+                self.reset()
+                raise ValueError(msg)
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                          DATAFRAME SOURCE DATA COMPONENT BUILDER                                 #
 # ------------------------------------------------------------------------------------------------ #
-class DFSourceDataComponentBuilder(DatasetComponentBuilder):
+class DFSourceDataComponentBuilder(DataComponentBuilder):
     """
     A builder class for constructing a `DataComponent` object.
 
@@ -94,15 +187,7 @@ class DFSourceDataComponentBuilder(DatasetComponentBuilder):
     """
 
     def __init__(self, passport: DatasetPassport, workspace: Workspace):
-        self._passport = passport
-        self._workspace = workspace
-        self._data = None
-        self._data_component = None
-        self._dftype = None
-        self._file_format = None
-        self._filepath = None
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+        super().__init__(passport=passport, workspace=workspace)
 
     @property
     def data_component(self) -> DataComponent:
@@ -202,13 +287,14 @@ class DFSourceDataComponentBuilder(DatasetComponentBuilder):
         Returns:
             DFSourceDataComponentBuilder: The current builder instance for chaining.
         """
+        self._created = datetime.now()
         self._validate()
         self._data_component = DataComponent(
             dftype=self._dftype,
             filepath=self._filepath,
             file_format=self._file_format,
-            created=datetime.now(),
-            data=self._data,
+            created=self._created,
+            _data=self._data.copy(deep=True),
         )
         return self
 
@@ -227,55 +313,21 @@ class DFSourceDataComponentBuilder(DatasetComponentBuilder):
         """
         Validates the builder's current state to ensure consistency and integrity.
 
-        Raises:
-            ValueError: If validation fails due to missing or invalid attributes.
         """
-        msg = ""
-
-        # Validate data type
-        msg += (
-            f"Invalid dataframe object. Expected a pandas or spark DataFrame. Received type {type(self._data)}\n"
-            if not isinstance(
-                self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
-            )
-            else ""
-        )
-        msg += (
-            "The type of dataframe must be set prior to build.\n"
-            if not isinstance(self._dftype, DFType)
-            else ""
-        )
-
-        msg += (
-            "The file format must be set prior to build.\n"
-            if not isinstance(self._file_format, FileFormat)
-            else ""
-        )
-
-        # Validate data integrity and consistency
-        msg += (
-            f"Data integrity error. The dftype value must be consistent with the dataframe type. DFType: {self._dftype}. Dataframe type: {type(self._data)}.\n"
-            if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
-            and self._dftype in (DFType.SPARK, DFType.SPARKNLP)
-            else ""
-        )
-
-        msg += (
-            f"Data integrity error. The dftype value must be consistent with the dataframe type. DFType: {self._dftype}. Dataframe type: {type(self._data)}.\n"
-            if not isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
-            and self._dftype not in (DFType.SPARK, DFType.SPARKNLP)
-            else ""
-        )
-
-        if msg:
+        super()._validate()
+        if not isinstance(
+            self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+        ):
+            msg = "Missing or invalid dataframe."
             self._logger.error(msg)
-            raise ValueError(msg)
+            self.reset()
+            raise TypeError(msg)
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                            FILE SOURCE DATA COMPONENT BUILDER                                    #
 # ------------------------------------------------------------------------------------------------ #
-class FileSourceDataComponentBuilder(DatasetComponentBuilder):
+class FileSourceDataComponentBuilder(DataComponentBuilder):
     """
     A builder class for constructing a `DataComponent` object from file sources.
 
@@ -346,21 +398,16 @@ class FileSourceDataComponentBuilder(DatasetComponentBuilder):
         ValueError: If validation fails due to missing or inconsistent attributes.
     """
 
-    @inject
     def __init__(
         self,
         passport: DatasetPassport,
         workspace: Workspace,
-        fao: FAO = Provide[DiscoverContainer.repo.fao],
+        fao: FAO,
+        spark_session_pool: SparkSessionPool,
     ):
-        self._passport = passport
-        self._workspace = workspace
+        super().__init__(passport=passport, workspace=workspace)
         self._fao = fao
-        self._data = None
-        self._data_component = None
-        self._dftype = None
-        self._file_format = None
-        self._filepath = None
+        self._spark_session_pool = spark_session_pool
         self._lazy_loading = False
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -486,6 +533,7 @@ class FileSourceDataComponentBuilder(DatasetComponentBuilder):
         Returns:
             FileSourceDataComponentBuilder: The current builder instance for chaining.
         """
+        self._created = datetime.now()
         self._validate()
 
         # The filepath provided is not in the workspace. The following determines a filepath for
@@ -501,40 +549,10 @@ class FileSourceDataComponentBuilder(DatasetComponentBuilder):
             dftype=self._dftype,
             filepath=self._filepath,
             file_format=self._file_format,
-            created=datetime.now(),
-            data=self._data,
+            created=self._created,
+            _data=self._data,
         )
         return self
-
-    def _validate(self) -> None:
-        """
-        Validates the builder's current state to ensure consistency and integrity.
-
-        Raises:
-            ValueError: If validation fails due to missing or inconsistent attributes.
-        """
-        msg = ""
-
-        msg += "File path must be set.\n" if not isinstance(self._filepath, str) else ""
-        msg += (
-            "DataFrame type must be set via as_* methods.\n"
-            if not isinstance(self._dftype, DFType)
-            else ""
-        )
-
-        # Infer file format from filepath if not provided
-        if not self._file_format:
-            if "csv" in self._filepath:
-                self._file_format = FileFormat.CSV
-            else:
-                self._file_format = FileFormat.PARQUET
-            self._logger.warning(
-                f"File format not set. It has been inferred from the filepath as {self._file_format.value}."
-            )
-
-        if msg:
-            self._logger.error(msg)
-            raise ValueError(msg)
 
     def _copy_file_to_workspace(self) -> str:
         """
@@ -573,12 +591,8 @@ class FileSourceDataComponentBuilder(DatasetComponentBuilder):
             filepath=self._filepath, file_format=self._file_format, dftype=self._dftype
         )
 
-    @inject
     def _load_spark_data(
         self,
-        spark_session_pool: SparkSessionPool = Provide[
-            DiscoverContainer.spark.session_pool
-        ],
     ) -> DataFrame:
         """
         Loads the data as a Spark DataFrame using the Spark session pool.
@@ -591,9 +605,9 @@ class FileSourceDataComponentBuilder(DatasetComponentBuilder):
             DataFrame: The loaded data as a Spark DataFrame.
         """
         spark = (
-            spark_session_pool.spark
+            self._spark_session_pool.spark
             if self._dftype == DFType.SPARK
-            else spark_session_pool.sparknlp
+            else self._spark_session_pool.sparknlp
         )
         return self._fao.read(
             filepath=self._filepath,

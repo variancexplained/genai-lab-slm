@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Friday December 27th 2024 10:48:37 pm                                               #
+# Modified   : Saturday December 28th 2024 03:27:16 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,15 +26,6 @@ import logging.config
 from dependency_injector import containers, providers
 
 from discover.asset.core import AssetType
-from discover.asset.dataset.builder import DatasetBuilder
-from discover.asset.dataset.component.ops import (
-    ConvertOperator,
-    DatasetOps,
-    MergeOperator,
-    SampleOperator,
-    SelectOperator,
-    SplitOperator,
-)
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 from discover.infra.persist.file.fao import FAO
@@ -135,52 +126,6 @@ class WorkspaceContainer(containers.DeclarativeContainer):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                DATASET OPERATORS CONTAINER                                       #
-# ------------------------------------------------------------------------------------------------ #
-class DatasetOperatorContainer(containers.DeclarativeContainer):
-
-    config = providers.Configuration()
-    spark = providers.DependenciesContainer()
-    repo = providers.DependenciesContainer()
-
-    converter = providers.Singleton(
-        ConvertOperator,
-        config=config.ops.convert,
-        fao=repo.fao,
-        spark_session_pool=spark.session_pool,
-    )
-
-    merger = providers.Singleton(MergeOperator)
-    splitter = providers.Singleton(SplitOperator)
-    sampler = providers.Singleton(SampleOperator)
-    selector = providers.Singleton(SelectOperator)
-
-    ops = providers.Singleton(
-        DatasetOps,
-        converter=converter,
-        merger=merger,
-        splitter=splitter,
-        sampler=sampler,
-        selector=selector,
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                DATASET BUILDER CONTAINER                                         #
-# ------------------------------------------------------------------------------------------------ #
-class BuilderContainer(containers.DeclarativeContainer):
-
-    config = providers.Configuration()
-
-    workspace = providers.DependenciesContainer()
-    ops = providers.DependenciesContainer()
-
-    dataset_builder = providers.Singleton(
-        DatasetBuilder, workspace=workspace.service, ops=ops.ops
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                  APPLICATION CONTAINER                                           #
 # ------------------------------------------------------------------------------------------------ #
 class DiscoverContainer(containers.DeclarativeContainer):
@@ -207,14 +152,4 @@ class DiscoverContainer(containers.DeclarativeContainer):
         WorkspaceContainer,
         config=config,
         repo=repo,
-    )
-
-    # Dataset Operations container
-    ops = providers.Container(
-        DatasetOperatorContainer, config=config, repo=repo, spark=spark
-    )
-
-    # Dataset Builder Container
-    builder = providers.Container(
-        BuilderContainer, config=config, workspace=workspace, ops=ops
     )

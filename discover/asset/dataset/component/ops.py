@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 06:22:40 am                                               #
-# Modified   : Saturday December 28th 2024 11:10:37 am                                             #
+# Modified   : Saturday December 28th 2024 03:35:20 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.dataset import DFType, FileFormat
-from discover.asset.dataset.component.data import DataComponent, DataFrameFileConfig
+from discover.asset.dataset.component.data import DataComponent
 from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
 
@@ -40,22 +40,24 @@ class DatasetOps:
 
     def __init__(
         self,
-        converter: ConvertOperator,
-        merger: MergeOperator,
-        splitter: SplitOperator,
-        sampler: SampleOperator,
-        selector: SelectOperator,
+        fao: FAO,
+        spark_session_pool: SparkSessionPool,
+        converter_cls: ConvertOperator,
+        merger_cls: MergeOperator,
+        splitter_cls: SplitOperator,
+        sampler_cls: SampleOperator,
+        selector_cls: SelectOperator,
     ) -> None:
-        self._converter = converter
-        self._merger = merger
-        self._splitter = splitter
-        self._sampler = sampler
-        self._selector = selector
+        self._converter_cls = converter_cls
+        self._merger_cls = merger_cls
+        self._splitter_cls = splitter_cls
+        self._sampler_cls = sampler_cls
+        self._selector_cls = selector_cls
 
     @property
     def converter(self) -> ConvertOperator:
         """Access the conversion operator."""
-        return self._converter
+        return self._converter_cls()
 
     @property
     def merger(self) -> MergeOperator:

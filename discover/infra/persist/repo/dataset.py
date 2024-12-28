@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Saturday December 28th 2024 02:21:37 am                                             #
+# Modified   : Saturday December 28th 2024 03:34:24 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Optional
 from pyspark.sql import SparkSession
 
 from discover.asset.base import Asset
-from discover.asset.dataset.component.data import DataFrameFileConfig
+from discover.asset.dataset import DFType, FileFormat
 from discover.infra.persist.dataframe.base import DataFrame
 from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.base import DAO
@@ -68,11 +68,11 @@ class DatasetRepo(AssetRepo):
         """
         # Persist the underlying data to file.
         self._fao.create(
-            data_envelope=asset.data_envelope,
-            filepath=asset.filepath,
-            data=asset.as_df(),
-            dftype=asset.dftype,
-            file_format=asset.file_format,
+            dftype=asset.data.dftype,
+            filepath=asset.data.filepath,
+            file_format=asset.data.file_format,
+            created=asset.data.created,
+            data=asset.data.as_df(),
             overwrite=False,
         )
         # Save the Dataset object.
@@ -80,7 +80,9 @@ class DatasetRepo(AssetRepo):
 
     def get_data(
         self,
-        data_envelope_config: DataFrameFileConfig,
+        filepath: str,
+        file_format: FileFormat,
+        dftype: DFType,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
         """Retrieves a file from the repository using the specified data structure and format.
@@ -99,8 +101,7 @@ class DatasetRepo(AssetRepo):
         """
 
         return self._fao.read(
-            data_envelope_config=data_envelope_config,
-            spark=spark,
+            filepath=filepath, file_format=file_format, dftype=dftype, spark=spark
         )
 
     def remove(self, asset_id: str) -> None:

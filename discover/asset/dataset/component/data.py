@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Saturday December 28th 2024 01:18:20 pm                                             #
+# Modified   : Saturday December 28th 2024 06:14:17 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,12 +19,12 @@
 """Dataset Data Module"""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
-from pydantic.dataclasses import dataclass as pydantic_dataclass
+from pydantic import Field
+from pydantic.dataclasses import dataclass
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DFType, FileFormat
@@ -35,16 +35,16 @@ from discover.infra.utils.file.stats import FileStats
 # ------------------------------------------------------------------------------------------------ #
 #                                    DATA SOURCE                                                   #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
+@dataclass(config=dict(arbitrary_types_allowed=True))
 class DataSource(DatasetComponent):
-    data: Union[pd.DataFrame, DataFrame]
     dftype: DFType
+    data: Union[pd.DataFrame, DataFrame] = Field(default=None, exclude=True)
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                    FILE SOURCE                                                   #
 # ------------------------------------------------------------------------------------------------ #
-@pydantic_dataclass
+@dataclass
 class FileSource(DatasetComponent):
     filepath: str
     file_format: FileFormat
@@ -53,30 +53,27 @@ class FileSource(DatasetComponent):
 # ------------------------------------------------------------------------------------------------ #
 #                                   DATA COMPONENT                                                 #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass()
+@dataclass(config=dict(arbitrary_types_allowed=True))
 class DataComponent(DatasetComponent):
 
     dftype: DFType
     filepath: str
     file_format: FileFormat
     created: datetime
-    data: Optional[Union[pd.DataFrame, DataFrame]] = None
-    size: Optional[int] = None
+    # Private item created to ensure pydantic skips validation of this member.
+    _data: Optional[Union[pd.DataFrame, DataFrame]] = Field(exclude=True)
 
-    def __post_init__(self) -> None:
-        if self._data:
-            if (
-                isinstance(self.data, pd.DataFrame) and self.dftype != DFType.PANDAS
-            ) or (
-                isinstance(self.data, DataFrame)
-                and self.dftype not in (DFType.SPARK, DFType.SPARKNLP)
-            ):
-                msg = f"Data integrity error. The data type and dftype arguments are incompatible.\ndata type: {type(self.data)}\nDFType (dftype): {self.dftype.value}."
-                raise ValueError(msg)
+    @property
+    def size(self) -> int:
+        return FileStats.get_size(path=self.filepath, in_bytes=True)
 
-        # Compute size of the dataset
-        if not self.size:
-            self.size = FileStats.get_size(path=self.filepath, in_bytes=True)
+    @property
+    def data(self) -> Optional[Union[pd.DataFrame, DataFrame]]:
+        return self._data
+
+    @data.setter
+    def data(self, data: Union[pd.DataFrame, DataFrame]) -> None:
+        self._data = data
 
     @property
     def accessed(self) -> str:
