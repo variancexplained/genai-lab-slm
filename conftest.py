@@ -11,19 +11,23 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday December 27th 2024 10:58:39 pm                                               #
+# Modified   : Saturday December 28th 2024 12:02:30 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 import sys
+from datetime import datetime
 
 import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
+from discover.asset.core import AssetType
+from discover.asset.dataset.component.identity import DatasetPassport
 from discover.container import DiscoverContainer
+from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
@@ -147,6 +151,17 @@ def dataset_builder(workspace):
     class MockDatasetBuilder:
         def __init__(self, workspace: Workspace):
             self._workspace = workspace
+
+        @property
+        def passport_ref(self):
+            return DatasetPassport(
+                asset_id="test_asset_id",
+                phase=PhaseDef.DATAPREP,
+                stage=DataPrepStageDef.CLEAN,
+                name="test_df_io_spec",
+                asset_type=AssetType.DATASET,
+                created=datetime.now(),
+            )
 
         @property
         def workspace(self):

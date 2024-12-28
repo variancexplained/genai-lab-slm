@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Friday December 27th 2024 10:52:29 pm                                               #
+# Modified   : Friday December 27th 2024 11:51:25 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,10 +37,10 @@ class DataFrameIOSpecBuilder(DatasetComponentBuilder):
         self._dftype = None
         self._file_format = None
         self._filepath = None
-        self._df_io_spec
+        self._df_io_spec = None
 
     @property
-    def df_io_spec(self) -> DataFrameIOSpec:
+    def spec(self) -> DataFrameIOSpec:
         df_io_spec = self._df_io_spec
         self.reset()
         return df_io_spec
@@ -80,6 +80,7 @@ class DataFrameIOSpecBuilder(DatasetComponentBuilder):
         Returns:
             Dataset: The fully constructed dataset.
         """
+        self._validate()
         self._filepath = self._get_filepath()
         self._df_io_spec = DataFrameIOSpec(
             dftype=self._dftype, filepath=self._filepath, file_format=self._file_format
@@ -92,3 +93,18 @@ class DataFrameIOSpecBuilder(DatasetComponentBuilder):
         return workspace.get_filepath(
             asset_id=passport.asset_id, file_format=self._file_format
         )
+
+    def _validate(self) -> None:
+        msg = ""
+        msg += (
+            f"DataFrame type {self._dftype} is invalid. Expected pandas, spark, or sparknlp type.\n"
+            if not isinstance(self._dftype, DFType)
+            else ""
+        )
+        msg += (
+            f"File format {self._file_format} is invalid. Expected csv or parquet.\n"
+            if not isinstance(self._file_format, FileFormat)
+            else ""
+        )
+        if msg:
+            raise ValueError(msg)

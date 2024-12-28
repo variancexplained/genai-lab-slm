@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Friday December 27th 2024 11:13:31 pm                                               #
+# Modified   : Friday December 27th 2024 11:42:52 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -84,7 +84,7 @@ class DatasetPassportBuilder(DatasetComponentBuilder):
         return self
 
     def build(self) -> DatasetPassportBuilder:
-        self._validate_in()
+        self._validate()
         self._created = datetime.now()
         self._asset_id = self._get_asset_id()
         self._description = self._generate_default_description()
@@ -127,7 +127,7 @@ class DatasetPassportBuilder(DatasetComponentBuilder):
         description += f"on {self._created.strftime('%Y-%m-%d')} at {self._created.strftime('%H:%M:%S')}"
         return description
 
-    def _validate_in(self) -> None:
+    def _validate(self) -> None:
         msg = ""
         msg += (
             f"Phase {self._phase} is invalid. Expected a PhaseDef type.\n"
