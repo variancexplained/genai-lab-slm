@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Saturday December 28th 2024 02:27:52 am                                             #
+# Modified   : Saturday December 28th 2024 02:43:49 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,7 +32,26 @@ from discover.infra.utils.file.stats import FileStats
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                  DATA ENVELOPE                                                   #
+#                                    DATA SOURCE                                                   #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class DataSource(DatasetComponent):
+    data: Union[pd.DataFrame, DataFrame]
+    dtype: DFType
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    FILE SOURCE                                                   #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class FileSource(DatasetComponent):
+    dftype: DFType
+    filepath: str
+    file_format: FileFormat
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   DATA ENVELOPE                                                  #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass()
 class DataEnvelope(DatasetComponent):

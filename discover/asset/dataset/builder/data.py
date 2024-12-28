@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday December 28th 2024 02:21:37 am                                             #
+# Modified   : Saturday December 28th 2024 02:43:59 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -37,17 +37,14 @@ from discover.infra.workspace.service import Workspace
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                DATA ENVELOPE BUILDER                                             #
+#                                DATA SOURCE BUILDER                                               #
 # ------------------------------------------------------------------------------------------------ #
-class DataEnvelopeBuilder(DatasetComponentBuilder):
+class DataSourceBuilder(DatasetComponentBuilder):
 
     def __init__(self, dataset_builder):
         self._dataset_builder = dataset_builder
         self._data = None
-        self._filepath = None
-        self._dftype = None
-        self._file_format = None
-        self._created = None
+        self._dtype = None
 
         self._workspace = None
         self._passport = None
