@@ -11,16 +11,16 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 11:31:34 am                                               #
-# Modified   : Friday December 27th 2024 05:57:44 am                                               #
+# Modified   : Friday December 27th 2024 05:20:59 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 
-from discover.core.asset import AssetType
+from discover.asset.core import AssetType
 from discover.core.file import FileFormat
-from discover.core.flow import PhaseEnum, StageEnum
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
 from discover.infra.persist.repo.model import ModelRepo
@@ -144,8 +144,8 @@ class Workspace:
     def get_asset_id(
         self,
         asset_type: AssetType,
-        phase: PhaseEnum,
-        stage: StageEnum,
+        phase: PhaseDef,
+        stage: StageDef,
         name: str,
     ) -> str:
         """
@@ -153,8 +153,8 @@ class Workspace:
 
         Args:
             asset_type (AssetType): The type of the asset (e.g., DATASET, MODEL).
-            phase (PhaseEnum): The lifecycle phase of the asset (e.g., TRAINING, EVALUATION).
-            stage (StageEnum): The processing stage of the asset (e.g., RAW, PROCESSED).
+            phase (PhaseDef): The lifecycle phase of the asset (e.g., TRAINING, EVALUATION).
+            stage (StageDef): The processing stage of the asset (e.g., RAW, PROCESSED).
             name (str): A human-readable name for the asset.
 
         Returns:

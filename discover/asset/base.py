@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Friday December 27th 2024 05:30:22 am                                               #
+# Modified   : Friday December 27th 2024 06:58:39 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,13 +20,16 @@
 from __future__ import annotations
 
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Union
 
+from discover.asset.dataset.dataset import Dataset
+from discover.asset.identity import Passport
+from discover.core.data_structure import DataClass
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
-from discover.core.identity import Passport
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -153,3 +156,73 @@ class Asset(ABC):
             return v.isoformat()
         else:
             return dict()
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    ASSET CONFIG                                                  #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class AssetConfig(DataClass):
+    """Base class for asset configuration subclasses."""
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   ASSET BUILDER                                                  #
+# ------------------------------------------------------------------------------------------------ #
+class AssetBuilder(ABC):
+    """
+    Abstract base class for building assets with phases, stages, and persistence
+    configurations.
+    """
+
+    @abstractmethod
+    def reset(self) -> None:
+        """
+        Resets the builder to be ready to construct another Dataset object.
+        """
+        pass
+
+    @abstractmethod
+    def build(self) -> Dataset:
+        """
+        Builds and returns the final Dataset object based on the provided configurations.
+
+        Returns:
+            Dataset: The fully constructed dataset.
+        """
+        pass
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   COMPONENT BUILDER                                              #
+# ------------------------------------------------------------------------------------------------ #
+class AssetComponentBuilder(ABC):
+    """
+    Abstract base class for building components of an asset.
+
+    This class provides the structure for builders that work with asset components.
+    It requires implementation of methods to reset the builder and construct the final asset component.
+
+    Args:
+        asset_builder (AssetBuilder): The main asset builder to which this component builder is associated.
+    """
+
+    def __init__(self, asset_builder: AssetBuilder) -> None:
+        self._asset_builder = asset_builder
+
+    @abstractmethod
+    def reset(self) -> None:
+        """
+        Resets the builder to its initial state, preparing it to construct a new asset component.
+        """
+        pass
+
+    @abstractmethod
+    def build(self) -> Dataset:
+        """
+        Constructs and returns the final asset component.
+
+        Returns:
+            Dataset: The constructed asset component, ready for use.
+        """
+        pass

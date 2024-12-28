@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Friday December 27th 2024 09:21:46 am                                               #
+# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,11 +26,7 @@ import pandas as pd
 import pyspark
 from pyspark.sql import SparkSession
 
-from discover.core.data_structure import (
-    DataEnvelope,
-    DataEnvelopeConfig,
-    DataFrameStructureEnum,
-)
+from discover.core.dataset import DataEnvelope, DataFrameIOSpec, DFType
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 
 DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
@@ -95,28 +91,28 @@ class FAO:
             Exception: If the writer encounters an error during the write operation.
         """
         writer = self._io_factory.get_writer(
-            dataframe_structure=data_envelope.dataframe_structure,
+            dftype=data_envelope.dftype,
             file_format=data_envelope.file_format,
         )
         writer.write(
             data=data_envelope.data,
             filepath=data_envelope.filepath,
             overwrite=overwrite,
-            **self._fao_config[data_envelope.dataframe_structure.value][
+            **self._fao_config[data_envelope.dftype.value][
                 data_envelope.file_format.value
             ]["write_kwargs"],
         )
 
     def read(
         self,
-        data_envelope_config: DataEnvelopeConfig,
+        data_envelope_config: DataFrameIOSpec,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
         """
         Reads a dataset from a file using the appropriate reader from the IO factory.
 
         Args:
-            data_envelope_config (DataEnvelopeConfig): Configuration specifying the dataset's
+            data_envelope_config (DataFrameIOSpec): Configuration specifying the dataset's
                 file path, structure, and format.
             spark (Optional[SparkSession]): Spark session required for reading Spark DataFrames.
                 Defaults to None.
@@ -128,14 +124,14 @@ class FAO:
             Exception: If the reader encounters an error during the read operation.
         """
         reader = self._io_factory.get_reader(
-            dataframe_structure=data_envelope_config.dataframe_structure,
+            dftype=data_envelope_config.dftype,
             file_format=data_envelope_config.file_format,
         )
 
-        if data_envelope_config.dataframe_structure == DataFrameStructureEnum.PANDAS:
+        if data_envelope_config.dftype == DFType.PANDAS:
             return reader.read(
                 filepath=data_envelope_config.filepath,
-                **self._fao_config[data_envelope_config.dataframe_structure.value][
+                **self._fao_config[data_envelope_config.dftype.value][
                     data_envelope_config.file_format.value
                 ]["read_kwargs"],
             )
@@ -143,7 +139,7 @@ class FAO:
             return reader.read(
                 filepath=data_envelope_config.filepath,
                 spark=spark,
-                **self._fao_config[data_envelope_config.dataframe_structure.value][
+                **self._fao_config[data_envelope_config.dftype.value][
                     data_envelope_config.file_format.value
                 ]["read_kwargs"],
             )

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Friday December 27th 2024 06:54:36 am                                               #
+# Modified   : Friday December 27th 2024 06:29:56 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ setup:
     stage: raw
     name: review
     filepath: data/stage/prod/reviews
-    dataframe_structure: pandas
+    dftype: pandas
     file_format: parquet
 # ------------------------------------------------------------------------------------------------ #
 #                                         WORKSPACE                                                #

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Friday December 27th 2024 10:33:30 am                                               #
+# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,19 +35,9 @@ from discover.infra.utils.file.stats import FileStats
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                  DATAFRAME STRUCTURE                                             #
-# ------------------------------------------------------------------------------------------------ #
-class DataFrameStructureEnum(Enum):
-
-    PANDAS = "pandas"
-    SPARK = "spark"
-    SPARKNLP = "sparknlp"
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                  DATASET COMPONENTS                                              #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass(frozen=True)
+@dataclass()
 class DatasetComponents(ABC):
     """Base Class for Data Transfer Objects"""
 
@@ -112,9 +102,9 @@ class DatasetComponents(ABC):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                       DATASET FRAME                                              #
+#                                  DATA ENVELOPE                                                   #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass(frozen=True)
+@dataclass()
 class DataEnvelope(DatasetComponents):
     """
     Encapsulates a dataset with its data, file path, structure, and format metadata.
@@ -126,7 +116,7 @@ class DataEnvelope(DatasetComponents):
     Attributes:
         data (Union[pd.DataFrame, DataFrame]): The dataset, either as a Pandas or Spark DataFrame.
         filepath (str): The file path where the dataset is stored or to be stored.
-        dataframe_structure (Optional[DataFrameStructureEnum]): The structure of the dataset
+        dftype (Optional[DFType]): The structure of the dataset
             (e.g., PANDAS or SPARK). Defaults to SPARK.
         file_format (Optional[FileFormat]): The file format of the dataset (e.g., PARQUET or CSV).
             Defaults to PARQUET.
@@ -138,13 +128,13 @@ class DataEnvelope(DatasetComponents):
 
     Raises:
         TypeError: If the `data` is not a Pandas or Spark DataFrame.
-        DatasetIntegrityError: If the `data` and `dataframe_structure` are inconsistent.
+        DatasetIntegrityError: If the `data` and `dftype` are inconsistent.
         ValueError: If the `file_format` is invalid.
     """
 
     data: Union[pd.DataFrame, DataFrame]
     filepath: str
-    dataframe_structure: Optional[DataFrameStructureEnum] = DataFrameStructureEnum.SPARK
+    dftype: Optional[DFType] = DFType.SPARK
     file_format: Optional[FileFormat] = FileFormat.PARQUET
     size: Optional[Union[int, str]] = None
     created: Optional[datetime] = None
@@ -155,12 +145,12 @@ class DataEnvelope(DatasetComponents):
 
         Ensures that:
         - The `data` field is a valid Pandas or Spark DataFrame.
-        - The `dataframe_structure` matches the type of `data`.
+        - The `dftype` matches the type of `data`.
         - The `file_format` is valid.
 
         Raises:
             TypeError: If the `data` is not a Pandas or Spark DataFrame.
-            DatasetIntegrityError: If the `data` and `dataframe_structure` are inconsistent.
+            DatasetIntegrityError: If the `data` and `dftype` are inconsistent.
             ValueError: If the `file_format` is invalid.
         """
         # Validate data structure
@@ -169,24 +159,18 @@ class DataEnvelope(DatasetComponents):
                 f"Expected a PANDAS or SPARK DataFrame, but received {type(self.data)}"
             )
 
-        # Validate data and dataframe_structure consistency
-        if not isinstance(self.dataframe_structure, DataFrameStructureEnum):
-            raise ValueError(f"Invalid dataframe structure: {self.dataframe_structure}")
+        # Validate data and dftype consistency
+        if not isinstance(self.dftype, DFType):
+            raise ValueError(f"Invalid dataframe structure: {self.dftype}")
 
-        # Validate data and dataframe_structure consistency
-        if (
-            isinstance(self.data, pd.DataFrame)
-            and self.dataframe_structure != DataFrameStructureEnum.PANDAS
-        ):
+        # Validate data and dftype consistency
+        if isinstance(self.data, pd.DataFrame) and self.dftype != DFType.PANDAS:
             raise DatasetIntegrityError(
-                f"Expected PANDAS structure but received {self.dataframe_structure.value}."
+                f"Expected PANDAS structure but received {self.dftype.value}."
             )
-        if (
-            isinstance(self.data, DataFrame)
-            and self.dataframe_structure == DataFrameStructureEnum.PANDAS
-        ):
+        if isinstance(self.data, DataFrame) and self.dftype == DFType.PANDAS:
             raise DatasetIntegrityError(
-                f"Expected SPARK structure but received {self.dataframe_structure.value}."
+                f"Expected SPARK structure but received {self.dftype.value}."
             )
 
         # Validate file_format
@@ -210,17 +194,17 @@ class DataEnvelope(DatasetComponents):
     def from_config(
         cls,
         data: Union[pd.DataFrame, DataFrame],
-        data_envelope_config: DataEnvelopeConfig,
+        data_envelope_config: DataFrameIOSpec,
     ) -> DataEnvelope:
         """
         Creates a `DataEnvelope` instance from the provided data and configuration.
 
         This method initializes a `DataEnvelope` by combining raw data with the
-        configuration metadata specified in a `DataEnvelopeConfig` object.
+        configuration metadata specified in a `DataFrameIOSpec` object.
 
         Args:
             data (Union[pd.DataFrame, DataFrame]): The dataset, either as a Pandas or Spark DataFrame.
-            data_envelope_config (DataEnvelopeConfig): The configuration object containing
+            data_envelope_config (DataFrameIOSpec): The configuration object containing
                 metadata such as file path, dataframe structure, and file format.
 
         Returns:
@@ -229,53 +213,6 @@ class DataEnvelope(DatasetComponents):
         return cls(
             data=data,
             filepath=data_envelope_config.filepath,
-            dataframe_structure=data_envelope_config.dataframe_structure,
+            dftype=data_envelope_config.dftype,
             file_format=data_envelope_config.file_format,
         )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 DATASET FRAME CONFIG                                             #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass(frozen=True)
-class DataEnvelopeConfig(DatasetComponents):
-    """
-    Represents configuration metadata for a dataset, including file path,
-    structure type, and file format.
-
-    This class provides validation during initialization to ensure that
-    the provided metadata is consistent and valid.
-
-    Attributes:
-        filepath (str): The path to the file associated with the dataset.
-        dataframe_structure (DataFrameStructureEnum): The structure of the dataset
-            (e.g., PANDAS or SPARK).
-        file_format (FileFormat): The format of the file (e.g., PARQUET, CSV).
-
-    Raises:
-        ValueError: If `dataframe_structure` or `file_format` is invalid.
-    """
-
-    filepath: str
-    dataframe_structure: DataFrameStructureEnum
-    file_format: FileFormat
-
-    def __post_init__(self) -> None:
-        """
-        Validates the configuration metadata.
-
-        Ensures that:
-        - `dataframe_structure` is a valid instance of `DataFrameStructureEnum`.
-        - `file_format` is a valid instance of `FileFormat`.
-
-        Raises:
-            ValueError: If `dataframe_structure` is not a valid `DataFrameStructureEnum`.
-            ValueError: If `file_format` is not a valid `FileFormat`.
-        """
-        # Validate dataframe_structure
-        if not isinstance(self.dataframe_structure, DataFrameStructureEnum):
-            raise ValueError(f"Invalid dataframe structure: {self.dataframe_structure}")
-
-        # Validate file_format
-        if not isinstance(self.file_format, FileFormat):
-            raise ValueError(f"Invalid file format: {self.file_format}")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Wednesday December 25th 2024 06:50:39 pm                                            #
+# Modified   : Friday December 27th 2024 05:20:59 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,12 +25,12 @@ from typing import Optional, Union
 
 from discover.core.data_structure import DataClass
 from discover.core.flow import (
-    DataPrepStageEnum,
-    EDADataPrepStageEnum,
-    ModelingDataPrepStageEnum,
-    OpportunityDataPrepStageEnum,
+    DataPrepStageDef,
+    EDADataPrepStageDef,
+    ModelingDataPrepStageDef,
+    OpportunityDataPrepStageDef,
     Phase,
-    SentimentDataPrepStageEnum,
+    SentimentDataPrepStageDef,
 )
 
 
@@ -39,12 +39,12 @@ from discover.core.flow import (
 class Profile(DataClass):
     phase: Phase  # Phase i.e. DataPrep, Analysis
     stage: Union[
-        DataPrepStageEnum,
+        DataPrepStageDef,
         Phase,
-        EDADataPrepStageEnum,
-        ModelingDataPrepStageEnum,
-        SentimentDataPrepStageEnum,
-        OpportunityDataPrepStageEnum,
+        EDADataPrepStageDef,
+        ModelingDataPrepStageDef,
+        SentimentDataPrepStageDef,
+        OpportunityDataPrepStageDef,
     ]  # Stage within Phase, i.e. DQA
     task: str  # Class name for the task to which the context applies.
     start_time: datetime  # Task start time

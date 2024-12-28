@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Friday December 27th 2024 09:21:46 am                                               #
+# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Optional
 from pyspark.sql import SparkSession
 
 from discover.asset.base import Asset
-from discover.core.data_structure import DataEnvelopeConfig
+from discover.core.dataset import DataFrameIOSpec
 from discover.infra.persist.dataframe.base import DataFrame
 from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.base import DAO
@@ -71,7 +71,7 @@ class DatasetRepo(AssetRepo):
             data_envelope=asset.data_envelope,
             filepath=asset.filepath,
             data=asset.as_df(),
-            dataframe_structure=asset.dataframe_structure,
+            dftype=asset.dftype,
             file_format=asset.file_format,
             overwrite=False,
         )
@@ -80,7 +80,7 @@ class DatasetRepo(AssetRepo):
 
     def get_data(
         self,
-        data_envelope_config: DataEnvelopeConfig,
+        data_envelope_config: DataFrameIOSpec,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
         """Retrieves a file from the repository using the specified data structure and format.
@@ -88,7 +88,7 @@ class DatasetRepo(AssetRepo):
         Args:
             filepath (str): Path to the file to retrieve.
             file_format (FileFormat): The format of the file (default is Parquet).
-            dataframe_structure (DataFrameStructureEnum): The data structure (default is Pandas).
+            dftype (DFType): The data structure (default is Pandas).
             spark (Optional[SparkSession]): Optional spark session for returning spark DataFrames.
 
         Returns:
@@ -99,7 +99,7 @@ class DatasetRepo(AssetRepo):
         """
 
         return self._fao.read(
-            datasetframe_config=data_envelope_config,
+            data_envelope_config=data_envelope_config,
             spark=spark,
         )
 

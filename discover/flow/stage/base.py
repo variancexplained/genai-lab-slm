@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Friday December 27th 2024 10:35:08 am                                               #
+# Modified   : Friday December 27th 2024 06:30:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,16 +27,16 @@ import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
+from discover.asset.core import AssetType
 from discover.container import DiscoverContainer
-from discover.core.asset import AssetType
-from discover.core.dataset import DataFrameStructureEnum, Dataset, DatasetFactory
+from discover.core.dataset import Dataset, DatasetFactory, DFType
 from discover.core.file import FileFormat
 from discover.core.flow import (
-    DataEnrichmentStageEnum,
-    DataPrepStageEnum,
-    ModelStageEnum,
-    PhaseEnum,
-    StageEnum,
+    DataEnrichmentStageDef,
+    DataPrepStageDef,
+    ModelStageDef,
+    PhaseDef,
+    StageDef,
 )
 from discover.flow.task.base import Task, TaskBuilder
 from discover.infra.exception.config import (
@@ -58,8 +58,8 @@ class Stage(ABC):
     and creating a transformed destination dataset.
 
     Args:
-        phase (PhaseEnum): The phase of the pipeline to which this stage belongs.
-        stage (StageEnum): The specific stage within the pipeline.
+        phase (PhaseDef): The phase of the pipeline to which this stage belongs.
+        stage (StageDef): The specific stage within the pipeline.
         source_config (dict): Configuration for the source dataset.
         destination_config (dict): Configuration for the destination dataset.
         dataset_factory_cls (Type[DatasetFactory], optional): Factory class for creating datasets. Defaults to DatasetFactory.
@@ -80,8 +80,8 @@ class Stage(ABC):
     @inject
     def __init__(
         self,
-        phase: PhaseEnum,
-        stage: StageEnum,
+        phase: PhaseDef,
+        stage: StageDef,
         source_config: dict,
         destination_config: dict,
         dataset_factory_cls: Type[DatasetFactory] = DatasetFactory,
@@ -111,20 +111,20 @@ class Stage(ABC):
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
-    def phase(self) -> PhaseEnum:
+    def phase(self) -> PhaseDef:
         """Returns the phase of the pipeline.
 
         Returns:
-            PhaseEnum: The phase associated with this stage.
+            PhaseDef: The phase associated with this stage.
         """
         return self._phase
 
     @property
-    def stage(self) -> StageEnum:
+    def stage(self) -> StageDef:
         """Returns the specific stage within the pipeline.
 
         Returns:
-            DataPrepStageEnum: The stage associated with this instance.
+            DataPrepStageDef: The stage associated with this instance.
         """
         return self._stage
 
@@ -170,7 +170,7 @@ class Stage(ABC):
         # Obtain the source data in the specified dataframe structure
         data = self._get_data(
             asset_id=self._source_asset_id,
-            dataframe_structure=self._source_config["dataframe_structure"],
+            dftype=self._source_config["dftype"],
         )
 
         # Apply tasks to the data sequentially.
@@ -196,7 +196,7 @@ class Stage(ABC):
             **kwargs: Additional keyword arguments for extended functionality.
 
         Returns:
-            Stage: An instance of DataPrepStageEnum.
+            Stage: An instance of DataPrepStageDef.
 
         Raises:
             ValueError: If a required key is missing from the configuration.
@@ -244,11 +244,11 @@ class Stage(ABC):
             ) from e
 
     def _get_data(
-        self, asset_id: str, dataframe_structure: DataFrameStructureEnum
+        self, asset_id: str, dftype: DFType
     ) -> Union[pd.DataFrame, DataFrame]:
         # Obtain the source dataset and extract the DataFrame in the specified structure.
         dataset = self._workspace.dataset_repo.get(asset_id=asset_id)
-        return dataset.as_df(dataframe_structure=dataframe_structure)
+        return dataset.as_df(dftype=dftype)
 
     def _create_destination_dataset(
         self, data: Union[pd.DataFrame, DataFrame]
@@ -264,7 +264,7 @@ class Stage(ABC):
             stage=self._destination_config["stage"],
             name=self._destination_config["name"],
             data=data,
-            dataframe_structure=self._destination_config["dataframe_structure"],
+            dftype=self._destination_config["dftype"],
             file_format=self._destination_config["file_format"],
         )
 
@@ -280,7 +280,7 @@ class ConfigDeserializer:
     """
 
     @classmethod
-    def deserialize_stage(cls, phase: str, stage: str) -> StageEnum:
+    def deserialize_stage(cls, phase: str, stage: str) -> StageDef:
         """Deserializes the stage based on the provided phase value.
 
         Args:
@@ -288,17 +288,17 @@ class ConfigDeserializer:
             stage (str): The stage identifier to be deserialized within the phase.
 
         Returns:
-            StageEnum: The deserialized stage Enum corresponding to the phase and stage.
+            StageDef: The deserialized stage Enum corresponding to the phase and stage.
 
         Raises:
             PhaseConfigurationError: If the phase value is unrecognized.
         """
         if "dataprep" in phase.strip().lower():
-            return DataPrepStageEnum.from_value(stage)
+            return DataPrepStageDef.from_value(stage)
         elif "enrich" in phase.strip().lower():
-            return DataEnrichmentStageEnum.from_value(stage)
+            return DataEnrichmentStageDef.from_value(stage)
         elif "model" in phase.strip().lower():
-            return ModelStageEnum.from_value(stage)
+            return ModelStageDef.from_value(stage)
         else:
             msg = f"Unrecognized phase: {phase} in deserialize_stage."
             raise PhaseConfigurationError(msg)
@@ -311,7 +311,7 @@ class ConfigDeserializer:
 
         Args:
             config (dict): The dataset configuration containing keys like "asset_type",
-                "phase", "stage", "dataframe_structure", and "file_format".
+                "phase", "stage", "dftype", and "file_format".
 
         Returns:
             dict: The deserialized dataset configuration with Enums replacing raw string values.
@@ -325,13 +325,11 @@ class ConfigDeserializer:
             config_deserialized["asset_type"] = AssetType.from_value(
                 config["asset_type"]
             )
-            config_deserialized["phase"] = PhaseEnum.from_value(config["phase"])
+            config_deserialized["phase"] = PhaseDef.from_value(config["phase"])
             config_deserialized["stage"] = cls.deserialize_stage(
                 phase=config["phase"], stage=config["stage"]
             )
-            config_deserialized["dataframe_structure"] = (
-                DataFrameStructureEnum.from_value(value=config["dataframe_structure"])
-            )
+            config_deserialized["dftype"] = DFType.from_value(value=config["dftype"])
             config_deserialized["file_format"] = FileFormat.from_value(
                 value=config["file_format"]
             )
@@ -364,7 +362,7 @@ class ConfigDeserializer:
         stage_config_deserialized = stage_config.copy()
 
         try:
-            stage_config_deserialized["phase"] = PhaseEnum.from_value(
+            stage_config_deserialized["phase"] = PhaseDef.from_value(
                 stage_config["phase"]
             )
             stage_config_deserialized["stage"] = cls.deserialize_stage(

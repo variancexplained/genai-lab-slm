@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Friday December 27th 2024 10:35:08 am                                               #
+# Modified   : Friday December 27th 2024 06:29:46 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Type
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.dataset import DataFrameStructureEnum
+from discover.core.dataset import DFType
 from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
@@ -76,7 +76,7 @@ class NominalAnomalyDetectRepairTaskDetectStrategy(DetectStrategy):
     which applies the detection logic to the input dataset.
 
     Methods:
-        detect(data: DataFrameStructureEnum) -> DataFrameStructureEnum:
+        detect(data: DFType) -> DFType:
             Abstract method that applies the detection logic to the provided dataset.
 
     Notes:
@@ -97,15 +97,15 @@ class NominalAnomalyDetectRepairTaskDetectStrategy(DetectStrategy):
         self._new_column = new_column
 
     @abstractmethod
-    def detect(self, data: DataFrameStructureEnum) -> DataFrameStructureEnum:
+    def detect(self, data: DFType) -> DFType:
         """
         Applies anomaly detection logic to the provided dataset.
 
         Args:
-            data (DataFrameStructureEnum): The input dataset to analyze for nominal anomalies.
+            data (DFType): The input dataset to analyze for nominal anomalies.
 
         Returns:
-            DataFrameStructureEnum: The dataset with anomaly detection results added.
+            DFType: The dataset with anomaly detection results added.
 
         Raises:
             NotImplementedError: If the method is not implemented in a subclass.

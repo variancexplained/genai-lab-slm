@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Wednesday December 25th 2024 07:33:43 pm                                            #
+# Modified   : Friday December 27th 2024 05:21:00 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 
 import pandas as pd
 
-from discover.core.flow import DataPrepStageEnum, PhaseEnum
+from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.stage.base import DataPrepStage
 from discover.infra.utils.data.compare import compare_dataframes
 from discover.infra.utils.data.format import show_thousands_separator
@@ -48,13 +48,13 @@ class DataCleaningStage(DataPrepStage):
     """
     Stage for cleaning data in the data preparation pipeline.
 
-    This class inherits from `DataPrepStageEnum` and focuses on data cleaning tasks
+    This class inherits from `DataPrepStageDef` and focuses on data cleaning tasks
     to ensure data quality and consistency before further processing. It sets up
     the configuration and execution logic needed for data cleaning.
 
     Args:
-        phase (PhaseEnum): The phase of the data pipeline.
-        stage (DataPrepStageEnum): The specific stage within the data pipeline.
+        phase (PhaseDef): The phase of the data pipeline.
+        stage (DataPrepStageDef): The specific stage within the data pipeline.
         source_config (dict): Configuration for the data source.
         destination_config (dict): Configuration for the data destination.
         force (bool, optional): Whether to force execution, even if the output already
@@ -64,8 +64,8 @@ class DataCleaningStage(DataPrepStage):
 
     def __init__(
         self,
-        phase: PhaseEnum,
-        stage: DataPrepStageEnum,
+        phase: PhaseDef,
+        stage: DataPrepStageDef,
         source_config: dict,
         destination_config: dict,
         force: bool = False,

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 10:51:29 pm                                             #
-# Modified   : Wednesday December 25th 2024 06:51:33 pm                                            #
+# Modified   : Friday December 27th 2024 05:21:00 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 """ing stage class module."""
 from __future__ import annotations
 
-from discover.core.flow import DataPrepStageEnum
+from discover.core.flow import DataPrepStageDef
 from discover.flow.stage.base import Stage
 
 
@@ -35,8 +35,8 @@ class SentimentClassificationStage(Stage):
     destination settings.
 
     Args:
-        phase (PhaseEnum): The phase of the data pipeline.
-        stage (DataPrepStageEnum): The specific stage within the data pipeline.
+        phase (PhaseDef): The phase of the data pipeline.
+        stage (DataPrepStageDef): The specific stage within the data pipeline.
         source_config (dict): Configuration for the data source, including details
             such as file paths or database connections.
         destination_config (dict): Configuration for the data destination, including
@@ -50,8 +50,8 @@ class SentimentClassificationStage(Stage):
 
     def __init__(
         self,
-        phase: PhaseEnum,
-        stage: DataPrepStageEnum,
+        phase: PhaseDef,
+        stage: DataPrepStageDef,
         source_config: dict,
         destination_config: dict,
         force: bool = False,

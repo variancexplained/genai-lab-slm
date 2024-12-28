@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 06:22:40 am                                               #
-# Modified   : Friday December 27th 2024 10:32:23 am                                               #
+# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,11 +24,7 @@ import tempfile
 import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
-from discover.core.dataset import (
-    DataEnvelope,
-    DataEnvelopeConfig,
-    DataFrameStructureEnum,
-)
+from discover.core.dataset import DataEnvelope, DataFrameIOSpec, DFType
 from discover.core.file import FileFormat
 from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
@@ -103,7 +99,7 @@ class ConvertOperator:
         Returns:
             pd.DataFrame: The converted dataframe.
         """
-        if source.dataframe_structure == DataFrameStructureEnum.PANDAS:
+        if source.dftype == DFType.PANDAS:
             return source.data  # No conversion needed
 
         if source.size <= self._config["to_pandas_threshold"]:
@@ -113,7 +109,7 @@ class ConvertOperator:
 
     # -------------------------------------------------------------------------------------------- #
     def to_spark(self, source: DataEnvelope) -> DataFrame:
-        if source.dataframe_structure == DataFrameStructureEnum.SPARK:
+        if source.dftype == DFType.SPARK:
             return source.data  # No conversion needed
 
         if source.size <= self._config["to_spark_threshold"]:
@@ -123,7 +119,7 @@ class ConvertOperator:
 
     # -------------------------------------------------------------------------------------------- #
     def to_sparknlp(self, source: DataEnvelope) -> DataFrame:
-        if source.dataframe_structure == DataFrameStructureEnum.SPARKNLP:
+        if source.dftype == DFType.SPARKNLP:
             return source.data  # No conversion needed
 
         if source.size <= self._config["to_spark_threshold"]:
@@ -159,9 +155,7 @@ class ConvertOperator:
         Returns:
             DataFrame: The converted Spark DataFrame.
         """
-        spark = self._get_spark_session(
-            dataframe_structure=DataFrameStructureEnum.SPARK
-        )
+        spark = self._get_spark_session(dftype=DFType.SPARK)
         return spark.createDataFrame(source.data)
 
     # -------------------------------------------------------------------------------------------- #
@@ -175,9 +169,7 @@ class ConvertOperator:
         Returns:
             DataFrame: The converted SparkNLP DataFrame.
         """
-        spark = self._get_spark_session(
-            dataframe_structure=DataFrameStructureEnum.SPARKNLP
-        )
+        spark = self._get_spark_session(dftype=DFType.SPARKNLP)
         return spark.createDataFrame(source.data)
 
     # -------------------------------------------------------------------------------------------- #
@@ -195,9 +187,7 @@ class ConvertOperator:
         Returns:
             pd.DataFrame: The converted Pandas DataFrame.
         """
-        return self._io_convert(
-            source=source, target_dataframe_structure=DataFrameStructureEnum.PANDAS
-        )
+        return self._io_convert(source=source, target_dftype=DFType.PANDAS)
 
     # -------------------------------------------------------------------------------------------- #
     def _io_to_spark(self, source: DataEnvelope) -> pd.DataFrame:
@@ -212,9 +202,7 @@ class ConvertOperator:
         Returns:
             DataFrame: The converted Spark DataFrame.
         """
-        return self._io_convert(
-            source=source, target_dataframe_structure=DataFrameStructureEnum.SPARK
-        )
+        return self._io_convert(source=source, target_dftype=DFType.SPARK)
 
     # -------------------------------------------------------------------------------------------- #
     def _io_to_sparknlp(self, source: DataEnvelope) -> pd.DataFrame:
@@ -229,22 +217,18 @@ class ConvertOperator:
         Returns:
             DataFrame: The converted SparkNLP DataFrame.
         """
-        return self._io_convert(
-            source=source, target_dataframe_structure=DataFrameStructureEnum.SPARKNLP
-        )
+        return self._io_convert(source=source, target_dftype=DFType.SPARKNLP)
 
     # -------------------------------------------------------------------------------------------- #
     #                          IO-BASED CONVERTER                                                  #
     # -------------------------------------------------------------------------------------------- #
-    def _io_convert(
-        self, source: DataEnvelope, target_dataframe_structure: DataFrameStructureEnum
-    ) -> DataFrame:
+    def _io_convert(self, source: DataEnvelope, target_dftype: DFType) -> DataFrame:
         """
         Performs an I/O-based conversion using Parquet as an intermediate format.
 
         Args:
             source (DataEnvelope): The source DataEnvelope.
-            target_dataframe_structure (DataFrameStructureEnum): The target dataframe structure.
+            target_dftype (DFType): The target dataframe structure.
 
         Returns:
             Union[pd.DataFrame, DataFrame]: The converted dataframe.
@@ -257,26 +241,24 @@ class ConvertOperator:
             tempframe = DataEnvelope(
                 data=source.data,
                 filepath=temp_file,
-                dataframe_structure=source.dataframe_structure,
+                dftype=source.dftype,
                 file_format=FileFormat.PARQUET,
             )
             # Write data to file
             self._fao.create(data_envelope=tempframe, overwrite=True)
 
-            # Create the target DataEnvelopeConfig object
-            target_data_envelope_config = DataEnvelopeConfig(
+            # Create the target DataFrameIOSpec object
+            target_data_envelope_config = DataFrameIOSpec(
                 filepath=temp_file,
-                dataframe_structure=target_dataframe_structure,
+                dftype=target_dftype,
                 file_format=FileFormat.PARQUET,
             )
             # Convert to Spark if requested
-            if target_data_envelope_config.dataframe_structure in (
-                DataFrameStructureEnum.SPARK,
-                DataFrameStructureEnum.SPARKNLP,
+            if target_data_envelope_config.dftype in (
+                DFType.SPARK,
+                DFType.SPARKNLP,
             ):
-                spark = self._get_spark_session(
-                    dataframe_structure=target_dataframe_structure
-                )
+                spark = self._get_spark_session(dftype=target_dftype)
                 # Read the dataframe back as a spark DataFrame
                 return self._fao.read(
                     data_envelope_config=target_data_envelope_config, spark=spark
@@ -287,10 +269,8 @@ class ConvertOperator:
                 return self._fao.read(data_envelope_config=target_data_envelope_config)
 
     # -------------------------------------------------------------------------------------------- #
-    def _get_spark_session(
-        self, dataframe_structure: DataFrameStructureEnum
-    ) -> SparkSession:
-        if dataframe_structure == DataFrameStructureEnum.SPARK:
+    def _get_spark_session(self, dftype: DFType) -> SparkSession:
+        if dftype == DFType.SPARK:
             return self._spark_session_pool.spark
         else:
             return self._spark_session_pool.sparknlp

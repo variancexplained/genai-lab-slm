@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:02:58 am                                               #
-# Modified   : Friday December 27th 2024 10:35:38 am                                               #
+# Modified   : Friday December 27th 2024 05:21:00 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.core.flow import DataPrepStageEnum, PhaseEnum
+from discover.core.flow import DataPrepStageDef, PhaseDef
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -34,8 +34,8 @@ logger = logging.getLogger(__name__)
 double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 # ------------------------------------------------------------------------------------------------ #
-PHASE = PhaseEnum.DATAPREP
-STAGE = DataPrepStageEnum.CLEAN
+PHASE = PhaseDef.DATAPREP
+STAGE = DataPrepStageDef.CLEAN
 NAME = "test_builder_dataset"
 PQFILE = "tests/data/reviews"
 CSVFILE = "tests/data/reviews.csv"
@@ -43,7 +43,7 @@ CSVFILE = "tests/data/reviews.csv"
 
 @pytest.mark.builder
 @pytest.mark.dataset
-class TestSomething:  # pragma: no cover
+class TestDatasetBuilder:  # pragma: no cover
     # ============================================================================================ #
     def test_dataset_builder(self, container, caplog) -> None:
         start = datetime.now()
@@ -54,7 +54,8 @@ class TestSomething:  # pragma: no cover
         # ---------------------------------------------------------------------------------------- #
         builder = container.builder.dataset_builder
         dataset = (
-            builder.for_phase(PHASE)
+            builder()
+            .for_phase(PHASE)
             .for_stage(STAGE)
             .with_name(NAME)
             .from_parquet_file(PQFILE)

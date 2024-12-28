@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 02:21:28 pm                                             #
-# Modified   : Friday December 27th 2024 10:35:07 am                                               #
+# Modified   : Friday December 27th 2024 06:30:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 """DataFrame IO Factory Module"""
 import logging
 
-from discover.core.dataset import DataFrameStructureEnum
+from discover.core.dataset import DFType
 from discover.core.file import FileFormat
 from discover.infra.persist.dataframe.base import DataFrameReader, DataFrameWriter
 from discover.infra.persist.dataframe.pandas import (
@@ -61,42 +61,38 @@ class DataFrameIOFactory(IOFactory):
     @classmethod
     def get_reader(
         cls,
-        dataframe_structure: DataFrameStructureEnum,
+        dftype: DFType,
         file_format: FileFormat = FileFormat.PARQUET,
     ) -> DataFrameReader:
         """Returns a dataframe reader for the specified dataframe structure and file format."""
-        key = cls._format_key(
-            dataframe_structure=dataframe_structure, file_format=file_format
-        )
+        key = cls._format_key(dftype=dftype, file_format=file_format)
         try:
             logging.debug(f"\n\nRequesting a {key} reader from the DataFrameIOFactory")
 
             return cls.__reader_map[key]
         except KeyError:
-            msg = f"Unsupported dataframe structure: {dataframe_structure} and file format {file_format}. Supported datarame structures are pandas and spark. Valid file formats are csv and parquet."
+            msg = f"Unsupported dataframe structure: {dftype} and file format {file_format}. Supported datarame structures are pandas and spark. Valid file formats are csv and parquet."
             raise ValueError(msg)
 
     @classmethod
     def get_writer(
         cls,
-        dataframe_structure: DataFrameStructureEnum,
+        dftype: DFType,
         file_format: FileFormat = FileFormat.PARQUET,
     ) -> DataFrameWriter:
         """Returns a dataframe writer for the specified dataframe structure and file format."""
-        key = cls._format_key(
-            dataframe_structure=dataframe_structure, file_format=file_format
-        )
+        key = cls._format_key(dftype=dftype, file_format=file_format)
         try:
             logging.debug(f"\n\nRequesting a {key} writer from the DataFrameIOFactory")
             return cls.__writer_map[key]
         except KeyError:
-            msg = f"Unsupported dataframe structure: {dataframe_structure} and file format {file_format}. Supported datarame structures are pandas and spark. Valid file formats are csv and parquet."
+            msg = f"Unsupported dataframe structure: {dftype} and file format {file_format}. Supported datarame structures are pandas and spark. Valid file formats are csv and parquet."
             raise ValueError(msg)
 
     @classmethod
     def _format_key(
         cls,
-        dataframe_structure: DataFrameStructureEnum,
+        dftype: DFType,
         file_format: FileFormat = FileFormat.PARQUET,
     ) -> str:
-        return f"{dataframe_structure.value}_{file_format.value}"
+        return f"{dftype.value}_{file_format.value}"

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Wednesday December 25th 2024 08:54:14 pm                                            #
+# Modified   : Friday December 27th 2024 05:20:59 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,12 +22,12 @@ from enum import Enum
 
 
 # ------------------------------------------------------------------------------------------------ #
-class StageEnum(Enum):
+class StageDef(Enum):
     """Base class describing stage enums."""
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataPrepStageEnum(StageEnum):
+class DataPrepStageDef(StageDef):
 
     RAW = ("raw", "00_raw", "Raw Data Stage")
     INGEST = ("ingest", "01_ingest", "Data Ingestion Stage")
@@ -37,7 +37,7 @@ class DataPrepStageEnum(StageEnum):
     CLEAN = ("clean", "05_clean", "Clean Data Stage")
 
     @classmethod
-    def from_value(cls, value) -> DataPrepStageEnum:
+    def from_value(cls, value) -> DataPrepStageDef:
         """Finds the enum member based on a given value"""
         for member in cls:
             if member.value == value:
@@ -54,7 +54,7 @@ class DataPrepStageEnum(StageEnum):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataEnrichmentStageEnum(StageEnum):
+class DataEnrichmentStageDef(StageDef):
 
     SENTIMENT = ("sentiment", "00_sentiment", "Sentiment Classification Stage")
     QUANT = (
@@ -70,7 +70,7 @@ class DataEnrichmentStageEnum(StageEnum):
     )
 
     @classmethod
-    def from_value(cls, value) -> DataEnrichmentStageEnum:
+    def from_value(cls, value) -> DataEnrichmentStageDef:
         """Finds the enum member based on a given value"""
         for member in cls:
             if member.value == value:
@@ -86,13 +86,13 @@ class DataEnrichmentStageEnum(StageEnum):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class ModelStageEnum(StageEnum):
+class ModelStageDef(StageDef):
 
     FINETUNING = ("fine_tuning", "00_fine_tuning", "Model Fine-Tuning Stage")
     DEVELOPMENT = ("development", "01_development", "Model Development Stage")
 
     @classmethod
-    def from_value(cls, value) -> ModelStageEnum:
+    def from_value(cls, value) -> ModelStageDef:
         """Finds the enum member based on a given value"""
         for member in cls:
             if member.value == value:
@@ -108,7 +108,7 @@ class ModelStageEnum(StageEnum):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class PhaseEnum(Enum):
+class PhaseDef(Enum):
     # Defining phases with name, directory, and description
     DATAPREP = ("dataprep", "00_dataprep", "Data Preparation Phase")
     ENRICHMENT = ("enrichment", "01_enrichment", "Data Enrichment Phase")
@@ -122,7 +122,7 @@ class PhaseEnum(Enum):
         return obj
 
     @classmethod
-    def from_value(cls, value) -> PhaseEnum:
+    def from_value(cls, value) -> PhaseDef:
         """Finds the enum member based on a given value"""
         for member in cls:
             if member.value == value:

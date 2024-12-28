@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Wednesday December 25th 2024 07:32:22 pm                                            #
+# Modified   : Friday December 27th 2024 05:21:00 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 """Ingest Stage Module"""
 
 
-from discover.core.flow import DataPrepStageEnum, PhaseEnum
+from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.stage.base import DataPrepStage
 from discover.infra.service.logging.stage import stage_logger
 
@@ -31,12 +31,12 @@ class IngestionStage(DataPrepStage):
 
     This class handles the ingestion of raw data from a specified source, applies
     a series of tasks to preprocess the data, and saves the processed result to
-    the destination. It inherits from `DataPrepStageEnum` and implements the
+    the destination. It inherits from `DataPrepStageDef` and implements the
     logic for data loading and saving.
 
     Args:
-        phase (PhaseEnum): The phase of the data pipeline.
-        stage (DataPrepStageEnum): The specific stage within the data pipeline.
+        phase (PhaseDef): The phase of the data pipeline.
+        stage (DataPrepStageDef): The specific stage within the data pipeline.
         source_config (dict): Configuration for the data source, including the file path.
         destination_config (dict): Configuration for the data destination.
         force (bool, optional): Whether to force execution, even if the output already
@@ -45,8 +45,8 @@ class IngestionStage(DataPrepStage):
 
     def __init__(
         self,
-        phase: PhaseEnum,
-        stage: DataPrepStageEnum,
+        phase: PhaseDef,
+        stage: DataPrepStageDef,
         source_config: dict,
         destination_config: dict,
         force: bool = False,

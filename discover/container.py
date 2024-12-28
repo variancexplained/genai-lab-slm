@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Friday December 27th 2024 10:17:06 am                                               #
+# Modified   : Friday December 27th 2024 04:40:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,8 @@ import logging.config
 
 from dependency_injector import containers, providers
 
-from discover.asset.dataset.base import DatasetBuilder
+from discover.asset.core import AssetType
+from discover.asset.dataset.build import DatasetBuilder
 from discover.asset.dataset.ops import (
     ConvertOperator,
     DatasetOps,
@@ -34,7 +35,6 @@ from discover.asset.dataset.ops import (
     SelectOperator,
     SplitOperator,
 )
-from discover.core.asset import AssetType
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 from discover.infra.persist.file.fao import FAO
@@ -210,7 +210,9 @@ class DiscoverContainer(containers.DeclarativeContainer):
     )
 
     # Dataset Operations container
-    ops = providers.Container(DatasetOps, config=config, repo=repo, spark=spark)
+    ops = providers.Container(
+        DatasetOperatorContainer, config=config, repo=repo, spark=spark
+    )
 
     # Dataset Builder Container
     builder = providers.Container(
