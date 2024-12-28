@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Saturday December 28th 2024 01:08:18 pm                                             #
+# Modified   : Saturday December 28th 2024 02:39:52 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,9 +23,12 @@ import logging
 from typing import Type
 
 from discover.asset.base import AssetBuilder
-from discover.asset.dataset.builder.data import DataComponentBuilder
+from discover.asset.dataset.builder.data import (
+    DataComponentBuilder,
+    DFSourceDataComponentBuilder,
+    FileSourceDataComponentBuilder,
+)
 from discover.asset.dataset.builder.identity import DatasetPassportBuilder
-from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.asset.dataset.component.ops import DatasetOps
 from discover.asset.dataset.dataset import Dataset
@@ -38,9 +41,61 @@ from discover.infra.workspace.service import Workspace
 # ------------------------------------------------------------------------------------------------ #
 class DatasetBuilder(AssetBuilder):
     """
-    Abstract base class for building datasets with configurable phases, stages,
-    and formats. The builder pattern supports ingesting data from multiple sources,
-    configuring internal representations, and exporting to various formats.
+    A builder class for constructing a `Dataset` object.
+
+    This builder provides a fluent interface for configuring and constructing a
+    `Dataset` that encapsulates its passport, data components, and operations.
+    It manages sub-builders for constructing dataset components such as the passport
+    and data component.
+
+    Args:
+        workspace (Workspace): The workspace that manages datasets, their storage,
+            and associated metadata.
+        ops (DatasetOps): The operations available for the dataset (e.g., conversion,
+            splitting, merging).
+        passport_builder_cls (Type[DatasetPassportBuilder]): The class to use for
+            building the dataset passport. Defaults to `DatasetPassportBuilder`.
+        data_component_builder_cls (Type[DataComponentBuilder]): The class to use for
+            building the data component. Defaults to `DataComponentBuilder`.
+
+    Attributes:
+        dataset (Dataset): The constructed `Dataset` object. Accessing this property
+            resets the builder's state.
+
+    Methods:
+        reset() -> None:
+            Resets the builder's internal state.
+
+        passport() -> DatasetPassport:
+            Returns the constructed passport for the dataset.
+
+        with_passport() -> DatasetPassportBuilder:
+            Initializes and returns the passport builder for configuring the dataset's
+            passport.
+
+        from_dataframe() -> DataComponentBuilder:
+            Initializes and returns the data component builder for constructing the
+            dataset from an in-memory dataframe.
+
+        from_file() -> DataComponentBuilder:
+            Initializes and returns the data component builder for constructing the
+            dataset from a file.
+
+        build() -> DatasetBuilder:
+            Constructs the final `Dataset` object based on the configured components.
+
+    Internal Methods:
+        _validate() -> None:
+            Validates the builder's current state to ensure all required components
+            are set.
+
+        _check_passport() -> None:
+            Ensures that the passport has been constructed before building other components.
+
+    Raises:
+        DatasetBuilderError: If validation fails during the build process.
+        RuntimeError: If a required component, such as the passport, is not set before
+            building subsequent components.
     """
 
     def __init__(
@@ -48,110 +103,142 @@ class DatasetBuilder(AssetBuilder):
         workspace: Workspace,
         ops: DatasetOps,
         passport_builder_cls: Type[DatasetPassportBuilder] = DatasetPassportBuilder,
-        source_builder_cls: Type[DataComponentBuilder] = DataComponentBuilder,
+        df_data_component_builder_cls: Type[
+            DFSourceDataComponentBuilder
+        ] = DFSourceDataComponentBuilder,
+        file_data_component_builder_cls: Type[
+            FileSourceDataComponentBuilder
+        ] = FileSourceDataComponentBuilder,
     ) -> None:
-        # Internal resources
+        # Resources
         self._workspace = workspace
+        self._ops = ops
 
-        # Component Builders
+        # Builders
         self._passport_builder = passport_builder_cls(workspace=self._workspace)
-        self._source_builder_cls = source_builder_cls
+        self._df_data_component_builder_cls = df_data_component_builder_cls
+        self._file_data_component_builder_cls = file_data_component_builder_cls
 
-        # Dataset Components
+        # Components
         self._passport = None
         self._data = None
-        self._ops = ops
+
         self._repo = self._workspace.dataset_repo
-
         self._dataset = None
-
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
     def dataset(self) -> Dataset:
+        """
+        Retrieves the constructed `Dataset` object and resets the builder's state.
+
+        Returns:
+            Dataset: The constructed dataset object.
+        """
         dataset = self._dataset
         self.reset()
         return dataset
 
     def reset(self) -> None:
+        """
+        Resets the builder's internal state.
+
+        Clears all configured components, preparing the builder for a new configuration.
+        """
         self._passport = None
         self._data = None
         self._dataset = None
 
     @property
-    def passport(self) -> DatasetPassportBuilder:
-        return self._passport_builder
+    def passport(self) -> DatasetPassport:
+        """
+        Provides access to the constructed passport for the dataset.
+
+        Returns:
+            DatasetPassport: The dataset's passport object.
+        """
+        return self._passport
+
+    def with_passport(self) -> DatasetPassportBuilder:
+        """
+        Initializes the passport builder for configuring the dataset's passport.
+
+        Returns:
+            DatasetPassportBuilder: The builder for configuring the dataset passport.
+        """
+        self._passport = self._passport_builder
 
     @property
-    def source(self) -> DataComponentBuilder:
-        if self._passport is None:
-            raise RuntimeError(
-                "The passport must be constructed before the data source."
-            )
-        return self._source_builder_cls(passport=self._passport)
+    def from_dataframe(self) -> DataComponentBuilder:
+        """
+        Initializes the data component builder for constructing the dataset
+        from an in-memory dataframe.
+
+        Returns:
+            DataComponentBuilder: The builder for configuring the data component
+            from a dataframe.
+        """
+        self._check_passport()
+        return self._df_data_component_builder_cls(
+            passport=self._passport, workspace=self._workspace
+        ).dataframe
+
+    @property
+    def from_file(self) -> DataComponentBuilder:
+        """
+        Initializes the data component builder for constructing the dataset
+        from a file.
+
+        Returns:
+            DataComponentBuilder: The builder for configuring the data component
+            from a file.
+        """
+        self._check_passport()
+        return self._file_data_component_builder_cls(
+            passport=self._passport, workspace=self._workspace
+        ).file
 
     def build(self) -> DatasetBuilder:
         """
-        Builds and returns the final Dataset object based on the provided configurations.
+        Constructs the final `Dataset` object based on the provided configurations.
 
         Returns:
-            Dataset: The fully constructed dataset.
+            DatasetBuilder: The current builder instance for chaining.
         """
-
-        # Construct the passport
-        self._passport = self._build_passport()
-
-        # Get data component
-        data = self._source_builder.data
-
-        # Construct the Dataset
+        self._validate()
         dataset = Dataset(
             passport=self._passport,
             workspace=self._workspace,
-            data=self.source.data,
+            data=self._data,
             ops=self._ops,
         )
-
-        # Validate Dataset
-        self._validate()
-
-        # Register Dataset
         self._workspace.dataset_repo.add(asset=dataset)
-
-        # Present constructed dataset as property
         self._dataset = dataset
+        return self
 
-    def _build_dataset(
-        self, passport: DatasetPassport, data_envelope: DataComponent
-    ) -> None:
-        """Constructs the Dataset object"""
-        return
+    def _validate(self) -> None:
+        """
+        Validates the builder's current state to ensure all required components
+        are set.
 
-    def _register_dataset(self, dataset: Dataset) -> Dataset:
-        """Registers the dataset with an asset_id, filepath, then persists it."""
-        # Assign an asset_id
-        dataset = self._workspace_service.set_asset_id(asset=dataset)
-        # Set the filepath in the workspace
-        dataset = self._workspace_service.set_filepath(asset=dataset)
-        # Persist the Dataset in the workspace
-        self._workspace_service.dataset_repo.add(asset=dataset)
-
-        return dataset
-
-    def _validate(self, dataset: Dataset) -> None:
-        self._validate_passport(dataset=dataset)
-        self._validate_workspace(dataset=dataset)
-        self._validate_data_envelope(dataset=dataset)
-        self._validate_ops(dataset=dataset)
-
-    def _validate_passport(self, dataset: Dataset) -> None:
+        Raises:
+            DatasetBuilderError: If any required components are missing.
+        """
         msg = ""
-        msg += "Dataset passport not set\n" if self._dataset.passport is None else ""
-        msg += (
-            "Dataset data_envelope not set\n"
-            if self._dataset.data_envelope is None
-            else ""
-        )
-        msg += "Dataset operations not set\n" if self._dataset.data_ops is None else ""
+        msg += "Dataset passport not set\n" if self._passport is None else ""
+        msg += "Data component not set\n" if self._data is None else ""
+        msg += "Dataset operations not set\n" if self._ops is None else ""
         if msg:
             raise DatasetBuilderError(msg)
+
+    def _check_passport(self) -> None:
+        """
+        Ensures that the passport has been constructed before building other components.
+
+        Raises:
+            RuntimeError: If the passport has not been constructed.
+        """
+        if self._passport is None:
+            raise RuntimeError(
+                "The passport must be constructed before building the data component."
+            )

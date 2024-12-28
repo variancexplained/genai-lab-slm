@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday December 28th 2024 01:57:35 pm                                             #
+# Modified   : Saturday December 28th 2024 02:38:48 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,33 +36,6 @@ from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
 from discover.infra.utils.file.copy import Copy
 from discover.infra.workspace.service import Workspace
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                DATA COMPONENT BUILDER                                            #
-# ------------------------------------------------------------------------------------------------ #
-class DataComponentBuilder(DatasetComponentBuilder):
-
-    @inject
-    def __init__(
-        self,
-        passport: DatasetPassport,
-        workspace: Workspace = Provide[DiscoverContainer.workspace.service],
-    ):
-        self._passport = passport
-        self._workspace = workspace
-
-    @property
-    def dataframe(self) -> DFSourceDataComponentBuilder:
-        return DFSourceDataComponentBuilder(
-            passport=self._passport, workspace=self._workspace
-        )
-
-    @property
-    def file(self) -> FileSourceDataComponentBuilder:
-        return FileSourceDataComponentBuilder(
-            passport=self._passport, workspace=self._workspace
-        )
 
 
 # ------------------------------------------------------------------------------------------------ #
