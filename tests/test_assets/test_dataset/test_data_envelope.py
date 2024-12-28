@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_assets/test_dataset/test_df_io_spec.py                                  #
+# Filename   : /tests/test_assets/test_dataset/test_data_envelope.py                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday December 27th 2024 11:10:41 pm                                               #
-# Modified   : Saturday December 28th 2024 02:21:37 am                                             #
+# Created    : Saturday December 28th 2024 12:40:58 am                                             #
+# Modified   : Saturday December 28th 2024 12:50:26 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,11 +20,12 @@ import inspect
 import logging
 from datetime import datetime
 
+import pandas as pd
 import pytest
 
 from discover.asset.dataset import DFType, FileFormat
-from discover.asset.dataset.builder.data import DataFrameFileConfigBuilder
-from discover.asset.dataset.component.data import DataFrameFileConfig
+from discover.asset.dataset.builder.data import DataEnvelopeBuilder
+from discover.asset.dataset.component.data import DataEnvelope
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -37,25 +38,33 @@ double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
 
-@pytest.mark.iospec
-@pytest.mark.dataset
-class TestDFIOSpecBuilder:  # pragma: no cover
+@pytest.mark.envelope
+@pytest.mark.builder
+class TestDataEnvelopeBuilder:  # pragma: no cover
     # ============================================================================================ #
-    def test_builder_pandas_csv(self, dataset_builder, caplog) -> None:
+    def test_builder_pandas_parquet(self, dataset_builder, pandas_df, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataFrameFileConfigBuilder(dataset_builder=dataset_builder)
-        spec = builder.pandas().csv().build().spec
-        assert isinstance(spec, DataFrameFileConfig)
-        assert isinstance(spec.dftype, DFType)
-        assert isinstance(spec.file_format, FileFormat)
-        assert isinstance(spec.filepath, str)
-        assert spec.file_format == FileFormat.CSV
-        assert spec.dftype == DFType.PANDAS
+        builder = DataEnvelopeBuilder(dataset_builder=dataset_builder)
+        envelope = (
+            builder.pandas()
+            .parquet()
+            .data(pandas_df)
+            .filepath("test/data_envelope/pandas.parquet")
+            .build()
+            .envelope
+        )
+        assert isinstance(envelope, DataEnvelope)
+        assert isinstance(envelope.dftype, DFType)
+        assert isinstance(envelope.file_format, FileFormat)
+        assert isinstance(envelope.filepath, str)
+        assert envelope.file_format == FileFormat.PARQ
+        assert envelope.dftype == DFType.PANDAS
+        assert isinstance(envelope.data, (pd.DataFrame, pd.core.frame.DataFrame))
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -67,21 +76,29 @@ class TestDFIOSpecBuilder:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_builder_spark_parquet(self, dataset_builder, caplog) -> None:
+    def test_builder_spark_parquet(self, dataset_builder, spark_df, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataFrameFileConfigBuilder(dataset_builder=dataset_builder)
-        spec = builder.spark().parquet().build().spec
-        assert isinstance(spec, DataFrameFileConfig)
-        assert isinstance(spec.dftype, DFType)
-        assert isinstance(spec.file_format, FileFormat)
-        assert isinstance(spec.filepath, str)
-        assert spec.file_format == FileFormat.PARQUET
-        assert spec.dftype == DFType.SPARK
+        builder = DataEnvelopeBuilder(dataset_builder=dataset_builder)
+        envelope = (
+            builder.spark()
+            .parquet()
+            .data(spark_df)
+            .filepath("test/data_envelope/spark.parquet")
+            .build()
+            .envelope
+        )
+        assert isinstance(envelope, DataEnvelope)
+        assert isinstance(envelope.dftype, DFType)
+        assert isinstance(envelope.file_format, FileFormat)
+        assert isinstance(envelope.filepath, str)
+        assert envelope.file_format == FileFormat.PARQ
+        assert envelope.dftype == DFType.SPARK
+        assert isinstance(envelope.data, (pd.DataFrame, pd.core.frame.DataFrame))
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -90,24 +107,31 @@ class TestDFIOSpecBuilder:  # pragma: no cover
         logger.info(
             f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
-        logger.info(single_line)
 
     # ============================================================================================ #
-    def test_builder_sparknlp_parquet(self, dataset_builder, caplog) -> None:
+    def test_builder_sparknlp_csv(self, dataset_builder, spark_df, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataFrameFileConfigBuilder(dataset_builder=dataset_builder)
-        spec = builder.sparknlp().parquet().build().spec
-        assert isinstance(spec, DataFrameFileConfig)
-        assert isinstance(spec.dftype, DFType)
-        assert isinstance(spec.file_format, FileFormat)
-        assert isinstance(spec.filepath, str)
-        assert spec.file_format == FileFormat.PARQUET
-        assert spec.dftype == DFType.SPARKNLP
+        builder = DataEnvelopeBuilder(dataset_builder=dataset_builder)
+        envelope = (
+            builder.sparknlp()
+            .csv()
+            .data(spark_df)
+            .filepath("test/data_envelope/spark.parquet")
+            .build()
+            .envelope
+        )
+        assert isinstance(envelope, DataEnvelope)
+        assert isinstance(envelope.dftype, DFType)
+        assert isinstance(envelope.file_format, FileFormat)
+        assert isinstance(envelope.filepath, str)
+        assert envelope.file_format == FileFormat.PARQ
+        assert envelope.dftype == DFType.SPARKNLP
+        assert isinstance(envelope.data, (pd.DataFrame, pd.core.frame.DataFrame))
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -116,24 +140,3 @@ class TestDFIOSpecBuilder:  # pragma: no cover
         logger.info(
             f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
-        logger.info(single_line)
-
-    # ============================================================================================ #
-    def test_builder_validation(self, dataset_builder, caplog) -> None:
-        start = datetime.now()
-        logger.info(
-            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
-        )
-        logger.info(double_line)
-        # ---------------------------------------------------------------------------------------- #
-        builder = DataFrameFileConfigBuilder(dataset_builder=dataset_builder)
-        with pytest.raises(ValueError):
-            _ = builder.build().spec
-        # ---------------------------------------------------------------------------------------- #
-        end = datetime.now()
-        duration = round((end - start).total_seconds(), 1)
-
-        logger.info(
-            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
-        )
-        logger.info(single_line)

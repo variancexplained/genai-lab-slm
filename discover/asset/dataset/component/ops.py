@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 06:22:40 am                                               #
-# Modified   : Friday December 27th 2024 10:25:26 pm                                               #
+# Modified   : Saturday December 28th 2024 02:21:37 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.dataset import DFType, FileFormat
-from discover.asset.dataset.component.data import DataEnvelope, DataFrameIOSpec
+from discover.asset.dataset.component.data import DataEnvelope, DataFrameFileConfig
 from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
 
@@ -247,8 +247,8 @@ class ConvertOperator:
             # Write data to file
             self._fao.create(data_envelope=tempframe, overwrite=True)
 
-            # Create the target DataFrameIOSpec object
-            target_data_envelope_config = DataFrameIOSpec(
+            # Create the target DataFrameFileConfig object
+            target_data_envelope_config = DataFrameFileConfig(
                 filepath=temp_file,
                 dftype=target_dftype,
                 file_format=FileFormat.PARQUET,

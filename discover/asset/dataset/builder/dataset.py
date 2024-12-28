@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Friday December 27th 2024 10:52:07 pm                                               #
+# Modified   : Saturday December 28th 2024 02:21:36 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,9 +22,9 @@ from __future__ import annotations
 from typing import Type
 
 from discover.asset.base import AssetBuilder
-from discover.asset.dataset.builder.data import DataFrameIOSpecBuilder
+from discover.asset.dataset.builder.data import DataFrameFileConfigBuilder
 from discover.asset.dataset.builder.identity import DatasetPassportBuilder
-from discover.asset.dataset.component.data import DataEnvelope, DataFrameIOSpec
+from discover.asset.dataset.component.data import DataEnvelope, DataFrameFileConfig
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.asset.dataset.component.ops import DatasetOps
 from discover.asset.dataset.dataset import Dataset
@@ -47,23 +47,22 @@ class DatasetBuilder(AssetBuilder):
         workspace: Workspace,
         ops: DatasetOps,
         passport_builder_cls: Type[DatasetPassportBuilder] = DatasetPassportBuilder,
-        df_io_spec_builder_cls: Type[DataFrameIOSpecBuilder] = DataFrameIOSpecBuilder,
+        data_builder_cls: Type[DataFrameFileConfigBuilder] = DataFrameFileConfigBuilder,
     ) -> None:
         # Internal resources
         self._workspace = workspace
         # Dataset Components
         self._passport = None
-        self._data = None
-        self._source_spec = None
-        self._target_spec = None
+        self._source = None
+        self._target = None
         self._ops = ops
         self._repo = self._workspace.dataset_repo
 
         self._dataset = None
 
         # Component Builders
-        self._passport_builder = passport_builder_cls(self)
-        self._df_io_spec_builder = df_io_spec_builder_cls(self)
+        self._passport_builder_cls = passport_builder_cls
+        self._df_io_spec_builder = df_io_spec_builder_cls
 
     @property
     def dataset(self) -> Dataset:
@@ -71,21 +70,9 @@ class DatasetBuilder(AssetBuilder):
         self.reset()
         return dataset
 
-    @property
-    def passport_ref(self) -> DatasetPassport:
-        """Provides access to componeent builders"""
-        return self._passport
-
-    @property
-    def workspace(self) -> Workspace:
-        """Provides access to componeent builders"""
-        return self._workspace
-
     def reset(self) -> None:
         self._passport = None
         self._data = None
-        self._source_spec = None
-        self._target_spec = None
         self._dataset = None
 
     @property
@@ -93,8 +80,22 @@ class DatasetBuilder(AssetBuilder):
         return self._passport_builder
 
     @property
-    def df_io_spec(self) -> DataFrameIOSpecBuilder:
+    def source(self) -> DatasetPassportBuilder:
+        return self.data_builder
+
+    @property
+    def df_io_spec(self) -> DataFrameFileConfigBuilder:
         return self._df_spec_builder
+
+    @property
+    def passport_ref(self) -> DatasetPassport:
+        """Provides sub builders with access to the passport ."""
+        return self._passport
+
+    @property
+    def workspace(self) -> Workspace:
+        """Provides access component builders access to the workspace."""
+        return self._workspace
 
     def build(self) -> DatasetBuilder:
         """
@@ -118,7 +119,7 @@ class DatasetBuilder(AssetBuilder):
         self._data_envelope = self._build_data_envelope(passport=self._passport)
 
         # Construct the data envelop config
-        self._data_envelope_config = DataFrameIOSpec(
+        self._data_envelope_config = DataFrameFileConfig(
             filepath=self._data_envelope.filepath,
             dftype=self._data_envelope.dftype,
             file_format=self._data_envelope.file_format,

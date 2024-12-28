@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Friday December 27th 2024 10:29:03 pm                                               #
+# Modified   : Saturday December 28th 2024 02:21:37 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import pyspark
 from pyspark.sql import SparkSession
 
 from discover.asset.dataset import DFType
-from discover.asset.dataset.component.data import DataEnvelope, DataFrameIOSpec
+from discover.asset.dataset.component.data import DataEnvelope, DataFrameFileConfig
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 
 DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
@@ -106,14 +106,14 @@ class FAO:
 
     def read(
         self,
-        data_envelope_config: DataFrameIOSpec,
+        data_envelope_config: DataFrameFileConfig,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
         """
         Reads a dataset from a file using the appropriate reader from the IO factory.
 
         Args:
-            data_envelope_config (DataFrameIOSpec): Configuration specifying the dataset's
+            data_envelope_config (DataFrameFileConfig): Configuration specifying the dataset's
                 file path, structure, and format.
             spark (Optional[SparkSession]): Spark session required for reading Spark DataFrames.
                 Defaults to None.
