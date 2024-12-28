@@ -4,36 +4,15 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/dataset/__init__.py                                                 #
+# Filename   : /discover/asset/dataset/component/__init__.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:21:25 pm                                               #
-# Modified   : Friday December 27th 2024 10:23:45 pm                                               #
+# Modified   : Friday December 27th 2024 10:25:36 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Dataset Init Module for Dataset Shared Classes"""
-from enum import Enum
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     FILE FORMATS                                                 #
-# ------------------------------------------------------------------------------------------------ #
-
-
-class FileFormat(Enum):
-    CSV = "csv"
-    PARQUET = "parquet"
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                  DATAFRAME LIBRARY                                               #
-# ------------------------------------------------------------------------------------------------ #
-class DFType(Enum):
-
-    PANDAS = "pandas"
-    SPARK = "spark"
-    SPARKNLP = "sparknlp"

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
+# Modified   : Friday December 27th 2024 10:29:03 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,8 @@ import pandas as pd
 import pyspark
 from pyspark.sql import SparkSession
 
-from discover.core.dataset import DataEnvelope, DataFrameIOSpec, DFType
+from discover.asset.dataset import DFType
+from discover.asset.dataset.component.data import DataEnvelope, DataFrameIOSpec
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 
 DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]

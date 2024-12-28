@@ -4,54 +4,34 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/identity.py                                                         #
+# Filename   : /discover/asset/dataset/base.py                                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Friday December 27th 2024 10:33:57 pm                                               #
+# Created    : Friday December 27th 2024 09:21:00 pm                                               #
+# Modified   : Friday December 27th 2024 09:24:01 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Base Module for the Asset Dimension"""
-from __future__ import annotations
-
-from datetime import datetime
-
+"""Dataset Base Module"""
 from pydantic.dataclasses import dataclass
 
-from discover.asset.core import AssetType
-from discover.core.data_structure import DataClass
-from discover.core.flow import PhaseDef, StageDef
+from discover.asset.base import AssetComponent, AssetComponentBuilder
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                     PASSPORT                                                     #
+#                               DATASET COMPONENT                                                  #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass()
-class Passport(DataClass):
-    """
-    Represents a basic passport containing metadata for an asset.
+@dataclass
+class DatasetComponent(AssetComponent):
+    pass
 
-    The Passport class is a base class that tracks minimal metadata about an asset,
-    such as its unique identifier, lifecycle phase, processing stage, and name.
 
-    Attributes:
-
-        asset_id (str): A unique identifier for the asset.
-        asset_type (AssetType): Type of asset as specified in AssetType enumeration.
-        phase (PhaseDef): The lifecycle phase of the asset (e.g., INGESTION, ANALYSIS).
-        stage (StageDef): The processing stage of the asset (e.g., RAW, PROCESSED).
-        name (str): A human-readable name for the asset.
-        created (datetime): Datetime the asset was created.
-    """
-
-    asset_id: str
-    phase: PhaseDef
-    stage: StageDef
-    name: str
-    created: datetime
-    asset_type: AssetType
+# ------------------------------------------------------------------------------------------------ #
+#                            DATASET COMPONENT BUILDER                                             #
+# ------------------------------------------------------------------------------------------------ #
+class DatasetComponentBuilder(AssetComponentBuilder):
+    pass

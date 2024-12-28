@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Friday December 27th 2024 06:58:39 pm                                               #
+# Modified   : Friday December 27th 2024 08:45:22 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,14 +21,13 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Union
 
-from discover.asset.dataset.dataset import Dataset
+from pydantic.dataclasses import dataclass
+
 from discover.asset.identity import Passport
-from discover.core.data_structure import DataClass
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 
 
@@ -159,14 +158,6 @@ class Asset(ABC):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                    ASSET CONFIG                                                  #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class AssetConfig(DataClass):
-    """Base class for asset configuration subclasses."""
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                   ASSET BUILDER                                                  #
 # ------------------------------------------------------------------------------------------------ #
 class AssetBuilder(ABC):
@@ -183,7 +174,7 @@ class AssetBuilder(ABC):
         pass
 
     @abstractmethod
-    def build(self) -> Dataset:
+    def build(self) -> Asset:
         """
         Builds and returns the final Dataset object based on the provided configurations.
 
@@ -191,6 +182,14 @@ class AssetBuilder(ABC):
             Dataset: The fully constructed dataset.
         """
         pass
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    ASSET COMPONENT                                               #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class AssetComponent(ABC):
+    """Base class for asset component subclasses."""
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -218,7 +217,7 @@ class AssetComponentBuilder(ABC):
         pass
 
     @abstractmethod
-    def build(self) -> Dataset:
+    def build(self) -> AssetComponentBuilder:
         """
         Constructs and returns the final asset component.
 

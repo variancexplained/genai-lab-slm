@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/dataset/ops.py                                                      #
+# Filename   : /discover/asset/dataset/component/ops.py                                            #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 06:22:40 am                                               #
-# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
+# Modified   : Friday December 27th 2024 10:25:26 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,8 @@ import tempfile
 import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
-from discover.core.dataset import DataEnvelope, DataFrameIOSpec, DFType
-from discover.core.file import FileFormat
+from discover.asset.dataset import DFType, FileFormat
+from discover.asset.dataset.component.data import DataEnvelope, DataFrameIOSpec
 from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
 

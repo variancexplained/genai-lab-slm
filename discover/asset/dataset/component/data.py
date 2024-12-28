@@ -4,108 +4,39 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/core/dataset.py                                                           #
+# Filename   : /discover/asset/dataset/component/data.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
+# Created    : Friday December 27th 2024 08:32:52 pm                                               #
+# Modified   : Friday December 27th 2024 10:28:07 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Data Structures Module"""
+"""Dataset Data Module"""
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
-from typing import Any, Dict, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 from pyspark.sql import DataFrame
 
-from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
-from discover.core.file import FileFormat
+from discover.asset.dataset import DFType, FileFormat
+from discover.asset.dataset.base import DatasetComponent
 from discover.infra.exception.dataset import DatasetIntegrityError
 from discover.infra.utils.file.stats import FileStats
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                  DATASET COMPONENTS                                              #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass()
-class DatasetComponents(ABC):
-    """Base Class for Data Transfer Objects"""
-
-    def __repr__(self) -> str:
-        return "{}({})".format(
-            self.__class__.__name__,
-            ", ".join(
-                "{}={!r}".format(k, v)
-                for k, v in self.__dict__.items()
-                if type(v) in IMMUTABLE_TYPES
-            ),
-        )
-
-    def __str__(self) -> str:
-        width = 32
-        breadth = width * 2
-        s = f"\n\n{self.__class__.__name__.center(breadth, ' ')}"
-        d = self.as_dict()
-        for k, v in d.items():
-            if type(v) in IMMUTABLE_TYPES:
-                k = k.strip("_")
-                s += f"\n{k.rjust(width,' ')} | {v}"
-        s += "\n\n"
-        return s
-
-    def as_dict(self) -> Dict[str, Union[str, int, float, datetime, None]]:
-        """Returns a dictionary representation of the the Config object."""
-        return {
-            k: self._export_config(v)
-            for k, v in self.__dict__.items()
-            if not k.startswith("_")
-        }
-
-    @classmethod
-    def _export_config(
-        cls,
-        v: Any,
-    ) -> Any:
-        """Returns v with Configs converted to dicts, recursively."""
-        if isinstance(v, IMMUTABLE_TYPES):
-            return v
-        elif isinstance(v, SEQUENCE_TYPES):
-            return type(v)(map(cls._export_config, v))
-        elif isinstance(v, dict):
-            return v
-        elif hasattr(v, "as_dict"):
-            return v.as_dict()
-        elif isinstance(v, Enum):
-            if hasattr(v, "description"):
-                return v.description
-            else:
-                return v.value
-        elif isinstance(v, datetime):
-            return v.isoformat()
-        else:
-            return dict()
-
-    def as_df(self) -> Any:
-        """Returns the project in DataFrame format"""
-        d = self.as_dict()
-        return pd.DataFrame(data=d, index=[0])
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                  DATA ENVELOPE                                                   #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass()
-class DataEnvelope(DatasetComponents):
+class DataEnvelope(DatasetComponent):
     """
     Encapsulates a dataset with its data, file path, structure, and format metadata.
 
@@ -188,31 +119,57 @@ class DataEnvelope(DatasetComponents):
     @property
     def accessed(self) -> str:
         """The last accessed timestamp of the dataset file."""
-        return FileStats.file_last_accessed(filepath=self._filepath)
+        return FileStats.file_last_accessed(filepath=self.filepath)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                 DATASET FRAME SPEC                                               #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class DataFrameIOSpec(DatasetComponent):
+    """
+    Represents configuration metadata for a dataset, including file path,
+    structure type, and file format.
+
+    This class provides validation during initialization to ensure that
+    the provided metadata is consistent and valid.
+
+    Attributes:
+        filepath (str): The path to the file associated with the dataset.
+        dftype (DFType): The structure of the dataset
+            (e.g., PANDAS or SPARK).
+        file_format (FileFormat): The format of the file (e.g., PARQUET, CSV).
+
+    Raises:
+        ValueError: If `dftype` or `file_format` is invalid.
+    """
+
+    dftype: DFType
+    filepath: str
+    file_format: FileFormat
+
+    def __post_init__(self) -> None:
+        """
+        Validates the configuration metadata.
+
+        Ensures that:
+        - `dftype` is a valid instance of `DFType`.
+        - `file_format` is a valid instance of `FileFormat`.
+
+        Raises:
+            ValueError: If `dftype` is not a valid `DFType`.
+            ValueError: If `file_format` is not a valid `FileFormat`.
+        """
+        # Validate dftype
+        if not isinstance(self.dftype, DFType):
+            raise ValueError(f"Invalid dataframe structure: {self.dftype}")
+
+        # Validate file_format
+        if not isinstance(self.file_format, FileFormat):
+            raise ValueError(f"Invalid file format: {self.file_format}")
 
     @classmethod
-    def from_config(
-        cls,
-        data: Union[pd.DataFrame, DataFrame],
-        data_envelope_config: DataFrameIOSpec,
-    ) -> DataEnvelope:
-        """
-        Creates a `DataEnvelope` instance from the provided data and configuration.
-
-        This method initializes a `DataEnvelope` by combining raw data with the
-        configuration metadata specified in a `DataFrameIOSpec` object.
-
-        Args:
-            data (Union[pd.DataFrame, DataFrame]): The dataset, either as a Pandas or Spark DataFrame.
-            data_envelope_config (DataFrameIOSpec): The configuration object containing
-                metadata such as file path, dataframe structure, and file format.
-
-        Returns:
-            DataEnvelope: A new `DataEnvelope` instance with the specified data and metadata.
-        """
-        return cls(
-            data=data,
-            filepath=data_envelope_config.filepath,
-            dftype=data_envelope_config.dftype,
-            file_format=data_envelope_config.file_format,
-        )
+    def create(
+        cls, dftype: DFType, file_format: FileFormat, filepath: str
+    ) -> DataFrameIOSpec:
+        return cls(dftype=dftype, filepath=filepath, file_format=file_format)

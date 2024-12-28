@@ -4,62 +4,52 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/setup.py                                                                  #
+# Filename   : /tests/test_assets/test_dataset/test_df_io_spec.py                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Friday December 27th 2024 08:26:52 pm                                               #
+# Created    : Friday December 27th 2024 11:10:41 pm                                               #
+# Modified   : Friday December 27th 2024 11:11:24 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import inspect
 import logging
-import sys
+from datetime import datetime
 
-from dependency_injector.wiring import Provide, inject
+import pytest
 
-from discover.container import DiscoverContainer
-from discover.infra.workspace.service import Workspace
-
+# ------------------------------------------------------------------------------------------------ #
+# pylint: disable=missing-class-docstring, line-too-long
+# mypy: ignore-errors
+# ------------------------------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------------------------------ #
 logger = logging.getLogger(__name__)
-
-
 # ------------------------------------------------------------------------------------------------ #
-@inject
-def load_data(
-    workspace: Workspace = Provide[DiscoverContainer.workspace.service],
-):
-    """Loads raw data into the workspace"""
-    # Obtain and deserialize the raw dataset configuration
-    # setup_config = AppConfigReader().get_config("setup", namespace=False)
-    # dataset_config = ConfigDeserializer.deserialize_dataset_config(
-    #     config=setup_config["dataset"]
-    # )
-
-    # TODO: Replace DatasetFactory with DatasetBuilder
-    # Create dataset if it doesn't already exist.
-    # asset_id = workspace.get_asset_id(**dataset_config)
-    # if not workspace.dataset_repo.exists(asset_id=asset_id):
-    #     dataset = DatasetFactory().from_parquet_file(**dataset_config)
-    #     print(f"Dataset {dataset.asset_id} | {dataset.description} created.")
+double_line = f"\n{100 * '='}"
+single_line = f"\n{100 * '-'}"
 
 
-# ------------------------------------------------------------------------------------------------ #
-def wire_container():
-    container = DiscoverContainer()
-    container.init_resources()
-    container.wire(
-        modules=["discover.asset.dataset", "discover.flow.stage.base", __name__]
-    )
-    return container
+@pytest.mark.iospec
+@pytest.mark.dataset
+class TestDFIOSpecBuilder:  # pragma: no cover
+    # ============================================================================================ #
+    def test_builder(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
 
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
 
-# ------------------------------------------------------------------------------------------------ #
-def auto_wire_container():
-    """Automatically wires the container if running in a notebook."""
-    if "ipykernel" in sys.modules:
-        return wire_container()
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)

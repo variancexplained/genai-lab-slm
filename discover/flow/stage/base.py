@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Friday December 27th 2024 06:30:02 pm                                               #
+# Modified   : Friday December 27th 2024 10:32:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,9 +28,9 @@ from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
 from discover.asset.core import AssetType
+from discover.asset.dataset import FileFormat
 from discover.container import DiscoverContainer
 from discover.core.dataset import Dataset, DatasetFactory, DFType
-from discover.core.file import FileFormat
 from discover.core.flow import (
     DataEnrichmentStageDef,
     DataPrepStageDef,

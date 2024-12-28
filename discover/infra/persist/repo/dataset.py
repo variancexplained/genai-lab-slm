@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Friday December 27th 2024 06:34:44 pm                                               #
+# Modified   : Friday December 27th 2024 10:53:53 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Optional
 from pyspark.sql import SparkSession
 
 from discover.asset.base import Asset
-from discover.core.dataset import DataFrameIOSpec
+from discover.asset.dataset.component.data import DataFrameIOSpec
 from discover.infra.persist.dataframe.base import DataFrame
 from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.base import DAO

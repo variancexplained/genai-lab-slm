@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 02:21:28 pm                                             #
-# Modified   : Friday December 27th 2024 06:30:02 pm                                               #
+# Modified   : Friday December 27th 2024 10:32:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,8 +19,7 @@
 """DataFrame IO Factory Module"""
 import logging
 
-from discover.core.dataset import DFType
-from discover.core.file import FileFormat
+from discover.asset.dataset import DFType, FileFormat
 from discover.infra.persist.dataframe.base import DataFrameReader, DataFrameWriter
 from discover.infra.persist.dataframe.pandas import (
     PandasDataFrameCSVReader,

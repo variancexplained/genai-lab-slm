@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday December 24th 2024 02:29:06 am                                              #
+# Modified   : Friday December 27th 2024 10:58:39 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,6 +27,7 @@ from discover.container import DiscoverContainer
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
+from discover.infra.workspace.service import Workspace
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -128,3 +129,27 @@ def spark_df(spark, pandas_df):
     """
 
     return spark.createDataFrame(pandas_df)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                      WORKSPACE                                                   #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def workspace(container):
+    return container.workspace.service()
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    DATASET BUILDER                                               #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dataset_builder(workspace):
+    class MockDatasetBuilder:
+        def __init__(self, workspace: Workspace):
+            self._workspace = workspace
+
+        @property
+        def workspace(self):
+            return self._workspace
+
+    return MockDatasetBuilder(workspace=workspace)

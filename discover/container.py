@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Friday December 27th 2024 04:40:02 pm                                               #
+# Modified   : Friday December 27th 2024 10:48:37 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,8 +26,8 @@ import logging.config
 from dependency_injector import containers, providers
 
 from discover.asset.core import AssetType
-from discover.asset.dataset.build import DatasetBuilder
-from discover.asset.dataset.ops import (
+from discover.asset.dataset.builder import DatasetBuilder
+from discover.asset.dataset.component.ops import (
     ConvertOperator,
     DatasetOps,
     MergeOperator,
