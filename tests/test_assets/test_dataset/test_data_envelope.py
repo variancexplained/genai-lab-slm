@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday December 28th 2024 12:40:58 am                                             #
-# Modified   : Saturday December 28th 2024 12:50:26 am                                             #
+# Modified   : Saturday December 28th 2024 11:10:38 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,8 @@ import pandas as pd
 import pytest
 
 from discover.asset.dataset import DFType, FileFormat
-from discover.asset.dataset.builder.data import DataEnvelopeBuilder
-from discover.asset.dataset.component.data import DataEnvelope
+from discover.asset.dataset.builder.data import DataComponentBuilder
+from discover.asset.dataset.component.data import DataComponent
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -40,7 +40,7 @@ single_line = f"\n{100 * '-'}"
 
 @pytest.mark.envelope
 @pytest.mark.builder
-class TestDataEnvelopeBuilder:  # pragma: no cover
+class TestDataComponentBuilder:  # pragma: no cover
     # ============================================================================================ #
     def test_builder_pandas_parquet(self, dataset_builder, pandas_df, caplog) -> None:
         start = datetime.now()
@@ -49,7 +49,7 @@ class TestDataEnvelopeBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataEnvelopeBuilder(dataset_builder=dataset_builder)
+        builder = DataComponentBuilder(dataset_builder=dataset_builder)
         envelope = (
             builder.pandas()
             .parquet()
@@ -58,7 +58,7 @@ class TestDataEnvelopeBuilder:  # pragma: no cover
             .build()
             .envelope
         )
-        assert isinstance(envelope, DataEnvelope)
+        assert isinstance(envelope, DataComponent)
         assert isinstance(envelope.dftype, DFType)
         assert isinstance(envelope.file_format, FileFormat)
         assert isinstance(envelope.filepath, str)
@@ -83,7 +83,7 @@ class TestDataEnvelopeBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataEnvelopeBuilder(dataset_builder=dataset_builder)
+        builder = DataComponentBuilder(dataset_builder=dataset_builder)
         envelope = (
             builder.spark()
             .parquet()
@@ -92,7 +92,7 @@ class TestDataEnvelopeBuilder:  # pragma: no cover
             .build()
             .envelope
         )
-        assert isinstance(envelope, DataEnvelope)
+        assert isinstance(envelope, DataComponent)
         assert isinstance(envelope.dftype, DFType)
         assert isinstance(envelope.file_format, FileFormat)
         assert isinstance(envelope.filepath, str)
@@ -116,7 +116,7 @@ class TestDataEnvelopeBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataEnvelopeBuilder(dataset_builder=dataset_builder)
+        builder = DataComponentBuilder(dataset_builder=dataset_builder)
         envelope = (
             builder.sparknlp()
             .csv()
@@ -125,7 +125,7 @@ class TestDataEnvelopeBuilder:  # pragma: no cover
             .build()
             .envelope
         )
-        assert isinstance(envelope, DataEnvelope)
+        assert isinstance(envelope, DataComponent)
         assert isinstance(envelope.dftype, DFType)
         assert isinstance(envelope.file_format, FileFormat)
         assert isinstance(envelope.filepath, str)

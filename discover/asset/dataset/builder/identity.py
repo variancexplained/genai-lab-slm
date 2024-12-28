@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Friday December 27th 2024 11:42:52 pm                                               #
+# Modified   : Saturday December 28th 2024 10:52:17 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,6 +26,7 @@ from discover.asset.dataset.base import DatasetComponentBuilder
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.asset.dataset.dataset import Dataset
 from discover.core.flow import PhaseDef, StageDef
+from discover.infra.workspace.service import Workspace
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -39,8 +40,8 @@ class DatasetPassportBuilder(DatasetComponentBuilder):
 
     __ASSET_TYPE: AssetType = AssetType.DATASET
 
-    def __init__(self, dataset_builder):
-        self._dataset_builder = dataset_builder
+    def __init__(self, workspace: Workspace):
+        self._workspace = workspace
         self._asset_type = self.__ASSET_TYPE
         self._asset_id = None
         self._phase = None
@@ -102,8 +103,7 @@ class DatasetPassportBuilder(DatasetComponentBuilder):
         return self
 
     def _get_asset_id(self) -> None:
-        workspace = self._dataset_builder.workspace
-        return workspace.get_asset_id(
+        return self._workspace.get_asset_id(
             asset_type=self._asset_type,
             phase=self._phase,
             stage=self._stage,

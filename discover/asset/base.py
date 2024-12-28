@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Friday December 27th 2024 08:45:22 pm                                               #
+# Modified   : Saturday December 28th 2024 03:54:12 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -205,9 +205,6 @@ class AssetComponentBuilder(ABC):
     Args:
         asset_builder (AssetBuilder): The main asset builder to which this component builder is associated.
     """
-
-    def __init__(self, asset_builder: AssetBuilder) -> None:
-        self._asset_builder = asset_builder
 
     @abstractmethod
     def reset(self) -> None:

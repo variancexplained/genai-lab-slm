@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Saturday December 28th 2024 02:21:36 am                                             #
+# Modified   : Saturday December 28th 2024 01:08:18 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,12 +19,13 @@
 """Dataset Core Module"""
 from __future__ import annotations
 
+import logging
 from typing import Type
 
 from discover.asset.base import AssetBuilder
-from discover.asset.dataset.builder.data import DataFrameFileConfigBuilder
+from discover.asset.dataset.builder.data import DataComponentBuilder
 from discover.asset.dataset.builder.identity import DatasetPassportBuilder
-from discover.asset.dataset.component.data import DataEnvelope, DataFrameFileConfig
+from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.asset.dataset.component.ops import DatasetOps
 from discover.asset.dataset.dataset import Dataset
@@ -47,22 +48,24 @@ class DatasetBuilder(AssetBuilder):
         workspace: Workspace,
         ops: DatasetOps,
         passport_builder_cls: Type[DatasetPassportBuilder] = DatasetPassportBuilder,
-        data_builder_cls: Type[DataFrameFileConfigBuilder] = DataFrameFileConfigBuilder,
+        source_builder_cls: Type[DataComponentBuilder] = DataComponentBuilder,
     ) -> None:
         # Internal resources
         self._workspace = workspace
+
+        # Component Builders
+        self._passport_builder = passport_builder_cls(workspace=self._workspace)
+        self._source_builder_cls = source_builder_cls
+
         # Dataset Components
         self._passport = None
-        self._source = None
-        self._target = None
+        self._data = None
         self._ops = ops
         self._repo = self._workspace.dataset_repo
 
         self._dataset = None
 
-        # Component Builders
-        self._passport_builder_cls = passport_builder_cls
-        self._df_io_spec_builder = df_io_spec_builder_cls
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
     def dataset(self) -> Dataset:
@@ -80,22 +83,12 @@ class DatasetBuilder(AssetBuilder):
         return self._passport_builder
 
     @property
-    def source(self) -> DatasetPassportBuilder:
-        return self.data_builder
-
-    @property
-    def df_io_spec(self) -> DataFrameFileConfigBuilder:
-        return self._df_spec_builder
-
-    @property
-    def passport_ref(self) -> DatasetPassport:
-        """Provides sub builders with access to the passport ."""
-        return self._passport
-
-    @property
-    def workspace(self) -> Workspace:
-        """Provides access component builders access to the workspace."""
-        return self._workspace
+    def source(self) -> DataComponentBuilder:
+        if self._passport is None:
+            raise RuntimeError(
+                "The passport must be constructed before the data source."
+            )
+        return self._source_builder_cls(passport=self._passport)
 
     def build(self) -> DatasetBuilder:
         """
@@ -105,33 +98,22 @@ class DatasetBuilder(AssetBuilder):
             Dataset: The fully constructed dataset.
         """
 
-        # Load data
-        if self._data is None:
-            self._load_data_from_file()
-
         # Construct the passport
         self._passport = self._build_passport()
 
-        # Construct source and target data configs
-        self._build_source_data_config()
-
-        # Construct the data_envelope object
-        self._data_envelope = self._build_data_envelope(passport=self._passport)
-
-        # Construct the data envelop config
-        self._data_envelope_config = DataFrameFileConfig(
-            filepath=self._data_envelope.filepath,
-            dftype=self._data_envelope.dftype,
-            file_format=self._data_envelope.file_format,
-        )
+        # Get data component
+        data = self._source_builder.data
 
         # Construct the Dataset
-        dataset = self._build_dataset(
-            passport=self._passport, data_envelope=self._data_envelope
+        dataset = Dataset(
+            passport=self._passport,
+            workspace=self._workspace,
+            data=self.source.data,
+            ops=self._ops,
         )
 
-        # Validate the dataset
-        self._validate(dataset)
+        # Validate Dataset
+        self._validate()
 
         # Register Dataset
         self._workspace.dataset_repo.add(asset=dataset)
@@ -139,49 +121,11 @@ class DatasetBuilder(AssetBuilder):
         # Present constructed dataset as property
         self._dataset = dataset
 
-    def _load_data_from_file(self) -> None:
-        """Constructs a Dataset from file"""
-
-        self._data = self._workspace.dataset_repo.get_data(
-            data_envelope_config=self._data_envelope_config,
-        )
-
-    def _build_passport(self) -> DatasetPassport:
-        asset_id = self._workspace.get_asset_id(
-            asset_type=self.__asset_type,
-            phase=self._phase,
-            stage=self._stage,
-            name=self._name,
-        )
-        return DatasetPassport(
-            asset_id=asset_id,
-            phase=self._phase,
-            stage=self._stage,
-            name=self._name,
-            asset_type=self.__asset_type,
-        )
-
-    def _build_data_envelope(self, passport: DatasetPassport) -> DataEnvelope:
-        filepath = self._workspace.get_filepath(
-            asset_id=passport.asset_id, file_format=self._target_file_format
-        )
-        return DataEnvelope(
-            data=self._data,
-            filepath=filepath,
-            dftype=self._target_dftype,
-            file_format=self._target_file_format,
-        )
-
     def _build_dataset(
-        self, passport: DatasetPassport, data_envelope: DataEnvelope
+        self, passport: DatasetPassport, data_envelope: DataComponent
     ) -> None:
         """Constructs the Dataset object"""
-        return Dataset(
-            passport=passport,
-            workspace=self._workspace,
-            data_envelope=data_envelope,
-            ops=self._ops,
-        )
+        return
 
     def _register_dataset(self, dataset: Dataset) -> Dataset:
         """Registers the dataset with an asset_id, filepath, then persists it."""

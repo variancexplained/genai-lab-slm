@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 06:22:40 am                                               #
-# Modified   : Saturday December 28th 2024 02:21:37 am                                             #
+# Modified   : Saturday December 28th 2024 11:10:37 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.dataset import DFType, FileFormat
-from discover.asset.dataset.component.data import DataEnvelope, DataFrameFileConfig
+from discover.asset.dataset.component.data import DataComponent, DataFrameFileConfig
 from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
 
@@ -89,12 +89,12 @@ class ConvertOperator:
         self._spark_session_pool = spark_session_pool
 
     # -------------------------------------------------------------------------------------------- #
-    def to_pandas(self, source: DataEnvelope) -> pd.DataFrame:
+    def to_pandas(self, source: DataComponent) -> pd.DataFrame:
         """
-        Converts a DataEnvelope to the specified pandas DataFrame.
+        Converts a DataComponent to the specified pandas DataFrame.
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
 
         Returns:
             pd.DataFrame: The converted dataframe.
@@ -108,7 +108,7 @@ class ConvertOperator:
             return self._io_to_pandas(source=source)
 
     # -------------------------------------------------------------------------------------------- #
-    def to_spark(self, source: DataEnvelope) -> DataFrame:
+    def to_spark(self, source: DataComponent) -> DataFrame:
         if source.dftype == DFType.SPARK:
             return source.data  # No conversion needed
 
@@ -118,7 +118,7 @@ class ConvertOperator:
             return self._io_to_spark(source=source)
 
     # -------------------------------------------------------------------------------------------- #
-    def to_sparknlp(self, source: DataEnvelope) -> DataFrame:
+    def to_sparknlp(self, source: DataComponent) -> DataFrame:
         if source.dftype == DFType.SPARKNLP:
             return source.data  # No conversion needed
 
@@ -130,14 +130,14 @@ class ConvertOperator:
     # -------------------------------------------------------------------------------------------- #
     #                             DIRECT CONVERSION METHODS                                        #
     # -------------------------------------------------------------------------------------------- #
-    def _direct_to_pandas(self, source: DataEnvelope) -> pd.DataFrame:
+    def _direct_to_pandas(self, source: DataComponent) -> pd.DataFrame:
         """
-        Converts the given DataEnvelope directly to a Pandas DataFrame.
+        Converts the given DataComponent directly to a Pandas DataFrame.
 
         This method uses PySpark's toPandas conversion facility.
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
 
         Returns:
             pd.DataFrame: The converted Pandas DataFrame.
@@ -145,12 +145,12 @@ class ConvertOperator:
         return source.data.toPandas()
 
     # -------------------------------------------------------------------------------------------- #
-    def _direct_to_spark(self, source: DataEnvelope) -> DataFrame:
+    def _direct_to_spark(self, source: DataComponent) -> DataFrame:
         """
-        Converts the given DataEnvelope to a Spark DataFrame.
+        Converts the given DataComponent to a Spark DataFrame.
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
 
         Returns:
             DataFrame: The converted Spark DataFrame.
@@ -159,12 +159,12 @@ class ConvertOperator:
         return spark.createDataFrame(source.data)
 
     # -------------------------------------------------------------------------------------------- #
-    def _direct_to_sparknlp(self, source: DataEnvelope) -> DataFrame:
+    def _direct_to_sparknlp(self, source: DataComponent) -> DataFrame:
         """
-        Converts the given DataEnvelope to a SparkNLP DataFrame.
+        Converts the given DataComponent to a SparkNLP DataFrame.
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
 
         Returns:
             DataFrame: The converted SparkNLP DataFrame.
@@ -175,14 +175,14 @@ class ConvertOperator:
     # -------------------------------------------------------------------------------------------- #
     #                       INDIRECT (IO-Based) CONVERSION METHODS                                 #
     # -------------------------------------------------------------------------------------------- #
-    def _io_to_pandas(self, source: DataEnvelope) -> pd.DataFrame:
+    def _io_to_pandas(self, source: DataComponent) -> pd.DataFrame:
         """
-        Converts the given DataEnvelope to a Pandas DataFrame.
+        Converts the given DataComponent to a Pandas DataFrame.
 
         This method uses io to convert large DataFrames
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
 
         Returns:
             pd.DataFrame: The converted Pandas DataFrame.
@@ -190,14 +190,14 @@ class ConvertOperator:
         return self._io_convert(source=source, target_dftype=DFType.PANDAS)
 
     # -------------------------------------------------------------------------------------------- #
-    def _io_to_spark(self, source: DataEnvelope) -> pd.DataFrame:
+    def _io_to_spark(self, source: DataComponent) -> pd.DataFrame:
         """
-        Converts the given DataEnvelope to a Spark DataFrame.
+        Converts the given DataComponent to a Spark DataFrame.
 
         This method uses io to convert large DataFrames
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
 
         Returns:
             DataFrame: The converted Spark DataFrame.
@@ -205,14 +205,14 @@ class ConvertOperator:
         return self._io_convert(source=source, target_dftype=DFType.SPARK)
 
     # -------------------------------------------------------------------------------------------- #
-    def _io_to_sparknlp(self, source: DataEnvelope) -> pd.DataFrame:
+    def _io_to_sparknlp(self, source: DataComponent) -> pd.DataFrame:
         """
-        Converts the given DataEnvelope to a SparkNLP DataFrame.
+        Converts the given DataComponent to a SparkNLP DataFrame.
 
         This method uses io to convert large DataFrames
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
 
         Returns:
             DataFrame: The converted SparkNLP DataFrame.
@@ -222,12 +222,12 @@ class ConvertOperator:
     # -------------------------------------------------------------------------------------------- #
     #                          IO-BASED CONVERTER                                                  #
     # -------------------------------------------------------------------------------------------- #
-    def _io_convert(self, source: DataEnvelope, target_dftype: DFType) -> DataFrame:
+    def _io_convert(self, source: DataComponent, target_dftype: DFType) -> DataFrame:
         """
         Performs an I/O-based conversion using Parquet as an intermediate format.
 
         Args:
-            source (DataEnvelope): The source DataEnvelope.
+            source (DataComponent): The source DataComponent.
             target_dftype (DFType): The target dataframe structure.
 
         Returns:
@@ -238,7 +238,7 @@ class ConvertOperator:
             temp_file = f"{tempdir}/temp_conversion.parquet"
 
             # Create an interim data_envelope pointing to tempfile.
-            tempframe = DataEnvelope(
+            tempframe = DataComponent(
                 data=source.data,
                 filepath=temp_file,
                 dftype=source.dftype,

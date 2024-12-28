@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Friday December 27th 2024 10:05:10 pm                                               #
+# Modified   : Saturday December 28th 2024 11:10:37 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 from discover.asset.base import Asset
-from discover.asset.dataset.component.data import DataEnvelope
+from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.asset.dataset.component.ops import DatasetOps
 
@@ -33,7 +33,7 @@ class Dataset(Asset):
     def __init__(
         self,
         passport: DatasetPassport,
-        data: DataEnvelope,
+        data: DataComponent,
         ops: DatasetOps,
     ) -> None:
         super().__init__(passport=DatasetPassport)
@@ -47,7 +47,7 @@ class Dataset(Asset):
     #                                  DATASET PROPERTIES                                           #
     # --------------------------------------------------------------------------------------------- #
     @property
-    def data(self) -> DataEnvelope:
+    def data(self) -> DataComponent:
         return self._data_envelope
 
     @property

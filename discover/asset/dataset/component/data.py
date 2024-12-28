@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Saturday December 28th 2024 02:43:49 am                                             #
+# Modified   : Saturday December 28th 2024 01:18:20 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DFType, FileFormat
@@ -37,33 +38,41 @@ from discover.infra.utils.file.stats import FileStats
 @dataclass
 class DataSource(DatasetComponent):
     data: Union[pd.DataFrame, DataFrame]
-    dtype: DFType
+    dftype: DFType
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                    FILE SOURCE                                                   #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
+@pydantic_dataclass
 class FileSource(DatasetComponent):
-    dftype: DFType
     filepath: str
     file_format: FileFormat
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                   DATA ENVELOPE                                                  #
+#                                   DATA COMPONENT                                                 #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass()
-class DataEnvelope(DatasetComponent):
+class DataComponent(DatasetComponent):
 
-    data: Union[pd.DataFrame, DataFrame]
-    filepath: str
     dftype: DFType
+    filepath: str
     file_format: FileFormat
     created: datetime
+    data: Optional[Union[pd.DataFrame, DataFrame]] = None
     size: Optional[int] = None
 
     def __post_init__(self) -> None:
+        if self._data:
+            if (
+                isinstance(self.data, pd.DataFrame) and self.dftype != DFType.PANDAS
+            ) or (
+                isinstance(self.data, DataFrame)
+                and self.dftype not in (DFType.SPARK, DFType.SPARKNLP)
+            ):
+                msg = f"Data integrity error. The data type and dftype arguments are incompatible.\ndata type: {type(self.data)}\nDFType (dftype): {self.dftype.value}."
+                raise ValueError(msg)
 
         # Compute size of the dataset
         if not self.size:
@@ -73,56 +82,3 @@ class DataEnvelope(DatasetComponent):
     def accessed(self) -> str:
         """The last accessed timestamp of the dataset file."""
         return FileStats.file_last_accessed(filepath=self.filepath)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                DATAFRAME FILE CONFIG                                             #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class DataFrameFileConfig(DatasetComponent):
-    """
-    Represents configuration metadata for a dataset file, including file path,
-    structure type, and file format.
-
-    This class provides validation during initialization to ensure that
-    the provided metadata is consistent and valid.
-
-    Attributes:
-        filepath (str): The path to the file associated with the dataset.
-        dftype (DFType): The structure of the dataset
-            (e.g., PANDAS or SPARK).
-        file_format (FileFormat): The format of the file (e.g., PARQUET, CSV).
-
-    Raises:
-        ValueError: If `dftype` or `file_format` is invalid.
-    """
-
-    dftype: DFType
-    filepath: str
-    file_format: FileFormat
-
-    def __post_init__(self) -> None:
-        """
-        Validates the configuration metadata.
-
-        Ensures that:
-        - `dftype` is a valid instance of `DFType`.
-        - `file_format` is a valid instance of `FileFormat`.
-
-        Raises:
-            ValueError: If `dftype` is not a valid `DFType`.
-            ValueError: If `file_format` is not a valid `FileFormat`.
-        """
-        # Validate dftype
-        if not isinstance(self.dftype, DFType):
-            raise ValueError(f"Invalid dataframe structure: {self.dftype}")
-
-        # Validate file_format
-        if not isinstance(self.file_format, FileFormat):
-            raise ValueError(f"Invalid file format: {self.file_format}")
-
-    @classmethod
-    def create(
-        cls, dftype: DFType, file_format: FileFormat, filepath: str
-    ) -> DataFrameFileConfig:
-        return cls(dftype=dftype, filepath=filepath, file_format=file_format)

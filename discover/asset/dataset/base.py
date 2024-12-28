@@ -11,12 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 09:21:00 pm                                               #
-# Modified   : Friday December 27th 2024 09:24:01 pm                                               #
+# Modified   : Saturday December 28th 2024 12:30:28 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Base Module"""
+
 from pydantic.dataclasses import dataclass
 
 from discover.asset.base import AssetComponent, AssetComponentBuilder

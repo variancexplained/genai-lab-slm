@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Saturday December 28th 2024 02:21:37 am                                             #
+# Modified   : Saturday December 28th 2024 12:52:27 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,14 +20,14 @@
 import logging
 import os
 import shutil
+from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
 import pyspark
 from pyspark.sql import SparkSession
 
-from discover.asset.dataset import DFType
-from discover.asset.dataset.component.data import DataEnvelope, DataFrameFileConfig
+from discover.asset.dataset import DFType, FileFormat
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 
 DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
@@ -38,24 +38,23 @@ DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
 # ------------------------------------------------------------------------------------------------ #
 class FAO:
     """
-    File Access Object (FAO) for managing dataset file operations such as creation,
-    reading, deletion, and validation.
+    A class for handling file access operations (FAO) for datasets.
 
-    This class uses an IO factory to dynamically select appropriate readers and writers
-    based on the dataset's structure and format.
+    This class manages reading and writing datasets in various formats and structures,
+    leveraging an IO factory for specific implementations based on the dataframe type
+    and file format.
 
-    Attributes:
-        _fao_config (dict): Configuration for file access operations, including arguments
-            for readers and writers.
-        _io_factory (DataFrameIOFactory): Factory for creating appropriate readers and writers.
-        _logger (logging.Logger): Logger instance for the FAO class.
+    Args:
+        fao_config (dict): Configuration dictionary specifying read/write options
+            for different dataframe types and file formats.
+        io_factory (DataFrameIOFactory): Factory for creating readers and writers
+            specific to dataframe types and file formats.
 
     Methods:
-        create(data_envelope, overwrite): Writes a dataset to a file.
-        read(data_envelope_config, spark): Reads a dataset from a file.
-        exists(filepath): Checks if a file exists.
-        delete(filepath): Deletes a file or directory.
-        reset(verified): Resets the FAO database directory.
+        create(dftype, filepath, file_format, created, data, overwrite):
+            Writes a dataset to the specified file path with the given format and type.
+        read(filepath, file_format, dftype, spark):
+            Reads a dataset from the specified file path with the given format and type.
     """
 
     def __init__(
@@ -63,86 +62,83 @@ class FAO:
         fao_config: dict,
         io_factory: DataFrameIOFactory,
     ):
-        """
-        Initializes the FAO object with configuration and IO factory.
-
-        Args:
-            fao_config (dict): Configuration for file access operations, including read/write
-                arguments for various dataframe structures and formats.
-            io_factory (DataFrameIOFactory): Factory instance for obtaining readers and writers.
-        """
         self._fao_config = fao_config
         self._io_factory = io_factory
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(
         self,
-        data_envelope: DataEnvelope,
+        dftype: DFType,
+        filepath: str,
+        file_format: FileFormat,
+        created: datetime,
+        data: Union[pd.DataFrame, DataFrame],
         overwrite: bool = False,
     ) -> None:
         """
-        Writes a dataset to a file using the appropriate writer from the IO factory.
+        Writes a dataset to the specified file path with the given format and type.
 
         Args:
-            data_envelope (DataEnvelope): The dataset to be written, including its data,
-                file path, structure, and format.
-            overwrite (bool): Whether to overwrite the file if it exists. Defaults to False.
+            dftype (DFType): The type of the dataframe (e.g., PANDAS, SPARK).
+            filepath (str): The destination file path.
+            file_format (FileFormat): The file format (e.g., CSV, PARQUET).
+            created (datetime): The timestamp of the dataset creation.
+            data (Union[pd.DataFrame, DataFrame]): The dataset to be written.
+            overwrite (bool): Whether to overwrite the file if it already exists.
+                Defaults to False.
 
         Raises:
-            Exception: If the writer encounters an error during the write operation.
+            Exception: If the write operation fails due to configuration or IO issues.
         """
         writer = self._io_factory.get_writer(
-            dftype=data_envelope.dftype,
-            file_format=data_envelope.file_format,
+            dftype=dftype,
+            file_format=file_format,
         )
         writer.write(
-            data=data_envelope.data,
-            filepath=data_envelope.filepath,
+            data=data,
+            filepath=filepath,
             overwrite=overwrite,
-            **self._fao_config[data_envelope.dftype.value][
-                data_envelope.file_format.value
-            ]["write_kwargs"],
+            **self._fao_config[dftype.value][file_format.value]["write_kwargs"],
         )
 
     def read(
         self,
-        data_envelope_config: DataFrameFileConfig,
+        filepath: str,
+        file_format: FileFormat,
+        dftype: DFType,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
         """
-        Reads a dataset from a file using the appropriate reader from the IO factory.
+        Reads a dataset from the specified file path with the given format and type.
 
         Args:
-            data_envelope_config (DataFrameFileConfig): Configuration specifying the dataset's
-                file path, structure, and format.
-            spark (Optional[SparkSession]): Spark session required for reading Spark DataFrames.
-                Defaults to None.
+            filepath (str): The path to the dataset file.
+            file_format (FileFormat): The file format (e.g., CSV, PARQUET).
+            dftype (DFType): The type of the dataframe (e.g., PANDAS, SPARK).
+            spark (Optional[SparkSession]): A Spark session, required for Spark-based
+                operations. Defaults to None.
 
         Returns:
-            DataFrame: The loaded dataset as a Pandas or Spark DataFrame.
+            DataFrame: The loaded dataset as a Pandas or Spark dataframe.
 
         Raises:
-            Exception: If the reader encounters an error during the read operation.
+            Exception: If the read operation fails due to configuration or IO issues.
         """
         reader = self._io_factory.get_reader(
-            dftype=data_envelope_config.dftype,
-            file_format=data_envelope_config.file_format,
+            dftype=dftype,
+            file_format=file_format,
         )
 
-        if data_envelope_config.dftype == DFType.PANDAS:
+        if dftype == DFType.PANDAS:
             return reader.read(
-                filepath=data_envelope_config.filepath,
-                **self._fao_config[data_envelope_config.dftype.value][
-                    data_envelope_config.file_format.value
-                ]["read_kwargs"],
+                filepath=filepath,
+                **self._fao_config[dftype.value][file_format.value]["read_kwargs"],
             )
         else:
             return reader.read(
-                filepath=data_envelope_config.filepath,
+                filepath=filepath,
                 spark=spark,
-                **self._fao_config[data_envelope_config.dftype.value][
-                    data_envelope_config.file_format.value
-                ]["read_kwargs"],
+                **self._fao_config[dftype.value][file_format.value]["read_kwargs"],
             )
 
     def exists(self, filepath: str) -> bool:
