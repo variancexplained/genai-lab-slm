@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday December 28th 2024 07:18:45 pm                                             #
+# Modified   : Sunday December 29th 2024 01:21:01 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,12 @@ from discover.asset.dataset.component.identity import DatasetPassport
 from discover.infra.persist.file.fao import FAO
 from discover.infra.service.spark.pool import SparkSessionPool
 from discover.infra.utils.file.copy import Copy
+from discover.infra.utils.file.info import ParquetFileDetector
 from discover.infra.workspace.service import Workspace
+
+# ------------------------------------------------------------------------------------------------ #
+copy = Copy()
+parquet_file_detector = ParquetFileDetector()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -54,11 +59,16 @@ class DataComponentBuilder(DatasetComponentBuilder):
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def _validate(self) -> None:
-        """
-        Validates the builder's current state to ensure consistency and integrity.
+    def _check_file_format_validity(
+        self, file_format: FileFormat, filepath: str
+    ) -> None:
+        if (file_format == FileFormat.CSV and "parquet" in filepath) or (
+            file_format == FileFormat.PARQUET and "csv" in filepath
+        ):
+            msg = f"DataIntegrityError: The `file_format` argument is likely incompatible with the filepath.\nFile format: {file_format.value}\nFilepath: {filepath}."
+            self._logger.error(msg)
+            raise ValueError(msg)
 
-        """
         # Filepath Validation
         if not isinstance(self._filepath, str):
             msg = f"File path `filepath` is missing or not a valid string. Filepath type: {type(self._filepath)}."
@@ -96,39 +106,6 @@ class DataComponentBuilder(DatasetComponentBuilder):
                 self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
             ):
                 msg = f"TypeError: `data` is type {type(self._data)}. Expected a pandas or spark DataFrame"
-                self._logger.error(msg)
-                self.reset()
-                raise TypeError(msg)
-
-        # Validate or infer Dataframe Type `dftype`
-        if self._dftype is None:
-            if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame)):
-                self._dftype = DFType.PANDAS
-                self._logger.warning(
-                    f"DataFrame type `dftype` has been inferred from the data as {self._dftype.value}"
-                )
-            elif isinstance(self._data, DataFrame):
-                self._dftype = DFType.SPARK
-                self._logger.warning(
-                    f"DataFrame type `dftype` has been inferred from the data as {self._dftype.value}"
-                )
-            else:
-                msg = "ValueErrror: DataFrame type `dftype` is None and could not be inferred from the data."
-                self._logger.error(msg)
-                self.reset()
-                raise ValueError(msg)
-        else:
-            if (
-                isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
-                and self._dftype != DFType.PANDAS
-            ):
-                msg = f"DataIntegrityError: Data and DataFrame type are not compatible.\nDataFrame is type {type(self._data)} and `dftype` is {self._dftype.value}."
-                self._logger.error(msg)
-                self.reset()
-                raise TypeError(msg)
-
-            elif isinstance(self._data, DataFrame) and self._dftype == DFType.PANDAS:
-                msg = f"DataIntegrityError: Data and DataFrame type are not compatible.\nDataFrame is type {type(self._data)} and `dftype` is {self._dftype.value}."
                 self._logger.error(msg)
                 self.reset()
                 raise TypeError(msg)
@@ -313,18 +290,32 @@ class DFSourceDataComponentBuilder(DataComponentBuilder):
         )
 
     def _validate(self) -> None:
-        """
-        Validates the builder's current state to ensure consistency and integrity.
-
-        """
-        super()._validate()
+        # Validate DataFrame type
         if not isinstance(
             self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
         ):
-            msg = "Missing or invalid dataframe."
+            msg = f"TypeError: Invalid data type for DataFrame. Expected DFType.PANDAS, DFType.SPARK, or DFType.SPARKNLP. Received type {type(self._data)}"
             self._logger.error(msg)
-            self.reset()
             raise TypeError(msg)
+
+        # Validate / Infer DataFrame type if None
+        if self._dftype is None:
+            if isinstance(self._data, DataFrame):  # Default to spark dataframe type
+                self._dftype = DFType.SPARK
+            else:
+                self._dftype = DFType.PANDAS
+        else:
+            if isinstance(self._data, DataFrame) and self._dftype == DFType.PANDAS:
+                msg = f"DataIntegrityError: DataFrame type `dftype` {self._dftype.value} is incompatible with the data of type {type(self._data)}"
+                self._logger.error(msg)
+                raise ValueError(msg)
+            if (
+                isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
+                and self._dftype != DFType.PANDAS
+            ):
+                msg = f"DataIntegrityError: DataFrame type `dftype` {self._dftype.value} is incompatible with the data of type {type(self._data)}"
+                self._logger.error(msg)
+                raise ValueError(msg)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -539,10 +530,8 @@ class FileSourceDataComponentBuilder(DataComponentBuilder):
         self._created = datetime.now()
         self._validate()
 
-        # The filepath provided is not in the workspace. The following determines a filepath for
-        # the component, copies the source file to the workspace and returns its workspace
-        # filepath.
-        self._filepath = self._copy_file_to_workspace()
+        # Create a version of the file in the workspace in the designated file format.
+        self._filepath = self._create_workspace_file()
 
         # Load data if eager loading
         if not self._lazy_loading:
@@ -557,64 +546,92 @@ class FileSourceDataComponentBuilder(DataComponentBuilder):
         )
         return self
 
-    def _copy_file_to_workspace(self) -> str:
+    def _get_target_filepath(self, file_format: FileFormat) -> str:
         """
-        Copies the source file to the workspace and returns the updated file path.
+        Generates and ensures the existence of the target file path for the asset.
 
-        Returns:
-            str: The file path of the copied file in the workspace.
-        """
-        filepath = self._workspace.get_filepath(
-            self._passport.asset_id, file_format=self._file_format
-        )
-        copy = Copy()
-        copy(source=self._filepath, target=filepath)
-        return filepath
-
-    def _load_data(self) -> Union[pd.DataFrame, DataFrame]:
-        """
-        Loads the data based on the configured dataframe type and file format.
-
-        Returns:
-            Union[pd.DataFrame, DataFrame]: The loaded data as a Pandas or Spark DataFrame.
-        """
-        if self._dftype == DFType.PANDAS:
-            return self._load_pandas_data()
-        else:
-            return self._load_spark_data()
-
-    def _load_pandas_data(self) -> pd.DataFrame:
-        """
-        Loads the data as a Pandas DataFrame.
-
-        Returns:
-            pd.DataFrame: The loaded data as a Pandas DataFrame.
-        """
-        return self._fao.read(
-            filepath=self._filepath, file_format=self._file_format, dftype=self._dftype
-        )
-
-    def _load_spark_data(
-        self,
-    ) -> DataFrame:
-        """
-        Loads the data as a Spark DataFrame using the Spark session pool.
+        This method retrieves the target file path using the workspace's `get_filepath` method,
+        based on the asset ID and file format. It ensures that the directory for the file path
+        exists by creating it if necessary.
 
         Args:
-            spark_session_pool (SparkSessionPool): The pool of Spark sessions for managing
-                Spark-based operations.
+            file_format (FileFormat): The target file format.
 
         Returns:
-            DataFrame: The loaded data as a Spark DataFrame.
+            str: The target file path.
+
+        Raises:
+            None
         """
-        spark = (
-            self._spark_session_pool.spark
-            if self._dftype == DFType.SPARK
-            else self._spark_session_pool.sparknlp
+
+        filepath = self._workspace.get_filepath(
+            self._passport.asset_id, file_format=file_format
         )
-        return self._fao.read(
-            filepath=self._filepath,
-            file_format=self._file_format,
-            dftype=self._dftype,
-            spark=spark,
-        )
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        return filepath
+
+    def _detect_file_format(self, filepath: str) -> FileFormat:
+        """
+        Detects the file format of a given file path.
+
+        This method prioritizes explicit indicators in the file path (e.g., "csv" or "parquet").
+        If no such indicators are found, it attempts to validate the file as Parquet using the
+        `parquet_file_detector`. If the file format cannot be conclusively determined, it defaults
+        to CSV and logs a warning.
+
+        Args:
+            filepath (str): The path to the file to detect.
+
+        Returns:
+            FileFormat: The detected file format, either `FileFormat.CSV` or `FileFormat.PARQUET`.
+
+        Logs:
+            Logs a warning if the file format is inferred as CSV without conclusive evidence.
+
+        Raises:
+            None
+        """
+
+        if "csv" in filepath:
+            return FileFormat.CSV
+        elif "parquet" in filepath:
+            return FileFormat.PARQUET
+        elif parquet_file_detector.is_parquet(path=filepath):
+            return FileFormat.PARQUET
+        else:
+            msg = f"File type is being inferred as {FileFormat.CSV.value}, with {FileFormat.PARQUET} as a fallback."
+            self._logger.warning(msg)
+            return FileFormat.CSV
+
+    def _validate(self) -> None:
+        """
+        Validates the builder's current state to ensure consistency and integrity.
+
+        """
+        super()._validate()
+        # Check for a valid dataframe type.
+        if not isinstance(self._dftype, DFType):
+            msg = f"TypeError: DataFrame type `dftype` must be a DFType Enum value. Received type {(type(self._dftype))}."
+            self._logger.error(msg)
+            raise TypeError(msg)
+
+        # Ensure file format is consistent with filepath
+        if self._file_format:
+            if "csv" in self._filepath and self._file_format != FileFormat.CSV:
+                msg = f"ValueError: The file format {self._file_format.value} is inconsistent with the filename {os.path.basename(self._filepath)}."
+                self._logger.error(msg)
+                raise ValueError(msg)
+            if "parquet" in self._filepath and self._file_format == FileFormat.CSV:
+                msg = f"ValueError: The file format {self._file_format.value} is inconsistent with the filename {os.path.basename(self._filepath)}."
+                self._logger.error(msg)
+                raise ValueError(msg)
+        else:
+            # Attempt to infer the file format from the filename.
+            if "csv" in self._filepath:
+                self._file_format = FileFormat.CSV
+            elif "parquet" in self._filepath:
+                self._file_format = FileFormat.PARQUET
+            else:
+                msg = "File format is missing and could not be inferred from the file name. Ensure a valid FileType is set using either the .csv, or .parquet method."
+                self._logger.error(msg)
+                raise TypeError(msg)

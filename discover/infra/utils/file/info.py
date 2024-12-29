@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/utils/file/stats.py                                                 #
+# Filename   : /discover/infra/utils/file/info.py                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Friday December 27th 2024 08:52:08 am                                               #
+# Modified   : Saturday December 28th 2024 10:45:16 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,6 +26,85 @@ from discover.infra.utils.date_time.format import ThirdDateFormatter
 
 # ------------------------------------------------------------------------------------------------ #
 d84mtr = ThirdDateFormatter()
+
+
+# ------------------------------------------------------------------------------------------------ #
+class ParquetFileDetector:
+    """
+    Detects whether a given path is a Parquet file or a directory containing Parquet files.
+
+    Methods:
+        is_parquet(path: str) -> bool:
+            Determines if the given path is a Parquet file or a directory containing Parquet files.
+
+        is_parquet_file(filepath: str) -> bool:
+            Checks if a file is a Parquet file using its magic number.
+
+        is_parquet_directory(directory: str) -> bool:
+            Recursively checks a directory and its subdirectories for Parquet files,
+            quitting early once a valid file is found.
+
+    Args:
+        None
+    """
+
+    def is_parquet(self, path: str) -> bool:
+        """
+        Determines if the given path is a Parquet file or a directory containing Parquet files.
+
+        Args:
+            path (str): The path to a file or directory to check.
+
+        Returns:
+            bool: True if the path is a Parquet file or a directory containing Parquet files, False otherwise.
+        """
+        if os.path.isfile(path):
+            return self.is_parquet_file(filepath=path)
+        else:
+            return self.is_parquet_directory(directory=path)
+
+    def is_parquet_file(self, filepath: str) -> bool:
+        """
+        Checks if a file is a Parquet file using its magic number.
+
+        Args:
+            filepath (str): The path to the file to check.
+
+        Returns:
+            bool: True if the file is a valid Parquet file, False otherwise.
+        """
+        try:
+            with open(filepath, "rb") as f:
+                # Check the first 4 bytes (header)
+                magic_start = f.read(4)
+                # Check the last 4 bytes (footer)
+                f.seek(-4, os.SEEK_END)
+                magic_end = f.read(4)
+                return magic_start == b"PAR1" and magic_end == b"PAR1"
+        except Exception:
+            return False
+
+    def is_parquet_directory(self, directory: str) -> bool:
+        """
+        Recursively checks a directory and its subdirectories for Parquet files,
+        quitting early once a valid file is found.
+
+        Args:
+            directory (str): The path to the directory to check.
+
+        Returns:
+            bool: True if the directory contains at least one valid Parquet file, False otherwise.
+        """
+        try:
+            for root, _, files in os.walk(directory):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    if self.is_parquet_file(filepath=file_path):
+                        return True  # Early quit: found a valid Parquet file
+            return False  # No valid Parquet files found
+        except Exception as e:
+            print(f"Error while checking directory {directory}: {e}")
+            return False
 
 
 # ------------------------------------------------------------------------------------------------ #

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Saturday December 28th 2024 06:14:17 pm                                             #
+# Modified   : Sunday December 29th 2024 01:28:56 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,7 +29,7 @@ from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DFType, FileFormat
 from discover.asset.dataset.base import DatasetComponent
-from discover.infra.utils.file.stats import FileStats
+from discover.infra.utils.file.info import FileStats
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -55,13 +55,12 @@ class FileSource(DatasetComponent):
 # ------------------------------------------------------------------------------------------------ #
 @dataclass(config=dict(arbitrary_types_allowed=True))
 class DataComponent(DatasetComponent):
-
     dftype: DFType
+    created: datetime
     filepath: str
     file_format: FileFormat
-    created: datetime
     # Private item created to ensure pydantic skips validation of this member.
-    _data: Optional[Union[pd.DataFrame, DataFrame]] = Field(exclude=True)
+    _data: Union[pd.DataFrame, DataFrame] = Field(exclude=True)
 
     @property
     def size(self) -> int:
@@ -70,10 +69,6 @@ class DataComponent(DatasetComponent):
     @property
     def data(self) -> Optional[Union[pd.DataFrame, DataFrame]]:
         return self._data
-
-    @data.setter
-    def data(self, data: Union[pd.DataFrame, DataFrame]) -> None:
-        self._data = data
 
     @property
     def accessed(self) -> str:
