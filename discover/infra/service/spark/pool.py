@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Tuesday December 24th 2024 02:05:31 am                                              #
+# Modified   : Saturday December 28th 2024 08:15:16 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -177,6 +177,7 @@ class SparkSessionPool:
                 spark = (
                     SparkSession.builder.appName("appvocai-discover")
                     .master("local[*]")
+                    .config("spark.sql.session.timeZone", "UTC")
                     .config("spark.driver.memory", memory)
                     .config("spark.executor.memory", memory)
                     .config("spark.sql.parquet.block.size", parquet_block_size)
@@ -244,6 +245,7 @@ class SparkSessionPool:
                 spark = (
                     SparkSession.builder.appName("appvocai-discover-nlp")
                     .master("local[*]")
+                    .config("spark.sql.session.timeZone", "UTC")
                     .config("spark.driver.memory", memory)
                     .config("spark.executor.memory", memory)
                     .config("spark.sql.parquet.block.size", parquet_block_size)

@@ -4,19 +4,19 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/normalize/text.py                                               #
+# Filename   : /discover/flow/task/dataprep/preprocess/text.py                                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Thursday December 19th 2024 01:40:46 pm                                             #
+# Modified   : Saturday December 28th 2024 07:50:35 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Ingest Module"""
+"""Text Preprocessing Module"""
 
 
 import pandas as pd

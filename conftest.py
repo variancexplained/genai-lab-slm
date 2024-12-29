@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday December 28th 2024 03:42:02 pm                                             #
+# Modified   : Saturday December 28th 2024 08:17:21 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -95,9 +95,55 @@ def spark():
         .config(
             "spark.driver.extraJavaOptions", f"-Dlog4j.configuration={log4j_conf_path}"
         )
+        .config("spark.sql.session.timeZone", "UTC")
         .config(
             "spark.executor.extraJavaOptions",
             f"-Dlog4j.configuration={log4j_conf_path}",
+        )
+        .getOrCreate()
+    )
+    spark_session.sparkContext.setLogLevel("ERROR")
+
+    yield spark_session
+
+    # Teardown after the test session ends
+    spark_session.stop()
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def sparknlp():
+    """
+    Pytest fixture to create a Spark session.
+    This fixture is session-scoped, meaning it will be created once per test session.
+    """
+    memory = "96g"
+    parquet_block_size = 1073741824
+    # Assuming the log4j.properties file is in the root directory
+    log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
+    spark_session = (
+        SparkSession.builder.appName("appvocai-discover-nlp")
+        .master("local[*]")
+        .config("spark.driver.memory", memory)
+        .config("spark.executor.memory", memory)
+        .config("spark.sql.session.timeZone", "UTC")
+        .config("spark.sql.parquet.block.size", parquet_block_size)
+        .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+        .config("spark.sql.execution.arrow.pyspark.fallback.enabled", "false")
+        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+        .config("spark.kryoserializer.buffer.max", "2000M")
+        .config("spark.driver.maxResultSize", "0")
+        .config(
+            "spark.jars.packages",
+            "com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3",
+        )
+        .config(
+            "spark.driver.extraJavaOptions",
+            f"-Dlog4j.configurationFile={log4j_conf_path}",
+        )
+        .config(
+            "spark.executor.extraJavaOptions",
+            f"-Dlog4j.configurationFile={log4j_conf_path}",
         )
         .getOrCreate()
     )
@@ -131,6 +177,17 @@ def spark_df(spark, pandas_df):
     """
 
     return spark.createDataFrame(pandas_df)
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def sparknlp_df(sparknlp, pandas_df):
+    """
+    Pytest fixture that converts a pandas DataFrame to a SparkNLP DataFrame.
+    Requires the spark fixture and pandas_df_from_csv fixture.
+    """
+
+    return sparknlp.createDataFrame(pandas_df)
 
 
 # ------------------------------------------------------------------------------------------------ #

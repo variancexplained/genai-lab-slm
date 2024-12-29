@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday December 28th 2024 06:51:26 pm                                             #
+# Modified   : Saturday December 28th 2024 07:18:45 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -121,14 +121,17 @@ class DataComponentBuilder(DatasetComponentBuilder):
             if (
                 isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
                 and self._dftype != DFType.PANDAS
-            ) or (
-                not isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
-                and self._dftype == DFType.PANDAS
             ):
                 msg = f"DataIntegrityError: Data and DataFrame type are not compatible.\nDataFrame is type {type(self._data)} and `dftype` is {self._dftype.value}."
                 self._logger.error(msg)
                 self.reset()
-                raise ValueError(msg)
+                raise TypeError(msg)
+
+            elif isinstance(self._data, DataFrame) and self._dftype == DFType.PANDAS:
+                msg = f"DataIntegrityError: Data and DataFrame type are not compatible.\nDataFrame is type {type(self._data)} and `dftype` is {self._dftype.value}."
+                self._logger.error(msg)
+                self.reset()
+                raise TypeError(msg)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -294,7 +297,7 @@ class DFSourceDataComponentBuilder(DataComponentBuilder):
             filepath=self._filepath,
             file_format=self._file_format,
             created=self._created,
-            _data=self._data.copy(deep=True),
+            _data=self._data,
         )
         return self
 
