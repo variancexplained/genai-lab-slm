@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Sunday December 29th 2024 01:21:01 am                                               #
+# Modified   : Sunday December 29th 2024 01:18:18 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,6 @@
 from __future__ import annotations
 
 import logging
-import os
-from datetime import datetime
 from typing import Union
 
 import pandas as pd
@@ -31,8 +29,6 @@ from discover.asset.dataset import DFType, FileFormat
 from discover.asset.dataset.base import DatasetComponentBuilder
 from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
-from discover.infra.persist.file.fao import FAO
-from discover.infra.service.spark.pool import SparkSessionPool
 from discover.infra.utils.file.copy import Copy
 from discover.infra.utils.file.info import ParquetFileDetector
 from discover.infra.workspace.service import Workspace
@@ -43,7 +39,7 @@ parquet_file_detector = ParquetFileDetector()
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                               DATA COMPONENT BUILDER                                             #
+#                                DATA COMPONENT BUILDER                                            #
 # ------------------------------------------------------------------------------------------------ #
 class DataComponentBuilder(DatasetComponentBuilder):
 
@@ -55,131 +51,8 @@ class DataComponentBuilder(DatasetComponentBuilder):
         self._dftype = None
         self._file_format = None
         self._filepath = None
-        self._created = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    def _check_file_format_validity(
-        self, file_format: FileFormat, filepath: str
-    ) -> None:
-        if (file_format == FileFormat.CSV and "parquet" in filepath) or (
-            file_format == FileFormat.PARQUET and "csv" in filepath
-        ):
-            msg = f"DataIntegrityError: The `file_format` argument is likely incompatible with the filepath.\nFile format: {file_format.value}\nFilepath: {filepath}."
-            self._logger.error(msg)
-            raise ValueError(msg)
-
-        # Filepath Validation
-        if not isinstance(self._filepath, str):
-            msg = f"File path `filepath` is missing or not a valid string. Filepath type: {type(self._filepath)}."
-            self._logger.error(msg)
-            self.reset()
-            raise TypeError(msg)
-
-        # File format validation or infer if not provided.
-        if not self._file_format:
-            if "csv" in self._filepath:
-                self._file_format = FileFormat.CSV
-                self._logger.warning(
-                    f"File format `file_format` was inferred from the filepath as {self._file_format.value}"
-                )
-            else:
-                self._file_format = FileFormat.PARQUET
-                self._logger.warning(
-                    f"File format `file_format` was inferred from the filepath as {self._file_format.value}"
-                )
-        else:
-            if self._file_format != FileFormat.CSV and "csv" in self._filepath:
-                msg = f"Incompatiable file_format: {self._file_format.value} and filepath {os.path.basename(self._filepath)}. Expected FileFormat.CSV"
-                self._logger.error(msg)
-                self.reset()
-                raise ValueError(msg)
-            elif self._file_format == FileFormat.CSV and "parquet" in self._filepath:
-                msg = f"Incompatiable file_format: {self._file_format.value} and filepath {os.path.basename(self._filepath)}. Expected FileFormat.PARQUET"
-                self._logger.error(msg)
-                self.reset()
-                raise ValueError(msg)
-
-        # DataFrame Type Validation
-        if self._data is not None:
-            if not isinstance(
-                self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
-            ):
-                msg = f"TypeError: `data` is type {type(self._data)}. Expected a pandas or spark DataFrame"
-                self._logger.error(msg)
-                self.reset()
-                raise TypeError(msg)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                          DATAFRAME SOURCE DATA COMPONENT BUILDER                                 #
-# ------------------------------------------------------------------------------------------------ #
-class DFSourceDataComponentBuilder(DataComponentBuilder):
-    """
-    A builder class for constructing a `DataComponent` object.
-
-    This builder provides a fluent interface to configure and construct a `DataComponent`
-    that encapsulates the data, its type, file format, and associated metadata.
-
-    Args:
-        passport (DatasetPassport): The dataset's passport, containing metadata about
-            the dataset (e.g., asset ID, phase, stage, name).
-        workspace (Workspace): The workspace object for managing file paths and asset tracking.
-
-    Attributes:
-        data_component (DataComponent): The constructed `DataComponent` object.
-            Accessing this property resets the builder's internal state.
-
-    Methods:
-        reset() -> None:
-            Resets the builder's internal state.
-
-        data(data: Union[pd.DataFrame, DataFrame]) -> DFSourceDataComponentBuilder:
-            Sets the data for the `DataComponent`.
-
-        pandas() -> DFSourceDataComponentBuilder:
-            Specifies that the data type is a Pandas DataFrame.
-
-        spark() -> DFSourceDataComponentBuilder:
-            Specifies that the data type is a Spark DataFrame.
-
-        sparknlp() -> DFSourceDataComponentBuilder:
-            Specifies that the data type is a SparkNLP DataFrame.
-
-        to_csv() -> DFSourceDataComponentBuilder:
-            Sets the file format to CSV and determines the file path.
-
-        to_parquet() -> DFSourceDataComponentBuilder:
-            Sets the file format to Parquet and determines the file path.
-
-        build() -> DFSourceDataComponentBuilder:
-            Validates and constructs the `DataComponent` object.
-
-    Internal Methods:
-        _get_filepath() -> str:
-            Generates the file path for the data component using the workspace and passport.
-
-        _validate() -> None:
-            Validates the builder's current state to ensure consistency and integrity.
-
-    Raises:
-        ValueError: If validation fails due to missing or invalid attributes.
-    """
-
-    def __init__(self, passport: DatasetPassport, workspace: Workspace):
-        super().__init__(passport=passport, workspace=workspace)
-
-    @property
-    def data_component(self) -> DataComponent:
-        """
-        Gets the constructed `DataComponent` object and resets the builder's state.
-
-        Returns:
-            DataComponent: The constructed `DataComponent` object.
-        """
-        data_component = self._data_component
-        self.reset()
-        return data_component
 
     def reset(self) -> None:
         """
@@ -193,9 +66,8 @@ class DFSourceDataComponentBuilder(DataComponentBuilder):
         self._file_format = None
         self._filepath = None
 
-    def data(
-        self, data: Union[pd.DataFrame, DataFrame]
-    ) -> DFSourceDataComponentBuilder:
+    # -------------------------------------------------------------------------------------------- #
+    def data(self, data: Union[pd.DataFrame, DataFrame]) -> DataComponentBuilder:
         """
         Sets the data for the `DataComponent`.
 
@@ -203,80 +75,71 @@ class DFSourceDataComponentBuilder(DataComponentBuilder):
             data (Union[pd.DataFrame, DataFrame]): The data to be included in the `DataComponent`.
 
         Returns:
-            DFSourceDataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilder: The current builder instance for chaining.
         """
         self._data = data
         return self
 
-    def pandas(self) -> DFSourceDataComponentBuilder:
+    # -------------------------------------------------------------------------------------------- #
+    #                                  DATAFRAME TYPES                                             #
+    # -------------------------------------------------------------------------------------------- #
+    def pandas(self) -> DataComponentBuilder:
         """
         Specifies that the data type is a Pandas DataFrame.
 
         Returns:
-            DFSourceDataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilder: The current builder instance for chaining.
         """
         self._dftype = DFType.PANDAS
         return self
 
-    def spark(self) -> DFSourceDataComponentBuilder:
+    def spark(self) -> DataComponentBuilder:
         """
         Specifies that the data type is a Spark DataFrame.
 
         Returns:
-            DFSourceDataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilder: The current builder instance for chaining.
         """
         self._dftype = DFType.SPARK
         return self
 
-    def sparknlp(self) -> DFSourceDataComponentBuilder:
-        """
-        Specifies that the data type is a SparkNLP DataFrame.
-
-        Returns:
-            DFSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.SPARKNLP
-        return self
-
-    def to_csv(self) -> DFSourceDataComponentBuilder:
+    # -------------------------------------------------------------------------------------------- #
+    #                                    FILE FORMATS                                              #
+    # -------------------------------------------------------------------------------------------- #
+    def to_csv(self) -> DataComponentBuilder:
         """
         Sets the file format to CSV and determines the file path.
 
         Returns:
-            DFSourceDataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilder: The current builder instance for chaining.
         """
         self._file_format = FileFormat.CSV
-        self._filepath = self._get_filepath()
         return self
 
-    def to_parquet(self) -> DFSourceDataComponentBuilder:
+    def to_parquet(self) -> DataComponentBuilder:
         """
         Sets the file format to Parquet and determines the file path.
 
         Returns:
-            DFSourceDataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilder: The current builder instance for chaining.
         """
         self._file_format = FileFormat.PARQUET
-        self._filepath = self._get_filepath()
         return self
 
-    def build(self) -> DFSourceDataComponentBuilder:
-        """
-        Validates and constructs the `DataComponent` object.
-
-        Returns:
-            DFSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._created = datetime.now()
+    # -------------------------------------------------------------------------------------------- #
+    #                                       BUILD                                                  #
+    # -------------------------------------------------------------------------------------------- #
+    def get_component(self) -> DataComponent:
+        self._filepath = self._get_filepath()
         self._validate()
-        self._data_component = DataComponent(
+        component = DataComponent(
             dftype=self._dftype,
             filepath=self._filepath,
             file_format=self._file_format,
-            created=self._created,
             _data=self._data,
         )
-        return self
+        self.reset()
+        return component
 
     def _get_filepath(self) -> str:
         """
@@ -300,7 +163,7 @@ class DFSourceDataComponentBuilder(DataComponentBuilder):
 
         # Validate / Infer DataFrame type if None
         if self._dftype is None:
-            if isinstance(self._data, DataFrame):  # Default to spark dataframe type
+            if isinstance(self._data, DataFrame):
                 self._dftype = DFType.SPARK
             else:
                 self._dftype = DFType.PANDAS
@@ -316,322 +179,3 @@ class DFSourceDataComponentBuilder(DataComponentBuilder):
                 msg = f"DataIntegrityError: DataFrame type `dftype` {self._dftype.value} is incompatible with the data of type {type(self._data)}"
                 self._logger.error(msg)
                 raise ValueError(msg)
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                            FILE SOURCE DATA COMPONENT BUILDER                                    #
-# ------------------------------------------------------------------------------------------------ #
-class FileSourceDataComponentBuilder(DataComponentBuilder):
-    """
-    A builder class for constructing a `DataComponent` object from file sources.
-
-    This builder provides a fluent interface for configuring and constructing a
-    `DataComponent` that encapsulates file-based data, its type, file format,
-    and associated metadata. It supports both lazy and eager loading of data,
-    automatically manages workspace file paths, and validates configurations.
-
-    Args:
-        passport (DatasetPassport): Metadata for the dataset, including asset ID, phase,
-            stage, and name.
-        workspace (Workspace): Manages file paths, asset tracking, and related operations.
-        fao (FAO): The file access object for reading and writing dataset files.
-
-    Attributes:
-        data_component (DataComponent): The constructed `DataComponent` object.
-            Accessing this property resets the builder's internal state.
-
-    Methods:
-        reset() -> None:
-            Resets the builder's internal state.
-
-        lazy_loading() -> FileSourceDataComponentBuilder:
-            Enables lazy loading for the `DataComponent`.
-
-        filepath(filepath: str) -> FileSourceDataComponentBuilder:
-            Sets the file path for the data source.
-
-        file_format(file_format: FileFormat) -> FileSourceDataComponentBuilder:
-            Sets the file format (e.g., CSV, Parquet) for the data source.
-
-        as_pandas() -> FileSourceDataComponentBuilder:
-            Specifies that the data type is a Pandas DataFrame.
-
-        as_spark() -> FileSourceDataComponentBuilder:
-            Specifies that the data type is a Spark DataFrame.
-
-        as_sparknlp() -> FileSourceDataComponentBuilder:
-            Specifies that the data type is a SparkNLP DataFrame.
-
-        csv() -> FileSourceDataComponentBuilder:
-            Sets the file format to CSV.
-
-        parquet() -> FileSourceDataComponentBuilder:
-            Sets the file format to Parquet.
-
-        build() -> FileSourceDataComponentBuilder:
-            Constructs the `DataComponent` object, validating the configuration,
-            optionally loading the data eagerly, and copying the file to the workspace.
-
-    Internal Methods:
-        _validate() -> None:
-            Validates the builder's current state to ensure consistency and integrity.
-
-        _copy_file_to_workspace() -> str:
-            Copies the source file to the workspace and returns the updated file path.
-
-        _load_data() -> Union[pd.DataFrame, DataFrame]:
-            Loads the data based on the configured dataframe type and file format.
-
-        _load_pandas_data() -> pd.DataFrame:
-            Loads the data as a Pandas DataFrame.
-
-        _load_spark_data(spark_session_pool: SparkSessionPool) -> DataFrame:
-            Loads the data as a Spark DataFrame using the Spark session pool.
-
-    Raises:
-        ValueError: If validation fails due to missing or inconsistent attributes.
-    """
-
-    def __init__(
-        self,
-        passport: DatasetPassport,
-        workspace: Workspace,
-        fao: FAO,
-        spark_session_pool: SparkSessionPool,
-    ):
-        super().__init__(passport=passport, workspace=workspace)
-        self._fao = fao
-        self._spark_session_pool = spark_session_pool
-        self._lazy_loading = False
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    @property
-    def data_component(self) -> DataComponent:
-        """
-        Gets the constructed `DataComponent` object and resets the builder's state.
-
-        Returns:
-            DataComponent: The constructed `DataComponent` object.
-        """
-        data_component = self._data_component
-        self.reset()
-        return data_component
-
-    def reset(self) -> None:
-        """
-        Resets the builder's internal state.
-
-        Clears all attributes, preparing the builder for a new configuration.
-        """
-        self._data = None
-        self._data_component = None
-        self._dftype = None
-        self._file_format = None
-        self._filepath = None
-        self._lazy_loading = False
-
-    def lazy_loading(self) -> FileSourceDataComponentBuilder:
-        """
-        Enables lazy loading for the `DataComponent`.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._lazy_loading = True
-        return self
-
-    def filepath(self, filepath: str) -> FileSourceDataComponentBuilder:
-        """
-        Sets the file path for the data source.
-
-        Args:
-            filepath (str): The path to the data file.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._filepath = filepath
-        return self
-
-    def file_format(self, file_format: FileFormat) -> FileSourceDataComponentBuilder:
-        """
-        Sets the file format for the data source.
-
-        Args:
-            file_format (FileFormat): The format of the file (e.g., CSV, Parquet).
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._file_format = file_format
-        return self
-
-    def as_pandas(self) -> FileSourceDataComponentBuilder:
-        """
-        Specifies that the data type is a Pandas DataFrame.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.PANDAS
-        return self
-
-    def as_spark(self) -> FileSourceDataComponentBuilder:
-        """
-        Specifies that the data type is a Spark DataFrame.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.SPARK
-        return self
-
-    def as_sparknlp(self) -> FileSourceDataComponentBuilder:
-        """
-        Specifies that the data type is a SparkNLP DataFrame.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.SPARKNLP
-        return self
-
-    def csv(self) -> FileSourceDataComponentBuilder:
-        """
-        Sets the file format to CSV.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._file_format = FileFormat.CSV
-        return self
-
-    def parquet(self) -> FileSourceDataComponentBuilder:
-        """
-        Sets the file format to Parquet.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._file_format = FileFormat.PARQUET
-        return self
-
-    def build(self) -> FileSourceDataComponentBuilder:
-        """
-        Constructs the `DataComponent` object.
-
-        Validates the current configuration, optionally loads the data eagerly,
-        and creates the `DataComponent` with the specified attributes.
-
-        Returns:
-            FileSourceDataComponentBuilder: The current builder instance for chaining.
-        """
-        self._created = datetime.now()
-        self._validate()
-
-        # Create a version of the file in the workspace in the designated file format.
-        self._filepath = self._create_workspace_file()
-
-        # Load data if eager loading
-        if not self._lazy_loading:
-            self._data = self._load_data()
-
-        self._data_component = DataComponent(
-            dftype=self._dftype,
-            filepath=self._filepath,
-            file_format=self._file_format,
-            created=self._created,
-            _data=self._data,
-        )
-        return self
-
-    def _get_target_filepath(self, file_format: FileFormat) -> str:
-        """
-        Generates and ensures the existence of the target file path for the asset.
-
-        This method retrieves the target file path using the workspace's `get_filepath` method,
-        based on the asset ID and file format. It ensures that the directory for the file path
-        exists by creating it if necessary.
-
-        Args:
-            file_format (FileFormat): The target file format.
-
-        Returns:
-            str: The target file path.
-
-        Raises:
-            None
-        """
-
-        filepath = self._workspace.get_filepath(
-            self._passport.asset_id, file_format=file_format
-        )
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        return filepath
-
-    def _detect_file_format(self, filepath: str) -> FileFormat:
-        """
-        Detects the file format of a given file path.
-
-        This method prioritizes explicit indicators in the file path (e.g., "csv" or "parquet").
-        If no such indicators are found, it attempts to validate the file as Parquet using the
-        `parquet_file_detector`. If the file format cannot be conclusively determined, it defaults
-        to CSV and logs a warning.
-
-        Args:
-            filepath (str): The path to the file to detect.
-
-        Returns:
-            FileFormat: The detected file format, either `FileFormat.CSV` or `FileFormat.PARQUET`.
-
-        Logs:
-            Logs a warning if the file format is inferred as CSV without conclusive evidence.
-
-        Raises:
-            None
-        """
-
-        if "csv" in filepath:
-            return FileFormat.CSV
-        elif "parquet" in filepath:
-            return FileFormat.PARQUET
-        elif parquet_file_detector.is_parquet(path=filepath):
-            return FileFormat.PARQUET
-        else:
-            msg = f"File type is being inferred as {FileFormat.CSV.value}, with {FileFormat.PARQUET} as a fallback."
-            self._logger.warning(msg)
-            return FileFormat.CSV
-
-    def _validate(self) -> None:
-        """
-        Validates the builder's current state to ensure consistency and integrity.
-
-        """
-        super()._validate()
-        # Check for a valid dataframe type.
-        if not isinstance(self._dftype, DFType):
-            msg = f"TypeError: DataFrame type `dftype` must be a DFType Enum value. Received type {(type(self._dftype))}."
-            self._logger.error(msg)
-            raise TypeError(msg)
-
-        # Ensure file format is consistent with filepath
-        if self._file_format:
-            if "csv" in self._filepath and self._file_format != FileFormat.CSV:
-                msg = f"ValueError: The file format {self._file_format.value} is inconsistent with the filename {os.path.basename(self._filepath)}."
-                self._logger.error(msg)
-                raise ValueError(msg)
-            if "parquet" in self._filepath and self._file_format == FileFormat.CSV:
-                msg = f"ValueError: The file format {self._file_format.value} is inconsistent with the filename {os.path.basename(self._filepath)}."
-                self._logger.error(msg)
-                raise ValueError(msg)
-        else:
-            # Attempt to infer the file format from the filename.
-            if "csv" in self._filepath:
-                self._file_format = FileFormat.CSV
-            elif "parquet" in self._filepath:
-                self._file_format = FileFormat.PARQUET
-            else:
-                msg = "File format is missing and could not be inferred from the file name. Ensure a valid FileType is set using either the .csv, or .parquet method."
-                self._logger.error(msg)
-                raise TypeError(msg)

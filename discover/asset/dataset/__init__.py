@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:21:25 pm                                               #
-# Modified   : Friday December 27th 2024 10:23:45 pm                                               #
+# Modified   : Sunday December 29th 2024 12:07:58 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,10 +30,9 @@ class FileFormat(Enum):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                  DATAFRAME LIBRARY                                               #
+#                                   DATAFRAME TYPE                                                 #
 # ------------------------------------------------------------------------------------------------ #
 class DFType(Enum):
 
     PANDAS = "pandas"
     SPARK = "spark"
-    SPARKNLP = "sparknlp"

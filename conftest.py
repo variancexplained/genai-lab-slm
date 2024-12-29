@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday December 28th 2024 08:17:21 pm                                             #
+# Modified   : Sunday December 29th 2024 04:35:37 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -156,6 +156,12 @@ def sparknlp():
 
 
 # ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def spark_session_pool(container):
+    return container.spark.session_pool()
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                                       DATA                                                       #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
@@ -196,6 +202,14 @@ def sparknlp_df(sparknlp, pandas_df):
 @pytest.fixture(scope="session")
 def workspace(container):
     return container.workspace.service()
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                         FAO                                                      #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def fao(container):
+    return container.repo.fao()
 
 
 # ------------------------------------------------------------------------------------------------ #

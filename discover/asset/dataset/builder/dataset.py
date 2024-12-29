@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Saturday December 28th 2024 03:36:02 pm                                             #
+# Modified   : Sunday December 29th 2024 01:10:52 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,17 +25,11 @@ from typing import Type
 from dependency_injector.wiring import Provide, inject
 
 from discover.asset.base import AssetBuilder
-from discover.asset.dataset.builder.data import (
-    DFSourceDataComponentBuilder,
-    FileSourceDataComponentBuilder,
-)
+from discover.asset.dataset.builder.data import DataComponentBuilder
 from discover.asset.dataset.builder.identity import DatasetPassportBuilder
-from discover.asset.dataset.component.identity import DatasetPassport
 from discover.asset.dataset.dataset import Dataset
 from discover.container import DiscoverContainer
 from discover.infra.exception.dataset import DatasetBuilderError
-from discover.infra.persist.file.fao import FAO
-from discover.infra.service.spark.pool import SparkSessionPool
 from discover.infra.workspace.service import Workspace
 
 
@@ -104,35 +98,17 @@ class DatasetBuilder(AssetBuilder):
     @inject
     def __init__(
         self,
-        # Dependencies
         workspace: Workspace = Provide[DiscoverContainer.workspace.service],
-        fao: FAO = Provide[DiscoverContainer.repo.fao],
-        spark_session_pool: SparkSessionPool = Provide[
-            DiscoverContainer.spark.session_pool
-        ],
-        # Component(s)
-        # ops_cls: Type[DatasetOps] = DatasetOps,
-        # Builders
         passport_builder_cls: Type[DatasetPassportBuilder] = DatasetPassportBuilder,
-        df_data_component_builder_cls: Type[
-            DFSourceDataComponentBuilder
-        ] = DFSourceDataComponentBuilder,
-        file_data_component_builder_cls: Type[
-            FileSourceDataComponentBuilder
-        ] = FileSourceDataComponentBuilder,
+        data_component_builder_cls: Type[DataComponentBuilder] = DataComponentBuilder,
     ) -> None:
         # Resources
         self._workspace = workspace
-        self._fao = fao
-        self._spark_session_pool = spark_session_pool
 
         # Builders
         self._passport_builder = passport_builder_cls(workspace=self._workspace)
-        self._df_data_component_builder_cls = df_data_component_builder_cls
-        self._file_data_component_builder_cls = file_data_component_builder_cls
+        self._data_component_builder_cls = data_component_builder_cls
 
-        # Components
-        # self._ops_cls = ops_cls
         self._passport = None
         self._data = None
 
@@ -161,27 +137,16 @@ class DatasetBuilder(AssetBuilder):
         self._data = None
         self._dataset = None
 
-    @property
-    def passport(self) -> DatasetPassport:
-        """
-        Provides access to the constructed passport for the dataset.
-
-        Returns:
-            DatasetPassport: The dataset's passport object.
-        """
-        return self._passport
-
-    def with_passport(self) -> DatasetPassportBuilder:
+    def passport(self) -> DatasetPassportBuilder:
         """
         Initializes the passport builder for configuring the dataset's passport.
 
         Returns:
             DatasetPassportBuilder: The builder for configuring the dataset passport.
         """
-        self._passport = self._passport_builder
+        return self._passport_builder
 
-    @property
-    def from_dataframe(self) -> DFSourceDataComponentBuilder:
+    def data(self) -> DataComponentBuilder:
         """
         Initializes the data component builder for constructing the dataset
         from an in-memory dataframe.
@@ -191,26 +156,8 @@ class DatasetBuilder(AssetBuilder):
             from a dataframe.
         """
         self._check_passport()
-        return self._df_data_component_builder_cls(
+        return self._data_component_builder_cls(
             passport=self._passport, workspace=self._workspace
-        )
-
-    @property
-    def from_file(self) -> FileSourceDataComponentBuilder:
-        """
-        Initializes the data component builder for constructing the dataset
-        from a file.
-
-        Returns:
-            DataComponentBuilder: The builder for configuring the data component
-            from a file.
-        """
-        self._check_passport()
-        return self._file_data_component_builder_cls(
-            passport=self._passport,
-            workspace=self._workspace,
-            fao=self._fao,
-            spark_session_pool=self._spark_session_pool,
         )
 
     def build(self) -> DatasetBuilder:
@@ -220,6 +167,7 @@ class DatasetBuilder(AssetBuilder):
         Returns:
             DatasetBuilder: The current builder instance for chaining.
         """
+        self._data = self.data.get_component()
         self._validate()
         dataset = Dataset(
             passport=self._passport,

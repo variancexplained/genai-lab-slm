@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Saturday December 28th 2024 03:54:12 am                                             #
+# Modified   : Sunday December 29th 2024 04:25:04 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -214,7 +214,7 @@ class AssetComponentBuilder(ABC):
         pass
 
     @abstractmethod
-    def build(self) -> AssetComponentBuilder:
+    def get_component(self) -> AssetComponent:
         """
         Constructs and returns the final asset component.
 
