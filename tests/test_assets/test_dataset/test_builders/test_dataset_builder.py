@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday December 29th 2024 01:22:15 pm                                               #
-# Modified   : Sunday December 29th 2024 06:00:39 pm                                               #
+# Modified   : Monday December 30th 2024 06:32:57 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pytest
 
 from discover.asset.base.atype import AssetType
 from discover.asset.dataset import DFType, FileFormat
-from discover.asset.dataset.builder.data import DataComponentBuilder
+from discover.asset.dataset.builder.data import DataComponentBuilderFromDataFrame
 from discover.asset.dataset.builder.dataset import DatasetBuilder
 from discover.asset.dataset.builder.identity import DatasetPassportBuilder
 from discover.asset.dataset.component.identity import DatasetPassport
@@ -94,7 +94,7 @@ class TestDatasetBuilder:  # pragma: no cover
             .passport
         )
         data = (
-            DataComponentBuilder()
+            DataComponentBuilderFromDataFrame()
             .passport(passport)
             .source(pandas_df)
             .as_pandas()

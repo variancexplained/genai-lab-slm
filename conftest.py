@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Sunday December 29th 2024 01:28:08 pm                                               #
+# Modified   : Monday December 30th 2024 06:19:52 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from pyspark.sql import SparkSession
 
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.container import DiscoverContainer
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, TestStageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
 from discover.infra.utils.file.io import IOService
@@ -218,10 +218,12 @@ def fao(container):
 @pytest.fixture(scope="session")
 def ds_passport(workspace):
     return DatasetPassport(
-        asset_id="test_dataset-0_dataprep-02_clean-test_dataset_passport",
-        phase=PhaseDef.ENRICHMENT,
-        stage=DataPrepStageDef.INGEST,
+        asset_id="dataset_test_dataset_v1.0",
+        phase=PhaseDef.TESTING,
+        stage=TestStageDef.SMOKE_TEST,
         asset_type="dataset",
-        name="test_dataset_passport",
+        name="test_dataset",
+        version="v1.0",
+        creator="PyTest",
         created=datetime.now(),
     )

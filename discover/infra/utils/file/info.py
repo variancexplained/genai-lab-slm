@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Monday December 30th 2024 03:36:49 pm                                               #
+# Modified   : Monday December 30th 2024 06:16:15 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -172,9 +172,6 @@ class ParquetFileDetector:
 class FileMeta(DataClass):
     """Encapsulates File level metadata."""
 
-    filename: str
-    filepath: str
-    file_type: str
     isdir: bool
     file_count: int
     created: str

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:02:58 am                                               #
-# Modified   : Sunday December 29th 2024 02:53:34 pm                                               #
+# Modified   : Monday December 30th 2024 06:31:14 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import pytest
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset import DFType, FileFormat
-from discover.asset.dataset.builder.data import DataComponentBuilder
+from discover.asset.dataset.builder.data import DataComponentBuilderFromDataFrame
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -43,7 +43,7 @@ INVALID_DF = {"a": 1}
 @pytest.mark.dataset
 @pytest.mark.builder
 @pytest.mark.dcbuilder
-class TestDataComponentBuilder:  # pragma: no cover
+class TestDataComponentBuilderFromDataFrame:  # pragma: no cover
     # ============================================================================================ #
     @pytest.mark.pandas_csv
     def test_pandas_dataframe_builder_csv(
@@ -55,7 +55,9 @@ class TestDataComponentBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataComponentBuilder(passport=ds_passport, workspace=workspace)
+        builder = DataComponentBuilderFromDataFrame(
+            passport=ds_passport, workspace=workspace
+        )
 
         # Test normal operation
         data = builder.data(pandas_df).pandas().to_csv().get_component()
@@ -108,7 +110,9 @@ class TestDataComponentBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataComponentBuilder(passport=ds_passport, workspace=workspace)
+        builder = DataComponentBuilderFromDataFrame(
+            passport=ds_passport, workspace=workspace
+        )
 
         # Test normal operation
         data = builder.data(pandas_df).pandas().to_parquet().get_component()
@@ -161,7 +165,9 @@ class TestDataComponentBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataComponentBuilder(passport=ds_passport, workspace=workspace)
+        builder = DataComponentBuilderFromDataFrame(
+            passport=ds_passport, workspace=workspace
+        )
 
         # Test normal operation
         data = builder.data(spark_df).spark().to_csv().get_component()
@@ -214,7 +220,9 @@ class TestDataComponentBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        builder = DataComponentBuilder(passport=ds_passport, workspace=workspace)
+        builder = DataComponentBuilderFromDataFrame(
+            passport=ds_passport, workspace=workspace
+        )
 
         # Test normal operation
         data = builder.data(spark_df).spark().to_parquet().get_component()

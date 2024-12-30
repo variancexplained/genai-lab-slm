@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Monday December 30th 2024 03:42:06 pm                                               #
+# Modified   : Monday December 30th 2024 06:34:00 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,7 +41,7 @@ parquet_file_detector = ParquetFileDetector()
 # ------------------------------------------------------------------------------------------------ #
 #                                DATA COMPONENT BUILDER                                            #
 # ------------------------------------------------------------------------------------------------ #
-class DataComponentBuilder(DatasetComponentBuilder):
+class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
 
     @inject
     def __init__(
@@ -53,8 +53,9 @@ class DataComponentBuilder(DatasetComponentBuilder):
         self._data = None
         self._data_component = None
         self._dftype = None
-        self._file_format = None
+        self._file_format = FileFormat.PARQUET
         self._filepath = None
+        self._file_meta = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -68,12 +69,12 @@ class DataComponentBuilder(DatasetComponentBuilder):
         self._data = None
         self._data_component = None
         self._dftype = None
-        self._file_format = None
+        self._file_format = FileFormat.PARQUET
         self._filepath = None
 
     # -------------------------------------------------------------------------------------------- #
     @property
-    def data(self) -> DataComponent:
+    def data_component(self) -> DataComponent:
         """
         Retrieves the constructed `Dataset` object and resets the builder's state.
 
@@ -85,7 +86,9 @@ class DataComponentBuilder(DatasetComponentBuilder):
         return data_component
 
     # -------------------------------------------------------------------------------------------- #
-    def passport(self, passport: DatasetPassport) -> DataComponentBuilder:
+    def data(
+        self, data: Union[pd.DataFrame, DataFrame]
+    ) -> DataComponentBuilderFromDataFrame:
         """
         Sets the data for the `DataComponent`.
 
@@ -93,67 +96,44 @@ class DataComponentBuilder(DatasetComponentBuilder):
             data (Union[pd.DataFrame, DataFrame]): The data to be included in the `DataComponent`.
 
         Returns:
-            DataComponentBuilder: The current builder instance for chaining.
-        """
-        self._passport = passport
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def source(self, data: Union[pd.DataFrame, DataFrame]) -> DataComponentBuilder:
-        """
-        Sets the data for the `DataComponent`.
-
-        Args:
-            data (Union[pd.DataFrame, DataFrame]): The data to be included in the `DataComponent`.
-
-        Returns:
-            DataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilderFromDataFrame: The current builder instance for chaining.
         """
         self._data = data
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    #                                  DATAFRAME TYPES                                             #
-    # -------------------------------------------------------------------------------------------- #
-    def as_pandas(self) -> DataComponentBuilder:
+    def passport(self, passport: DatasetPassport) -> DataComponentBuilderFromDataFrame:
         """
-        Specifies that the data type is a Pandas DataFrame.
+        Sets the data for the `DataComponent`.
+
+        Args:
+            data (Union[pd.DataFrame, DataFrame]): The data to be included in the `DataComponent`.
 
         Returns:
-            DataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilderFromDataFrame: The current builder instance for chaining.
         """
-        self._dftype = DFType.PANDAS
-        return self
-
-    def as_spark(self) -> DataComponentBuilder:
-        """
-        Specifies that the data type is a Spark DataFrame.
-
-        Returns:
-            DataComponentBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.SPARK
+        self._passport = passport
         return self
 
     # -------------------------------------------------------------------------------------------- #
     #                                    FILE FORMATS                                              #
     # -------------------------------------------------------------------------------------------- #
-    def to_csv(self) -> DataComponentBuilder:
+    def to_csv(self) -> DataComponentBuilderFromDataFrame:
         """
         Sets the file format to CSV and determines the file path.
 
         Returns:
-            DataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilderFromDataFrame: The current builder instance for chaining.
         """
         self._file_format = FileFormat.CSV
         return self
 
-    def to_parquet(self) -> DataComponentBuilder:
+    def to_parquet(self) -> DataComponentBuilderFromDataFrame:
         """
         Sets the file format to Parquet and determines the file path.
 
         Returns:
-            DataComponentBuilder: The current builder instance for chaining.
+            DataComponentBuilderFromDataFrame: The current builder instance for chaining.
         """
         self._file_format = FileFormat.PARQUET
         return self
@@ -161,31 +141,53 @@ class DataComponentBuilder(DatasetComponentBuilder):
     # -------------------------------------------------------------------------------------------- #
     #                                       BUILD                                                  #
     # -------------------------------------------------------------------------------------------- #
-    def build(self) -> DataComponentBuilder:
+    def build(self) -> DataComponentBuilderFromDataFrame:
         self._validate()
+
+        self._filepath = self._gen_filepath()
+
+        self._dftype = self._determine_dataframe_type()
+
         self._data_component = DataComponent(
+            passport=self._passport,
             dftype=self._dftype,
             filepath=self._filepath,
             file_format=self._file_format,
-            _data=self._data,
+            data=self._data,
         )
         return self
 
-    def _get_filepath(self) -> str:
+    def _gen_filepath(self) -> str:
         """
         Generates the file path for the data component using the workspace and passport.
 
         Returns:
             str: The file path for the data component.
         """
-        return self._workspace.get_filepath(
+        return self._workspace.gen_filepath(
             asset_type=self._passport.asset_type,
             asset_id=self._passport.asset_id,
             phase=self._passport.phase,
             file_format=self._file_format,
         )
 
+    def _determine_dataframe_type(self) -> DFType:
+        """Returns the DataFrame type based on the data
+
+        Returns
+            DFType: The type of datafrme provided.
+        """
+        if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame)):
+            return DFType.PANDAS
+        else:
+            return DFType.SPARK
+
     def _validate(self) -> None:
+        # Ensure a passport is provided
+        if not isinstance(self._passport, DatasetPassport):
+            msg = "A DataComponent requires a DatasetPassport object for the Dataset to which this component belongs."
+            self._Logger.error(msg)
+            raise TypeError(msg)
         # Validate DataFrame type
         if not isinstance(
             self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
@@ -194,21 +196,10 @@ class DataComponentBuilder(DatasetComponentBuilder):
             self._logger.error(msg)
             raise TypeError(msg)
 
-        # Validate / Infer DataFrame type if None
-        if self._dftype is None:
-            if isinstance(self._data, DataFrame):
-                self._dftype = DFType.SPARK
-            else:
-                self._dftype = DFType.PANDAS
-        else:
-            if isinstance(self._data, DataFrame) and self._dftype == DFType.PANDAS:
-                msg = f"DataIntegrityError: DataFrame type `dftype` {self._dftype.value} is incompatible with the data of type {type(self._data)}"
-                self._logger.error(msg)
-                raise ValueError(msg)
-            if (
-                isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame))
-                and self._dftype != DFType.PANDAS
-            ):
-                msg = f"DataIntegrityError: DataFrame type `dftype` {self._dftype.value} is incompatible with the data of type {type(self._data)}"
-                self._logger.error(msg)
-                raise ValueError(msg)
+        # Validate File Format
+        if not isinstance(
+            self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+        ):
+            msg = "TypeError: Invalid file format provided. Expected FileFormat.CSV or FileFormat.PARQUET."
+            self._logger.error(msg)
+            raise TypeError(msg)

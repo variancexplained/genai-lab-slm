@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 11:31:34 am                                               #
-# Modified   : Monday December 30th 2024 03:46:59 pm                                               #
+# Modified   : Monday December 30th 2024 05:41:57 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -141,15 +141,14 @@ class Workspace:
             asset_type=asset_type, phase=phase, stage=stage, name=name
         )
 
-    def get_filepath(
+    def gen_filepath(
         self,
         asset_type: AssetType,
         asset_id: str,
         phase: PhaseDef,
         file_format: FileFormat = FileFormat.PARQUET,
     ) -> str:
-        """
-        Resolves the file path for an asset.
+        """Generates a filepath for the given asset_type, asset_id, phase, and file format.
 
         Args:
             asset_type (AssetType): The type of the asset.
