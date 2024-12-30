@@ -11,18 +11,18 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:33:51 pm                                             #
-# Modified   : Friday December 27th 2024 06:29:46 pm                                               #
+# Modified   : Monday December 30th 2024 03:13:39 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Categorical Detect and Repair Strategies"""
-from typing import Type
+from typing import Dict, Type
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.dataset import DFType
+from discover.asset.dataset import DFType
 from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
@@ -34,14 +34,14 @@ from discover.flow.task.dataprep.clean.strategy.factory import (
 class CategoricalStrategyFactory(StrategyFactory):
 
     @property
-    def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
+    def detect_strategies(self) -> Dict[str, Type[DetectStrategy]]:
         """
         Retrieves a dictionary of numeric anomaly detection strategies.
 
         The dictionary maps strategy keys to their corresponding strategy classes.
 
         Returns:
-            dict[str, Type[DetectStrategy]]: A dictionary where the keys represent
+            Dict[str, Type[DetectStrategy]]: A dictionary where the keys represent
             strategy names, and the values are classes implementing the detection logic.
 
         Available Detection Strategies:
@@ -52,7 +52,7 @@ class CategoricalStrategyFactory(StrategyFactory):
         }
 
     @property
-    def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
+    def repair_strategies(self) -> Dict[str, Type[RepairStrategy]]:
         return {
             "categorical": CategoricalAnomalyDetectRepairTaskRepairStrategy,
         }

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Saturday December 28th 2024 10:45:16 pm                                             #
+# Modified   : Monday December 30th 2024 03:36:49 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,11 +21,71 @@ import os
 from datetime import datetime
 from typing import Union
 
+from pydantic.dataclasses import dataclass
+
+from discover.core.data_structure import DataClass
 from discover.infra.utils.data.format import format_size
 from discover.infra.utils.date_time.format import ThirdDateFormatter
 
 # ------------------------------------------------------------------------------------------------ #
 d84mtr = ThirdDateFormatter()
+
+
+# ------------------------------------------------------------------------------------------------ #
+class FileTypeDetector:
+    """A class to detect the file type based on magic numbers."""
+
+    MAGIC_NUMBERS = {
+        "Parquet": (b"PAR1", None),  # Footer-based detection
+        "pickle": (b"\x80\x04", None),  # Pickle protocol magic bytes
+        "Csv": None,  # No magic number for CSV, fallback required
+        "Feather": (b"FEA1", None),  # Feather magic number
+        "HDF5": (b"\x89HDF", None),  # HDF5 magic number
+    }
+
+    def get_file_type(self, filepath: str) -> str:
+        """Detect the file type using magic numbers.
+
+        Returns:
+            str: The detected file type or 'Unknown' if no match is found.
+        """
+        if not os.path.isfile(filepath):
+            raise FileNotFoundError(f"The file {filepath} does not exist.")
+
+        try:
+            with open(filepath, "rb") as file:
+                header = file.read(8)  # Read enough bytes to check multiple types
+
+                # Check footer for formats like Parquet
+                file.seek(-4, os.SEEK_END)
+                footer = file.read(4)
+
+                for file_type, magic in self.MAGIC_NUMBERS.items():
+                    if not magic:  # Special handling for CSV
+                        continue
+                    header_magic, footer_magic = magic
+                    if (header_magic and header.startswith(header_magic)) or (
+                        footer_magic and footer == footer_magic
+                    ):
+                        return file_type
+
+                # CSV fallback: check for text-like content
+                file.seek(0)
+                if self._is_csv(file):
+                    return "Csv"
+
+        except Exception as e:
+            raise RuntimeError(f"Error detecting file type: {e}")
+
+        return "Unknown"
+
+    def _is_csv(self, file) -> bool:
+        """Fallback for detecting CSV files based on plain text."""
+        try:
+            sample = file.read(1024).decode("utf-8", errors="ignore")
+            return "," in sample or "\n" in sample  # Basic CSV characteristics
+        except Exception:
+            return False
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -108,7 +168,23 @@ class ParquetFileDetector:
 
 
 # ------------------------------------------------------------------------------------------------ #
-class FileStats:
+@dataclass(config=dict(arbitrary_types_allowed=True))
+class FileMeta(DataClass):
+    """Encapsulates File level metadata."""
+
+    filename: str
+    filepath: str
+    file_type: str
+    isdir: bool
+    file_count: int
+    created: str
+    accessed: str
+    modified: str
+    size: int
+
+
+# ------------------------------------------------------------------------------------------------ #
+class FileInfo:
     """Utility class for retrieving statistics and metadata about files and directories.
 
     This class provides methods to calculate the size, creation time, last access time,
@@ -116,8 +192,34 @@ class FileStats:
     handling recursive operations for directories when necessary.
     """
 
-    @classmethod
-    def get_count(cls, filepath: str) -> int:
+    def get_file_info(self, filepath: str) -> FileMeta:
+        ftd = FileTypeDetector()
+        file_type = ftd.get_file_type(filepath)
+
+        return FileMeta(
+            filename=os.path.basename(filepath),
+            filepath=filepath,
+            file_type=file_type,
+            isdir=self.isdir(filepath=filepath),
+            file_count=self.get_count(filepath=filepath),
+            created=self.file_created(filepath=filepath),
+            accessed=self.file_last_accessed(filepath=filepath),
+            modified=self.file_last_modified(filepath=filepath),
+            size=self.get_size(path=filepath, in_bytes=True),
+        )
+
+    def isdir(self, filepath: str) -> bool:
+        """Returns True if the filepath is a directory
+
+        Args:
+            filepath (str): The path to the file or directory.
+
+        Returns:
+            True if the filepath is a directory. False otherwise.
+        """
+        return os.path.isdir(filepath)
+
+    def get_count(self, filepath: str) -> int:
         """Gets the count of items in the specified file or directory.
 
         Args:
@@ -133,12 +235,11 @@ class FileStats:
         if os.path.isfile(filepath):
             return 1
         elif os.path.isdir(filepath):
-            return cls._get_directory_count(directory=filepath)
+            return self._get_directory_count(directory=filepath)
         else:
             raise ValueError(f"The filepath {filepath} is not valid.")
 
-    @classmethod
-    def file_created(cls, filepath: str) -> datetime:
+    def file_created(self, filepath: str) -> datetime:
         """Gets the creation time of the specified file.
 
         Args:
@@ -151,8 +252,7 @@ class FileStats:
         ctime = datetime.fromtimestamp(stat_info.st_ctime)
         return d84mtr.to_HTTP_format(dt=ctime)
 
-    @classmethod
-    def file_last_accessed(cls, filepath: str) -> datetime:
+    def file_last_accessed(self, filepath: str) -> datetime:
         """Gets the last access time of the specified file.
 
         Args:
@@ -165,8 +265,7 @@ class FileStats:
         atime = datetime.fromtimestamp(stat_info.st_atime)
         return d84mtr.to_HTTP_format(dt=atime)
 
-    @classmethod
-    def file_last_modified(cls, filepath: str) -> datetime:
+    def file_last_modified(self, filepath: str) -> datetime:
         """Gets the last modified time of the specified file.
 
         Args:
@@ -179,8 +278,7 @@ class FileStats:
         mtime = datetime.fromtimestamp(stat_info.st_mtime)
         return d84mtr.to_HTTP_format(dt=mtime)
 
-    @classmethod
-    def get_size(cls, path: str, in_bytes: bool = True) -> Union[int, str]:
+    def get_size(self, path: str, in_bytes: bool = True) -> Union[int, str]:
         """Gets the size of the specified file or directory in a human-readable format.
 
         Args:
@@ -195,9 +293,9 @@ class FileStats:
             ValueError: If the path is neither a file nor a directory.
         """
         if os.path.isfile(path):
-            size = cls._get_file_size(filepath=path)
+            size = self._get_file_size(filepath=path)
         elif os.path.isdir(path):
-            size = cls._get_directory_size(directory=path)
+            size = self._get_directory_size(directory=path)
         else:
             raise ValueError(f"The path {path} is not valid.")
         if in_bytes:
@@ -205,8 +303,7 @@ class FileStats:
         else:
             return format_size(size_in_bytes=size)
 
-    @classmethod
-    def _get_file_size(cls, filepath: str) -> int:
+    def _get_file_size(self, filepath: str) -> int:
         """Gets the size of a file in bytes.
 
         Args:
@@ -217,8 +314,7 @@ class FileStats:
         """
         return os.path.getsize(filepath)
 
-    @classmethod
-    def _get_directory_size(cls, directory: str) -> int:
+    def _get_directory_size(self, directory: str) -> int:
         """Recursively calculates the total size of a directory in bytes.
 
         Args:
@@ -233,11 +329,10 @@ class FileStats:
                 if entry.is_file():
                     total += entry.stat().st_size
                 elif entry.is_dir():
-                    total += cls._get_directory_size(directory=entry.path)
+                    total += self._get_directory_size(directory=entry.path)
         return total
 
-    @classmethod
-    def _get_directory_count(cls, directory: str) -> int:
+    def _get_directory_count(self, directory: str) -> int:
         """Recursively counts the total number of files and directories in a directory.
 
         Args:
@@ -252,5 +347,5 @@ class FileStats:
                 if entry.is_file():
                     total += 1
                 elif entry.is_dir():
-                    total += cls._get_directory_count(directory=entry.path)
+                    total += self._get_directory_count(directory=entry.path)
         return total

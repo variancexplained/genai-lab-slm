@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Friday December 27th 2024 05:20:59 pm                                               #
+# Modified   : Monday December 30th 2024 02:25:16 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,12 +29,12 @@ class StageDef(Enum):
 # ------------------------------------------------------------------------------------------------ #
 class DataPrepStageDef(StageDef):
 
-    RAW = ("raw", "00_raw", "Raw Data Stage")
-    INGEST = ("ingest", "01_ingest", "Data Ingestion Stage")
-    DQD = ("dqd", "02_dqd", "Data Quality Anomaly Detection Stage")
-    SEMICLEAN = ("semiclean", "03_semiclean", "Semi-Clean Data Stage")
-    DQV = ("dqv", "04_dqv", "Data Quality Verification Stage")
-    CLEAN = ("clean", "05_clean", "Clean Data Stage")
+    RAW = ("raw", 0, "Raw Data Stage")
+    INGEST = ("ingest", 1, "Data Ingestion Stage")
+    DQD = ("dqd", 2, "Data Quality Anomaly Detection Stage")
+    SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
+    DQV = ("dqv", 4, "Data Quality Verification Stage")
+    CLEAN = ("clean", 5, "Clean Data Stage")
 
     @classmethod
     def from_value(cls, value) -> DataPrepStageDef:
@@ -44,30 +44,25 @@ class DataPrepStageDef(StageDef):
                 return member
         raise ValueError(f"No matching {cls.__name__} for value: {value}")
 
-    def __new__(cls, name: str, directory: str, description: str):
+    def __new__(cls, name: str, id: str, label: str):
         obj = object.__new__(cls)
         obj._value_ = name
-
-        obj.directory = directory
-        obj.description = description
+        obj.id = id
+        obj.label = label
         return obj
 
 
 # ------------------------------------------------------------------------------------------------ #
 class DataEnrichmentStageDef(StageDef):
 
-    SENTIMENT = ("sentiment", "00_sentiment", "Sentiment Classification Stage")
-    QUANT = (
-        "quantitative",
-        "01_quantitative",
-        "Quantitative Data Enrichment Stage",
-    )
-    APP = ("app", "02_app", "App Enrichment Stage")
-    CATEGORY = (
-        "category",
-        "03_categpru",
-        "Category Enrichment Stage",
-    )
+    TQA = ("tqa", 0, "Text Quality Analysis")
+    SENTIMENT = ("sentiment", 1, "Sentiment Classification Stage")
+    ASPECT = ("aspect", 2, "Aspect Extraction Stage")
+    TOPIC = ("topic", 3, "Topic Analysis Stage")
+    APP = ("app", 4, "App Aggregation Stage")
+    CATEGORY = ("category", 5, "Category Aggregation Stage")
+    STATS = ("stats", 6, "Statistical Features Stage ")
+    SEGMENTATION = ("segmentation", 7, "User Segmentation Stage")
 
     @classmethod
     def from_value(cls, value) -> DataEnrichmentStageDef:
@@ -77,11 +72,11 @@ class DataEnrichmentStageDef(StageDef):
                 return member
         raise ValueError(f"No matching {cls.__name__} for value: {value}")
 
-    def __new__(cls, name: str, directory: str, description: str):
+    def __new__(cls, name: str, id: str, label: str):
         obj = object.__new__(cls)
         obj._value_ = name
-        obj.directory = directory
-        obj.description = description
+        obj.id = id
+        obj.label = label
         return obj
 
 
@@ -99,26 +94,54 @@ class ModelStageDef(StageDef):
                 return member
         raise ValueError(f"No matching {cls.__name__} for value: {value}")
 
-    def __new__(cls, name: str, directory: str, description: str):
+    def __new__(cls, name: str, id: str, label: str):
         obj = object.__new__(cls)
         obj._value_ = name
-        obj.directory = directory
-        obj.description = description
+        obj.id = id
+        obj.label = label
+        return obj
+
+
+# ------------------------------------------------------------------------------------------------ #
+class TestStageDef(StageDef):
+    UNIT_TEST = ("unit", 0, "Unit Testing")
+    INTEGRATION_TEST = ("integration", 1, "Integration Testing")
+    FUNCTIONAL_TEST = ("functional", 2, "Functional Testing")
+    SYSTEM_TEST = ("system", 3, "System Testing")
+    PERFORMANCE_TEST = ("performance", 4, "Performance Testing")
+    SMOKE_TEST = ("smoke", 4, "Smoke Testing")
+
+    @classmethod
+    def from_value(cls, value) -> TestStageDef:
+        """Finds the enum member based on a given value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No matching {cls.__name__} for value: {value}")
+
+    def __new__(cls, name: str, id: int, label: str):
+        obj = object.__new__(cls)
+        obj._value_ = name
+        obj.id = id
+        obj.label = label
         return obj
 
 
 # ------------------------------------------------------------------------------------------------ #
 class PhaseDef(Enum):
-    # Defining phases with name, directory, and description
-    DATAPREP = ("dataprep", "00_dataprep", "Data Preparation Phase")
-    ENRICHMENT = ("enrichment", "01_enrichment", "Data Enrichment Phase")
-    MODEL = ("model", "02_model", "Modeling Phase")
+    ACQUISITION = ("acquisition", 0, "Data Acquisition Phase")
+    DATAPREP = ("dataprep", 1, "Data Preparation Phase")
+    ENRICHMENT = ("enrichment", 2, "Data Enrichment Phase")
+    EDA = ("eda", 3, "Exploratory Data Analysis")
+    ABSA_FT = ("absa_ft", 4, "ABSA Model Fine-Tuning Phase")
+    ABSA_CD = ("absa_cd", 5, "ABSA Custom Model Development Phase")
+    TESTING = ("test", 6, "Testing Phase")
 
-    def __new__(cls, name: str, directory: str, description: str):
+    def __new__(cls, name: str, id: int, label: str):
         obj = object.__new__(cls)
         obj._value_ = name
-        obj.directory = directory
-        obj.description = description
+        obj.id = id
+        obj.label = label
         return obj
 
     @classmethod

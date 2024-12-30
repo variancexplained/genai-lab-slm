@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Friday December 27th 2024 10:35:16 am                                               #
+# Modified   : Monday December 30th 2024 03:31:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,6 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from types import SimpleNamespace
@@ -66,7 +65,7 @@ class NestedNamespace(SimpleNamespace):
         """
         return (self.__class__, (self.to_dict(),))
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict:
         """
         Converts the NestedNamespace back into a dictionary.
 
@@ -85,8 +84,7 @@ class NestedNamespace(SimpleNamespace):
 # ------------------------------------------------------------------------------------------------ #
 #                                    DATACLASS                                                     #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
-class DataClass(ABC):  # noqa
+class DataClass(ABC):
     """Base Class for Data Transfer Objects"""
 
     def __repr__(self) -> str:

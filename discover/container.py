@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Saturday December 28th 2024 03:27:16 pm                                             #
+# Modified   : Monday December 30th 2024 03:43:27 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import logging.config
 
 from dependency_injector import containers, providers
 
-from discover.asset.core import AssetType
+from discover.asset.base.atype import AssetType
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 from discover.infra.persist.file.fao import FAO
@@ -34,7 +34,10 @@ from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
 from discover.infra.persist.repo.model import ModelRepo
 from discover.infra.service.spark.pool import SparkSessionPool
+from discover.infra.workspace.idgen import IDGen
+from discover.infra.workspace.location import LocationService
 from discover.infra.workspace.service import Workspace
+from discover.infra.workspace.version import VersionManager
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -71,7 +74,7 @@ class RepoContainer(containers.DeclarativeContainer):
     dataset_dao = providers.Singleton(
         ShelveDAO,
         location=config.workspace.location,
-        db_path=config.workspace.assets.datasets,
+        db_path=config.workspace.metadata.datasets,
         asset_type=AssetType.DATASET,
     )
     fao = providers.Singleton(
@@ -90,7 +93,7 @@ class RepoContainer(containers.DeclarativeContainer):
     model_dao = providers.Singleton(
         ShelveDAO,
         location=config.workspace.location,
-        db_path=config.workspace.assets.models,
+        db_path=config.workspace.metadata.models,
         asset_type=AssetType.MODEL,
     )
 
@@ -100,7 +103,7 @@ class RepoContainer(containers.DeclarativeContainer):
     experiment_dao = providers.Singleton(
         ShelveDAO,
         location=config.workspace.location,
-        db_path=config.workspace.assets.experiments,
+        db_path=config.workspace.metadata.experiments,
         asset_type=AssetType.EXPERIMENT,
     )
 
@@ -116,12 +119,23 @@ class WorkspaceContainer(containers.DeclarativeContainer):
 
     repo = providers.DependenciesContainer()
 
+    version_manager = providers.Singleton(
+        VersionManager, version_db_path=config.workspace.ops.version
+    )
+
+    location_service = providers.Singleton(LocationService, config=config.workspace)
+
+    idgen = providers.Singleton(IDGen, version_manager=version_manager)
+
     service = providers.Singleton(
         Workspace,
         config=config.workspace,
         dataset_repo=repo.dataset_repo,
         model_repo=repo.model_repo,
         experiment_repo=repo.experiment_repo,
+        version_manager=version_manager,
+        location_service=location_service,
+        idgen=idgen,
     )
 
 

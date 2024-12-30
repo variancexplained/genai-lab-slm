@@ -140,7 +140,7 @@ var Stemmer = function() {
       suffix = fp[2];
       re = new RegExp(mgr0);
       if (re.test(stem))
-        w = stem + step2list[suffix];
+        w = stem + step2List[suffix];
     }
 
     // Step 3
@@ -151,7 +151,7 @@ var Stemmer = function() {
       suffix = fp[2];
       re = new RegExp(mgr0);
       if (re.test(stem))
-        w = stem + step3list[suffix];
+        w = stem + step3List[suffix];
     }
 
     // Step 4

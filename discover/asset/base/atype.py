@@ -4,28 +4,29 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/core.py                                                             #
+# Filename   : /discover/asset/base/atype.py                                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Friday December 27th 2024 04:59:48 pm                                               #
+# Created    : Sunday December 29th 2024 01:54:33 pm                                               #
+# Modified   : Monday December 30th 2024 03:15:20 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-"""Base Module for the Asset Dimension"""
+"""Asset Type Module"""
 from __future__ import annotations
 
 from enum import Enum
 from typing import Any
 
-
 # ------------------------------------------------------------------------------------------------ #
 #                                   ASSET TYPE                                                     #
 # ------------------------------------------------------------------------------------------------ #
+
+
 class AssetType(Enum):
     """
     Enum representing different types of assets in a machine learning workflow.
@@ -65,7 +66,7 @@ class AssetType(Enum):
         return obj
 
     @classmethod
-    def from_value(cls, value) -> AssetType:
+    def from_value(cls, value: str) -> AssetType:
         """Finds the enum member based on a given value"""
         for member in cls:
             if member.value == value:

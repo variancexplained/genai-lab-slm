@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_assets/test_dataset/test_data_component_builder_from_df.py              #
+# Filename   : /tests/test_assets/test_dataset/test_builders/test_data_component_builder_from_df.py #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:02:58 am                                               #
-# Modified   : Sunday December 29th 2024 01:19:17 pm                                               #
+# Modified   : Sunday December 29th 2024 02:53:34 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,7 +42,7 @@ INVALID_DF = {"a": 1}
 
 @pytest.mark.dataset
 @pytest.mark.builder
-@pytest.mark.dsbuilder
+@pytest.mark.dcbuilder
 class TestDataComponentBuilder:  # pragma: no cover
     # ============================================================================================ #
     @pytest.mark.pandas_csv

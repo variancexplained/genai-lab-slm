@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Sunday December 15th 2024 01:42:46 pm                                               #
+# Modified   : Monday December 30th 2024 02:40:22 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ def stage_logger(func):
 
         try:
             # Print title and dataframe header
-            printer.print_title(title=self.stage.description)
+            printer.print_title(title=self.stage.label)
             # Formatting the current time using the date formatter in HTTP format.
             # This is logged with the message indicating the start of the method.
             start = datetime.now()
@@ -63,7 +63,7 @@ def stage_logger(func):
             # Print table total line
             table_printer.print_total_line(
                 data=(
-                    self.stage.description,
+                    self.stage.label,
                     start_fmt,
                     end_fmt,
                     runtime_fmt,
@@ -71,14 +71,14 @@ def stage_logger(func):
             )
             # Print summary if the stage has a summarize method
             if hasattr(self, "summarize"):
-                printer.print_subtitle(subtitle=self.stage.description + " Summary")
+                printer.print_subtitle(subtitle=self.stage.label + " Summary")
                 print(self.summarize())
 
             # Close the stage output
             printer.print_trailer()
 
             # Log stage
-            logger.debug(f"Stage: {self.stage.description}")
+            logger.debug(f"Stage: {self.stage.label}")
             logger.debug(f"Stage Started: {start_fmt}")
             logger.debug(f"Stage Completed: {end_fmt}")
             logger.debug(f"Stage Runtime: {runtime_fmt}")

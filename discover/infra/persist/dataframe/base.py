@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
-# Modified   : Thursday December 26th 2024 08:45:44 pm                                             #
+# Modified   : Sunday December 29th 2024 03:31:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -119,3 +119,4 @@ class DataFrameWriter(Writer):
             raise FileExistsError(
                 f"File exists at {filepath}. To overwrite this file, set overwrite argument to True."
             )
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)

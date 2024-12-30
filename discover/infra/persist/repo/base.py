@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:33:35 pm                                               #
-# Modified   : Wednesday December 25th 2024 10:25:30 pm                                            #
+# Modified   : Sunday December 29th 2024 01:43:48 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,8 +21,8 @@ from typing import Dict
 
 import pandas as pd
 
-from discover.asset.base import Asset
-from discover.asset.repo import Repo
+from discover.asset.base.asset import Asset
+from discover.asset.base.repo import Repo
 from discover.infra.persist.object.base import DAO
 
 

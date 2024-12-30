@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/strategy/factory.py                                       #
+# Filename   : /discover/flow/task/dataprep/clean/strategy/factory.py                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:35:09 am                                             #
-# Modified   : Sunday December 15th 2024 09:29:02 am                                               #
+# Modified   : Monday December 30th 2024 03:12:42 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,12 +30,12 @@ class StrategyFactory(ABC):
 
     @property
     @abstractmethod
-    def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
+    def detect_strategies(self) -> Dict[str, Type[DetectStrategy]]:
         """Returns a dictionary of detect strategies"""
 
     @property
     @abstractmethod
-    def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
+    def repair_strategies(self) -> Dict[str, Type[RepairStrategy]]:
         """Returns a dictionary of detect strategies"""
 
     def get_detect_strategy(self, strategy_type) -> Type[DetectStrategy]:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Sunday December 29th 2024 12:49:06 pm                                               #
+# Modified   : Monday December 30th 2024 03:38:07 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,14 +23,12 @@ from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
-from pydantic import Field
 from pydantic.dataclasses import dataclass
 from pyspark.sql import DataFrame
 
-from discover.asset.dataset import DFType, FileFormat
+from discover.asset.base.asset import Asset
 from discover.asset.dataset.base import DatasetComponent
-from discover.flow import SparkSessionType
-from discover.infra.utils.file.info import FileStats
+from discover.infra.utils.file.info import FileMeta
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -38,35 +36,17 @@ from discover.infra.utils.file.info import FileStats
 # ------------------------------------------------------------------------------------------------ #
 @dataclass(config=dict(arbitrary_types_allowed=True))
 class DataComponent(DatasetComponent):
-    dftype: DFType
-    filepath: str
-    file_format: FileFormat
-    created: Optional[datetime] = None
-    # Private item created to ensure pydantic skips validation of this member.
-    _data: Union[pd.DataFrame, DataFrame] = Field(exclude=True)
-    spark_session_type: Optional[SparkSessionType] = SparkSessionType.SPARK
+    file_meta: FileMeta
+    data: Optional[Union[pd.DataFrame, DataFrame]] = None
 
     def __post_init__(self) -> None:
         self.created = self.created if self.created else datetime.now()
 
-    @property
-    def size(self) -> int:
-        return FileStats.get_size(path=self.filepath, in_bytes=True)
+    def __eq__(self, other: object) -> bool:
+        """Checks equality between two Asset objects based on their asset ID."""
+        if not isinstance(other, Asset):
+            return NotImplemented
+        return self.file_meta == other.file_meta
 
-    @property
-    def data(self) -> Optional[Union[pd.DataFrame, DataFrame]]:
+    def as_df(self) -> Optional[Union[pd.DataFrame, DataFrame]]:
         return self._data
-
-    @data.setter
-    def data(self, data: Union[pd.DataFrame, DataFrame]) -> None:
-        if isinstance(data, (pd.DataFrame, DataFrame)):
-            self._data = data
-        else:
-            raise TypeError(
-                f"Data of type: {type(data)} is invalid. Expected a spark or pandas DataFrame"
-            )
-
-    @property
-    def accessed(self) -> str:
-        """The last accessed timestamp of the dataset file."""
-        return FileStats.file_last_accessed(filepath=self.filepath)

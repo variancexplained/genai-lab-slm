@@ -11,20 +11,19 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 06:56:09 pm                                               #
-# Modified   : Monday December 23rd 2024 04:20:32 pm                                               #
+# Modified   : Monday December 30th 2024 03:26:28 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from dataclasses import dataclass
-
 import pandas as pd
+from pydantic.dataclasses import dataclass
 
 from discover.core.data_structure import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
+@dataclass(config=dict(arbitrary_types_allowed=True))
 class DataFrameComparison(DataClass):
     rows_removed: int
     rows_added: int

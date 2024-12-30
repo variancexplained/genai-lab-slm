@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
-# Modified   : Monday December 23rd 2024 11:52:33 pm                                               #
+# Modified   : Sunday December 29th 2024 01:43:48 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 
 from abc import ABC, abstractmethod
 
-from discover.asset.base import Asset
+from discover.asset.base.asset import Asset
 
 
 # ------------------------------------------------------------------------------------------------ #

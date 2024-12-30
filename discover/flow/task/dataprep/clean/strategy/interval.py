@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 12:21:51 am                                               #
-# Modified   : Tuesday December 24th 2024 07:45:40 pm                                              #
+# Modified   : Monday December 30th 2024 03:12:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,13 +35,13 @@ from discover.flow.task.dataprep.clean.strategy.factory import (
 class IntervalStrategyFactory(StrategyFactory):
 
     @property
-    def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
+    def detect_strategies(self) -> Dict[str, Type[DetectStrategy]]:
         return {
             "date_range": DateRangeAnomalyDetectStrategy,
         }
 
     @property
-    def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
+    def repair_strategies(self) -> Dict[str, Type[RepairStrategy]]:
         return {
             "date_range": DateRangeAnomalyRepairStrategy,
         }
@@ -140,7 +140,7 @@ class DateRangeAnomalyRepairStrategy(RepairStrategy):
     occurrence.
 
     Args:
-        column (list[str]): List of columns to consider for uniqueness.
+        column (List[str]): List of columns to consider for uniqueness.
         new_column (str): The name of the column where the detection results will be stored.
         detect_strategy (Type[UniquenessAnomalyDetectStrategy]): The strategy used to detect uniqueness anomalies.
         **kwargs: Additional keyword arguments passed to the base class.

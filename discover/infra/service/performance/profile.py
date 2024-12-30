@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Friday December 27th 2024 05:20:59 pm                                               #
+# Modified   : Monday December 30th 2024 03:26:28 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,9 +19,10 @@
 """Profile Module"""
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional, Union
+
+from pydantic.dataclasses import dataclass
 
 from discover.core.data_structure import DataClass
 from discover.core.flow import (
@@ -35,7 +36,7 @@ from discover.core.flow import (
 
 
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
+@dataclass(config=dict(arbitrary_types_allowed=True))
 class Profile(DataClass):
     phase: Phase  # Phase i.e. DataPrep, Analysis
     stage: Union[

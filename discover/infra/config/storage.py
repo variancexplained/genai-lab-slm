@@ -11,21 +11,20 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 11th 2024 09:42:37 pm                                                #
-# Modified   : Monday December 23rd 2024 04:20:29 pm                                               #
+# Modified   : Monday December 30th 2024 03:26:28 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from dataclasses import field
 from typing import Any, Dict
 
-from pydantic.dataclasses import dataclass
+from pydantic.dataclasses import dataclass, field
 
 from discover.core.data_structure import DataClass
 
 
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
+@dataclass(config=dict(arbitrary_types_allowed=True))
 class StorageConfig(DataClass):
     """
     Base class that defines the interface for dataset content storage medium specific configurations.

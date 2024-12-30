@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:27:43 am                                             #
-# Modified   : Friday December 27th 2024 06:29:46 pm                                               #
+# Modified   : Monday December 30th 2024 03:13:30 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,7 @@
 """Data Prep Cleaning Task Base Module"""
 from typing import Literal, Type, Union
 
-from discover.core.dataset import DFType
+from discover.asset.dataset import DFType
 from discover.flow.task.base import Task
 from discover.flow.task.dataprep.clean.strategy.categorical import (
     CategoricalStrategyFactory,

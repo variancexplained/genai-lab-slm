@@ -4,25 +4,26 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/clean/strategy/text/pattern.py                                  #
+# Filename   : /discover/flow/task/dataprep/clean/strategy/text/pattern.py                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Sunday November 24th 2024 07:43:07 pm                                               #
+# Modified   : Monday December 30th 2024 03:26:28 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from dataclasses import dataclass
 from typing import Callable, Dict
 
+from pydantic.dataclasses import dataclass
+
 
 # ------------------------------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------------------------------ #
-@dataclass
+@dataclass(config=dict(arbitrary_types_allowed=True))
 class Regex:
     """
     Represents a regex pattern and its corresponding replacement.

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Friday December 27th 2024 04:40:05 pm                                               #
+# Modified   : Sunday December 29th 2024 05:56:15 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,8 +23,8 @@ import shelve
 import shutil
 from typing import Dict
 
-from discover.asset.base import Asset
-from discover.asset.core import AssetType
+from discover.asset.base.asset import Asset
+from discover.asset.base.atype import AssetType
 from discover.infra.exception.object import (
     ObjectDatabaseNotFoundError,
     ObjectIOException,

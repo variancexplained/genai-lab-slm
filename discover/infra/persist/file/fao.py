@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Saturday December 28th 2024 12:52:27 pm                                             #
+# Modified   : Sunday December 29th 2024 03:51:13 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -165,36 +165,16 @@ class FAO:
         """
         try:
             os.remove(filepath)
+            msg = f"File {os.path.basename(filepath)} successfully removed from the repository."
+            self._logger.info()
         except FileNotFoundError:
             msg = f"File {filepath} not found."
             self._logger.warning(msg)
         except OSError:
             shutil.rmtree(filepath)
+            msg = f"Directory {os.path.basename(filepath)} successfully removed from the repository."
+            self._logger.info()
         except Exception as e:
             msg = f"Unexpected exception occurred.\n{e}"
             self._logger.error(msg)
             raise Exception(msg)
-
-    def reset(self, verified: bool = False) -> None:
-        """
-        Resets the FAO database directory by deleting all files.
-
-        Args:
-            verified (bool): Whether the reset action is pre-approved. If False, prompts
-                for confirmation before proceeding.
-
-        Raises:
-            Exception: If an unexpected error occurs during reset.
-        """
-        if verified:
-            shutil.rmtree(self._basedir)
-            self._logger.warning(f"{self.__class__.__name__} has been reset.")
-        else:
-            proceed = input(
-                f"Resetting the {self.__class__.__name__} object database is irreversible. To proceed, type 'YES'."
-            )
-            if proceed == "YES":
-                shutil.rmtree(self._basedir)
-                self._logger.warning(f"{self.__class__.__name__} has been reset.")
-            else:
-                self._logger.info(f"{self.__class__.__name__} reset has been aborted.")

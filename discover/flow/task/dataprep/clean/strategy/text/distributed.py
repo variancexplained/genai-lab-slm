@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Wednesday December 25th 2024 05:11:54 am                                            #
+# Modified   : Monday December 30th 2024 03:12:45 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -49,7 +49,7 @@ class TextStrategyFactory(StrategyFactory):
     """Factory to retrieve strategies for anomaly detection and repair."""
 
     @property
-    def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
+    def detect_strategies(self) -> Dict[str, Type[DetectStrategy]]:
         """Returns a dictionary of detect strategies"""
         return {
             "regex": RegexDetectStrategy,
@@ -59,7 +59,7 @@ class TextStrategyFactory(StrategyFactory):
         }
 
     @property
-    def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
+    def repair_strategies(self) -> Dict[str, Type[RepairStrategy]]:
         """Returns a dictionary of detect strategies"""
         return {
             "regex_replace": RegexReplaceStrategy,

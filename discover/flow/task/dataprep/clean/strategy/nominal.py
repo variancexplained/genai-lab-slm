@@ -11,19 +11,19 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Friday December 27th 2024 06:29:46 pm                                               #
+# Modified   : Monday December 30th 2024 03:12:09 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Nominal Value Detect and Repair Strategies"""
 from abc import abstractmethod
-from typing import Type
+from typing import Dict, List, Type
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.core.dataset import DFType
+from discover.asset.dataset import DFType
 from discover.flow.task.dataprep.clean.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
@@ -42,24 +42,24 @@ class NominalStrategyFactory(StrategyFactory):
     anomaly detection and repair.
 
     Methods:
-        detect_strategies -> dict[str, Type[DetectStrategy]]:
-            Returns a dictionary mapping strategy names to their respective
+        detect_strategies -> Dict[str, Type[DetectStrategy]]:
+            Returns a Dictionary mapping strategy names to their respective
             detection strategy classes.
 
-        repair_strategies -> dict[str, Type[RepairStrategy]]:
-            Returns a dictionary mapping strategy names to their respective
+        repair_strategies -> Dict[str, Type[RepairStrategy]]:
+            Returns a Dictionary mapping strategy names to their respective
             repair strategy classes.
     """
 
     @property
-    def detect_strategies(self) -> dict[str, Type[DetectStrategy]]:
+    def detect_strategies(self) -> Dict[str, Type[DetectStrategy]]:
         return {
             "nominal": NominalAnomalyDetectRepairTaskDetectStrategy,
             "unique": UniquenessAnomalyDetectStrategy,
         }
 
     @property
-    def repair_strategies(self) -> dict[str, Type[RepairStrategy]]:
+    def repair_strategies(self) -> Dict[str, Type[RepairStrategy]]:
         return {
             "nominal": NominalAnomalyDetectRepairTaskRepairStrategy,
             "unique": UniquenessAnomalyRepairStrategy,
@@ -169,13 +169,13 @@ class UniquenessAnomalyDetectStrategy(NominalAnomalyDetectRepairTaskDetectStrate
     as unique, with all others marked as duplicates.
 
     Args:
-        column (list[str]): A list of column names to include in duplication evaluation.
+        column (List[str]): A list of column names to include in duplication evaluation.
         new_column (str): Name of the column to store duplicate indicators.
     """
 
     def __init__(
         self,
-        column: list[str],
+        column: List[str],
         new_column: str,
         **kwargs,
     ) -> None:
@@ -225,7 +225,7 @@ class UniquenessAnomalyRepairStrategy(NominalAnomalyDetectRepairTaskRepairStrate
     occurrence.
 
     Args:
-        column (list[str]): List of columns to consider for uniqueness.
+        column (List[str]): List of columns to consider for uniqueness.
         new_column (str): The name of the column where the detection results will be stored.
         detect_strategy (Type[UniquenessAnomalyDetectStrategy]): The strategy used to detect uniqueness anomalies.
         **kwargs: Additional keyword arguments passed to the base class.
@@ -233,7 +233,7 @@ class UniquenessAnomalyRepairStrategy(NominalAnomalyDetectRepairTaskRepairStrate
 
     def __init__(
         self,
-        column: list[str],
+        column: List[str],
         new_column: str,
         detect_strategy: Type[
             UniquenessAnomalyDetectStrategy

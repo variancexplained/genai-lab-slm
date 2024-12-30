@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 19th 2024 12:57:59 pm                                              #
-# Modified   : Friday December 27th 2024 06:30:03 pm                                               #
+# Modified   : Monday December 30th 2024 03:13:30 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 
 import pandas as pd
 
-from discover.core.dataset import DFType
+from discover.asset.dataset import DFType
 from discover.core.flow import DataPrepStageDef, PhaseDef
 from discover.flow.stage.base import DataPrepStage
 from discover.infra.utils.data.compare import compare_dataframes

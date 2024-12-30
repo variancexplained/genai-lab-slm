@@ -11,12 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 22nd 2024 01:08:57 am                                               #
-# Modified   : Tuesday December 24th 2024 07:45:40 pm                                              #
+# Modified   : Monday December 30th 2024 03:10:14 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from typing import Literal, Type, Union
+from typing import List, Literal, Type, Union
 
 from discover.flow.task.dataprep.clean.base import NominalAnomalyDetectRepairTask
 from discover.flow.task.dataprep.clean.strategy.nominal import NominalStrategyFactory
@@ -32,7 +32,7 @@ class DetectOrRepairUniquenessTask(NominalAnomalyDetectRepairTask):
     values in the specified column are unique or meet certain uniqueness criteria.
 
     Args:
-        column (list[str]): A list of columns in the dataset to apply anomaly detection. The values in these columns should be unique.
+        column (List[str]): A list of columns in the dataset to apply anomaly detection. The values in these columns should be unique.
         new_column (str): The name of the new column that will store the results of the uniqueness detection/repair.
         mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
         strategy_factory_cls (Type[NominalStrategyFactory], optional): The class for the strategy factory to use. Defaults to `NominalStrategyFactory`.
@@ -43,7 +43,7 @@ class DetectOrRepairUniquenessTask(NominalAnomalyDetectRepairTask):
         unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
 
     Attributes:
-        column (list[str]): The list of columns in the dataset to apply anomaly detection. The values in these columns should be unique.
+        column (List[str]): The list of columns in the dataset to apply anomaly detection. The values in these columns should be unique.
         new_column (str): The name of the new column that will store the results of the uniqueness detection/repair.
         mode (str): The mode of operation, either "detect" or "repair".
         strategy_factory_cls (Type[NominalStrategyFactory]): The class for the strategy factory to use.
@@ -56,7 +56,7 @@ class DetectOrRepairUniquenessTask(NominalAnomalyDetectRepairTask):
 
     def __init__(
         self,
-        column: list[str],
+        column: List[str],
         new_column: str,
         mode: str = "detect",
         strategy_factory_cls: Type[NominalStrategyFactory] = NominalStrategyFactory,

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Saturday December 28th 2024 03:34:24 pm                                             #
+# Modified   : Sunday December 29th 2024 04:22:40 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from typing import Optional
 
 from pyspark.sql import SparkSession
 
-from discover.asset.base import Asset
+from discover.asset.base.asset import Asset
 from discover.asset.dataset import DFType, FileFormat
 from discover.infra.persist.dataframe.base import DataFrame
 from discover.infra.persist.file.fao import FAO
@@ -141,9 +141,17 @@ class DatasetRepo(AssetRepo):
         )
         if proceed == "YES":
             assets = self.get_all()
+            self._logger.info(f"Assets to be deleted: {len(assets)}")
             for asset_id, asset in assets.items():
-                self._fao.delete(filepath=asset.filepath)
-            self._dao.reset(verified=True)
+                try:
+                    self._fao.delete(filepath=asset.data.filepath)
+                except AttributeError as e:
+                    msg = f"Asset {asset_id} file(s) could not be deleted.\n{e}"
+                    self._logger.warning(msg)
+                except Exception as e:
+                    msg = f"Asset {asset_id} file(s) could not be deleted. An unknown exception occurred.\n{e}"
+                    self._logger.error(msg)
+                    raise Exception(msg)
             self._logger.warning(f"{self.__class__.__name__} has been reset.")
         else:
             self._logger.info(f"{self.__class__.__name__} reset has been aborted.")
