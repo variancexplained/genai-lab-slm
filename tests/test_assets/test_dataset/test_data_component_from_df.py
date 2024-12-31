@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 06:16:36 pm                                               #
-# Modified   : Monday December 30th 2024 06:35:24 pm                                               #
+# Modified   : Tuesday December 31st 2024 05:41:56 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -65,9 +65,78 @@ class TestDatasetBuilderFromDataFrame:  # pragma: no cover
         assert isinstance(dc.filepath, str)
         assert dc.file_format == FileFormat.CSV
         assert isinstance(dc.data, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert dc.file_meta is None
 
         logging.info(dc)
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_validate_passport(self, pandas_df, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        with pytest.raises(TypeError):
+            builder = DataComponentBuilderFromDataFrame()
+            _ = builder.data(pandas_df).passport(2).to_csv().build().data_component
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_validate_df_type(self, ds_passport, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        with pytest.raises(TypeError):
+            builder = DataComponentBuilderFromDataFrame()
+            _ = builder.data(2).passport(ds_passport).to_csv().build().data_component
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_validate_file_meta(self, ds_passport, pandas_df, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        with pytest.raises(FileNotFoundError):
+            builder = DataComponentBuilderFromDataFrame()
+            dc = (
+                builder.data(pandas_df)
+                .passport(ds_passport)
+                .to_csv()
+                .build()
+                .data_component
+            )
+            _ = dc.file_meta
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

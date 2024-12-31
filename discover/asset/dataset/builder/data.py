@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Monday December 30th 2024 06:34:00 pm                                               #
+# Modified   : Tuesday December 31st 2024 05:42:46 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -52,7 +52,6 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
         self._passport = None
         self._data = None
         self._data_component = None
-        self._dftype = None
         self._file_format = FileFormat.PARQUET
         self._filepath = None
         self._file_meta = None
@@ -144,27 +143,26 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
     def build(self) -> DataComponentBuilderFromDataFrame:
         self._validate()
 
-        self._filepath = self._gen_filepath()
+        self._filepath = self._get_filepath()
 
         self._dftype = self._determine_dataframe_type()
 
         self._data_component = DataComponent(
             passport=self._passport,
-            dftype=self._dftype,
             filepath=self._filepath,
             file_format=self._file_format,
             data=self._data,
         )
         return self
 
-    def _gen_filepath(self) -> str:
+    def _get_filepath(self) -> str:
         """
         Generates the file path for the data component using the workspace and passport.
 
         Returns:
             str: The file path for the data component.
         """
-        return self._workspace.gen_filepath(
+        return self._workspace.get_filepath(
             asset_type=self._passport.asset_type,
             asset_id=self._passport.asset_id,
             phase=self._passport.phase,
@@ -186,20 +184,12 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
         # Ensure a passport is provided
         if not isinstance(self._passport, DatasetPassport):
             msg = "A DataComponent requires a DatasetPassport object for the Dataset to which this component belongs."
-            self._Logger.error(msg)
+            self._logger.error(msg)
             raise TypeError(msg)
         # Validate DataFrame type
         if not isinstance(
             self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
         ):
             msg = f"TypeError: Invalid data type for DataFrame. Expected DFType.PANDAS, DFType.SPARK, or DFType.SPARKNLP. Received type {type(self._data)}"
-            self._logger.error(msg)
-            raise TypeError(msg)
-
-        # Validate File Format
-        if not isinstance(
-            self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
-        ):
-            msg = "TypeError: Invalid file format provided. Expected FileFormat.CSV or FileFormat.PARQUET."
             self._logger.error(msg)
             raise TypeError(msg)

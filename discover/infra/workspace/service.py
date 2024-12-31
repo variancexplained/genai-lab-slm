@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 11:31:34 am                                               #
-# Modified   : Monday December 30th 2024 05:41:57 pm                                               #
+# Modified   : Tuesday December 31st 2024 05:00:58 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -141,7 +141,7 @@ class Workspace:
             asset_type=asset_type, phase=phase, stage=stage, name=name
         )
 
-    def gen_filepath(
+    def get_filepath(
         self,
         asset_type: AssetType,
         asset_id: str,

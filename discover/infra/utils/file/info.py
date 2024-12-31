@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Monday December 30th 2024 06:16:15 pm                                               #
+# Modified   : Tuesday December 31st 2024 05:18:05 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,7 +38,7 @@ class FileTypeDetector:
     MAGIC_NUMBERS = {
         "Parquet": (b"PAR1", None),  # Footer-based detection
         "pickle": (b"\x80\x04", None),  # Pickle protocol magic bytes
-        "Csv": None,  # No magic number for CSV, fallback required
+        "csv": None,  # No magic number for CSV, fallback required
         "Feather": (b"FEA1", None),  # Feather magic number
         "HDF5": (b"\x89HDF", None),  # HDF5 magic number
     }
@@ -72,7 +72,7 @@ class FileTypeDetector:
                 # CSV fallback: check for text-like content
                 file.seek(0)
                 if self._is_csv(file):
-                    return "Csv"
+                    return "csv"
 
         except Exception as e:
             raise RuntimeError(f"Error detecting file type: {e}")
@@ -172,6 +172,9 @@ class ParquetFileDetector:
 class FileMeta(DataClass):
     """Encapsulates File level metadata."""
 
+    filepath: str
+    filename: str
+    file_type: str
     isdir: bool
     file_count: int
     created: str
@@ -189,13 +192,13 @@ class FileInfo:
     handling recursive operations for directories when necessary.
     """
 
-    def get_file_info(self, filepath: str) -> FileMeta:
+    def get_file_meta(self, filepath: str) -> FileMeta:
         ftd = FileTypeDetector()
         file_type = ftd.get_file_type(filepath)
 
         return FileMeta(
-            filename=os.path.basename(filepath),
             filepath=filepath,
+            filename=os.path.basename(filepath),
             file_type=file_type,
             isdir=self.isdir(filepath=filepath),
             file_count=self.get_count(filepath=filepath),
