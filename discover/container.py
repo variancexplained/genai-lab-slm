@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Monday December 30th 2024 03:43:27 pm                                               #
+# Modified   : Tuesday December 31st 2024 02:56:05 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,6 @@ import logging.config
 
 from dependency_injector import containers, providers
 
-from discover.asset.base.atype import AssetType
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 from discover.infra.persist.file.fao import FAO
@@ -66,21 +65,21 @@ class SparkContainer(containers.DeclarativeContainer):
 # ------------------------------------------------------------------------------------------------ #
 #                                    REPO CONTAINER                                                #
 # ------------------------------------------------------------------------------------------------ #
-class RepoContainer(containers.DeclarativeContainer):
+class IOContainer(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
     # -------------------------------------------------------------------------------------------- #
-    dataset_dao = providers.Singleton(
-        ShelveDAO,
-        location=config.workspace.location,
-        db_path=config.workspace.metadata.datasets,
-        asset_type=AssetType.DATASET,
-    )
+    iofactory = providers.Singleton(DataFrameIOFactory, config=config.fao)
+
     fao = providers.Singleton(
         FAO,
-        fao_config=config.fao,
-        io_factory=DataFrameIOFactory,
+        iofactory=iofactory,
+    )
+
+    dataset_dao = providers.Singleton(
+        ShelveDAO,
+        db_path=config.workspace.metadata.datasets,
     )
 
     dataset_repo = providers.Singleton(
@@ -92,9 +91,7 @@ class RepoContainer(containers.DeclarativeContainer):
     # -------------------------------------------------------------------------------------------- #
     model_dao = providers.Singleton(
         ShelveDAO,
-        location=config.workspace.location,
         db_path=config.workspace.metadata.models,
-        asset_type=AssetType.MODEL,
     )
 
     model_repo = providers.Singleton(ModelRepo, dao=model_dao)
@@ -102,9 +99,7 @@ class RepoContainer(containers.DeclarativeContainer):
     # -------------------------------------------------------------------------------------------- #
     experiment_dao = providers.Singleton(
         ShelveDAO,
-        location=config.workspace.location,
         db_path=config.workspace.metadata.experiments,
-        asset_type=AssetType.EXPERIMENT,
     )
 
     experiment_repo = providers.Singleton(ExperimentRepo, dao=experiment_dao)
@@ -117,22 +112,23 @@ class WorkspaceContainer(containers.DeclarativeContainer):
 
     config = providers.Configuration()
 
-    repo = providers.DependenciesContainer()
+    io = providers.DependenciesContainer()
 
     version_manager = providers.Singleton(
         VersionManager, version_db_path=config.workspace.ops.version
     )
 
-    location_service = providers.Singleton(LocationService, config=config.workspace)
+    location_service = providers.Singleton(
+        LocationService, files_location=config.workspace.files
+    )
 
     idgen = providers.Singleton(IDGen, version_manager=version_manager)
 
     service = providers.Singleton(
         Workspace,
-        config=config.workspace,
-        dataset_repo=repo.dataset_repo,
-        model_repo=repo.model_repo,
-        experiment_repo=repo.experiment_repo,
+        dataset_repo=io.dataset_repo,
+        model_repo=io.model_repo,
+        experiment_repo=io.experiment_repo,
         version_manager=version_manager,
         location_service=location_service,
         idgen=idgen,
@@ -158,12 +154,12 @@ class DiscoverContainer(containers.DeclarativeContainer):
     # Configure spark session pool
     spark = providers.Container(SparkContainer, config=config)
 
-    # Data Access Object Container
-    repo = providers.Container(RepoContainer, config=config)
+    # IO Container
+    io = providers.Container(IOContainer, config=config)
 
     # Workspace container
     workspace = providers.Container(
         WorkspaceContainer,
         config=config,
-        repo=repo,
+        io=io,
     )

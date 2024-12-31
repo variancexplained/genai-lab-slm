@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:53:18 am                                               #
-# Modified   : Monday December 30th 2024 04:13:34 am                                               #
+# Modified   : Tuesday December 31st 2024 01:18:10 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,6 @@
 
 # ------------------------------------------------------------------------------------------------ #
 from pathlib import Path
-from typing import Dict
 
 from discover.asset.base.atype import AssetType
 from discover.asset.dataset import FileFormat
@@ -29,32 +28,14 @@ from discover.core.flow import PhaseDef
 
 
 class LocationService:
-    def __init__(self, config: Dict) -> None:
+    def __init__(self, files_location: str) -> None:
         """
         Initializes the LocationService with workspace configuration.
 
         Args:
-            config (dict): Workspace configuration dictionary. Must contain:
-                - "location": Base workspace location.
-                - "files": Relative path to the files directory within the workspace.
-
-        Raises:
-            KeyError: If required keys ("location", "files") are missing in the config.
-            ValueError: If any config values are empty or invalid paths.
+            files_location (str): Location of files directory in workspace.
         """
-        # Validate required keys in the config
-        if "location" not in config or "files" not in config:
-            raise KeyError("Config must contain 'location' and 'files' keys.")
-
-        workspace_location = config["location"]
-        files_location = config["files"]
-
-        # Validate non-empty and valid paths
-        if not workspace_location or not files_location:
-            raise ValueError("'location' and 'files' values must be non-empty.")
-
-        self._workspace_location = Path(workspace_location)
-        self._files_location = self._workspace_location / files_location
+        self._files_location = Path(files_location)
 
     def get_filepath(
         self,
@@ -78,12 +59,6 @@ class LocationService:
         Raises:
             ValueError: If any required arguments are missing or invalid.
         """
-        # Validate input arguments
-        if not all([asset_type, asset_id, phase, file_format]):
-            raise ValueError(
-                "All arguments (asset_type, asset_id, phase, file_format) must be provided and non-empty."
-            )
-
         # Ensure valid asset_type and file_format enums
         if not hasattr(asset_type, "value") or not hasattr(file_format, "value"):
             raise ValueError(

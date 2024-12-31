@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Tuesday December 31st 2024 05:39:58 am                                              #
+# Modified   : Tuesday December 31st 2024 08:15:09 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -42,13 +42,13 @@ class DataComponent(DatasetComponent):
         self,
         passport: DatasetPassport,
         filepath: str,
-        data: Union[pd.DataFrame, DataFrame],
+        dataframe: Union[pd.DataFrame, DataFrame],
         file_format: FileFormat = FileFormat.PARQUET,
     ) -> None:
         self._passport = passport
         self._filepath = filepath
         self._file_format = file_format
-        self._data = data
+        self._dataframe = dataframe
         self._file_meta = None
 
         self._dftype = None
@@ -90,8 +90,8 @@ class DataComponent(DatasetComponent):
         self._file_meta = file_meta
 
     @property
-    def data(self) -> Union[pd.DataFrame, DataFrame]:
-        return self._data
+    def dataframe(self) -> Union[pd.DataFrame, DataFrame]:
+        return self._dataframe
 
     def _get_file_meta(self) -> FileMeta:
         try:
@@ -105,11 +105,11 @@ class DataComponent(DatasetComponent):
             raise Exception(msg) from e
 
     def _determine_dftype(self) -> DFType:
-        if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame)):
+        if isinstance(self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame)):
             return DFType.PANDAS
-        elif isinstance(self._data, DataFrame):
+        elif isinstance(self._dataframe, DataFrame):
             return DFType.SPARK
         else:
-            msg = f"Unrecognized data type. Expected a pandas or spark DataFrame. Received a {type(self._data)} object."
+            msg = f"Unrecognized data type. Expected a pandas or spark DataFrame. Received a {type(self._dataframe)} object."
             self._logger.error(msg)
             raise TypeError(msg)

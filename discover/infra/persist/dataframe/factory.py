@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 02:21:28 pm                                             #
-# Modified   : Friday December 27th 2024 10:32:02 pm                                               #
+# Modified   : Tuesday December 31st 2024 02:41:03 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,60 +38,91 @@ from discover.infra.persist.file.base import IOFactory
 
 # ------------------------------------------------------------------------------------------------ #
 class DataFrameIOFactory(IOFactory):
-    """Factory that produces DataFrame IO objects."""
+    """Factory that produces DataFrame IO objects for different dftypes and file formats.
+
+    Args:
+        config (dict): A nested dictionary containing `read_kwargs` and `write_kwargs`
+                       for each `dftype` and `file_format` combination.
+    """
 
     __reader_map = {
         "pandas_csv": PandasDataFrameCSVReader,
         "pandas_parquet": PandasDataFrameParquetReader,
         "spark_csv": SparkDataFrameCSVReader,
         "spark_parquet": SparkDataFrameParquetReader,
-        "sparknlp_csv": SparkDataFrameCSVReader,
-        "sparknlp_parquet": SparkDataFrameParquetReader,
     }
     __writer_map = {
         "pandas_csv": PandasDataFrameCSVWriter,
         "pandas_parquet": PandasDataFrameParquetWriter,
         "spark_csv": SparkDataFrameCSVWriter,
         "spark_parquet": SparkDataFrameParquetWriter,
-        "sparknlp_csv": SparkDataFrameCSVWriter,
-        "sparknlp_parquet": SparkDataFrameParquetWriter,
     }
 
-    @classmethod
+    def __init__(self, config: dict) -> None:
+        self._config = config
+
     def get_reader(
-        cls,
-        dftype: DFType,
-        file_format: FileFormat = FileFormat.PARQUET,
+        self, dftype: DFType, file_format: FileFormat = FileFormat.PARQUET
     ) -> DataFrameReader:
-        """Returns a dataframe reader for the specified dataframe structure and file format."""
-        key = cls._format_key(dftype=dftype, file_format=file_format)
+        """
+        Returns a dataframe reader for the specified dataframe structure and file format.
+
+        Args:
+            dftype (DFType): The data structure type (e.g., 'pandas', 'spark').
+            file_format (FileFormat): The file format (e.g., 'csv', 'parquet').
+
+        Returns:
+            DataFrameReader: An instance of the appropriate reader class.
+
+        Raises:
+            ValueError: If the combination of `dftype` and `file_format` is unsupported.
+        """
+        key = self._format_key(dftype=dftype, file_format=file_format)
         try:
-            logging.debug(f"\n\nRequesting a {key} reader from the DataFrameIOFactory")
+            logging.debug(f"Requesting a {key} reader from the DataFrameIOFactory")
+            reader = self.__reader_map[key]
+            kwargs = self._config[dftype.value][file_format.value]["read_kwargs"]
+            return reader(kwargs)
+        except KeyError as e:
+            raise ValueError(
+                f"Failed to create reader for dftype={dftype} and file_format={file_format}: {e}. "
+                f"Supported dftypes are {list(self._config.keys())} with valid file formats "
+                f"{list(self.__reader_map.keys())}."
+            )
 
-            return cls.__reader_map[key]
-        except KeyError:
-            msg = f"Unsupported dataframe structure: {dftype} and file format {file_format}. Supported datarame structures are pandas and spark. Valid file formats are csv and parquet."
-            raise ValueError(msg)
-
-    @classmethod
     def get_writer(
-        cls,
-        dftype: DFType,
-        file_format: FileFormat = FileFormat.PARQUET,
+        self, dftype: DFType, file_format: FileFormat = FileFormat.PARQUET
     ) -> DataFrameWriter:
-        """Returns a dataframe writer for the specified dataframe structure and file format."""
-        key = cls._format_key(dftype=dftype, file_format=file_format)
-        try:
-            logging.debug(f"\n\nRequesting a {key} writer from the DataFrameIOFactory")
-            return cls.__writer_map[key]
-        except KeyError:
-            msg = f"Unsupported dataframe structure: {dftype} and file format {file_format}. Supported datarame structures are pandas and spark. Valid file formats are csv and parquet."
-            raise ValueError(msg)
+        """
+        Returns a dataframe writer for the specified dataframe structure and file format.
 
-    @classmethod
+        Args:
+            dftype (DFType): The data structure type (e.g., 'pandas', 'spark').
+            file_format (FileFormat): The file format (e.g., 'csv', 'parquet').
+
+        Returns:
+            DataFrameWriter: An instance of the appropriate writer class.
+
+        Raises:
+            ValueError: If the combination of `dftype` and `file_format` is unsupported.
+        """
+        key = self._format_key(dftype=dftype, file_format=file_format)
+        try:
+            logging.debug(f"Requesting a {key} writer from the DataFrameIOFactory")
+            writer = self.__writer_map[key]
+            kwargs = self._config[dftype.value][file_format.value]["write_kwargs"]
+            return writer(kwargs)
+        except KeyError as e:
+            raise ValueError(
+                f"Failed to create writer for dftype={dftype} and file_format={file_format}: {e}. "
+                f"Supported dftypes are {list(self._config.keys())} with valid file formats "
+                f"{list(self.__writer_map.keys())}."
+            )
+
     def _format_key(
-        cls,
+        self,
         dftype: DFType,
         file_format: FileFormat = FileFormat.PARQUET,
     ) -> str:
+        """Generates a key for the reader or writer map."""
         return f"{dftype.value}_{file_format.value}"

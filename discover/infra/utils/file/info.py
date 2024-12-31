@@ -11,12 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Tuesday December 31st 2024 05:18:05 am                                              #
+# Modified   : Tuesday December 31st 2024 11:52:29 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """File / Directory Stats Module"""
+from __future__ import annotations
+
 import os
 from datetime import datetime
 from typing import Union
@@ -29,63 +31,6 @@ from discover.infra.utils.date_time.format import ThirdDateFormatter
 
 # ------------------------------------------------------------------------------------------------ #
 d84mtr = ThirdDateFormatter()
-
-
-# ------------------------------------------------------------------------------------------------ #
-class FileTypeDetector:
-    """A class to detect the file type based on magic numbers."""
-
-    MAGIC_NUMBERS = {
-        "Parquet": (b"PAR1", None),  # Footer-based detection
-        "pickle": (b"\x80\x04", None),  # Pickle protocol magic bytes
-        "csv": None,  # No magic number for CSV, fallback required
-        "Feather": (b"FEA1", None),  # Feather magic number
-        "HDF5": (b"\x89HDF", None),  # HDF5 magic number
-    }
-
-    def get_file_type(self, filepath: str) -> str:
-        """Detect the file type using magic numbers.
-
-        Returns:
-            str: The detected file type or 'Unknown' if no match is found.
-        """
-        if not os.path.isfile(filepath):
-            raise FileNotFoundError(f"The file {filepath} does not exist.")
-
-        try:
-            with open(filepath, "rb") as file:
-                header = file.read(8)  # Read enough bytes to check multiple types
-
-                # Check footer for formats like Parquet
-                file.seek(-4, os.SEEK_END)
-                footer = file.read(4)
-
-                for file_type, magic in self.MAGIC_NUMBERS.items():
-                    if not magic:  # Special handling for CSV
-                        continue
-                    header_magic, footer_magic = magic
-                    if (header_magic and header.startswith(header_magic)) or (
-                        footer_magic and footer == footer_magic
-                    ):
-                        return file_type
-
-                # CSV fallback: check for text-like content
-                file.seek(0)
-                if self._is_csv(file):
-                    return "csv"
-
-        except Exception as e:
-            raise RuntimeError(f"Error detecting file type: {e}")
-
-        return "Unknown"
-
-    def _is_csv(self, file) -> bool:
-        """Fallback for detecting CSV files based on plain text."""
-        try:
-            sample = file.read(1024).decode("utf-8", errors="ignore")
-            return "," in sample or "\n" in sample  # Basic CSV characteristics
-        except Exception:
-            return False
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -165,6 +110,122 @@ class ParquetFileDetector:
         except Exception as e:
             print(f"Error while checking directory {directory}: {e}")
             return False
+
+
+# ------------------------------------------------------------------------------------------------ #
+class FileTypeDetector:
+    """A class to detect the file type based on magic numbers, including handling directories.
+
+    The default file type is parquet in the event the detector is unable to determine
+    the file type using the magic number method.
+
+    Args:
+        default_file_type (str): The default file type to be returned if unable to determine
+            based on magic number method.
+
+    """
+
+    MAGIC_NUMBERS = {
+        "Parquet": (b"PAR1", None),  # Footer-based detection
+        "pickle": (b"\x80\x04", None),  # Pickle protocol magic bytes
+        "Feather": (b"FEA1", None),  # Feather magic number
+        "HDF5": (b"\x89HDF", None),  # HDF5 magic number
+        # CSV doesn't have a magic number; handle based on content characteristics
+        "csv": None,
+    }
+
+    def __init__(
+        self,
+        default_file_type: str = "parquet",
+        pfd: type[ParquetFileDetector] = ParquetFileDetector,
+    ) -> None:
+        self._default_file_type = default_file_type
+        self._pfd = pfd()
+
+    def get_file_type(self, path: str) -> str:
+        """Detect the file type using magic numbers, including handling directories.
+
+        Args:
+            path (str): Path to the file or directory.
+
+        Returns:
+            str: The detected file type or 'Unknown' if no match is found.
+
+        Raises:
+            FileNotFoundError: If the path does not exist.
+        """
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"The path {path} does not exist.")
+
+        if os.path.isdir(path):
+            return self._detect_directory_type(path)
+
+        return self._detect_file_type(path)
+
+    def _detect_file_type(self, filepath: str) -> str:
+        """Detect file type for a single file."""
+        try:
+            with open(filepath, "rb") as file:
+                header = file.read(8)  # Read enough bytes to check multiple types
+
+                # Check footer for formats like Parquet
+                file.seek(-4, os.SEEK_END)
+                footer = file.read(4)
+
+                for file_type, magic in self.MAGIC_NUMBERS.items():
+                    if not magic:  # Special handling for CSV
+                        continue
+                    header_magic, footer_magic = magic
+                    if (header_magic and header.startswith(header_magic)) or (
+                        footer_magic and footer == footer_magic
+                    ):
+                        return file_type
+
+                # CSV fallback: check for text-like content
+                file.seek(0)
+                if self._is_csv(file):
+                    return "csv"
+
+        except Exception:
+            return self._fallback(filepath=filepath)
+
+        return self._fallback(filepath=filepath)
+
+    def _detect_directory_type(self, directory_path: str) -> str:
+        """Detect file type for a directory based on its contents."""
+        try:
+            # List all files in the directory
+            files = [
+                os.path.join(directory_path, f)
+                for f in os.listdir(directory_path)
+                if os.path.isfile(os.path.join(directory_path, f))
+            ]
+
+            # Check the type of the first valid file
+            for file in files:
+                file_type = self._detect_file_type(file)
+                if file_type != "Unknown":
+                    return file_type
+
+            return self._default_file_type
+
+        except Exception:
+            return self._default_file_type
+
+    def _is_csv(self, file) -> bool:
+        """Fallback for detecting CSV files based on plain text."""
+        try:
+            sample = file.read(1024).decode("utf-8", errors="ignore")
+            return "," in sample or "\n" in sample  # Basic CSV characteristics
+        except Exception:
+            return False
+
+    def _fallback(self, filepath: str) -> str:
+        """Returns the fallback if unable to determine filetype using magic number method"""
+        if self._pfd.is_parquet(path=filepath):
+            return "parquet"
+        else:
+            return self._default_file_type
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -249,8 +310,7 @@ class FileInfo:
             datetime: The creation time of the file in HTTP date format.
         """
         stat_info = os.stat(filepath)
-        ctime = datetime.fromtimestamp(stat_info.st_ctime)
-        return d84mtr.to_HTTP_format(dt=ctime)
+        return datetime.fromtimestamp(stat_info.st_ctime)
 
     def file_last_accessed(self, filepath: str) -> datetime:
         """Gets the last access time of the specified file.
@@ -262,8 +322,7 @@ class FileInfo:
             datetime: The last access time of the file in HTTP date format.
         """
         stat_info = os.stat(filepath)
-        atime = datetime.fromtimestamp(stat_info.st_atime)
-        return d84mtr.to_HTTP_format(dt=atime)
+        return datetime.fromtimestamp(stat_info.st_atime)
 
     def file_last_modified(self, filepath: str) -> datetime:
         """Gets the last modified time of the specified file.
@@ -275,8 +334,7 @@ class FileInfo:
             datetime: The last modified time of the file in HTTP date format.
         """
         stat_info = os.stat(filepath)
-        mtime = datetime.fromtimestamp(stat_info.st_mtime)
-        return d84mtr.to_HTTP_format(dt=mtime)
+        return datetime.fromtimestamp(stat_info.st_mtime)
 
     def get_size(self, path: str, in_bytes: bool = True) -> Union[int, str]:
         """Gets the size of the specified file or directory in a human-readable format.

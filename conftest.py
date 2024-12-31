@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday December 30th 2024 06:19:52 pm                                               #
+# Modified   : Tuesday December 31st 2024 03:16:56 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,12 +24,13 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
+from discover.asset.dataset import DFType, FileFormat
+from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.flow import PhaseDef, TestStageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
-from discover.infra.utils.file.io import IOService
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -112,6 +113,28 @@ def spark():
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
+def sparklight():
+    """
+    Pytest fixture to create a Spark session.
+    This fixture is session-scoped, meaning it will be created once per test session.
+    """
+
+    spark_session = (
+        SparkSession.builder.appName("pytest-spark-session")
+        .master("local[*]")
+        .config("spark.sql.session.timeZone", "UTC")
+        .getOrCreate()
+    )
+    spark_session.sparkContext.setLogLevel("ERROR")
+
+    yield spark_session
+
+    # Teardown after the test session ends
+    spark_session.stop()
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
 def sparknlp():
     """
     Pytest fixture to create a Spark session.
@@ -165,35 +188,28 @@ def spark_session_pool(container):
 #                                       DATA                                                       #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def pandas_df():
+def pandas_df(container):
     """
-    Pytest fixture that reads a CSV file into a pandas DataFrame.
-    Modify this to point to the correct CSV file.
+    Pytest fixture that reads a Parquet file into a pandas DataFrame.
+    Modify this to point to the correct Parquet file.
     """
     FILEPATH = "data/working/reviews"
-    return IOService.read(filepath=FILEPATH)
+    iofactory = container.io.iofactory()
+    reader = iofactory.get_reader(dftype=DFType.PANDAS, file_format=FileFormat.PARQUET)
+    return reader.read(filepath=FILEPATH)
 
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def spark_df(spark, pandas_df):
+def spark_df(spark, container):
     """
     Pytest fixture that converts a pandas DataFrame to a Spark DataFrame.
     Requires the spark fixture and pandas_df_from_csv fixture.
     """
-
-    return spark.createDataFrame(pandas_df)
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def sparknlp_df(sparknlp, pandas_df):
-    """
-    Pytest fixture that converts a pandas DataFrame to a SparkNLP DataFrame.
-    Requires the spark fixture and pandas_df_from_csv fixture.
-    """
-
-    return sparknlp.createDataFrame(pandas_df)
+    FILEPATH = "data/working/reviews"
+    iofactory = container.io.iofactory()
+    reader = iofactory.get_reader(dftype=DFType.SPARK, file_format=FileFormat.PARQUET)
+    return reader.read(filepath=FILEPATH, spark=spark)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -209,14 +225,14 @@ def workspace(container):
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
 def fao(container):
-    return container.repo.fao()
+    return container.io.fao()
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                         PASSPORT                                                 #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def ds_passport(workspace):
+def ds_passport():
     return DatasetPassport(
         asset_id="dataset_test_dataset_v1.0",
         phase=PhaseDef.TESTING,
@@ -226,4 +242,74 @@ def ds_passport(workspace):
         version="v1.0",
         creator="PyTest",
         created=datetime.now(),
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                          FILEPATH                                                #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def filepath_csv(workspace, ds_passport):
+    return workspace.get_filepath(
+        asset_type=ds_passport.asset_type,
+        asset_id=ds_passport.asset_id,
+        phase=ds_passport.phase,
+        file_format=FileFormat.CSV,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def filepath_parquet(workspace, ds_passport):
+    return workspace.get_filepath(
+        asset_type=ds_passport.asset_type,
+        asset_id=ds_passport.asset_id,
+        phase=ds_passport.phase,
+        file_format=FileFormat.PARQUET,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                    DATA COMPONENTS                                               #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dc_pandas_csv(ds_passport, pandas_df, filepath_csv):
+    return DataComponent(
+        passport=ds_passport,
+        filepath=filepath_csv,
+        dataframe=pandas_df,
+        file_format=FileFormat.CSV,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dc_pandas_parquet(ds_passport, pandas_df, filepath_parquet):
+    return DataComponent(
+        passport=ds_passport,
+        filepath=filepath_parquet,
+        dataframe=pandas_df,
+        file_format=FileFormat.PARQUET,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dc_spark_csv(ds_passport, spark_df_csv, filepath_csv):
+    return DataComponent(
+        passport=ds_passport,
+        filepath=filepath_csv,
+        dataframe=spark_df_csv,
+        file_format=FileFormat.CSV,
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dc_spark_parquet(ds_passport, spark_df, filepath_parquet):
+    return DataComponent(
+        passport=ds_passport,
+        filepath=filepath_parquet,
+        dataframe=spark_df,
+        file_format=FileFormat.PARQUET,
     )

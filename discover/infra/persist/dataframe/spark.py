@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Thursday December 26th 2024 09:15:46 pm                                             #
+# Modified   : Tuesday December 31st 2024 02:44:08 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,10 +32,16 @@ from discover.infra.persist.dataframe.base import DataFrameWriter as BaseDataFra
 #                                    DATAFRAME READERS                                             #
 # ------------------------------------------------------------------------------------------------ #
 class SparkDataFrameParquetReader(BaseDataFrameReader):
-    """A reader class for loading data into Spark DataFrames from parquet files."""
+    """A reader class for loading dataframe into Spark DataFrames from parquet files."""
 
-    @classmethod
-    def read(cls, filepath: str, spark: SparkSession, **kwargs) -> DataFrame:
+    def __init__(self, kwargs: dict) -> None:
+        self._kwargs = kwargs
+
+    def read(
+        self,
+        filepath: str,
+        spark: SparkSession,
+    ) -> DataFrame:
         """
         Reads a Parquet file into a Spark DataFrame.
 
@@ -45,16 +51,18 @@ class SparkDataFrameParquetReader(BaseDataFrameReader):
             **kwargs: Additional keyword arguments passed to Spark's `read.parquet` method.
 
         Returns:
-            DataFrame: A PySpark DataFrame containing the data from the Parquet file.
+            DataFrame: A PySpark DataFrame containing the dataframe from the Parquet file.
 
         Raises:
             FileNotFoundError: If the specified Parquet file does not exist.
             FileIOException: If any other exception occurs while reading the file.
         """
         try:
-            data = spark.read.parquet(filepath, **kwargs)
+            dataframe = spark.read.parquet(filepath, **self._kwargs)
             logging.debug(f"Read Spark DataFrame from parquet file {filepath}")
-            return data
+            if "__index_level_0__" in dataframe.columns:
+                dataframe = dataframe.drop("__index_level_0__")
+            return dataframe
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a Parquet file from {filepath}. File does not exist.\n{e}"
             raise FileNotFoundError(msg)
@@ -67,10 +75,16 @@ class SparkDataFrameParquetReader(BaseDataFrameReader):
 
 # ------------------------------------------------------------------------------------------------ #
 class SparkDataFrameCSVReader(BaseDataFrameReader):
-    """A reader class for loading data into Spark DataFrames from csv files."""
+    """A reader class for loading dataframe into Spark DataFrames from csv files."""
 
-    @classmethod
-    def read(cls, filepath: str, spark: SparkSession, **kwargs) -> DataFrame:
+    def __init__(self, kwargs: dict) -> None:
+        self._kwargs = kwargs
+
+    def read(
+        self,
+        filepath: str,
+        spark: SparkSession,
+    ) -> DataFrame:
         """
         Reads a CSV file into a Spark DataFrame.
 
@@ -80,16 +94,18 @@ class SparkDataFrameCSVReader(BaseDataFrameReader):
             **kwargs: Additional keyword arguments passed to Spark's `read.csv` method.
 
         Returns:
-            DataFrame: A PySpark DataFrame containing the data from the CSV file.
+            DataFrame: A PySpark DataFrame containing the dataframe from the CSV file.
 
         Raises:
             FileNotFoundError: If the specified CSV file does not exist.
             FileIOException: If any other exception occurs while reading the file.
         """
         try:
-            data = spark.read.csv(filepath, **kwargs)
+            dataframe = spark.read.csv(filepath, **self._kwargs)
             logging.debug(f"Read Spark DataFrame from csv file {filepath}")
-            return data
+            if "__index_level_0__" in dataframe.columns:
+                dataframe = dataframe.drop("__index_level_0__")
+            return dataframe
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a CSV file from {filepath}. File does not exist.\n{e}"
             raise FileNotFoundError(msg)
@@ -102,79 +118,89 @@ class SparkDataFrameCSVReader(BaseDataFrameReader):
 #                                   DATAFRAME WRITERS                                              #
 # ------------------------------------------------------------------------------------------------ #
 class SparkDataFrameParquetWriter(BaseDataFrameWriter):
-    """Writes a pandas DataFrame to a parquet file."""
+    """Writes a spark DataFrame to a parquet file."""
 
-    @classmethod
+    def __init__(self, kwargs: dict) -> None:
+        self._kwargs = kwargs
+
     def write(
-        cls, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
+        self,
+        dataframe: DataFrame,
+        filepath: str,
+        overwrite: bool = False,
     ) -> None:
         """
-        Writes the data to a Parquet file at the designated filepath.
+        Writes the dataframe to a Parquet file at the designated filepath.
 
         Args:
-            data (DataFrame): The DataFrame to write to the Parquet file.
+            dataframe (DataFrame): The DataFrame to write to the Parquet file.
             filepath (str): The path where the Parquet file will be saved.
-            overwrite (bool): Whether to overwrite existing data. Defaults to False.
+            overwrite (bool): Whether to overwrite existing dataframe. Defaults to False.
             **kwargs: Additional keyword arguments passed to the PySpark write command.
                 Common options include:
                 - mode (str): Write mode (e.g., "overwrite", "append").
-                - partitionBy (list): List of columns to partition the data by.
+                - partitionBy (list): List of columns to partition the dataframe by.
 
         Raises:
             FileIOException: If an error occurs while writing the Parquet file.
         """
         super().validate_write(filepath=filepath, overwrite=overwrite)
         # Extract arguments from kwargs
-        mode = kwargs.get("mode", None)
-        partition_cols = kwargs.get("partitionBy", None)
+        mode = self._kwargs.get("mode", None)
+        partition_cols = self._kwargs.get("partitionBy", None)
 
         # Construct pyspark write command based upon kwargs
         try:
             if mode and partition_cols:
-                data.write.mode(mode).partitionBy(partition_cols).parquet(filepath)
+                dataframe.write.mode(mode).partitionBy(partition_cols).parquet(filepath)
                 logging.debug(
                     f"Writing spark DataFrame to partitioned parquet file at {filepath}"
                 )
             elif mode:
-                data.write.mode(mode).parquet(filepath)
+                dataframe.write.mode(mode).parquet(filepath)
                 logging.debug(f"Writing spark DataFrame to parquet file at {filepath}")
             elif partition_cols:
-                data.write.partitionBy(partition_cols).parquet(filepath)
+                dataframe.write.partitionBy(partition_cols).parquet(filepath)
                 logging.debug(
                     f"Writing spark DataFrame to partitioned parquet file at {filepath}"
                 )
             else:
-                data.write.parquet(filepath)
+                dataframe.write.parquet(filepath)
                 logging.debug(f"Writing spark DataFrame to parquet file at {filepath}")
         except Exception as e:
-            msg = f"Exception occurred while writing a Parquet file at {filepath}.\nKeyword Arguments: {kwargs}"
+            msg = f"Exception occurred while writing a Parquet file at {filepath}.\nKeyword Arguments: {self._kwargs}"
             raise FileIOException(msg, e) from e
 
 
 # ------------------------------------------------------------------------------------------------ #
 class SparkDataFrameCSVWriter(BaseDataFrameWriter):
-    """Writes a pandas DataFrame to a csv file."""
+    """Writes a spark DataFrame to a csv file."""
 
-    @classmethod
+    def __init__(self, kwargs: dict) -> None:
+        self._kwargs = kwargs
+
     def write(
-        cls, data: DataFrame, filepath: str, overwrite: bool = False, **kwargs
+        self,
+        dataframe: DataFrame,
+        filepath: str,
+        overwrite: bool = False,
     ) -> None:
         """
-        Writes the data to a CSV file at the designated filepath.
+        Writes the dataframe to a CSV file at the designated filepath.
 
         Args:
-            data (DataFrame): The DataFrame to write to the CSV file.
+            dataframe (DataFrame): The DataFrame to write to the CSV file.
             filepath (str): The path where the CSV file will be saved.
-            overwrite (bool): Whether to overwrite existing data. Defaults to False.
+            overwrite (bool): Whether to overwrite existing dataframe. Defaults to False.
             **kwargs: Additional keyword arguments passed to the PySpark write command.
 
         Raises:
             FileIOException: If an error occurs while writing the CSV file.
         """
-        cls.validate_write(filepath=filepath, overwrite=overwrite)
+        self.validate_write(filepath=filepath, overwrite=overwrite)
         try:
-            data.repartition(1).write.csv(filepath, **kwargs)
+            dataframe.repartition(1).write.csv(filepath, **self._kwargs)
             logging.debug(f"Writing partitioned spark csv file to {filepath}")
         except Exception as e:
-            msg = f"Exception occurred while writing a CSV file to {filepath}.\nKeyword Arguments: {kwargs}"
+            msg = f"Exception occurred while writing a CSV file to {filepath}.\nKeyword Arguments: {self._kwargs}"
             raise FileIOException(msg, e) from e

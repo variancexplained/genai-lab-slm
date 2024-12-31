@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Monday December 30th 2024 03:00:13 pm                                               #
+# Modified   : Tuesday December 31st 2024 11:38:04 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,14 @@
 from typing import Tuple
 
 import numpy as np
+from pyspark.sql.types import (
+    DoubleType,
+    LongType,
+    StringType,
+    StructField,
+    StructType,
+    TimestampType,
+)
 
 # ------------------------------------------------------------------------------------------------ #
 #                                           DATA TYPES                                             #
@@ -60,3 +68,35 @@ NUMERICS = [
     np.float64,
     np.float128,
 ]
+
+# ------------------------------------------------------------------------------------------------ #
+DTYPES = {
+    "id": "string",
+    "app_id": "string",
+    "app_name": "string",
+    "category_id": "category",
+    "category": "category",
+    "author": "string",
+    "rating": "int16",
+    "content": "string",
+    "vote_count": "int64",
+    "vote_sum": "int64",
+    "date": "datetime64[ns]",
+}
+
+# ------------------------------------------------------------------------------------------------ #
+SPARK_SCHEMA_DEFAULT = StructType(
+    [
+        StructField("id", StringType(), False),
+        StructField("app_id", StringType(), False),
+        StructField("app_name", StringType(), False),
+        StructField("category_id", StringType(), False),
+        StructField("author", StringType(), False),
+        StructField("rating", DoubleType(), False),
+        StructField("content", StringType(), False),
+        StructField("vote_sum", LongType(), False),
+        StructField("vote_count", LongType(), False),
+        StructField("date", TimestampType(), False),
+        StructField("category", StringType(), False),
+    ]
+)

@@ -11,23 +11,27 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Sunday December 29th 2024 04:22:40 pm                                               #
+# Modified   : Tuesday December 31st 2024 02:16:03 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repo Module"""
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from pyspark.sql import SparkSession
 
 from discover.asset.base.asset import Asset
-from discover.asset.dataset import DFType, FileFormat
+from discover.asset.dataset import DFType
 from discover.infra.persist.dataframe.base import DataFrame
 from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.base import DAO
 from discover.infra.persist.repo.base import AssetRepo
+
+# ------------------------------------------------------------------------------------------------ #
+if TYPE_CHECKING:
+    from discover.asset.dataset.dataset import Dataset
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -48,7 +52,7 @@ class DatasetRepo(AssetRepo):
     """
 
     def __init__(self, dao: DAO, fao: FAO) -> None:
-        super().__init__(dao=dao)
+        super().__init__(dao=dao)  # base class assigns the value to self._dao
         self._fao = fao
 
     @property
@@ -71,17 +75,37 @@ class DatasetRepo(AssetRepo):
             dftype=asset.data.dftype,
             filepath=asset.data.filepath,
             file_format=asset.data.file_format,
-            created=asset.data.created,
-            data=asset.data.as_df(),
+            data=asset.data.data,
             overwrite=False,
         )
         # Save the Dataset object.
         self._dao.create(asset=asset)
 
-    def get_data(
+    def get(self, asset_id: str, spark: Optional[SparkSession] = None) -> "Dataset":
+        """
+        Retrieve a Dataset by its asset ID and load its data into memory.
+
+        Args:
+            asset_id (str): The identifier of the dataset to retrieve.
+            spark (Optional[SparkSession]): The Spark session for distributed dataframes.
+
+        Returns:
+            Dataset: The reconstituted dataset with its data loaded.
+
+        Note:
+            This method uses `setattr` to update the internal `_data` attribute
+            of the `Dataset`'s `data` object, ensuring immutability in the public API.
+        """
+        dataset = self._dao.read(asset_id=asset_id)
+        df = self._get_data(
+            filepath=dataset.data.filepath, dftype=dataset.data.dftype, spark=spark
+        )
+        setattr(dataset.data, "_dataframe", df)
+        return dataset
+
+    def _get_data(
         self,
         filepath: str,
-        file_format: FileFormat,
         dftype: DFType,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
@@ -100,9 +124,7 @@ class DatasetRepo(AssetRepo):
             ValueError: If an unsupported data structure is specified.
         """
 
-        return self._fao.read(
-            filepath=filepath, file_format=file_format, dftype=dftype, spark=spark
-        )
+        return self._fao.read(filepath=filepath, dftype=dftype, spark=spark)
 
     def remove(self, asset_id: str) -> None:
         """Removes a dataset and its associated file from the repository.

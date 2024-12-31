@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Sunday December 29th 2024 05:56:51 pm                                               #
+# Modified   : Tuesday December 31st 2024 06:42:28 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,16 +44,15 @@ class Dataset(Asset):
 
         self._is_composite = False
 
-    # --------------------------------------------------------------------------------------------- #
-    #                                  DATASET PROPERTIES                                           #
-    # --------------------------------------------------------------------------------------------- #
-    @property
-    def data(self) -> DatasetComponent:
-        return self._data
-
-    @property
-    def passport(self) -> DatasetPassport:
-        return self._passport
+    def __eq__(self, other) -> bool:
+        if (
+            self.passport == other.passport
+            and self.data.data.filepath == other.data.filepath
+            and self.dftype == other.dftype
+        ):
+            return True
+        else:
+            return False
 
     # --------------------------------------------------------------------------------------------- #
     #                                      SERIALIZATION                                            #
@@ -79,3 +78,14 @@ class Dataset(Asset):
             state (dict): The state dictionary to restore.
         """
         self.__dict__.update(state)
+
+    # --------------------------------------------------------------------------------------------- #
+    #                                  DATASET PROPERTIES                                           #
+    # --------------------------------------------------------------------------------------------- #
+    @property
+    def data(self) -> DatasetComponent:
+        return self._data
+
+    @property
+    def passport(self) -> DatasetPassport:
+        return self._passport

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Tuesday December 31st 2024 05:42:46 am                                              #
+# Modified   : Tuesday December 31st 2024 07:27:03 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.asset.dataset import DFType, FileFormat
+from discover.asset.dataset import FileFormat
 from discover.asset.dataset.base import DatasetComponentBuilder
 from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
@@ -50,7 +50,7 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
     ) -> None:
         self._workspace = workspace
         self._passport = None
-        self._data = None
+        self._dataframe = None
         self._data_component = None
         self._file_format = FileFormat.PARQUET
         self._filepath = None
@@ -65,7 +65,7 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
         Clears all attributes, preparing the builder for a new configuration.
         """
         self._passport = None
-        self._data = None
+        self._dataframe = None
         self._data_component = None
         self._dftype = None
         self._file_format = FileFormat.PARQUET
@@ -85,8 +85,8 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
         return data_component
 
     # -------------------------------------------------------------------------------------------- #
-    def data(
-        self, data: Union[pd.DataFrame, DataFrame]
+    def dataframe(
+        self, dataframe: Union[pd.DataFrame, DataFrame]
     ) -> DataComponentBuilderFromDataFrame:
         """
         Sets the data for the `DataComponent`.
@@ -97,7 +97,7 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
         Returns:
             DataComponentBuilderFromDataFrame: The current builder instance for chaining.
         """
-        self._data = data
+        self._dataframe = dataframe
         return self
 
     # -------------------------------------------------------------------------------------------- #
@@ -145,13 +145,11 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
 
         self._filepath = self._get_filepath()
 
-        self._dftype = self._determine_dataframe_type()
-
         self._data_component = DataComponent(
             passport=self._passport,
             filepath=self._filepath,
             file_format=self._file_format,
-            data=self._data,
+            dataframe=self._dataframe,
         )
         return self
 
@@ -169,17 +167,6 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
             file_format=self._file_format,
         )
 
-    def _determine_dataframe_type(self) -> DFType:
-        """Returns the DataFrame type based on the data
-
-        Returns
-            DFType: The type of datafrme provided.
-        """
-        if isinstance(self._data, (pd.DataFrame, pd.core.frame.DataFrame)):
-            return DFType.PANDAS
-        else:
-            return DFType.SPARK
-
     def _validate(self) -> None:
         # Ensure a passport is provided
         if not isinstance(self._passport, DatasetPassport):
@@ -188,8 +175,8 @@ class DataComponentBuilderFromDataFrame(DatasetComponentBuilder):
             raise TypeError(msg)
         # Validate DataFrame type
         if not isinstance(
-            self._data, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+            self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
         ):
-            msg = f"TypeError: Invalid data type for DataFrame. Expected DFType.PANDAS, DFType.SPARK, or DFType.SPARKNLP. Received type {type(self._data)}"
+            msg = f"TypeError: Invalid data type for DataFrame. Expected DFType.PANDAS, DFType.SPARK, or DFType.SPARKNLP. Received type {type(self._dataframe)}"
             self._logger.error(msg)
             raise TypeError(msg)

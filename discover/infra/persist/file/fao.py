@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Tuesday December 31st 2024 05:10:59 am                                              #
+# Modified   : Tuesday December 31st 2024 03:19:09 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,6 @@
 import logging
 import os
 import shutil
-from datetime import datetime
 from typing import Optional, Union
 
 import pandas as pd
@@ -29,6 +28,7 @@ from pyspark.sql import SparkSession
 
 from discover.asset.dataset import DFType, FileFormat
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
+from discover.infra.utils.file.info import FileTypeDetector
 
 DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
 
@@ -45,9 +45,7 @@ class FAO:
     and file format.
 
     Args:
-        fao_config (dict): Configuration dictionary specifying read/write options
-            for different dataframe types and file formats.
-        io_factory (DataFrameIOFactory): Factory for creating readers and writers
+        iofactory (DataFrameIOFactory): Factory for creating readers and writers
             specific to dataframe types and file formats.
 
     Methods:
@@ -57,13 +55,8 @@ class FAO:
             Reads a dataset from the specified file path with the given format and type.
     """
 
-    def __init__(
-        self,
-        fao_config: dict,
-        io_factory: DataFrameIOFactory,
-    ):
-        self._fao_config = fao_config
-        self._io_factory = io_factory
+    def __init__(self, iofactory: DataFrameIOFactory):
+        self._iofactory = iofactory
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(
@@ -71,8 +64,7 @@ class FAO:
         dftype: DFType,
         filepath: str,
         file_format: FileFormat,
-        created: datetime,
-        data: Union[pd.DataFrame, DataFrame],
+        dataframe: Union[pd.DataFrame, DataFrame],
         overwrite: bool = False,
     ) -> None:
         """
@@ -90,21 +82,23 @@ class FAO:
         Raises:
             Exception: If the write operation fails due to configuration or IO issues.
         """
-        writer = self._io_factory.get_writer(
+        writer = self._iofactory.get_writer(
             dftype=dftype,
             file_format=file_format,
         )
         writer.write(
-            data=data,
+            dataframe=dataframe,
             filepath=filepath,
             overwrite=overwrite,
-            **self._fao_config[dftype.value][file_format.value]["write_kwargs"],
         )
+        if not os.path.exists(filepath):
+            msg = f"Failure to write dataframe to {filepath}."
+            self._logger.error(msg)
+            raise FileNotFoundError(msg)
 
     def read(
         self,
         filepath: str,
-        file_format: FileFormat,
         dftype: DFType,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
@@ -113,7 +107,6 @@ class FAO:
 
         Args:
             filepath (str): The path to the dataset file.
-            file_format (FileFormat): The file format (e.g., CSV, PARQUET).
             dftype (DFType): The type of the dataframe (e.g., PANDAS, SPARK).
             spark (Optional[SparkSession]): A Spark session, required for Spark-based
                 operations. Defaults to None.
@@ -124,7 +117,20 @@ class FAO:
         Raises:
             Exception: If the read operation fails due to configuration or IO issues.
         """
-        reader = self._io_factory.get_reader(
+        try:
+            file_type = FileTypeDetector().get_file_type(path=filepath).lower()
+            file_format = FileFormat.from_value(file_type)
+            self._logger.debug(f"File type detected is: {file_type}")
+        except ValueError as e:
+            msg = f"File formaat {file_type} of {filepath} is not supported."
+            self._logger.error(msg)
+            raise ValueError(msg) from e
+        except Exception as e:
+            msg = f"Unknown exception occurred while reading from {filepath}."
+            self._logger.error(msg)
+            raise Exception(msg) from e
+
+        reader = self._iofactory.get_reader(
             dftype=dftype,
             file_format=file_format,
         )
@@ -132,13 +138,15 @@ class FAO:
         if dftype == DFType.PANDAS:
             return reader.read(
                 filepath=filepath,
-                **self._fao_config[dftype.value][file_format.value]["read_kwargs"],
             )
         else:
+            if spark is None:
+                msg = "Unable to read spark dataframe. Spark session is None. When reading spark dataframes a spark session must be provided."
+                self._logger.error(msg)
+                raise RuntimeError(msg)
             return reader.read(
                 filepath=filepath,
                 spark=spark,
-                **self._fao_config[dftype.value][file_format.value]["read_kwargs"],
             )
 
     def exists(self, filepath: str) -> bool:
@@ -166,14 +174,14 @@ class FAO:
         try:
             os.remove(filepath)
             msg = f"File {os.path.basename(filepath)} successfully removed from the repository."
-            self._logger.info()
+            self._logger.info(msg)
         except FileNotFoundError:
             msg = f"File {filepath} not found."
             self._logger.warning(msg)
         except OSError:
             shutil.rmtree(filepath)
             msg = f"Directory {os.path.basename(filepath)} successfully removed from the repository."
-            self._logger.info()
+            self._logger.info(msg)
         except Exception as e:
             msg = f"Unexpected exception occurred.\n{e}"
             self._logger.error(msg)
