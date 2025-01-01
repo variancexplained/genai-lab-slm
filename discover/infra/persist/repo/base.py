@@ -11,13 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:33:35 pm                                               #
-# Modified   : Sunday December 29th 2024 01:43:48 pm                                               #
+# Modified   : Tuesday December 31st 2024 04:12:50 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import logging
-from typing import Dict
+from typing import Dict, List, Union
 
 import pandas as pd
 
@@ -61,14 +61,14 @@ class AssetRepo(Repo):
         """
         return self._dao.read(asset_id=asset_id)
 
-    def get_all(self) -> Dict[str, Asset]:
+    def get_all(self, keys_only: bool = False) -> Union[List[str], Dict[str, Asset]]:
         """Retrieves all assets in the repository.
 
         Returns:
             Dict[str, Asset]: A dictionary of all assets, where keys are asset IDs
             and values are Asset objects.
         """
-        return self._dao.read_all()
+        return self._dao.read_all(keys_only=keys_only)
 
     def remove(self, asset_id: str) -> None:
         """Removes an asset by its ID.

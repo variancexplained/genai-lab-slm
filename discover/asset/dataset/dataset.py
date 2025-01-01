@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Tuesday December 31st 2024 06:42:28 am                                              #
+# Modified   : Tuesday December 31st 2024 07:11:12 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -47,8 +47,8 @@ class Dataset(Asset):
     def __eq__(self, other) -> bool:
         if (
             self.passport == other.passport
-            and self.data.data.filepath == other.data.filepath
-            and self.dftype == other.dftype
+            and self.data.filepath == other.data.filepath
+            and self.data.dftype == other.data.dftype
         ):
             return True
         else:
@@ -67,9 +67,7 @@ class Dataset(Asset):
         Returns:
             dict: A dictionary representation of the object's state.
         """
-        state = self.__dict__.copy()
-        state["_data"] = None  # Exclude data from serialization
-        return state
+        return self.__dict__.copy()
 
     def __setstate__(self, state) -> None:
         """Restores the object's state during deserialization.
@@ -82,6 +80,10 @@ class Dataset(Asset):
     # --------------------------------------------------------------------------------------------- #
     #                                  DATASET PROPERTIES                                           #
     # --------------------------------------------------------------------------------------------- #
+    @property
+    def asset_id(self) -> str:
+        return self._passport.asset_id
+
     @property
     def data(self) -> DatasetComponent:
         return self._data

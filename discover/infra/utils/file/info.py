@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Tuesday December 31st 2024 11:52:29 am                                              #
+# Modified   : Tuesday December 31st 2024 08:56:58 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,7 @@
 """File / Directory Stats Module"""
 from __future__ import annotations
 
+import logging
 import os
 from datetime import datetime
 from typing import Union
@@ -114,16 +115,7 @@ class ParquetFileDetector:
 
 # ------------------------------------------------------------------------------------------------ #
 class FileTypeDetector:
-    """A class to detect the file type based on magic numbers, including handling directories.
-
-    The default file type is parquet in the event the detector is unable to determine
-    the file type using the magic number method.
-
-    Args:
-        default_file_type (str): The default file type to be returned if unable to determine
-            based on magic number method.
-
-    """
+    """A class to detect the file type based on magic numbers, including handling directories."""
 
     MAGIC_NUMBERS = {
         "Parquet": (b"PAR1", None),  # Footer-based detection
@@ -134,13 +126,8 @@ class FileTypeDetector:
         "csv": None,
     }
 
-    def __init__(
-        self,
-        default_file_type: str = "parquet",
-        pfd: type[ParquetFileDetector] = ParquetFileDetector,
-    ) -> None:
-        self._default_file_type = default_file_type
-        self._pfd = pfd()
+    def __init__(self) -> None:
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def get_file_type(self, path: str) -> str:
         """Detect the file type using magic numbers, including handling directories.
@@ -207,10 +194,10 @@ class FileTypeDetector:
                 if file_type != "Unknown":
                     return file_type
 
-            return self._default_file_type
+            return self._fallback(filepath=directory_path)
 
         except Exception:
-            return self._default_file_type
+            return self._fallback(filepath=directory_path)
 
     def _is_csv(self, file) -> bool:
         """Fallback for detecting CSV files based on plain text."""
@@ -222,10 +209,14 @@ class FileTypeDetector:
 
     def _fallback(self, filepath: str) -> str:
         """Returns the fallback if unable to determine filetype using magic number method"""
-        if self._pfd.is_parquet(path=filepath):
+        if "parquet" in filepath:
             return "parquet"
+        elif "csv" in filepath:
+            return "csv"
         else:
-            return self._default_file_type
+            msg = "Unable to determine file type. Returning None."
+            self._logger.warning(msg)
+            return None
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -238,9 +229,9 @@ class FileMeta(DataClass):
     file_type: str
     isdir: bool
     file_count: int
-    created: str
-    accessed: str
-    modified: str
+    created: datetime
+    accessed: datetime
+    modified: datetime
     size: int
 
 

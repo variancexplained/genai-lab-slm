@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Tuesday December 31st 2024 03:19:09 pm                                              #
+# Modified   : Tuesday December 31st 2024 09:19:54 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -171,18 +171,15 @@ class FAO:
         Raises:
             Exception: If an unexpected error occurs during deletion.
         """
-        try:
+        if os.path.isfile(filepath):
             os.remove(filepath)
             msg = f"File {os.path.basename(filepath)} successfully removed from the repository."
             self._logger.info(msg)
-        except FileNotFoundError:
-            msg = f"File {filepath} not found."
-            self._logger.warning(msg)
-        except OSError:
-            shutil.rmtree(filepath)
+        elif os.path.isdir(filepath):
+            shutil.rmtree(filepath, ignore_errors=True)
             msg = f"Directory {os.path.basename(filepath)} successfully removed from the repository."
             self._logger.info(msg)
-        except Exception as e:
-            msg = f"Unexpected exception occurred.\n{e}"
+        else:
+            msg = "Unexpected exception occurred."
             self._logger.error(msg)
             raise Exception(msg)

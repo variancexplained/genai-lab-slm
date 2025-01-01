@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday December 31st 2024 03:16:56 pm                                              #
+# Modified   : Tuesday December 31st 2024 07:52:47 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
 from discover.asset.dataset import DFType, FileFormat
+from discover.asset.dataset.builder.dataset import DatasetBuilder
 from discover.asset.dataset.component.data import DataComponent
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.container import DiscoverContainer
@@ -295,11 +296,11 @@ def dc_pandas_parquet(ds_passport, pandas_df, filepath_parquet):
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def dc_spark_csv(ds_passport, spark_df_csv, filepath_csv):
+def dc_spark_csv(ds_passport, spark_df, filepath_csv):
     return DataComponent(
         passport=ds_passport,
         filepath=filepath_csv,
-        dataframe=spark_df_csv,
+        dataframe=spark_df,
         file_format=FileFormat.CSV,
     )
 
@@ -313,3 +314,31 @@ def dc_spark_parquet(ds_passport, spark_df, filepath_parquet):
         dataframe=spark_df,
         file_format=FileFormat.PARQUET,
     )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     DATASETS                                                     #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dataset_pandas_csv(ds_passport, dc_pandas_csv):
+    return DatasetBuilder().passport(ds_passport).data(dc_pandas_csv).build().dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dataset_pandas_parquet(ds_passport, dc_pandas_parquet):
+    return (
+        DatasetBuilder().passport(ds_passport).data(dc_pandas_parquet).build().dataset
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dataset_spark_csv(ds_passport, dc_spark_csv):
+    return DatasetBuilder().passport(ds_passport).data(dc_spark_csv).build().dataset
+
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def dataset_spark_parquet(ds_passport, dc_spark_parquet):
+    return DatasetBuilder().passport(ds_passport).data(dc_spark_parquet).build().dataset

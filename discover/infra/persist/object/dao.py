@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Tuesday December 31st 2024 01:24:44 pm                                              #
+# Modified   : Tuesday December 31st 2024 08:33:22 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -79,6 +79,9 @@ class ShelveDAO(DAO):
             ObjectDatabaseNotFoundError: If the database file is not found.
             ObjectIOException: If an unknown exception occurs during creation.
         """
+
+        df = asset.data.serialize()
+
         try:
             with shelve.open(self._db_path) as db:
                 db[asset.asset_id] = asset
@@ -90,6 +93,14 @@ class ShelveDAO(DAO):
             msg = f"Unknown exception occurred while creating {self._asset_type.value} asset_id: {asset.asset_id}.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
+
+        # Ensure that the dataframe is not None before deserializing
+        if df is not None:
+            asset.data.deserialize(dataframe=df)
+        else:
+            self._logger.error(
+                "Attempted to deserialize with a None dataframe. Asset deserialization may be incomplete."
+            )
 
     def read(self, asset_id: str) -> Asset:
         """Reads an asset by its ID from the database.
@@ -121,7 +132,7 @@ class ShelveDAO(DAO):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def read_all(self) -> Dict[str, Asset]:
+    def read_all(self, keys_only: bool = False) -> Dict[str, Asset]:
         """Reads all assets from the database.
 
         Returns:
@@ -134,7 +145,10 @@ class ShelveDAO(DAO):
         """
         try:
             with shelve.open(self._db_path) as db:
-                return dict(db.items())
+                if keys_only:
+                    return list(db.keys())
+                else:
+                    return dict(db.items())
         except FileNotFoundError as e:
             msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)

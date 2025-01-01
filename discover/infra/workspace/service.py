@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 11:31:34 am                                               #
-# Modified   : Tuesday December 31st 2024 02:51:47 pm                                              #
+# Modified   : Tuesday December 31st 2024 09:14:21 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,6 +36,7 @@ class Workspace:
 
     def __init__(
         self,
+        files: str,
         dataset_repo: DatasetRepo,
         model_repo: ModelRepo,
         experiment_repo: ExperimentRepo,
@@ -43,6 +44,7 @@ class Workspace:
         location_service: LocationService,
         idgen: Type[IDGen] = IDGen,
     ) -> None:
+        self._files = files
         self._dataset_repo = dataset_repo
         self._model_repo = model_repo
         self._exepriment_repo = experiment_repo

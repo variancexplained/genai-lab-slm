@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Tuesday December 31st 2024 02:16:03 pm                                              #
+# Modified   : Tuesday December 31st 2024 08:36:33 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -70,14 +70,16 @@ class DatasetRepo(AssetRepo):
         Args:
             asset (Dataset): The dataset object to be added to the repository.
         """
+
         # Persist the underlying data to file.
         self._fao.create(
             dftype=asset.data.dftype,
             filepath=asset.data.filepath,
             file_format=asset.data.file_format,
-            data=asset.data.data,
+            dataframe=asset.data.dataframe,
             overwrite=False,
         )
+
         # Save the Dataset object.
         self._dao.create(asset=asset)
 
@@ -97,11 +99,23 @@ class DatasetRepo(AssetRepo):
             of the `Dataset`'s `data` object, ensuring immutability in the public API.
         """
         dataset = self._dao.read(asset_id=asset_id)
+
         df = self._get_data(
             filepath=dataset.data.filepath, dftype=dataset.data.dftype, spark=spark
         )
         setattr(dataset.data, "_dataframe", df)
         return dataset
+
+    def get_metadata(self, asset_id: str) -> "Dataset":
+        """Returns the metadata for a dataset object
+
+        Args:
+            asset_id (str): The identifier of the dataset to retrieve.
+
+        Returns:
+            Dataset: The dataset without the dataframe.
+        """
+        return self._dao.read(asset_id=asset_id)
 
     def _get_data(
         self,
@@ -139,11 +153,11 @@ class DatasetRepo(AssetRepo):
             ValueError: If the file or directory specified by the dataset's filepath
             does not exist or cannot be identified.
         """
-        asset = self.get(asset_id=asset_id)
-        self._fao.delete(filepath=asset.filepath)
+        asset_meta = self.get_metadata(asset_id=asset_id)
+        self._fao.delete(filepath=asset_meta.data.filepath)
         self._dao.delete(asset_id=asset_id)
         self._logger.info(
-            f"Dataset {asset.asset_id}, including its file at {asset.filepath} has been removed from the repository."
+            f"Dataset {asset_meta.asset_id}, including its file at {asset_meta.data.filepath} has been removed from the repository."
         )
 
     def reset(self) -> None:
@@ -162,18 +176,14 @@ class DatasetRepo(AssetRepo):
             "Resetting the repository is irreversible. To proceed, type 'YES'."
         )
         if proceed == "YES":
-            assets = self.get_all()
-            self._logger.info(f"Assets to be deleted: {len(assets)}")
-            for asset_id, asset in assets.items():
-                try:
-                    self._fao.delete(filepath=asset.data.filepath)
-                except AttributeError as e:
-                    msg = f"Asset {asset_id} file(s) could not be deleted.\n{e}"
-                    self._logger.warning(msg)
-                except Exception as e:
-                    msg = f"Asset {asset_id} file(s) could not be deleted. An unknown exception occurred.\n{e}"
-                    self._logger.error(msg)
-                    raise Exception(msg)
-            self._logger.warning(f"{self.__class__.__name__} has been reset.")
+            asset_ids = self.get_all(keys_only=True)
+
+            self._logger.info(f"Assets to be deleted: {self.count}")
+
+            for asset_id in asset_ids:
+                self.remove(asset_id=asset_id)
+            self._logger.warning(
+                f"{self.__class__.__name__} has been reset. Current asset count: {self.count}"
+            )
         else:
             self._logger.info(f"{self.__class__.__name__} reset has been aborted.")

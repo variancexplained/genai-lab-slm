@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Tuesday December 31st 2024 02:56:05 pm                                              #
+# Modified   : Tuesday December 31st 2024 09:14:49 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -126,6 +126,7 @@ class WorkspaceContainer(containers.DeclarativeContainer):
 
     service = providers.Singleton(
         Workspace,
+        files=config.workspace.files,
         dataset_repo=io.dataset_repo,
         model_repo=io.model_repo,
         experiment_repo=io.experiment_repo,
