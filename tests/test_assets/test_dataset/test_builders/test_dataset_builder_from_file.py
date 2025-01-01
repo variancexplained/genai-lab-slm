@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_assets/test_dataset/test_builders/test_dataset_builder.py               #
+# Filename   : /tests/test_assets/test_dataset/test_builders/test_dataset_builder_from_file.py     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday December 29th 2024 01:22:15 pm                                               #
-# Modified   : Tuesday December 31st 2024 09:23:42 pm                                              #
+# Modified   : Wednesday January 1st 2025 02:00:39 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,9 +28,8 @@ import pytest
 from pyspark.sql import DataFrame
 
 from discover.asset.dataset.base import DatasetComponent
-from discover.asset.dataset.builder.data import DataComponentBuilderFromDataFrame
+from discover.asset.dataset.builder.data import DataComponentBuilderFromFile
 from discover.asset.dataset.builder.dataset import DatasetBuilder
-from discover.asset.dataset.builder.identity import DatasetPassportBuilder
 from discover.asset.dataset.component.identity import DatasetPassport
 from discover.asset.dataset.dataset import Dataset
 from discover.core.flow import PhaseDef, TestStageDef
@@ -48,16 +47,21 @@ single_line = f"\n{100 * '-'}"
 # ------------------------------------------------------------------------------------------------ #
 PHASE = PhaseDef.TESTING
 STAGE = TestStageDef.SMOKE_TEST
-NAME = "test_build_pandas_dataset_to_csv"
+NAME = "test_build_pandas_dataset_from_csv"
+
+# ------------------------------------------------------------------------------------------------ #
+CSV_FILEPATH = "tests/data/reviews.csv"
+PARQUET_FILEPATH = "tests/data/reviews"
+BOGUS_FILEPATH = "tests/data/bogus"
 
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.builder
-@pytest.mark.datasetbuilder
-class TestDatasetBuilder:  # pragma: no cover
+@pytest.mark.dsbuilder_file
+class TestDatasetBuilderPandas:  # pragma: no cover
     # ============================================================================================ #
-    def test_setup(self, workspace, caplog) -> None:
+    def test_setup(self, workspace, ds_passport, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -81,33 +85,28 @@ class TestDatasetBuilder:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_build_pandas_dataset_to_csv(self, workspace, pandas_df, caplog) -> None:
+    def test_build_pandas_dataset_from_csv(
+        self, workspace, ds_passport, pandas_df, caplog
+    ) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        passport = (
-            DatasetPassportBuilder()
-            .phase(PHASE)
-            .stage(STAGE)
-            .name(NAME)
-            .build()
-            .passport
-        )
         data = (
-            DataComponentBuilderFromDataFrame()
-            .passport(passport)
-            .dataframe(pandas_df)
-            .to_csv()
+            DataComponentBuilderFromFile()
+            .passport(ds_passport)
+            .source_filepath(CSV_FILEPATH)
+            .from_csv()
+            .to_pandas()
             .build()
             .data_component
         )
 
         # Evaluate Data Component Befoe Build
         logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(passport).data(data).build().dataset
+        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -140,7 +139,7 @@ class TestDatasetBuilder:  # pragma: no cover
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=passport.asset_id)
+        ds = repo.get(asset_id=ds_passport.asset_id)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -153,8 +152,8 @@ class TestDatasetBuilder:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_build_pandas_dataset_to_parquet(
-        self, workspace, pandas_df, caplog
+    def test_build_pandas_dataset_from_parquet(
+        self, workspace, ds_passport, pandas_df, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -162,26 +161,19 @@ class TestDatasetBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        passport = (
-            DatasetPassportBuilder()
-            .phase(PHASE)
-            .stage(STAGE)
-            .name(NAME)
-            .build()
-            .passport
-        )
         data = (
-            DataComponentBuilderFromDataFrame()
-            .passport(passport)
-            .dataframe(pandas_df)
-            .to_parquet()
+            DataComponentBuilderFromFile()
+            .passport(ds_passport)
+            .source_filepath(PARQUET_FILEPATH)
+            .from_parquet()
+            .to_pandas()
             .build()
             .data_component
         )
 
         # Evaluate Data Component Befoe Build
         logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(passport).data(data).build().dataset
+        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -214,7 +206,7 @@ class TestDatasetBuilder:  # pragma: no cover
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=passport.asset_id)
+        ds = repo.get(asset_id=ds_passport.asset_id)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -226,9 +218,39 @@ class TestDatasetBuilder:  # pragma: no cover
         )
         logger.info(single_line)
 
+
+# ------------------------------------------------------------------------------------------------ #
+@pytest.mark.dataset
+@pytest.mark.builder
+@pytest.mark.dsbuilder_file
+class TestDatasetBuilderSpark:  # pragma: no cover
     # ============================================================================================ #
-    def test_build_spark_dataset_to_csv(
-        self, workspace, spark, spark_df, caplog
+    def test_setup(self, workspace, ds_passport, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        repo = workspace.dataset_repo
+        repo.reset()
+        try:
+            shutil.rmtree(workspace.files)
+        except Exception:
+            pass
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_build_spark_dataset_from_csv(
+        self, workspace, ds_passport, spark, spark_df, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -236,26 +258,19 @@ class TestDatasetBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        passport = (
-            DatasetPassportBuilder()
-            .phase(PHASE)
-            .stage(STAGE)
-            .name(NAME)
-            .build()
-            .passport
-        )
         data = (
-            DataComponentBuilderFromDataFrame()
-            .passport(passport)
-            .dataframe(spark_df)
-            .to_csv()
+            DataComponentBuilderFromFile()
+            .passport(ds_passport)
+            .source_filepath(CSV_FILEPATH)
+            .from_csv()
+            .to_spark()
             .build()
             .data_component
         )
 
         # Evaluate Data Component Befoe Build
         logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(passport).data(data).build().dataset
+        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -285,7 +300,7 @@ class TestDatasetBuilder:  # pragma: no cover
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=passport.asset_id, spark=spark)
+        ds = repo.get(asset_id=ds_passport.asset_id, spark=spark)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -298,8 +313,8 @@ class TestDatasetBuilder:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_build_spark_dataset_to_parquet(
-        self, workspace, spark, spark_df, caplog
+    def test_build_spark_dataset_from_parquet(
+        self, workspace, ds_passport, spark, spark_df, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -307,26 +322,19 @@ class TestDatasetBuilder:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        passport = (
-            DatasetPassportBuilder()
-            .phase(PHASE)
-            .stage(STAGE)
-            .name(NAME)
-            .build()
-            .passport
-        )
         data = (
-            DataComponentBuilderFromDataFrame()
-            .passport(passport)
-            .dataframe(spark_df)
-            .to_parquet()
+            DataComponentBuilderFromFile()
+            .passport(ds_passport)
+            .source_filepath(PARQUET_FILEPATH)
+            .from_parquet()
+            .to_spark()
             .build()
             .data_component
         )
 
         # Evaluate Data Component Befoe Build
         logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(passport).data(data).build().dataset
+        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -357,7 +365,7 @@ class TestDatasetBuilder:  # pragma: no cover
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=passport.asset_id, spark=spark)
+        ds = repo.get(asset_id=ds_passport.asset_id, spark=spark)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -370,7 +378,7 @@ class TestDatasetBuilder:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_teardown(self, workspace, caplog) -> None:
+    def test_teardown(self, workspace, ds_passport, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
