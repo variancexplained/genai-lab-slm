@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday December 29th 2024 01:54:33 pm                                               #
-# Modified   : Monday December 30th 2024 03:15:20 pm                                               #
+# Modified   : Tuesday December 31st 2024 11:46:25 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
 
 # ------------------------------------------------------------------------------------------------ #
 #                                   ASSET TYPE                                                     #
@@ -49,36 +48,21 @@ class AssetType(Enum):
     EXPERIMENT = ("experiment", "Experiment")
     INFERENCE = ("inference", "Inference")
 
-    def __new__(cls, value: str, label: str) -> Any:
-        """
-        Create a new instance of AssetType.
-
-        Args:
-            value (str): The string identifier for the asset type.
-            label (str): The human-readable label for the asset type.
-
-        Returns:
-            AssetType: An instance of the AssetType enum.
-        """
+    def __new__(cls, value: str, label: str):
         obj = object.__new__(cls)
-        obj._value_ = value  # Set the Enum value
-        obj._label = label  # Set the custom label
+        obj._value_ = value
+        obj._label = label
         return obj
 
-    @classmethod
-    def from_value(cls, value: str) -> AssetType:
-        """Finds the enum member based on a given value"""
-        for member in cls:
-            if member.value == value:
-                return member
-        raise ValueError(f"No matching {cls.__name__} for value: {value}")
-
     @property
-    def label(self) -> str:
-        """
-        Returns the human-readable label for the asset type.
-
-        Returns:
-            str: The label associated with the asset type.
-        """
+    def label(self):
+        """Get the human-readable label for the asset type."""
         return self._label
+
+    @classmethod
+    def from_value(cls, value: str) -> "AssetType":
+        """Class method to retrieve an AssetType from its string value."""
+        for asset_type in cls:
+            if asset_type.value == value:
+                return asset_type
+        raise ValueError(f"{value} is not a valid AssetType")

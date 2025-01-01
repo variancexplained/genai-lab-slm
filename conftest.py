@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday December 31st 2024 07:52:47 pm                                              #
+# Modified   : Wednesday January 1st 2025 01:23:39 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
+from discover.asset.base.atype import AssetType
 from discover.asset.dataset import DFType, FileFormat
 from discover.asset.dataset.builder.dataset import DatasetBuilder
 from discover.asset.dataset.component.data import DataComponent
@@ -36,7 +37,8 @@ from discover.infra.persist.cloud.aws import S3Handler
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = []
+collect_ignore_glob = ["discover/core/*"]
+collect_ignore = ["discover/core"]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -238,7 +240,7 @@ def ds_passport():
         asset_id="dataset_test_dataset_v1.0",
         phase=PhaseDef.TESTING,
         stage=TestStageDef.SMOKE_TEST,
-        asset_type="dataset",
+        asset_type=AssetType.DATASET,
         name="test_dataset",
         version="v1.0",
         creator="PyTest",

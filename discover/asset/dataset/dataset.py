@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Tuesday December 31st 2024 07:11:12 pm                                              #
+# Modified   : Tuesday December 31st 2024 09:57:51 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,7 @@
 """Dataset Core Module"""
 from __future__ import annotations
 
+from discover.analytics.dqa import DQA
 from discover.asset.base.asset import Asset
 from discover.asset.dataset.base import DatasetComponent
 from discover.asset.dataset.component.data import DataComponent
@@ -41,6 +42,8 @@ class Dataset(Asset):
         self._workspace = workspace
         self._passport = passport
         self._data = data
+
+        self._dqa = None
 
         self._is_composite = False
 
@@ -91,3 +94,14 @@ class Dataset(Asset):
     @property
     def passport(self) -> DatasetPassport:
         return self._passport
+
+    @property
+    def dqa(self) -> DQA:
+        if self._dqa is None:
+            print("This Dataset has no DQA component.")
+        else:
+            return self._dqa
+
+    @dqa.setter
+    def dqa(self, dqa: DQA) -> None:
+        self._dqa = dqa

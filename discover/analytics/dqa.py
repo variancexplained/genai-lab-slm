@@ -11,24 +11,27 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Friday December 27th 2024 05:36:52 am                                               #
+# Modified   : Tuesday December 31st 2024 10:49:41 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
 
-from typing import Optional, Type, Union
+from typing import TYPE_CHECKING, Optional, Type, Union
 
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
 
 from discover.analytics.base import Analysis
-from discover.asset.dataset import Dataset
 from discover.infra.config.app import AppConfigReader
 
 # ------------------------------------------------------------------------------------------------ #
 viz = Visualizer()
+
+# ------------------------------------------------------------------------------------------------ #
+if TYPE_CHECKING:
+    from discover.asset.dataset.dataset import Dataset
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -38,10 +41,12 @@ class DQA(Analysis):
 
     def __init__(
         self,
-        dataset: Dataset,
+        dataset: "Dataset",
         config_reader_cls: Type[AppConfigReader] = AppConfigReader,
     ) -> None:
-        df = dataset.to_pandas()
+        df = dataset.data.dataframe
+        self._dataset = dataset
+        self._dataset.dqa = self
         super().__init__(df=df)
         self._config_reader = config_reader_cls()
         self._config = self._config_reader.get_config(section="dqa", namespace=True)
@@ -74,6 +79,13 @@ class DQA(Analysis):
 
         # Privacy Measures
         self._privacy = None
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                    DATASET                                                   #
+    # -------------------------------------------------------------------------------------------- #
+    @property
+    def dataset(self) -> "Dataset":
+        return self._dataset
 
     # -------------------------------------------------------------------------------------------- #
     #                                 QUALITY SCORE                                                #

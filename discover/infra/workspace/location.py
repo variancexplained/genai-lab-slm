@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:53:18 am                                               #
-# Modified   : Tuesday December 31st 2024 01:18:10 pm                                              #
+# Modified   : Tuesday December 31st 2024 11:49:47 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -60,10 +60,10 @@ class LocationService:
             ValueError: If any required arguments are missing or invalid.
         """
         # Ensure valid asset_type and file_format enums
-        if not hasattr(asset_type, "value") or not hasattr(file_format, "value"):
-            raise ValueError(
-                "asset_type and file_format must be valid enums with a 'value' attribute."
-            )
+        if not hasattr(asset_type, "value"):
+            raise ValueError(f"asset_type {asset_type} has no `value` attribute.")
+        if not hasattr(file_format, "value"):
+            raise ValueError(f"file_format {file_format} has no `value` attribute.")
 
         # Construct the file extension and filename
         filext = file_format.value.lstrip(".")  # Remove leading dot if present
