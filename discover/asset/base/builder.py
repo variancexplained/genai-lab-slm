@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Sunday December 29th 2024 05:07:50 pm                                               #
+# Modified   : Thursday January 2nd 2025 06:54:40 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,9 @@
 """Base Module for the Asset Dimension"""
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
+from typing import List
 
 from discover.asset.base.asset import Asset
 
@@ -32,6 +34,9 @@ class AssetBuilder(ABC):
     Abstract base class for building assets with phases, stages, and persistence
     configurations.
     """
+
+    def __init__(self):
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @abstractmethod
     def reset(self) -> None:
@@ -49,3 +54,8 @@ class AssetBuilder(ABC):
             Dataset: The fully constructed dataset.
         """
         pass
+
+    def _report_validation_errors(self, errors: List[str]) -> None:
+        errors = "\n".join(errors)
+        self._logger.error(errors)
+        raise ValueError(errors)

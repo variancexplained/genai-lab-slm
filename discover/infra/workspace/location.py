@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:53:18 am                                               #
-# Modified   : Tuesday December 31st 2024 11:49:47 pm                                              #
+# Modified   : Thursday January 2nd 2025 06:45:17 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@
 from pathlib import Path
 
 from discover.asset.base.atype import AssetType
-from discover.asset.dataset import FileFormat
+from discover.core.file import FileFormat
 from discover.core.flow import PhaseDef
 
 

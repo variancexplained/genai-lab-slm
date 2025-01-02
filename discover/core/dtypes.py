@@ -11,12 +11,15 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Tuesday December 31st 2024 11:38:04 am                                              #
+# Modified   : Thursday January 2nd 2025 06:41:19 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Types Module """
+from __future__ import annotations
+
+from enum import Enum
 from typing import Tuple
 
 import numpy as np
@@ -28,6 +31,24 @@ from pyspark.sql.types import (
     StructType,
     TimestampType,
 )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   DATAFRAME TYPE                                                 #
+# ------------------------------------------------------------------------------------------------ #
+class DFType(Enum):
+
+    PANDAS = "pandas"
+    SPARK = "spark"
+
+    @classmethod
+    def from_value(cls, value) -> DFType:
+        """Finds the enum member based on a given value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No matching {cls.__name__} for value: {value}")
+
 
 # ------------------------------------------------------------------------------------------------ #
 #                                           DATA TYPES                                             #

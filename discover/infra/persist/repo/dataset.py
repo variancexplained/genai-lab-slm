@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Tuesday December 31st 2024 08:36:33 pm                                              #
+# Modified   : Thursday January 2nd 2025 11:36:42 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,8 @@ from typing import TYPE_CHECKING, Optional
 from pyspark.sql import SparkSession
 
 from discover.asset.base.asset import Asset
-from discover.asset.dataset import DFType
+from discover.core.dtypes import DFType
+from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.base import DataFrame
 from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.base import DAO
@@ -73,10 +74,10 @@ class DatasetRepo(AssetRepo):
 
         # Persist the underlying data to file.
         self._fao.create(
-            dftype=asset.data.dftype,
-            filepath=asset.data.filepath,
-            file_format=asset.data.file_format,
-            dataframe=asset.data.dataframe,
+            dftype=asset.dftype,
+            filepath=asset.filepath,
+            file_format=asset.file_format,
+            dataframe=asset.dataframe,
             overwrite=False,
         )
 
@@ -101,9 +102,9 @@ class DatasetRepo(AssetRepo):
         dataset = self._dao.read(asset_id=asset_id)
 
         df = self._get_data(
-            filepath=dataset.data.filepath, dftype=dataset.data.dftype, spark=spark
+            filepath=dataset.filepath, dftype=dataset.dftype, spark=spark
         )
-        setattr(dataset.data, "_dataframe", df)
+        setattr(dataset, "_dataframe", df)
         return dataset
 
     def get_metadata(self, asset_id: str) -> "Dataset":
@@ -154,10 +155,10 @@ class DatasetRepo(AssetRepo):
             does not exist or cannot be identified.
         """
         asset_meta = self.get_metadata(asset_id=asset_id)
-        self._fao.delete(filepath=asset_meta.data.filepath)
+        self._fao.delete(filepath=asset_meta.filepath)
         self._dao.delete(asset_id=asset_id)
         self._logger.info(
-            f"Dataset {asset_meta.asset_id}, including its file at {asset_meta.data.filepath} has been removed from the repository."
+            f"Dataset {asset_meta.asset_id}, including its file at {asset_meta.filepath} has been removed from the repository."
         )
 
     def reset(self) -> None:
@@ -172,10 +173,7 @@ class DatasetRepo(AssetRepo):
         Raises:
             ValueError: If any dataset's filepath does not exist or cannot be identified.
         """
-        proceed = input(
-            "Resetting the repository is irreversible. To proceed, type 'YES'."
-        )
-        if proceed == "YES":
+        if AppConfigReader().get_environment().lower() == "test":
             asset_ids = self.get_all(keys_only=True)
 
             self._logger.info(f"Assets to be deleted: {self.count}")
@@ -186,4 +184,6 @@ class DatasetRepo(AssetRepo):
                 f"{self.__class__.__name__} has been reset. Current asset count: {self.count}"
             )
         else:
-            self._logger.info(f"{self.__class__.__name__} reset has been aborted.")
+            msg = "Repository reset is only supported in test environment."
+            self._logger.error(msg)
+            raise RuntimeError(msg)

@@ -4,29 +4,15 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/base/component.py                                                   #
+# Filename   : /discover/flow/dataprep/ingest/builder.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Thursday January 2nd 2025 06:46:20 am                                               #
+# Created    : Wednesday January 1st 2025 04:58:34 am                                              #
+# Modified   : Wednesday January 1st 2025 04:58:35 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
-# Copyright  : (c) 2024 John James                                                                 #
+# Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
-"""Base Module for the Asset Dimension"""
-from __future__ import annotations
-
-from pydantic.dataclasses import dataclass
-
-from discover.core.dstruct import DataClass
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                    ASSET COMPONENT                                               #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass(config=dict(arbitrary_types_allowed=True))
-class AssetComponent(DataClass):
-    """Base class for asset component subclasses."""

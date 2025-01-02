@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday July 19th 2024 08:27:38 am                                                   #
-# Modified   : Tuesday December 24th 2024 01:08:05 am                                              #
+# Modified   : Thursday January 2nd 2025 06:46:20 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from typing import Any, Dict, Optional, Union
 import yaml
 from dotenv import dotenv_values, load_dotenv
 
-from discover.core.data_structure import NestedNamespace
+from discover.core.dstruct import NestedNamespace
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

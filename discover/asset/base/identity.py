@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Monday December 30th 2024 04:48:20 pm                                               #
+# Modified   : Thursday January 2nd 2025 06:46:20 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from typing import Any, Optional
 from pydantic.dataclasses import dataclass
 
 from discover.asset.base.atype import AssetType
-from discover.core.data_structure import DataClass
+from discover.core.dstruct import DataClass
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from discover.core.flow import PhaseDef, StageDef
 

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Tuesday December 31st 2024 10:49:41 pm                                              #
+# Modified   : Thursday January 2nd 2025 11:02:49 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,7 +44,7 @@ class DQA(Analysis):
         dataset: "Dataset",
         config_reader_cls: Type[AppConfigReader] = AppConfigReader,
     ) -> None:
-        df = dataset.data.dataframe
+        df = dataset.dataframe
         self._dataset = dataset
         self._dataset.dqa = self
         super().__init__(df=df)

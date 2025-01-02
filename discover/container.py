@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Tuesday December 31st 2024 09:14:49 pm                                              #
+# Modified   : Thursday January 2nd 2025 06:08:14 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -29,6 +29,7 @@ from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 from discover.infra.persist.file.fao import FAO
 from discover.infra.persist.object.dao import ShelveDAO
+from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
 from discover.infra.persist.repo.model import ModelRepo
@@ -103,6 +104,9 @@ class IOContainer(containers.DeclarativeContainer):
     )
 
     experiment_repo = providers.Singleton(ExperimentRepo, dao=experiment_dao)
+
+    # -------------------------------------------------------------------------------------------- #
+    flowstate = providers.Singleton(FlowState, db_path=config.workspace.ops.flowstate)
 
 
 # ------------------------------------------------------------------------------------------------ #

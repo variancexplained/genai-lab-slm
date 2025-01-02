@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday December 31st 2024 07:36:59 am                                              #
-# Modified   : Tuesday December 31st 2024 03:12:38 pm                                              #
+# Modified   : Thursday January 2nd 2025 06:43:38 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ import pytest
 from pyspark.sql import DataFrame
 from pyspark.testing.utils import assertDataFrameEqual
 
-from discover.asset.dataset import DFType
+from discover.core.dtypes import DFType
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

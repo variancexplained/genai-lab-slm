@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday December 29th 2024 01:22:15 pm                                               #
-# Modified   : Wednesday January 1st 2025 02:00:39 am                                              #
+# Modified   : Thursday January 2nd 2025 11:00:04 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,11 +27,9 @@ import pandas as pd
 import pytest
 from pyspark.sql import DataFrame
 
-from discover.asset.dataset.base import DatasetComponent
-from discover.asset.dataset.builder.data import DataComponentBuilderFromFile
-from discover.asset.dataset.builder.dataset import DatasetBuilder
-from discover.asset.dataset.component.identity import DatasetPassport
+from discover.asset.dataset.builder import DatasetBuilderFromFile
 from discover.asset.dataset.dataset import Dataset
+from discover.asset.dataset.passport import DatasetPassport
 from discover.core.flow import PhaseDef, TestStageDef
 from discover.infra.utils.file.info import FileMeta
 
@@ -86,7 +84,7 @@ class TestDatasetBuilderPandas:  # pragma: no cover
 
     # ============================================================================================ #
     def test_build_pandas_dataset_from_csv(
-        self, workspace, ds_passport, pandas_df, caplog
+        self, workspace, ds_passport_pandas_csv, pandas_df, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -94,19 +92,15 @@ class TestDatasetBuilderPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        data = (
-            DataComponentBuilderFromFile()
-            .passport(ds_passport)
+        dataset = (
+            DatasetBuilderFromFile()
+            .passport(ds_passport_pandas_csv)
             .source_filepath(CSV_FILEPATH)
-            .from_csv()
-            .to_pandas()
             .build()
-            .data_component
+            .dataset
         )
 
         # Evaluate Data Component Befoe Build
-        logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -114,32 +108,29 @@ class TestDatasetBuilderPandas:  # pragma: no cover
         assert isinstance(dataset.passport, DatasetPassport)
 
         # Evaluate Data Component
-        logger.info(dataset.data.asset_id)
-        logger.info(dataset.data.file_format.value)
-        logger.info(dataset.data.filepath)
-        assert isinstance(dataset.data, DatasetComponent)
-        assert isinstance(
-            dataset.data.dataframe, (pd.DataFrame, pd.core.frame.DataFrame)
-        )
+        logger.info(dataset.asset_id)
+        logger.info(dataset.file_format.value)
+        logger.info(dataset.filepath)
+        assert isinstance(dataset.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
 
         # Evaluate File Info
-        logger.info(dataset.data.file_meta)
-        assert isinstance(dataset.data.file_meta, FileMeta)
-        assert isinstance(dataset.data.file_meta.filepath, str)
-        assert os.path.exists(dataset.data.file_meta.filepath)
-        assert isinstance(dataset.data.file_meta.file_type, str)
-        assert dataset.data.file_meta.file_type == "csv"
-        assert dataset.data.file_meta.isdir is False
-        assert dataset.data.file_meta.file_count == 1
-        assert isinstance(dataset.data.file_meta.created, datetime)
-        assert isinstance(dataset.data.file_meta.accessed, datetime)
-        assert isinstance(dataset.data.file_meta.modified, datetime)
-        assert isinstance(dataset.data.file_meta.size, int)
-        assert dataset.data.size > 0
+        logger.info(dataset.file_meta)
+        assert isinstance(dataset.file_meta, FileMeta)
+        assert isinstance(dataset.file_meta.filepath, str)
+        assert os.path.exists(dataset.file_meta.filepath)
+        assert isinstance(dataset.file_meta.file_type, str)
+        assert dataset.file_meta.file_type == "csv"
+        assert dataset.file_meta.isdir is False
+        assert dataset.file_meta.file_count == 1
+        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file_meta.accessed, datetime)
+        assert isinstance(dataset.file_meta.modified, datetime)
+        assert isinstance(dataset.file_meta.size, int)
+        assert dataset.size > 0
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=ds_passport.asset_id)
+        ds = repo.get(asset_id=ds_passport_pandas_csv.asset_id)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -153,7 +144,7 @@ class TestDatasetBuilderPandas:  # pragma: no cover
 
     # ============================================================================================ #
     def test_build_pandas_dataset_from_parquet(
-        self, workspace, ds_passport, pandas_df, caplog
+        self, workspace, ds_passport_pandas_parquet, pandas_df, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -161,19 +152,14 @@ class TestDatasetBuilderPandas:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        data = (
-            DataComponentBuilderFromFile()
-            .passport(ds_passport)
+        dataset = (
+            DatasetBuilderFromFile()
+            .passport(ds_passport_pandas_parquet)
             .source_filepath(PARQUET_FILEPATH)
-            .from_parquet()
-            .to_pandas()
             .build()
-            .data_component
+            .dataset
         )
 
-        # Evaluate Data Component Befoe Build
-        logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -181,32 +167,29 @@ class TestDatasetBuilderPandas:  # pragma: no cover
         assert isinstance(dataset.passport, DatasetPassport)
 
         # Evaluate Data Component
-        logger.info(dataset.data.asset_id)
-        logger.info(dataset.data.file_format.value)
-        logger.info(dataset.data.filepath)
-        assert isinstance(dataset.data, DatasetComponent)
-        assert isinstance(
-            dataset.data.dataframe, (pd.DataFrame, pd.core.frame.DataFrame)
-        )
+        logger.info(dataset.asset_id)
+        logger.info(dataset.file_format.value)
+        logger.info(dataset.filepath)
+        assert isinstance(dataset.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
 
         # Evaluate File Info
-        logger.info(dataset.data.file_meta)
-        assert isinstance(dataset.data.file_meta, FileMeta)
-        assert isinstance(dataset.data.file_meta.filepath, str)
-        assert os.path.exists(dataset.data.file_meta.filepath)
-        assert isinstance(dataset.data.file_meta.file_type, str)
-        assert dataset.data.file_meta.file_type == "parquet"
-        assert dataset.data.file_meta.isdir is True
-        assert dataset.data.file_meta.file_count > 1
-        assert isinstance(dataset.data.file_meta.created, datetime)
-        assert isinstance(dataset.data.file_meta.accessed, datetime)
-        assert isinstance(dataset.data.file_meta.modified, datetime)
-        assert isinstance(dataset.data.file_meta.size, int)
-        assert dataset.data.size > 0
+        logger.info(dataset.file_meta)
+        assert isinstance(dataset.file_meta, FileMeta)
+        assert isinstance(dataset.file_meta.filepath, str)
+        assert os.path.exists(dataset.file_meta.filepath)
+        assert isinstance(dataset.file_meta.file_type, str)
+        assert dataset.file_meta.file_type == "parquet"
+        assert dataset.file_meta.isdir is True
+        assert dataset.file_meta.file_count > 1
+        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file_meta.accessed, datetime)
+        assert isinstance(dataset.file_meta.modified, datetime)
+        assert isinstance(dataset.file_meta.size, int)
+        assert dataset.size > 0
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=ds_passport.asset_id)
+        ds = repo.get(asset_id=ds_passport_pandas_parquet.asset_id)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -225,7 +208,7 @@ class TestDatasetBuilderPandas:  # pragma: no cover
 @pytest.mark.dsbuilder_file
 class TestDatasetBuilderSpark:  # pragma: no cover
     # ============================================================================================ #
-    def test_setup(self, workspace, ds_passport, caplog) -> None:
+    def test_setup(self, workspace, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -250,7 +233,7 @@ class TestDatasetBuilderSpark:  # pragma: no cover
 
     # ============================================================================================ #
     def test_build_spark_dataset_from_csv(
-        self, workspace, ds_passport, spark, spark_df, caplog
+        self, workspace, ds_passport_spark_csv, spark, spark_df, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -258,19 +241,15 @@ class TestDatasetBuilderSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        data = (
-            DataComponentBuilderFromFile()
-            .passport(ds_passport)
+        dataset = (
+            DatasetBuilderFromFile()
+            .passport(ds_passport_spark_csv)
             .source_filepath(CSV_FILEPATH)
-            .from_csv()
-            .to_spark()
             .build()
-            .data_component
+            .dataset
         )
 
         # Evaluate Data Component Befoe Build
-        logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -278,29 +257,28 @@ class TestDatasetBuilderSpark:  # pragma: no cover
         assert isinstance(dataset.passport, DatasetPassport)
 
         # Evaluate Data Component
-        logger.info(dataset.data.asset_id)
-        logger.info(dataset.data.file_format.value)
-        logger.info(dataset.data.filepath)
-        assert isinstance(dataset.data, DatasetComponent)
-        assert isinstance(dataset.data.dataframe, DataFrame)
+        logger.info(dataset.asset_id)
+        logger.info(dataset.file_format.value)
+        logger.info(dataset.filepath)
+        assert isinstance(dataset.dataframe, DataFrame)
         # Evaluate File Info
-        logger.info(dataset.data.file_meta)
-        assert isinstance(dataset.data.file_meta, FileMeta)
-        assert isinstance(dataset.data.file_meta.filepath, str)
-        assert os.path.exists(dataset.data.file_meta.filepath)
-        assert isinstance(dataset.data.file_meta.file_type, str)
-        assert dataset.data.file_meta.file_type == "csv"
-        assert dataset.data.file_meta.isdir is True
-        assert dataset.data.file_meta.file_count > 1
-        assert isinstance(dataset.data.file_meta.created, datetime)
-        assert isinstance(dataset.data.file_meta.accessed, datetime)
-        assert isinstance(dataset.data.file_meta.modified, datetime)
-        assert isinstance(dataset.data.file_meta.size, int)
-        assert dataset.data.size > 0
+        logger.info(dataset.file_meta)
+        assert isinstance(dataset.file_meta, FileMeta)
+        assert isinstance(dataset.file_meta.filepath, str)
+        assert os.path.exists(dataset.file_meta.filepath)
+        assert isinstance(dataset.file_meta.file_type, str)
+        assert dataset.file_meta.file_type == "csv"
+        assert dataset.file_meta.isdir is True
+        assert dataset.file_meta.file_count > 1
+        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file_meta.accessed, datetime)
+        assert isinstance(dataset.file_meta.modified, datetime)
+        assert isinstance(dataset.file_meta.size, int)
+        assert dataset.size > 0
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=ds_passport.asset_id, spark=spark)
+        ds = repo.get(asset_id=ds_passport_spark_csv.asset_id, spark=spark)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -314,7 +292,7 @@ class TestDatasetBuilderSpark:  # pragma: no cover
 
     # ============================================================================================ #
     def test_build_spark_dataset_from_parquet(
-        self, workspace, ds_passport, spark, spark_df, caplog
+        self, workspace, ds_passport_spark_parquet, spark, spark_df, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -322,19 +300,15 @@ class TestDatasetBuilderSpark:  # pragma: no cover
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        data = (
-            DataComponentBuilderFromFile()
-            .passport(ds_passport)
+        dataset = (
+            DatasetBuilderFromFile()
+            .passport(ds_passport_spark_parquet)
             .source_filepath(PARQUET_FILEPATH)
-            .from_parquet()
-            .to_spark()
             .build()
-            .data_component
+            .dataset
         )
 
         # Evaluate Data Component Befoe Build
-        logger.info(data.dataframe.head())
-        dataset = DatasetBuilder().passport(ds_passport).data(data).build().dataset
         assert isinstance(dataset, Dataset)
 
         # Evaluate Passport Component
@@ -342,30 +316,29 @@ class TestDatasetBuilderSpark:  # pragma: no cover
         assert isinstance(dataset.passport, DatasetPassport)
 
         # Evaluate Data Component
-        logger.info(dataset.data.asset_id)
-        logger.info(dataset.data.file_format.value)
-        logger.info(dataset.data.filepath)
-        assert isinstance(dataset.data, DatasetComponent)
-        assert isinstance(dataset.data.dataframe, DataFrame)
+        logger.info(dataset.asset_id)
+        logger.info(dataset.file_format.value)
+        logger.info(dataset.filepath)
+        assert isinstance(dataset.dataframe, DataFrame)
 
         # Evaluate File Info
-        logger.info(dataset.data.file_meta)
-        assert isinstance(dataset.data.file_meta, FileMeta)
-        assert isinstance(dataset.data.file_meta.filepath, str)
-        assert os.path.exists(dataset.data.file_meta.filepath)
-        assert isinstance(dataset.data.file_meta.file_type, str)
-        assert dataset.data.file_meta.file_type == "parquet"
-        assert dataset.data.file_meta.isdir is True
-        assert dataset.data.file_meta.file_count > 1
-        assert isinstance(dataset.data.file_meta.created, datetime)
-        assert isinstance(dataset.data.file_meta.accessed, datetime)
-        assert isinstance(dataset.data.file_meta.modified, datetime)
-        assert isinstance(dataset.data.file_meta.size, int)
-        assert dataset.data.size > 0
+        logger.info(dataset.file_meta)
+        assert isinstance(dataset.file_meta, FileMeta)
+        assert isinstance(dataset.file_meta.filepath, str)
+        assert os.path.exists(dataset.file_meta.filepath)
+        assert isinstance(dataset.file_meta.file_type, str)
+        assert dataset.file_meta.file_type == "parquet"
+        assert dataset.file_meta.isdir is True
+        assert dataset.file_meta.file_count > 1
+        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file_meta.accessed, datetime)
+        assert isinstance(dataset.file_meta.modified, datetime)
+        assert isinstance(dataset.file_meta.size, int)
+        assert dataset.size > 0
 
         # Check the data from repository
         repo = workspace.dataset_repo
-        ds = repo.get(asset_id=ds_passport.asset_id, spark=spark)
+        ds = repo.get(asset_id=ds_passport_spark_parquet.asset_id, spark=spark)
         assert ds == dataset
 
         # ---------------------------------------------------------------------------------------- #
@@ -378,7 +351,7 @@ class TestDatasetBuilderSpark:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_teardown(self, workspace, ds_passport, caplog) -> None:
+    def test_teardown(self, workspace, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"

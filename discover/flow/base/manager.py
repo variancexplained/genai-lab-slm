@@ -4,29 +4,30 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/base/component.py                                                   #
+# Filename   : /discover/flow/base/manager.py                                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Thursday January 2nd 2025 06:46:20 am                                               #
+# Created    : Wednesday January 1st 2025 04:53:26 am                                              #
+# Modified   : Thursday January 2nd 2025 10:33:38 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
-# Copyright  : (c) 2024 John James                                                                 #
+# Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
-"""Base Module for the Asset Dimension"""
-from __future__ import annotations
-
-from pydantic.dataclasses import dataclass
-
-from discover.core.dstruct import DataClass
+from discover.archive.flow.task.base import TaskBuilder
+from discover.asset.dataset.builder import DatasetBuilder
+from discover.infra.persist.object.flowstate import FlowState
 
 
-# ------------------------------------------------------------------------------------------------ #
-#                                    ASSET COMPONENT                                               #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass(config=dict(arbitrary_types_allowed=True))
-class AssetComponent(DataClass):
-    """Base class for asset component subclasses."""
+class FlowManager:
+    def __init__(
+        self,
+        flowstate: FlowState,
+        dataset_builder: DatasetBuilder,
+        task_builder: TaskBuilder,
+    ) -> None:
+        self._flowstate = flowstate
+        self._dataset_builder = dataset_builder
+        self._task_builder = task_builder

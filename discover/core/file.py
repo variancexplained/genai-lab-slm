@@ -10,11 +10,30 @@
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday December 23rd 2024 11:42:22 pm                                               #
-# Modified   : Sunday December 29th 2024 02:47:44 pm                                               #
+# Created    : Thursday January 2nd 2025 06:41:52 am                                               #
+# Modified   : Thursday January 2nd 2025 06:42:38 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
-# Copyright  : (c) 2024 John James                                                                 #
+# Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Core File Module"""
 from __future__ import annotations
+
+from enum import Enum
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     FILE FORMATS                                                 #
+# ------------------------------------------------------------------------------------------------ #
+
+
+class FileFormat(Enum):
+    CSV = "csv"
+    PARQUET = "parquet"
+
+    @classmethod
+    def from_value(cls, value) -> FileFormat:
+        """Finds the enum member based on a given value"""
+        for member in cls:
+            if member.value == value:
+                return member
+        raise ValueError(f"No matching {cls.__name__} for value: {value}")

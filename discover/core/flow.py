@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Monday December 30th 2024 02:25:16 pm                                               #
+# Modified   : Wednesday January 1st 2025 03:33:18 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -151,3 +151,12 @@ class PhaseDef(Enum):
             if member.value == value:
                 return member
         raise ValueError(f"No matching {cls.__name__} for value: {value}")
+
+
+# ------------------------------------------------------------------------------------------------ #
+class FlowStateDef(Enum):
+    CREATED = "created"
+    PENDING = "pending"
+    STARTED = "started"
+    EXCEPTION = "exception"
+    COMPLETED = "complete"

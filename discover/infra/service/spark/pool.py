@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Sunday December 29th 2024 12:47:36 pm                                               #
+# Modified   : Thursday January 2nd 2025 06:46:18 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,12 +20,12 @@ import atexit
 import logging
 import os
 import time
+from enum import Enum
 from typing import Dict
 
 from pyspark.sql import SparkSession
 
-from discover.core.data_structure import NestedNamespace
-from discover.flow import SparkSessionType
+from discover.core.dstruct import NestedNamespace
 
 # ------------------------------------------------------------------------------------------------ #
 # Set up root logger to only log errors
@@ -34,6 +34,15 @@ logging.getLogger("pyspark").setLevel(logging.ERROR)
 logging.getLogger("com.johnsnowlabs").setLevel(logging.ERROR)
 logging.getLogger("org.apache.spark").setLevel(logging.ERROR)
 logging.getLogger("org.apache.hadoop").setLevel(logging.ERROR)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                 SPARK SESSION  TYPE                                              #
+# ------------------------------------------------------------------------------------------------ #
+class SparkSessionType(Enum):
+
+    SPARK = "spark"
+    SPARKNLP = "sparknlp"
 
 
 # ------------------------------------------------------------------------------------------------ #

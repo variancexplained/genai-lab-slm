@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Tuesday December 31st 2024 08:33:22 pm                                              #
+# Modified   : Thursday January 2nd 2025 11:01:49 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -80,23 +80,23 @@ class ShelveDAO(DAO):
             ObjectIOException: If an unknown exception occurs during creation.
         """
 
-        df = asset.data.serialize()
+        df = asset.serialize()
 
         try:
             with shelve.open(self._db_path) as db:
                 db[asset.asset_id] = asset
         except FileNotFoundError as e:
-            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
+            msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg)
         except Exception as e:
-            msg = f"Unknown exception occurred while creating {self._asset_type.value} asset_id: {asset.asset_id}.\n{e}"
+            msg = f"Unknown exception occurred while creating asset_id: {asset.asset_id}.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
         # Ensure that the dataframe is not None before deserializing
         if df is not None:
-            asset.data.deserialize(dataframe=df)
+            asset.deserialize(dataframe=df)
         else:
             self._logger.error(
                 "Attempted to deserialize with a None dataframe. Asset deserialization may be incomplete."
@@ -124,11 +124,11 @@ class ShelveDAO(DAO):
             self._logger.error(msg)
             raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
-            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
+            msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while reading {self._asset_type.value} asset_id: {asset_id} from the object database.\n{e}"
+            msg = f"Unknown exception occurred while reading asset_id: {asset_id} from the object database.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
@@ -150,11 +150,11 @@ class ShelveDAO(DAO):
                 else:
                     return dict(db.items())
         except FileNotFoundError as e:
-            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
+            msg = f"The object database found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while reading from {self._asset_type.value} database.\n{e}"
+            msg = f"Unknown exception occurred while reading from object database.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
@@ -175,11 +175,11 @@ class ShelveDAO(DAO):
             with shelve.open(self._db_path) as db:
                 return asset_id in db
         except FileNotFoundError as e:
-            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
+            msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while checking existence of {self._asset_type.value} asset_id: {asset_id}."
+            msg = f"Unknown exception occurred while checking existence of asset_id: {asset_id}."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
@@ -198,15 +198,15 @@ class ShelveDAO(DAO):
             with shelve.open(self._db_path, writeback=True) as db:
                 del db[asset_id]
         except KeyError:
-            msg = f"{self._asset_type.label} asset_id: {asset_id} was not found."
+            msg = f"asset_id: {asset_id} was not found."
             self._logger.error(msg)
             raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
-            msg = f"The object database for {self._asset_type.value} was not found at {self._db_path}.\n{e}"
+            msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectDatabaseNotFoundError(msg, e) from e
         except Exception as e:
-            msg = f"Unknown exception occurred while deleting {self._asset_type.value} asset_id: {asset_id}."
+            msg = f"Unknown exception occurred while deleting asset_id: {asset_id}."
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
