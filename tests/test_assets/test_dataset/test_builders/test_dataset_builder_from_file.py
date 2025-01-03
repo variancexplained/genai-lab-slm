@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday December 29th 2024 01:22:15 pm                                               #
-# Modified   : Friday January 3rd 2025 05:33:16 am                                                 #
+# Modified   : Friday January 3rd 2025 06:13:11 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,6 +30,7 @@ from pyspark.sql import DataFrame
 from discover.asset.dataset.builder import DatasetBuilder
 from discover.asset.dataset.dataset import Dataset
 from discover.asset.dataset.identity import DatasetPassport
+from discover.core.file import FileFormat
 from discover.core.flow import PhaseDef, TestStageDef
 from discover.infra.utils.file.info import FileMeta
 
@@ -56,7 +57,7 @@ BOGUS_FILEPATH = "tests/data/bogus"
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.builder
-@pytest.mark.dsbuilder_file
+@pytest.mark.dsbfp
 class TestDatasetBuilderPandas:  # pragma: no cover
     # ============================================================================================ #
     def test_setup(self, workspace, ds_passport, caplog) -> None:
@@ -95,7 +96,9 @@ class TestDatasetBuilderPandas:  # pragma: no cover
         dataset = (
             DatasetBuilder()
             .passport(ds_passport)
-            .source_filepath(CSV_FILEPATH)
+            .from_source_filepath(CSV_FILEPATH, file_format=FileFormat.CSV)
+            .as_pandas()
+            .to_csv()
             .build()
             .dataset
         )
@@ -155,7 +158,9 @@ class TestDatasetBuilderPandas:  # pragma: no cover
         dataset = (
             DatasetBuilder()
             .passport(ds_passport)
-            .source_filepath(PARQUET_FILEPATH)
+            .from_source_filepath(PARQUET_FILEPATH, file_format=FileFormat.PARQUET)
+            .as_pandas()
+            .to_parquet()
             .build()
             .dataset
         )
@@ -205,7 +210,7 @@ class TestDatasetBuilderPandas:  # pragma: no cover
 # ------------------------------------------------------------------------------------------------ #
 @pytest.mark.dataset
 @pytest.mark.builder
-@pytest.mark.dsbuilder_file
+@pytest.mark.dsbfs
 class TestDatasetBuilderSpark:  # pragma: no cover
     # ============================================================================================ #
     def test_setup(self, workspace, caplog) -> None:
@@ -244,7 +249,9 @@ class TestDatasetBuilderSpark:  # pragma: no cover
         dataset = (
             DatasetBuilder()
             .passport(ds_passport)
-            .source_filepath(CSV_FILEPATH)
+            .from_source_filepath(CSV_FILEPATH, file_format=FileFormat.CSV)
+            .as_spark()
+            .to_csv()
             .build()
             .dataset
         )
@@ -303,7 +310,9 @@ class TestDatasetBuilderSpark:  # pragma: no cover
         dataset = (
             DatasetBuilder()
             .passport(ds_passport)
-            .source_filepath(PARQUET_FILEPATH)
+            .from_source_filepath(PARQUET_FILEPATH, file_format=FileFormat.PARQUET)
+            .as_spark()
+            .to_parquet()
             .build()
             .dataset
         )

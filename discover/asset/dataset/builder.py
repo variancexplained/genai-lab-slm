@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Friday January 3rd 2025 05:48:20 am                                                 #
+# Modified   : Friday January 3rd 2025 06:14:01 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -53,6 +53,7 @@ class DatasetBuilder(AssetBuilder):
     ) -> None:
         super().__init__()
         self._workspace = workspace
+        self._fao = fao
 
         self._passport = None
         self._dataframe = None
@@ -110,7 +111,7 @@ class DatasetBuilder(AssetBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def from_source_file(
+    def from_source_filepath(
         self, filepath: str, file_format: FileFormat
     ) -> DatasetBuilder:
         """
