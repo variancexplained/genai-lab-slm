@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Thursday January 2nd 2025 04:34:16 am                                               #
+# Modified   : Thursday January 2nd 2025 07:09:45 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,26 +22,6 @@ phases:
 # ================================================================================================ #
   dataprep:
     stages:
-# ------------------------------------------------------------------------------------------------ #
-#                                   DATA ACQUISITION STAGE                                         #
-# ------------------------------------------------------------------------------------------------ #
-      acquire:
-        phase: dataprep
-        stage: raw
-        source:
-          filepath: data/stage/prod/reviews
-          dftype: pandas
-        target:
-          asset_type: dataset
-          phase: dataprep
-          stage: acquire
-          name: acquire
-          file_format: parquet
-        tasks:
-          - name: sample
-            class_name:
-
-
 # ------------------------------------------------------------------------------------------------ #
 #                               DATA INGESTION STAGE PIPELINE                                      #
 # ------------------------------------------------------------------------------------------------ #
@@ -64,12 +44,14 @@ phases:
           dftype: pandas
           file_format: parquet
         tasks:
-          - class_name: VerifyEncodingTask
-            module: discover.flow.task.dataprep.preprocess.text
+          encoding:
+            class_name: VerifyEncodingTask
+            module: discover.flow.dataprep.ingest.task
             params:
               column: content
-          - class_name: CastDataTypeTask
-            module: discover.flow.task.dataprep.preprocess.text
+          datatypes:
+            class_name: CastDataTypeTask
+            module: discover.flow.dataprep.ingest.task
             params:
               datatypes:
                 id: string
@@ -83,12 +65,14 @@ phases:
                 vote_count: int64
                 vote_sum: int64
                 date: datetime64[ms]
-          - class_name: RemoveNewlinesTask
-            module: discover.flow.task.dataprep.preprocess.text
+          newlines:
+            class_name: RemoveNewlinesTask
+            module: discover.flow.dataprep.ingest.task
             params:
               column: content
-          - class_name: ConvertDateTimeUTC
-            module: discover.flow.task.dataprep.preprocess.date
+          convert_datetime_utc:
+            class_name: ConvertDateTimeUTC
+            module: discover.flow.dataprep.ingest.task
             params:
               column: date
               timezone: America/New_York

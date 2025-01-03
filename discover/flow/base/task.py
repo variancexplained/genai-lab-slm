@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:33:59 am                                              #
-# Modified   : Thursday January 2nd 2025 04:36:56 am                                               #
+# Modified   : Thursday January 2nd 2025 05:46:19 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -88,38 +88,6 @@ class Task(ABC):
 
 
 # ------------------------------------------------------------------------------------------------ #
-def instantiate_class(
-    module: str,
-    class_name: str,
-    params: dict,
-):
-    """
-    Dynamically imports and instantiates a class with the given parameters.
-
-    This function loads a module, retrieves the specified class, and creates an
-    instance of the class by passing the provided parameters and stage definition.
-
-    Args:
-        module (str): The name of the module containing the class to be instantiated.
-        class_name (str): The name of the class to instantiate.
-        params (dict): A dictionary of keyword arguments to pass to the class constructor.
-
-    Returns:
-        Any: An instance of the specified class.
-
-    Raises:
-        ImportError: If the specified module cannot be imported.
-        AttributeError: If the specified class is not found in the module.
-        TypeError: If the class cannot be instantiated with the provided arguments.
-    """
-    module = importlib.import_module(module)
-    cls = getattr(module, class_name)
-    return cls(
-        **params,
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                      TASK BUILDER                                                #
 # ------------------------------------------------------------------------------------------------ #
 class TaskBuilder:
@@ -132,8 +100,7 @@ class TaskBuilder:
     task class.
     """
 
-    @staticmethod
-    def build(task_config: dict):
+    def build(self, task_config: dict):
         """
         Constructs a task instance based on the given configuration.
 
@@ -159,8 +126,40 @@ class TaskBuilder:
         module = task_config["module"]
         class_name = task_config["class_name"]
         params = task_config["params"]
-        return instantiate_class(
+        return self.instantiate_class(
             module=module,
             class_name=class_name,
             params=params,
+        )
+
+    # ------------------------------------------------------------------------------------------------ #
+    def instantiate_class(
+        self,
+        module: str,
+        class_name: str,
+        params: dict,
+    ):
+        """
+        Dynamically imports and instantiates a class with the given parameters.
+
+        This function loads a module, retrieves the specified class, and creates an
+        instance of the class by passing the provided parameters and stage definition.
+
+        Args:
+            module (str): The name of the module containing the class to be instantiated.
+            class_name (str): The name of the class to instantiate.
+            params (dict): A dictionary of keyword arguments to pass to the class constructor.
+
+        Returns:
+            Any: An instance of the specified class.
+
+        Raises:
+            ImportError: If the specified module cannot be imported.
+            AttributeError: If the specified class is not found in the module.
+            TypeError: If the class cannot be instantiated with the provided arguments.
+        """
+        module = importlib.import_module(module)
+        cls = getattr(module, class_name)
+        return cls(
+            **params,
         )

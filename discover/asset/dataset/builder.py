@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Thursday January 2nd 2025 10:57:43 am                                               #
+# Modified   : Thursday January 2nd 2025 07:01:57 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -150,30 +150,32 @@ class DatasetBuilder(AssetBuilder):
 
         # Valdidate passport before performing checks that depend upon valid passport.
         if isinstance(self._passport, DatasetPassport):
-            if (
-                self._passport.dftype == DFType.PANDAS
-                and not isinstance(
-                    self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame)
-                )
-            ) or (
-                self._passport.dftype == DFType.SPARK
-                and not isinstance(self._dataframe, DataFrame)
-            ):
-                errors.append(
-                    f"Invalid dataframe type `dftype`. Expected: {self._passport.dftype.value}. Actual: {type(self._dataframe)}."
-                )
+            if self._dataframe is not None:
+                if (
+                    self._passport.dftype == DFType.PANDAS
+                    and not isinstance(
+                        self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame)
+                    )
+                ) or (
+                    self._passport.dftype == DFType.SPARK
+                    and not isinstance(self._dataframe, DataFrame)
+                ):
+                    errors.append(
+                        f"Invalid dataframe type `dftype`. Expected: {self._passport.dftype.value}. Actual: {type(self._dataframe)}."
+                    )
 
         if not isinstance(self._passport, DatasetPassport):
             errors.append(
                 "A Dataset requires a DatasetPassport object for the Dataset to which this component belongs."
             )
         # Validate DataFrame type
-        if not isinstance(
-            self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
-        ):
-            errors.append(
-                f"TypeError: Invalid data type for DataFrame. Expected DFType.PANDAS, DFType.SPARK, or DFType.SPARKNLP. Received type {type(self._dataframe)}"
-            )
+        if self._dataframe is not None:
+            if not isinstance(
+                self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+            ):
+                errors.append(
+                    f"DataFrame must be None or a pandas or spark DataFrame object. Received type {type(self._dataframe)}"
+                )
 
         if errors:
             self._report_validation_errors(errors=errors)
@@ -275,7 +277,7 @@ class DatasetBuilderFromFile(DatasetBuilder):
             )
 
     def _validate(self) -> None:
-        super().validate()
+        super()._validate()
         # Ensure a passport is provided
         errors = []
         if isinstance(self._passport, DatasetPassport) and isinstance(
@@ -349,8 +351,8 @@ class DatasetPassportBuilder(AssetBuilder):
         self._created: Optional[datetime] = None
         self._source: Optional[Dataset] = None
         self._parent: Optional[DatasetPassport] = None
-        self._file_format = Optional[DatasetPassport] = FileFormat.PARQUET
-        self._dftype = Optional[DatasetPassport] = None
+        self._file_format = FileFormat.PARQUET
+        self._dftype: Optional[DatasetPassport] = None
         self._dataset_passport: Optional[DatasetPassport] = None
 
     @property
@@ -381,7 +383,7 @@ class DatasetPassportBuilder(AssetBuilder):
         self._version = None
         self._source = None
         self._parent = None
-        self._file_format = Optional[DatasetPassport] = FileFormat.PARQUET
+        self._file_format = FileFormat.PARQUET
         self._dftype = None
         self._dataset_passport = None
 

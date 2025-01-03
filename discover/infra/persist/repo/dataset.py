@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Thursday January 2nd 2025 11:36:42 am                                               #
+# Modified   : Thursday January 2nd 2025 07:04:54 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@
 
 from typing import TYPE_CHECKING, Optional
 
+import pandas as pd
 from pyspark.sql import SparkSession
 
 from discover.asset.base.asset import Asset
@@ -73,13 +74,16 @@ class DatasetRepo(AssetRepo):
         """
 
         # Persist the underlying data to file.
-        self._fao.create(
-            dftype=asset.dftype,
-            filepath=asset.filepath,
-            file_format=asset.file_format,
-            dataframe=asset.dataframe,
-            overwrite=False,
-        )
+        if isinstance(
+            asset.dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+        ):
+            self._fao.create(
+                dftype=asset.dftype,
+                filepath=asset.filepath,
+                file_format=asset.file_format,
+                dataframe=asset.dataframe,
+                overwrite=False,
+            )
 
         # Save the Dataset object.
         self._dao.create(asset=asset)

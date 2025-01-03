@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Wednesday December 25th 2024 01:45:32 am                                            #
+# Modified   : Thursday January 2nd 2025 07:34:47 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import logging
 
-from discover.setup import load_data, wire_container
+from discover.setup import wire_container
 
 # ------------------------------------------------------------------------------------------------ #
 logger = logging.getLogger(__name__)
@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
 def main():
     _ = wire_container()
-    load_data()
 
 
 if __name__ == "__main__":
