@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/dataset/component/identity.py                                       #
+# Filename   : /discover/asset/dataset/identity.py                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Thursday January 2nd 2025 06:44:28 am                                               #
+# Modified   : Friday January 3rd 2025 05:49:06 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,24 +26,64 @@ from pydantic.dataclasses import dataclass
 
 from discover.asset.base.atype import AssetType
 from discover.asset.base.identity import Passport
+from discover.core.dstruct import DataClass
 from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
-from discover.core.flow import FlowStateDef, PhaseDef, StageDef
+from discover.core.flow import PhaseDef, StageDef
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                  DATASET PASSPORT                                                #
+#                                       DATA SOURCE                                                #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class SourceDataConfig(DataClass):
+    dftype: DFType
+    file_format: FileFormat
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     SOURCE DATASET                                               #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class SourceDatasetConfig(SourceDataConfig):
+    phase: PhaseDef
+    stage: StageDef
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     SOURCE FILE                                                  #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class SourceFileConfig(SourceDataConfig):
+    filepath: str
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                   DATASET PASSPORT                                               #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class DatasetPassport(Passport):
+    """
+    Represents a passport assigned to each dataset created, encapsulating metadata and relationships.
+
+    This class is used to manage metadata for datasets, including their asset type, source, parent dataset,
+    and additional attributes inherited from the `Passport` base class.
+
+    Attributes:
+        asset_type (AssetType): The type of the asset, defaulting to `AssetType.DATASET`.
+        source (Optional[DatasetPassport]): The dataset passport from which this dataset was derived.
+        parent (Optional[DatasetPassport]): The parent dataset passport, representing hierarchical relationships.
+
+    Methods:
+        create: A factory method for creating instances of `DatasetPassport`.
+    """
+
     asset_type: AssetType = AssetType.DATASET
     source: Optional[DatasetPassport] = None
     parent: Optional[DatasetPassport] = None
-    dftype: Optional[DFType] = None
-    file_format: Optional[FileFormat] = FileFormat.PARQUET
-    state: Optional[FlowStateDef] = FlowStateDef.CREATED
 
     def __post_init__(self) -> None:
+        """Initializes the `DatasetPassport` with a default description if none is provided."""
         self.description = self.description or self._generate_default_description()
 
     def _generate_default_description(self) -> str:
@@ -76,9 +116,27 @@ class DatasetPassport(Passport):
         creator: Optional[str] = None,
         source: Optional[DatasetPassport] = None,
         parent: Optional[DatasetPassport] = None,
-        file_format: Optional[DatasetPassport] = None,
-        dftype: Optional[DatasetPassport] = None,
     ) -> DatasetPassport:
+        """
+        Factory method to create a new `DatasetPassport` instance.
+
+        Args:
+            asset_type (AssetType): The type of the asset, typically `AssetType.DATASET`.
+            asset_id (str): A unique identifier for the dataset.
+            phase (PhaseDef): The current phase of the dataset's lifecycle.
+            stage (StageDef): The current stage of the dataset within its phase.
+            name (str): The name of the dataset.
+            created (datetime): The timestamp when the dataset was created.
+            version (str): The version of the dataset.
+            creator (Optional[str], optional): The creator of the dataset. Defaults to None.
+            source (Optional[DatasetPassport], optional): The dataset passport from which this
+                dataset was derived. Defaults to None.
+            parent (Optional[DatasetPassport], optional): The parent dataset passport, representing
+                hierarchical relationships. Defaults to None.
+
+        Returns:
+            DatasetPassport: A new instance of `DatasetPassport`.
+        """
         return cls(
             asset_type=asset_type,
             asset_id=asset_id,
@@ -90,6 +148,4 @@ class DatasetPassport(Passport):
             version=version,
             source=source,
             parent=parent,
-            file_format=file_format,
-            dftype=dftype,
         )

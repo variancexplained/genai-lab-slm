@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/model/sentiment.py                                              #
+# Filename   : /discover/archive/flow/task/model/sentiment.py                                      #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:34:20 pm                                              #
-# Modified   : Wednesday December 25th 2024 12:13:13 pm                                            #
+# Modified   : Friday January 3rd 2025 01:01:16 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ import torch
 from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-from discover.flow.task.base import Task
+from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
 from discover.infra.utils.file.io import IOService
 

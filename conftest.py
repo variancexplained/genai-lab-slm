@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday January 2nd 2025 07:36:57 pm                                               #
+# Modified   : Friday January 3rd 2025 05:38:08 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from pyspark.sql import SparkSession
 
 from discover.asset.base.atype import AssetType
 from discover.asset.dataset.builder import DatasetBuilder
-from discover.asset.dataset.passport import DatasetPassport
+from discover.asset.dataset.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
@@ -235,66 +235,13 @@ def fao(container):
 #                                         PASSPORT                                                 #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def ds_passport_pandas_csv():
+def ds_passport():
     return DatasetPassport(
         asset_id="dataset_test_dataset_v1.0",
         phase=PhaseDef.TESTING,
         stage=TestStageDef.SMOKE_TEST,
         asset_type=AssetType.DATASET,
-        file_format=FileFormat.CSV,
-        dftype=DFType.PANDAS,
-        name="test_dataset_pandas_csv",
-        version="v1.0",
-        creator="PyTest",
-        created=datetime.now(),
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def ds_passport_pandas_parquet():
-    return DatasetPassport(
-        asset_id="dataset_test_dataset_v2.0",
-        phase=PhaseDef.TESTING,
-        stage=TestStageDef.SMOKE_TEST,
-        asset_type=AssetType.DATASET,
-        file_format=FileFormat.PARQUET,
-        dftype=DFType.PANDAS,
-        name="test_dataset_pandas_parquet",
-        version="v1.0",
-        creator="PyTest",
-        created=datetime.now(),
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def ds_passport_spark_csv():
-    return DatasetPassport(
-        asset_id="dataset_test_dataset_v1.0",
-        phase=PhaseDef.TESTING,
-        stage=TestStageDef.SMOKE_TEST,
-        asset_type=AssetType.DATASET,
-        file_format=FileFormat.CSV,
-        dftype=DFType.SPARK,
-        name="test_dataset_spark_csv",
-        version="v1.0",
-        creator="PyTest",
-        created=datetime.now(),
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def ds_passport_spark_parquet():
-    return DatasetPassport(
-        asset_id="dataset_test_dataset_v2.0",
-        phase=PhaseDef.TESTING,
-        stage=TestStageDef.SMOKE_TEST,
-        asset_type=AssetType.DATASET,
-        file_format=FileFormat.PARQUET,
-        dftype=DFType.SPARK,
-        name="test_dataset_spark_parquet",
+        name="test_dataset",
         version="v1.0",
         creator="PyTest",
         created=datetime.now(),
@@ -329,47 +276,31 @@ def filepath_parquet(workspace, ds_passport):
 #                                     DATASETS                                                     #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def dataset_pandas_csv(ds_passport_pandas_csv, pandas_df):
+def dataset_pandas_csv(ds_passport, pandas_df):
     return (
-        DatasetBuilder()
-        .passport(ds_passport_pandas_csv)
-        .dataframe(pandas_df)
-        .build()
-        .dataset
+        DatasetBuilder().passport(ds_passport).from_dataframe(pandas_df).build().dataset
     )
 
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def dataset_pandas_parquet(ds_passport_pandas_parquet, pandas_df):
+def dataset_pandas_parquet(ds_passport, pandas_df):
     return (
-        DatasetBuilder()
-        .passport(ds_passport_pandas_parquet)
-        .dataframe(pandas_df)
-        .build()
-        .dataset
+        DatasetBuilder().passport(ds_passport).from_dataframe(pandas_df).build().dataset
     )
 
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def dataset_spark_csv(ds_passport_spark_csv, spark_df):
+def dataset_spark_csv(ds_passport, spark_df):
     return (
-        DatasetBuilder()
-        .passport(ds_passport_spark_csv)
-        .dataframe(spark_df)
-        .build()
-        .dataset
+        DatasetBuilder().passport(ds_passport).from_dataframe(spark_df).build().dataset
     )
 
 
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
-def dataset_spark_parquet(ds_passport_spark_parquet, spark_df):
+def dataset_spark_parquet(ds_passport, spark_df):
     return (
-        DatasetBuilder()
-        .passport(ds_passport_spark_parquet)
-        .dataframe(spark_df)
-        .build()
-        .dataset
+        DatasetBuilder().passport(ds_passport).from_dataframe(spark_df).build().dataset
     )

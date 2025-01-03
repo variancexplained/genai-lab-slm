@@ -11,13 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Thursday January 2nd 2025 07:52:52 pm                                               #
+# Modified   : Friday January 3rd 2025 02:21:06 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 import logging
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import List
 
 import pandas as pd
@@ -97,7 +97,10 @@ class Stage(ABC):
         Raises:
             RuntimeError: If any task execution fails, an error is logged and the exception is raised.
         """
-        # Step 1: Execute all tasks sequentially
+        # Step 1: Initialize Stage
+        self.initialize_stage()
+
+        # Step 2: Execute all tasks sequentially
         data = self._source.dataframe
         for task in self._tasks:
             try:
@@ -107,16 +110,24 @@ class Stage(ABC):
                 self._logger.error(msg)
                 raise RuntimeError(msg)
 
-        # Step 2: Update the target dataset with the final processed data
+        # Step 3: Update the target dataset with the final processed data
         self._target = self._set_target_dataframe(dataset=self._target, dataframe=data)
 
-        # Step 3: Persist the stage in the repository
-        self._repo.add(asset=self._target)
-
-        # Step 4: Persist the passport in the flowstate
-        self._state.create(passport=self._target.passport)
+        # Step 4: Finalize stage
+        self.finalize_stage()
 
         return self._target
+
+    @abstractmethod
+    def initialize_stage(self) -> None:
+        """Logic executed prior at the onset of stage execution"""
+        pass
+
+    @abstractmethod
+    def finalize_stage(self) -> None:
+        """Logic executed after stage execution"""
+        # Step 3: Persist the stage in the repository
+        self._repo.add(asset=self._target)
 
     def _set_target_dataframe(
         self,

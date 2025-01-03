@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 2nd 2025 11:16:12 am                                               #
-# Modified   : Thursday January 2nd 2025 11:39:17 am                                               #
+# Modified   : Friday January 3rd 2025 03:27:53 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.asset.dataset.passport import DatasetPassport
+from discover.asset.dataset.identity import DatasetPassport
 from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
 from discover.infra.utils.file.info import FileMeta

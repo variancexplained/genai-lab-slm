@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/archive/flow/task/dataprep/clean/strategy/nominal.py                      #
+# Filename   : /discover/flow/dataprep/quality/strategy/nominal.py                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:11 pm                                             #
-# Modified   : Friday January 3rd 2025 12:59:36 am                                                 #
+# Modified   : Friday January 3rd 2025 12:59:35 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #

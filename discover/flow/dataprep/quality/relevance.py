@@ -4,7 +4,7 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/archive/flow/task/dataprep/clean/relevance.py                             #
+# Filename   : /discover/flow/dataprep/quality/relevance.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #

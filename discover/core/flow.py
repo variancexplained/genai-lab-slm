@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Wednesday January 1st 2025 03:33:18 am                                              #
+# Modified   : Friday January 3rd 2025 01:05:00 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,7 +31,7 @@ class DataPrepStageDef(StageDef):
 
     RAW = ("raw", 0, "Raw Data Stage")
     INGEST = ("ingest", 1, "Data Ingestion Stage")
-    DQD = ("dqd", 2, "Data Quality Anomaly Detection Stage")
+    DQC = ("dqc", 2, "Data Quality Check Stage")
     SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")

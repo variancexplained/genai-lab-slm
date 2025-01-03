@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Thursday January 2nd 2025 06:45:17 am                                               #
+# Modified   : Friday January 3rd 2025 01:01:17 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -38,7 +38,7 @@ from discover.core.flow import (
     PhaseDef,
     StageDef,
 )
-from discover.flow.task.base import Task, TaskBuilder
+from discover.flow.base.task import Task, TaskBuilder
 from discover.infra.exception.config import (
     DatasetConfigurationException,
     PhaseConfigurationError,

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/dataprep/preprocess/text.py                                     #
+# Filename   : /discover/archive/flow/task/dataprep/preprocess/text.py                             #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday October 17th 2024 09:19:05 am                                              #
-# Modified   : Saturday December 28th 2024 07:50:35 pm                                             #
+# Modified   : Friday January 3rd 2025 01:01:17 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@
 import pandas as pd
 from pandarallel import pandarallel
 
-from discover.flow.task.base import Task
+from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
 
 # ------------------------------------------------------------------------------------------------ #

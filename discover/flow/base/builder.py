@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Thursday January 2nd 2025 07:58:03 pm                                               #
+# Modified   : Friday January 3rd 2025 05:33:16 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,15 +23,17 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 from dependency_injector.wiring import Provide, inject
+from numpy import DataSource
 
-from discover.asset.dataset.builder import DatasetBuilder, DatasetBuilderFromFile
-from discover.asset.dataset.passport import DatasetPassport
+from discover.asset.dataset.builder import DatasetBuilder
+from discover.asset.dataset.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import TaskBuilder
 from discover.infra.config.flow import FlowConfigReader
 from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
+from discover.infra.service.spark.pool import SparkSessionPool
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -52,8 +54,8 @@ class StageBuilder(ABC):
             Defaults to the provided `DiscoverContainer.io.flowstate`.
         dataset_builder_cls (Type[DatasetBuilder], optional): Class used for building datasets.
             Defaults to `DatasetBuilder`.
-        dataset_builder_from_file_cls (Type[DatasetBuilderFromFile], optional): Class used for building datasets from files.
-            Defaults to `DatasetBuilderFromFile`.
+        dataset_builder_from_file_cls (Type[DatasetBuilder], optional): Class used for building datasets from files.
+            Defaults to `DatasetBuilder`.
         task_builder_cls (Type[TaskBuilder], optional): Class used for building tasks in the pipeline.
             Defaults to `TaskBuilder`.
 
@@ -62,7 +64,7 @@ class StageBuilder(ABC):
         _repo (DatasetRepo): Repository used to manage datasets.
         _state (FlowState): Instance responsible for managing metadata and flow states.
         _dataset_builder (DatasetBuilder): Instance used for constructing datasets.
-        _dataset_builder_from_file (DatasetBuilderFromFile): Instance used for building datasets from files.
+        _dataset_builder_from_file (DatasetBuilder): Instance used for building datasets from files.
         _task_builder (TaskBuilder): Instance used for constructing tasks.
         _source (Optional[Dataset]): The source dataset for the stage (initially `None`).
         _source_passport (Optional[DatasetPassport]): The passport for the source dataset (initially `None`).
@@ -99,9 +101,10 @@ class StageBuilder(ABC):
         repo: DatasetRepo = Provide[DiscoverContainer.io.dataset_repo],
         state: FlowState = Provide[DiscoverContainer.io.flowstate],
         dataset_builder_cls: Type[DatasetBuilder] = DatasetBuilder,
-        dataset_builder_from_file_cls: Type[
-            DatasetBuilderFromFile
-        ] = DatasetBuilderFromFile,
+        dataset_builder_from_file_cls: Type[DatasetBuilder] = DatasetBuilder,
+        spark_session_pool: SparkSessionPool = Provide[
+            DiscoverContainer.spark.session_pool
+        ],
         task_builder_cls: Type[TaskBuilder] = TaskBuilder,
     ) -> None:
         self._config_reader = config_reader_cls()
@@ -109,10 +112,11 @@ class StageBuilder(ABC):
         self._state = state
         self._dataset_builder = dataset_builder_cls()
         self._dataset_builder_from_file = dataset_builder_from_file_cls()
+        self._spark_session_pool = spark_session_pool
         self._task_builder = task_builder_cls()
 
         self._source = None
-        self._source_passport = None
+        self._source_data = None
         self._tasks = []
         self._task_configs = []
         self._target = None
@@ -139,36 +143,24 @@ class StageBuilder(ABC):
         This ensures a clean state for the next stage build process.
         """
         self._source = None
-        self._source_passport = None
+        self._source_data = None
         self._tasks = []
         self._task_configs = []
         self._target = None
         self._target_passport = None
 
-    def source_passport(self, passport: DatasetPassport) -> StageBuilder:
+    def source_data(self, source_data: DataSource) -> StageBuilder:
         """
-        Sets the source passport for the stage.
+        Sets the data source for the stage
 
         Args:
-            passport (DatasetPassport): The passport for the source dataset.
+            data_source (DataSource): A DataSource object encapsulating identifying
+                information for the source data.
 
         Returns:
             StageBuilder: The current instance of the builder for method chaining.
         """
-        self._source_passport = passport
-        return self
-
-    def target_passport(self, passport: DatasetPassport) -> StageBuilder:
-        """
-        Sets the target passport for the stage.
-
-        Args:
-            passport (DatasetPassport): The passport for the target dataset.
-
-        Returns:
-            StageBuilder: The current instance of the builder for method chaining.
-        """
-        self._target_passport = passport
+        self._source_data = source_data
         return self
 
     @abstractmethod

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Thursday January 2nd 2025 08:12:22 pm                                               #
+# Modified   : Thursday January 2nd 2025 11:50:01 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -60,6 +60,13 @@ class IngestStageBuilder(StageBuilder):
         self._convert_datetime_utc = None
 
         self._config = self._get_task_config()
+
+    def reset(self) -> None:
+        super().reset()
+        self._encoding = None
+        self._datatypes = None
+        self._newlines = None
+        self._convert_datetime_utc = None
 
     def source_filepath(
         self, filepath: str = None, from_config: bool = True

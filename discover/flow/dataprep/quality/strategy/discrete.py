@@ -4,24 +4,22 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/archive/flow/task/dataprep/clean/strategy/interval.py                     #
+# Filename   : /discover/flow/dataprep/quality/strategy/discrete.py                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Sunday November 24th 2024 12:21:51 am                                               #
-# Modified   : Friday January 3rd 2025 12:59:36 am                                                 #
+# Created    : Sunday November 24th 2024 01:04:01 am                                               #
+# Modified   : Friday January 3rd 2025 12:59:35 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-from datetime import datetime
-from typing import Literal, Type
+from typing import Dict, Type
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
-from pyspark.sql.types import DateType
 
 from discover.flow.dataprep.quality.strategy.factory import (
     DetectStrategy,
@@ -32,101 +30,63 @@ from discover.flow.dataprep.quality.strategy.factory import (
 # ------------------------------------------------------------------------------------------------ #
 
 
-class IntervalStrategyFactory(StrategyFactory):
+class DiscreteStrategyFactory(StrategyFactory):
 
     @property
     def detect_strategies(self) -> Dict[str, Type[DetectStrategy]]:
         return {
-            "date_range": DateRangeAnomalyDetectStrategy,
+            "range": DiscreteRangeAnomalyDetectStrategy,
         }
 
     @property
     def repair_strategies(self) -> Dict[str, Type[RepairStrategy]]:
         return {
-            "date_range": DateRangeAnomalyRepairStrategy,
+            "range": DateRangeAnomalyRepairStrategy,
         }
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DateRangeAnomalyDetectStrategy(DetectStrategy):
-    """
-    Strategy for detecting anomalies in a date range.
-
-    This strategy flags observations where the values in the specified column
-    fall outside the defined range for years, months, or specific dates.
-
-    Args:
-        column (str): The column to check for anomalies.
-        new_column (str): The column to store anomaly flags.
-        range_min (int): The minimum value for the date range (integer format).
-        range_max (int): The maximum value for the date range (integer format).
-        range_type (Literal["year", "month", "date"]): The type of range to apply.
-            Options are "year", "month", or "date".
-    """
-
+class DiscreteRangeAnomalyDetectStrategy(DetectStrategy):
     def __init__(
         self,
         column: str,
         new_column: str,
         range_min: int,
         range_max: int,
-        range_type: Literal["year", "month", "date"] = "year",
         **kwargs,
     ) -> None:
         super().__init__()
         self._column = column
         self._new_column = new_column
-        self._range_min = self._convert_to_datetime(range_min, range_type)
-        self._range_max = self._convert_to_datetime(range_max, range_type)
-        self._range_type = range_type
-
-    def _convert_to_datetime(self, value: int, range_type_id: str) -> datetime:
-        """
-        Converts the integer range value to a datetime object based on the range type.
-
-        Args:
-            value (int): The range value to convert.
-            range_type (str): The type of range ("year", "month", or "date").
-
-        Returns:
-            datetime: The converted datetime object.
-        """
-        if range_type_id == "year":
-            return datetime(value, 1, 1)
-        elif range_type_id == "month":
-            year = value // 100
-            month = value % 100
-            return datetime(year, month, 1)
-        elif range_type_id == "date":
-            year = value // 10000
-            month = (value // 100) % 100
-            day = value % 100
-            return datetime(year, month, day)
-        else:
-            raise ValueError("Invalid range_type. Must be 'year', 'month', or 'date'.")
+        self._range_min = range_min
+        self._range_max = range_max
 
     def detect(self, data: DataFrame) -> DataFrame:
         """
-        Detects anomalies in the specified column based on the given date range.
+        Detects rows where the specified column has non-integer values or
+        integer values outside the specified range [range_min, range_max].
 
         Args:
             data (DataFrame): The input PySpark DataFrame.
 
         Returns:
-            DataFrame: The original DataFrame updated with an additional column (`self._new_column`)
-                    indicating anomalies as boolean values.
+            DataFrame: A DataFrame with an additional column (`self._new_column`)
+                       indicating anomalies. Rows with True are anomalies, and
+                       rows with False are valid.
         """
-        # Temporarily cast the column to datetime for comparison
-        temp_column = F.col(self._column).cast(DateType())
+        # Check if the column value is an integer
+        is_integer = F.col(self._column).rlike(r"^-?\d+$")
 
-        # Add the anomaly flag column as a boolean
-        data = data.withColumn(
-            self._new_column,
-            (temp_column < F.lit(self._range_min))
-            | (temp_column > F.lit(self._range_max)),
+        # Check if the column value is within the range
+        in_range = (F.col(self._column).cast("int") >= self._range_min) & (
+            F.col(self._column).cast("int") <= self._range_max
         )
 
-        return data
+        # Flag anomalies: Non-integer values or integers outside the range
+        anomaly_flag = ~is_integer | ~in_range
+
+        # Add the anomaly flag column
+        return data.withColumn(self._new_column, anomaly_flag)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -152,10 +112,9 @@ class DateRangeAnomalyRepairStrategy(RepairStrategy):
         new_column: str,
         range_min: int,
         range_max: int,
-        range_type: Literal["year", "month", "date"] = "year",
         detect_strategy: Type[
-            DateRangeAnomalyDetectStrategy
-        ] = DateRangeAnomalyDetectStrategy,
+            DiscreteRangeAnomalyDetectStrategy
+        ] = DiscreteRangeAnomalyDetectStrategy,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -163,7 +122,6 @@ class DateRangeAnomalyRepairStrategy(RepairStrategy):
         self._new_column = new_column
         self._range_min = range_min
         self._range_max = range_max
-        self._range_type = range_type
         self._detect_strategy = detect_strategy
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -198,7 +156,6 @@ class DateRangeAnomalyRepairStrategy(RepairStrategy):
                 new_column=self._new_column,
                 range_min=self._range_min,
                 range_max=self._range_max,
-                range_type=self._range_type,
             )
             data = strategy.detect(data)
 

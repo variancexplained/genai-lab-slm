@@ -4,20 +4,20 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/archive/flow/task/dataprep/clean/strategy/interval.py                     #
+# Filename   : /discover/flow/dataprep/quality/strategy/interval.py                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 12:21:51 am                                               #
-# Modified   : Friday January 3rd 2025 12:59:36 am                                                 #
+# Modified   : Friday January 3rd 2025 01:47:18 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 from datetime import datetime
-from typing import Literal, Type
+from typing import Dict, Literal, Type
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F

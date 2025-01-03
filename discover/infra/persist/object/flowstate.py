@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 02:49:35 am                                              #
-# Modified   : Thursday January 2nd 2025 07:53:54 pm                                               #
+# Modified   : Friday January 3rd 2025 03:27:53 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,7 +23,7 @@ import shelve
 from datetime import datetime
 from typing import Dict
 
-from discover.asset.dataset.passport import DatasetPassport
+from discover.asset.dataset.identity import DatasetPassport
 from discover.core.flow import FlowStateDef, PhaseDef, StageDef
 from discover.infra.exception.object import (
     ObjectDatabaseNotFoundError,

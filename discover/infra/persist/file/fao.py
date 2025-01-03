@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Thursday January 2nd 2025 06:44:28 am                                               #
+# Modified   : Friday January 3rd 2025 05:43:30 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -83,6 +83,7 @@ class FAO:
         Raises:
             Exception: If the write operation fails due to configuration or IO issues.
         """
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
         writer = self._iofactory.get_writer(
             dftype=dftype,
             file_format=file_format,
@@ -101,6 +102,7 @@ class FAO:
         self,
         filepath: str,
         dftype: DFType,
+        file_format: Optional[FileFormat] = None,
         spark: Optional[SparkSession] = None,
     ) -> DataFrame:
         """
@@ -119,9 +121,10 @@ class FAO:
             Exception: If the read operation fails due to configuration or IO issues.
         """
         try:
-            file_type = FileTypeDetector().get_file_type(path=filepath).lower()
-            file_format = FileFormat.from_value(file_type)
-            self._logger.debug(f"File type detected is: {file_type}")
+            if not file_format:
+                file_type = FileTypeDetector().get_file_type(path=filepath).lower()
+                file_format = FileFormat.from_value(file_type)
+                self._logger.debug(f"File type detected is: {file_type}")
         except ValueError as e:
             msg = f"File formaat {file_type} of {filepath} is not supported."
             self._logger.error(msg)

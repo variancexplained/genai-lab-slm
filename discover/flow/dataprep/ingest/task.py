@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:54:25 am                                              #
-# Modified   : Thursday January 2nd 2025 07:21:43 pm                                               #
+# Modified   : Thursday January 2nd 2025 08:22:12 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -164,10 +164,37 @@ class RemoveNewlinesTask(Task):
 
 # ------------------------------------------------------------------------------------------------ #
 class ConvertDateTimeUTC(Task):
+    """
+    A task that converts datetime values in a specified column of a DataFrame to UTC.
+    It handles both naive and aware timestamps, performing necessary localization
+    based on the given timezone, and accounts for Daylight Saving Time (DST) transitions.
+
+    Args:
+        column (str): The name of the column containing the datetime values to convert.
+                      Defaults to "date".
+        timezone (str): The timezone of the input timestamps. Defaults to "America/New_York".
+        **kwargs: Additional keyword arguments to pass to the parent class.
+
+    Methods:
+        run(data: pd.DataFrame) -> pd.DataFrame:
+            Executes the conversion process, applying the UTC conversion to the specified column.
+
+        _convert_to_utc(ts):
+            Converts a single timestamp to UTC, handling both naive and aware datetime values.
+            Adjusts for non-existent and ambiguous times during DST transitions.
+    """
 
     def __init__(
         self, column: str = "date", timezone: str = "America/New_York", **kwargs
     ) -> None:
+        """
+        Initializes the ConvertDateTimeUTC task.
+
+        Args:
+            column (str): The name of the column containing datetime values to convert. Defaults to "date".
+            timezone (str): The timezone of the input timestamps. Defaults to "America/New_York".
+            **kwargs: Additional keyword arguments passed to the parent class constructor.
+        """
         super().__init__(**kwargs)
         self._column = column
         self._kwargs = kwargs
@@ -175,10 +202,33 @@ class ConvertDateTimeUTC(Task):
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Applies the UTC conversion to the specified column in the DataFrame.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame containing the column to convert.
+
+        Returns:
+            pd.DataFrame: The DataFrame with the converted column values in UTC.
+        """
         data[self._column] = data[self._column].parallel_apply(self._convert_to_utc)
         return data
 
     def _convert_to_utc(self, ts):
+        """
+        Converts a single timestamp to UTC. Handles both naive and aware timestamps,
+        and adjusts for non-existent and ambiguous times during Daylight Saving Time (DST) transitions.
+
+        Args:
+            ts (pd.Timestamp): The timestamp to convert.
+
+        Returns:
+            pd.Timestamp: The converted timestamp in UTC.
+
+        Raises:
+            pytz.NonExistentTimeError: Raised when a timestamp does not exist due to DST transition.
+            pytz.AmbiguousTimeError: Raised when a timestamp is ambiguous during the end of DST.
+        """
         # Check if the timestamp is a datetime
         if isinstance(ts, pd.Timestamp):
             # If tzinfo is not None, the timestamp is aware
@@ -194,9 +244,6 @@ class ConvertDateTimeUTC(Task):
                     return localized_ts.astimezone(pytz.utc)
                 except pytz.NonExistentTimeError:
                     # Handle non-existent time during DST transition (e.g., 2:30 AM in a timezone that skips this time)
-                    self._logger.warning(
-                        f"Non-existent time encountered: {ts} in {self._timezone}. Adjusting by 1 hour."
-                    )
                     # Adjust by adding 1 hour and then converting to UTC
                     adjusted_ts = ts + pd.Timedelta(hours=1)
                     localized_ts = local_tz.localize(adjusted_ts, is_dst=None)

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/enrich/tqa.py                                                   #
+# Filename   : /discover/archive/flow/task/enrich/tqa.py                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 7th 2024 11:03:10 pm                                              #
-# Modified   : Wednesday December 25th 2024 06:50:15 am                                            #
+# Modified   : Friday January 3rd 2025 01:01:17 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,7 @@ from pyspark.sql import functions as F
 from sparknlp.annotator import PerceptronModel, Tokenizer
 from sparknlp.base import DocumentAssembler, Finisher
 
-from discover.flow.task.base import Task
+from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
 
 # ------------------------------------------------------------------------------------------------ #

@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/task/dataprep/clean/strategy/discrete.py                             #
+# Filename   : /discover/archive/flow/task/dataprep/clean/strategy/discrete.py                     #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 01:04:01 am                                               #
-# Modified   : Monday December 30th 2024 03:11:11 pm                                               #
+# Modified   : Friday January 3rd 2025 12:59:37 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ from typing import Dict, Type
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 
-from discover.flow.task.dataprep.clean.strategy.factory import (
+from discover.flow.dataprep.quality.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
     StrategyFactory,
