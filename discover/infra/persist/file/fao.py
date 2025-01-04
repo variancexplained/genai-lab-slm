@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Friday January 3rd 2025 05:43:30 am                                                 #
+# Modified   : Saturday January 4th 2025 04:04:45 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -183,7 +183,10 @@ class FAO:
             shutil.rmtree(filepath, ignore_errors=True)
             msg = f"Directory {os.path.basename(filepath)} successfully removed from the repository."
             self._logger.info(msg)
+        elif not os.path.exists(filepath):
+            msg = f"Filepath {filepath} does not exist."
+            self._logger.warning(msg)
         else:
             msg = "Unexpected exception occurred."
-            self._logger.error(msg)
+            self._logger.exception(msg)
             raise Exception(msg)

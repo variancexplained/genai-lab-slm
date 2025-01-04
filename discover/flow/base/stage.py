@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Friday January 3rd 2025 02:21:06 am                                                 #
+# Modified   : Friday January 3rd 2025 06:43:47 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -25,6 +25,7 @@ from git import Union
 from pyspark.sql import DataFrame
 
 from discover.archive.flow.task.base import Task
+from discover.asset.dataset.builder import DatasetBuilder
 from discover.asset.dataset.dataset import Dataset
 from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
@@ -62,18 +63,16 @@ class Stage(ABC):
 
     def __init__(
         self,
-        source: Dataset,
         tasks: List[Task],
-        target: Dataset,
         state: FlowState,
         repo: DatasetRepo,
+        dataset_builder: DatasetBuilder,
     ) -> None:
         """Initializes the Stage with source, tasks, target, state, and repository."""
-        self._source = source
         self._tasks = tasks
-        self._target = target
         self._state = state
         self._repo = repo
+        self._dataset_builder = dataset_builder
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -97,8 +96,8 @@ class Stage(ABC):
         Raises:
             RuntimeError: If any task execution fails, an error is logged and the exception is raised.
         """
-        # Step 1: Initialize Stage
-        self.initialize_stage()
+        # Step 1: Get source data
+        self._source = self.get_source_data()
 
         # Step 2: Execute all tasks sequentially
         data = self._source.dataframe
@@ -110,30 +109,17 @@ class Stage(ABC):
                 self._logger.error(msg)
                 raise RuntimeError(msg)
 
-        # Step 3: Update the target dataset with the final processed data
-        self._target = self._set_target_dataframe(dataset=self._target, dataframe=data)
-
-        # Step 4: Finalize stage
-        self.finalize_stage()
+        # Step 4: Save target data
+        self._target = self.save_target_data(data)
 
         return self._target
 
     @abstractmethod
-    def initialize_stage(self) -> None:
+    def get_source_data(self) -> Dataset:
         """Logic executed prior at the onset of stage execution"""
         pass
 
     @abstractmethod
-    def finalize_stage(self) -> None:
+    def save_target_data(self, data: Union[pd.DataFrame, DataFrame]) -> Dataset:
         """Logic executed after stage execution"""
-        # Step 3: Persist the stage in the repository
-        self._repo.add(asset=self._target)
-
-    def _set_target_dataframe(
-        self,
-        dataset: Dataset,
-        dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
-    ) -> Dataset:
-        """A cheeky back door rather than exposing a setter on the dataset."""
-        setattr(dataset, "_dataframe", dataframe)
-        return dataset
+        pass

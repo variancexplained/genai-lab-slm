@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Thursday January 2nd 2025 11:50:01 pm                                               #
+# Modified   : Friday January 3rd 2025 06:59:47 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -21,10 +21,10 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from discover.asset.dataset.dataset import Dataset
+from discover.asset.dataset.builder import DatasetBuilder
 from discover.flow.base.builder import StageBuilder
-from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task
+from discover.flow.dataprep.ingest.stage import IngestStage
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -145,42 +145,15 @@ class IngestStageBuilder(StageBuilder):
             IngestStageBuilder: The builder instance with the constructed stage.
         """
         self._validate()
-        self._source = self._build_source_dataset()
-        self._target = self._build_target_dataset()
         self._tasks = self._build_tasks()
-        self._stage = Stage(
-            source=self._source,
-            target=self._target,
+        self._stage = IngestStage(
+            source_filepath=self._source_filepath,
             tasks=self._tasks,
             state=self._state,
             repo=self._repo,
+            dataset_builder=DatasetBuilder(),
         )
         return self
-
-    def _build_source_dataset(self) -> Dataset:
-        """
-        Builds the source dataset from the provided passport and filepath.
-
-        Returns:
-            Dataset: The constructed source dataset.
-        """
-        dataset = (
-            self._dataset_builder_from_file.passport(self._source_passport)
-            .source_filepath(self._source_filepath)
-            .build()
-            .dataset
-        )
-        return dataset
-
-    def _build_target_dataset(self) -> Dataset:
-        """
-        Builds the target dataset from the provided passport.
-
-        Returns:
-            Dataset: The constructed target dataset.
-        """
-        dataset = self._dataset_builder.passport(self._target_passport).build().dataset
-        return dataset
 
     def _build_tasks(self) -> List[Task]:
         """

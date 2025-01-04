@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Friday January 3rd 2025 06:14:01 am                                                 #
+# Modified   : Saturday January 4th 2025 04:18:13 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -112,7 +112,7 @@ class DatasetBuilder(AssetBuilder):
 
     # -------------------------------------------------------------------------------------------- #
     def from_source_filepath(
-        self, filepath: str, file_format: FileFormat
+        self, filepath: str, file_format: FileFormat = FileFormat.PARQUET
     ) -> DatasetBuilder:
         """
         Sets the source filepath, format, and DataFrame type.
@@ -233,7 +233,6 @@ class DatasetBuilder(AssetBuilder):
             dataframe=self._dataframe,
         )
 
-        self._workspace.dataset_repo.add(asset=self._dataset)
         return self
 
     # -------------------------------------------------------------------------------------------- #
@@ -256,12 +255,14 @@ class DatasetBuilder(AssetBuilder):
         Returns:
             str: The file path for the data component.
         """
-        return self._workspace.get_filepath(
+        filepath = self._workspace.get_filepath(
             asset_type=self._passport.asset_type,
             asset_id=self._passport.asset_id,
             phase=self._passport.phase,
             file_format=self._file_format,
         )
+        self._logger.debug(f"Filepath assigned: {filepath}")
+        return filepath
 
     # -------------------------------------------------------------------------------------------- #
     def _read_data(self) -> Union[pd.DataFrame, DataFrame]:
@@ -451,29 +452,6 @@ class DatasetPassportBuilder(AssetBuilder):
         self._file_format = FileFormat.PARQUET
         return self
 
-    # -------------------------------------------------------------------------------------------- #
-    #                              IN-MEMORY DATA STRUCTURE                                        #
-    # -------------------------------------------------------------------------------------------- #
-    def as_pandas(self) -> DatasetPassportBuilder:
-        """
-        Sets the file format to CSV and determines the file path.
-
-        Returns:
-            DatasetBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.PANDAS
-        return self
-
-    def as_spark(self) -> DatasetPassportBuilder:
-        """
-        Sets the file format to Parquet and determines the file path.
-
-        Returns:
-            DatasetBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.SPARK
-        return self
-
     def build(self) -> DatasetPassportBuilder:
         """
         Builds the DatasetPassport after validating all fields.
@@ -499,8 +477,6 @@ class DatasetPassportBuilder(AssetBuilder):
             version=self._version,
             source=self._source,
             parent=self._parent,
-            file_format=self._file_format,
-            dftype=self._dftype,
         )
         return self
 
@@ -535,11 +511,6 @@ class DatasetPassportBuilder(AssetBuilder):
             errors.append(f"Invalid stage: {self._stage} (Expected: StageDef)")
         if not isinstance(self._name, str):
             errors.append(f"Invalid name: {self._name} (Expected: str)")
-        if not isinstance(self._file_format, FileFormat):
-            errors.append(
-                f"Invalid file_format: {self._file_format} (Expected: FileFormat)"
-            )
-        if not isinstance(self._dftype, DFType):
-            errors.append(f"Invalid dftype: {self._dftype} (Expected: DFType)")
+
         if errors:
             raise ValueError("\n".join(errors))

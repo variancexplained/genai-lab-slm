@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Friday January 3rd 2025 05:33:16 am                                                 #
+# Modified   : Friday January 3rd 2025 07:02:06 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,10 +23,8 @@ from abc import ABC, abstractmethod
 from typing import Type
 
 from dependency_injector.wiring import Provide, inject
-from numpy import DataSource
 
 from discover.asset.dataset.builder import DatasetBuilder
-from discover.asset.dataset.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import TaskBuilder
@@ -116,7 +114,6 @@ class StageBuilder(ABC):
         self._task_builder = task_builder_cls()
 
         self._source = None
-        self._source_data = None
         self._tasks = []
         self._task_configs = []
         self._target = None
@@ -143,25 +140,10 @@ class StageBuilder(ABC):
         This ensures a clean state for the next stage build process.
         """
         self._source = None
-        self._source_data = None
         self._tasks = []
         self._task_configs = []
         self._target = None
         self._target_passport = None
-
-    def source_data(self, source_data: DataSource) -> StageBuilder:
-        """
-        Sets the data source for the stage
-
-        Args:
-            data_source (DataSource): A DataSource object encapsulating identifying
-                information for the source data.
-
-        Returns:
-            StageBuilder: The current instance of the builder for method chaining.
-        """
-        self._source_data = source_data
-        return self
 
     @abstractmethod
     def build(self) -> StageBuilder:
@@ -183,18 +165,4 @@ class StageBuilder(ABC):
         Raises:
             ValueError: If either the source or target passport is not a valid `DatasetPassport`.
         """
-        errors = []
-        if not isinstance(self._source_passport, DatasetPassport):
-            errors.append(
-                f"Invalid source passport type. Expected: DatasetPassport. Actual: {type(self._source_passport)}."
-            )
-
-        if not isinstance(self._target_passport, DatasetPassport):
-            errors.append(
-                f"Invalid target passport type. Expected: DatasetPassport. Actual: {type(self._target_passport)}."
-            )
-        if errors:
-            self.reset()
-            msg = "\n".join(errors)
-            self._logger.error(msg)
-            raise ValueError(msg)
+        pass

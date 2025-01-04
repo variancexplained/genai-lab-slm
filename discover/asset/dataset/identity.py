@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Friday January 3rd 2025 05:49:06 am                                                 #
+# Modified   : Friday January 3rd 2025 07:21:40 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,6 +19,7 @@
 """Dataset Core Module"""
 from __future__ import annotations
 
+from dataclasses import field
 from datetime import datetime
 from typing import Optional
 
@@ -27,7 +28,6 @@ from pydantic.dataclasses import dataclass
 from discover.asset.base.atype import AssetType
 from discover.asset.base.identity import Passport
 from discover.core.dstruct import DataClass
-from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
 from discover.core.flow import PhaseDef, StageDef
 
@@ -37,7 +37,6 @@ from discover.core.flow import PhaseDef, StageDef
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
 class SourceDataConfig(DataClass):
-    dftype: DFType
     file_format: FileFormat
 
 
@@ -79,8 +78,8 @@ class DatasetPassport(Passport):
     """
 
     asset_type: AssetType = AssetType.DATASET
-    source: Optional[DatasetPassport] = None
-    parent: Optional[DatasetPassport] = None
+    source: Optional[DatasetPassport] = field(default=None)
+    parent: Optional[DatasetPassport] = field(default=None)
 
     def __post_init__(self) -> None:
         """Initializes the `DatasetPassport` with a default description if none is provided."""
@@ -114,8 +113,8 @@ class DatasetPassport(Passport):
         created: datetime,
         version: str,
         creator: Optional[str] = None,
-        source: Optional[DatasetPassport] = None,
-        parent: Optional[DatasetPassport] = None,
+        source: Optional[DatasetPassport] = field(default=None),
+        parent: Optional[DatasetPassport] = field(default=None),
     ) -> DatasetPassport:
         """
         Factory method to create a new `DatasetPassport` instance.
