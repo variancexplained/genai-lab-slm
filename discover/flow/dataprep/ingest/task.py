@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:54:25 am                                              #
-# Modified   : Thursday January 2nd 2025 08:22:12 pm                                               #
+# Modified   : Saturday January 4th 2025 08:28:35 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -20,7 +20,6 @@
 
 
 import pandas as pd
-import pytz
 from pandarallel import pandarallel
 
 from discover.flow.base.task import Task
@@ -211,46 +210,9 @@ class ConvertDateTimeUTC(Task):
         Returns:
             pd.DataFrame: The DataFrame with the converted column values in UTC.
         """
-        data[self._column] = data[self._column].parallel_apply(self._convert_to_utc)
+        data[self._column] = data[self._column].parallel_apply(self._localize_dt)
         return data
 
-    def _convert_to_utc(self, ts):
-        """
-        Converts a single timestamp to UTC. Handles both naive and aware timestamps,
-        and adjusts for non-existent and ambiguous times during Daylight Saving Time (DST) transitions.
-
-        Args:
-            ts (pd.Timestamp): The timestamp to convert.
-
-        Returns:
-            pd.Timestamp: The converted timestamp in UTC.
-
-        Raises:
-            pytz.NonExistentTimeError: Raised when a timestamp does not exist due to DST transition.
-            pytz.AmbiguousTimeError: Raised when a timestamp is ambiguous during the end of DST.
-        """
-        # Check if the timestamp is a datetime
-        if isinstance(ts, pd.Timestamp):
-            # If tzinfo is not None, the timestamp is aware
-            if ts.tzinfo is not None:
-                # If it's already timezone-aware, convert directly to UTC
-                return ts.astimezone(pytz.utc)
-            else:
-                # If the timestamp is naive, localize to the specified timezone and then convert to UTC
-                local_tz = pytz.timezone(self._timezone)
-                try:
-                    # Localize the naive timestamp to the timezone and convert to UTC
-                    localized_ts = local_tz.localize(ts, is_dst=None)
-                    return localized_ts.astimezone(pytz.utc)
-                except pytz.NonExistentTimeError:
-                    # Handle non-existent time during DST transition (e.g., 2:30 AM in a timezone that skips this time)
-                    # Adjust by adding 1 hour and then converting to UTC
-                    adjusted_ts = ts + pd.Timedelta(hours=1)
-                    localized_ts = local_tz.localize(adjusted_ts, is_dst=None)
-                    return localized_ts.astimezone(pytz.utc)
-                except pytz.AmbiguousTimeError:
-                    # Handle ambiguous time during DST end (e.g., 1:30 AM occurs twice)
-                    return local_tz.localize(ts, is_dst=False).astimezone(pytz.utc)
-        else:
-            # If ts is not a valid timestamp, return it as is
-            return ts
+    def _localize_dt(self, dt):
+        ts = dt.tz_localize(self._timezone, nonexistent="shift_forward")
+        return pd.to_datetime(ts, unit="us")

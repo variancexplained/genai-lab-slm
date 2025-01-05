@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Friday January 3rd 2025 01:05:00 am                                                 #
+# Modified   : Saturday January 4th 2025 06:31:49 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,38 +23,16 @@ from enum import Enum
 
 # ------------------------------------------------------------------------------------------------ #
 class StageDef(Enum):
-    """Base class describing stage enums."""
+    """Defines all workflow stages."""
 
-
-# ------------------------------------------------------------------------------------------------ #
-class DataPrepStageDef(StageDef):
-
+    # Data prep phase
     RAW = ("raw", 0, "Raw Data Stage")
     INGEST = ("ingest", 1, "Data Ingestion Stage")
     DQC = ("dqc", 2, "Data Quality Check Stage")
     SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")
-
-    @classmethod
-    def from_value(cls, value) -> DataPrepStageDef:
-        """Finds the enum member based on a given value"""
-        for member in cls:
-            if member.value == value:
-                return member
-        raise ValueError(f"No matching {cls.__name__} for value: {value}")
-
-    def __new__(cls, name: str, id: str, label: str):
-        obj = object.__new__(cls)
-        obj._value_ = name
-        obj.id = id
-        obj.label = label
-        return obj
-
-
-# ------------------------------------------------------------------------------------------------ #
-class DataEnrichmentStageDef(StageDef):
-
+    # Enrichment Phase
     TQA = ("tqa", 0, "Text Quality Analysis")
     SENTIMENT = ("sentiment", 1, "Sentiment Classification Stage")
     ASPECT = ("aspect", 2, "Aspect Extraction Stage")
@@ -65,7 +43,7 @@ class DataEnrichmentStageDef(StageDef):
     SEGMENTATION = ("segmentation", 7, "User Segmentation Stage")
 
     @classmethod
-    def from_value(cls, value) -> DataEnrichmentStageDef:
+    def from_value(cls, value) -> StageDef:
         """Finds the enum member based on a given value"""
         for member in cls:
             if member.value == value:
@@ -81,29 +59,7 @@ class DataEnrichmentStageDef(StageDef):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class ModelStageDef(StageDef):
-
-    FINETUNING = ("fine_tuning", "00_fine_tuning", "Model Fine-Tuning Stage")
-    DEVELOPMENT = ("development", "01_development", "Model Development Stage")
-
-    @classmethod
-    def from_value(cls, value) -> ModelStageDef:
-        """Finds the enum member based on a given value"""
-        for member in cls:
-            if member.value == value:
-                return member
-        raise ValueError(f"No matching {cls.__name__} for value: {value}")
-
-    def __new__(cls, name: str, id: str, label: str):
-        obj = object.__new__(cls)
-        obj._value_ = name
-        obj.id = id
-        obj.label = label
-        return obj
-
-
-# ------------------------------------------------------------------------------------------------ #
-class TestStageDef(StageDef):
+class TestStageDef(Enum):
     UNIT_TEST = ("unit", 0, "Unit Testing")
     INTEGRATION_TEST = ("integration", 1, "Integration Testing")
     FUNCTIONAL_TEST = ("functional", 2, "Functional Testing")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Friday January 3rd 2025 06:59:47 am                                                 #
+# Modified   : Saturday January 4th 2025 08:29:59 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,6 +22,7 @@ from __future__ import annotations
 from typing import Dict, List
 
 from discover.asset.dataset.builder import DatasetBuilder
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
 from discover.flow.base.task import Task
 from discover.flow.dataprep.ingest.stage import IngestStage
@@ -46,6 +47,9 @@ class IngestStageBuilder(StageBuilder):
         _config (dict): Configuration read from the config reader.
     """
 
+    __PHASE = PhaseDef.DATAPREP
+    __STAGE = StageDef.INGEST
+
     def __init__(self) -> None:
         """
         Initializes the IngestStageBuilder with default settings and task configuration.
@@ -59,7 +63,9 @@ class IngestStageBuilder(StageBuilder):
         self._newlines = None
         self._convert_datetime_utc = None
 
-        self._config = self._get_task_config()
+        self._task_config = self._get_config(
+            phase=self.__PHASE, stage=self.__STAGE, config="tasks"
+        )
 
     def reset(self) -> None:
         super().reset()
@@ -91,9 +97,9 @@ class IngestStageBuilder(StageBuilder):
         """
 
         if from_config:
-            self._source_filepath = self._get_source_filepath()
+            self._source_config = self._get_source_config()
         else:
-            self._source_filepath = filepath
+            self._source_config = {"filepath": filepath}
         return self
 
     def encoding(self) -> IngestStageBuilder:
@@ -103,7 +109,7 @@ class IngestStageBuilder(StageBuilder):
         Returns:
             IngestStageBuilder: The builder instance for method chaining.
         """
-        self._encoding = self._config["encoding"]
+        self._encoding = self._task_config["encoding"]
         return self
 
     def datatypes(self) -> IngestStageBuilder:
@@ -113,7 +119,7 @@ class IngestStageBuilder(StageBuilder):
         Returns:
             IngestStageBuilder: The builder instance for method chaining.
         """
-        self._datatypes = self._config["datatypes"]
+        self._datatypes = self._task_config["datatypes"]
         return self
 
     def newlines(self) -> IngestStageBuilder:
@@ -123,7 +129,7 @@ class IngestStageBuilder(StageBuilder):
         Returns:
             IngestStageBuilder: The builder instance for method chaining.
         """
-        self._newlines = self._config["newlines"]
+        self._newlines = self._task_config["newlines"]
         return self
 
     def convert_datetime_utc(self) -> IngestStageBuilder:
@@ -133,7 +139,7 @@ class IngestStageBuilder(StageBuilder):
         Returns:
             IngestStageBuilder: The builder instance for method chaining.
         """
-        self._convert_datetime_utc = self._config["convert_datetime_utc"]
+        self._convert_datetime_utc = self._task_config["convert_datetime_utc"]
         return self
 
     def build(self) -> IngestStageBuilder:
@@ -147,7 +153,7 @@ class IngestStageBuilder(StageBuilder):
         self._validate()
         self._tasks = self._build_tasks()
         self._stage = IngestStage(
-            source_filepath=self._source_filepath,
+            source_config=self._source_config,
             tasks=self._tasks,
             state=self._state,
             repo=self._repo,
@@ -166,7 +172,6 @@ class IngestStageBuilder(StageBuilder):
         tasks.append(self._task_builder.build(self._encoding))
         tasks.append(self._task_builder.build(self._datatypes))
         tasks.append(self._task_builder.build(self._newlines))
-        tasks.append(self._task_builder.build(self._convert_datetime_utc))
         return tasks
 
     def _validate(self) -> None:
@@ -181,7 +186,7 @@ class IngestStageBuilder(StageBuilder):
         """
         super()._validate()
         errors = []
-        if not isinstance(self._source_filepath, str):
+        if not isinstance(self._source_config, Dict):
             errors.append("Source filepath is required for the IngestStage.")
         if self._encoding is None:
             errors.append("The encoding step is required for the IngestStage.")
@@ -189,46 +194,12 @@ class IngestStageBuilder(StageBuilder):
             errors.append("The datatypes step is required for the IngestStage.")
         if self._newlines is None:
             errors.append("The newlines removal step is required for the IngestStage.")
-        if self._convert_datetime_utc is None:
-            errors.append(
-                "The convert_datetime_utc step is required for the IngestStage."
-            )
-
         if errors:
             msg = "\n".join(errors)
             self._logger.error(msg)
             raise ValueError(msg)
 
-    def _get_source_filepath(self) -> str:
-        try:
-            return self._config_reader.get_config(section="phases", namespace=False)[
-                "dataprep"
-            ]["stages"]["ingest"]["source_config"]["filepath"]
-        except KeyError as e:
-            msg = f"Configuration Error. Unable to obtain source filepath from config. Check your config.yaml file.\n{e}"
-            self._logger.error(msg)
-            raise RuntimeError(msg)
-        except Exception as e:
-            msg = f"Unrecognized error occurred while accessing the source file configuration.\n{e}"
-            self._logger.error(msg)
-            raise RuntimeError(msg)
-
-    def _get_task_config(self) -> Dict[str, Dict[str, str]]:
-        """
-        Retrieves the configuration for tasks in the Ingest stage from the config reader.
-
-        Returns:
-            Dict[str, Dict[str, str]]: The task configuration dictionary.
-        """
-        try:
-            return self._config_reader.get_config(section="phases", namespace=False)[
-                "dataprep"
-            ]["stages"]["ingest"]["tasks"]
-        except KeyError as e:
-            msg = f"Configuration Error. Unable to obtain task configurations from config. Check your config.yaml file.\n{e}"
-            self._logger.error(msg)
-            raise RuntimeError(msg)
-        except Exception as e:
-            msg = f"Unrecognized error occurred while accessing the task configuration.\n{e}"
-            self._logger.error(msg)
-            raise RuntimeError(msg)
+    def _get_source_config(self) -> str:
+        return self._get_config(
+            phase=self.__PHASE, stage=self.__STAGE, config="source_config"
+        )

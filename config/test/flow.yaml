@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Thursday January 2nd 2025 11:33:57 pm                                               #
+# Modified   : Saturday January 4th 2025 05:50:38 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ phases:
           name: review
           dftype: pandas
           file_format: parquet
-        destination_config:
+        target_config:
           asset_type: dataset
           phase: enrichment
           stage: sentiment

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Thursday January 2nd 2025 06:41:19 am                                               #
+# Modified   : Saturday January 4th 2025 11:59:30 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -40,6 +40,7 @@ class DFType(Enum):
 
     PANDAS = "pandas"
     SPARK = "spark"
+    SPARKNLP = "sparknlp"
 
     @classmethod
     def from_value(cls, value) -> DFType:

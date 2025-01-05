@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Thursday January 2nd 2025 06:46:18 am                                               #
+# Modified   : Saturday January 4th 2025 11:52:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -211,15 +211,15 @@ class FileTypeDetector:
         """Returns the fallback if unable to determine filetype using magic number method"""
         if "parquet" in filepath:
             msg = "Based on the filename, we are inferring a `parquet` file."
-            self._logger.info(msg)
+            self._logger.debug(msg)
             return "parquet"
         elif "csv" in filepath:
             msg = "Based on the filename, we are inferring a `csv` file."
-            self._logger.info(msg)
+            self._logger.debug(msg)
             return "csv"
         else:
             msg = "Unable to determine file type. We're assuming parquet."
-            self._logger.info(msg)
+            self._logger.debug(msg)
             return "parquet"
 
 

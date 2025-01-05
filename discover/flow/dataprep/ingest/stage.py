@@ -11,81 +11,81 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Friday January 3rd 2025 07:23:51 am                                                 #
+# Modified   : Saturday January 4th 2025 11:48:28 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Data Ingestion Stage Module"""
-from typing import List, Union
+from typing import Dict, List, Optional
 
-import pandas as pd
-from pyspark.sql import DataFrame
+from pyspark.sql import SparkSession
 
 from discover.asset.dataset.builder import DatasetBuilder, DatasetPassportBuilder
 from discover.asset.dataset.dataset import Dataset
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.dtypes import DFType
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task
 from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
 
 
+# ------------------------------------------------------------------------------------------------ #
 class IngestStage(Stage):
+
+    __PHASE = PhaseDef.DATAPREP
+    __STAGE = StageDef.INGEST
+    __DFTYPE = DFType.PANDAS
+
     def __init__(
         self,
-        source_filepath: str,
+        source_config: Dict[str, str],
         tasks: List[Task],
         state: FlowState,
         repo: DatasetRepo,
         dataset_builder: DatasetBuilder,
+        spark: Optional[SparkSession] = None,
     ) -> None:
         super().__init__(
-            tasks=tasks, dataset_builder=dataset_builder, state=state, repo=repo
+            source_config=source_config,
+            tasks=tasks,
+            state=state,
+            repo=repo,
+            dataset_builder=dataset_builder,
+            spark=spark,
         )
-        self._source_filepath = source_filepath
 
-    def get_source_data(self) -> Dataset:
+    @property
+    def phase(self) -> PhaseDef:
+        return self.__PHASE
+
+    @property
+    def stage(self) -> StageDef:
+        return self.__STAGE
+
+    @property
+    def dftype(self) -> DFType:
+        return self.__DFTYPE
+
+    def get_source_dataset(self, **kwargs) -> Dataset:
         """Logic executed prior at the onset of stage execution"""
+        source_phase = PhaseDef.from_value(self._source_config["phase"])
+        source_stage = StageDef.from_value(self._source_config["stage"])
         passport = (
             DatasetPassportBuilder()
-            .phase(PhaseDef.DATAPREP)
-            .stage(DataPrepStageDef.RAW)
+            .phase(source_phase)
+            .stage(source_stage)
             .creator(self.__class__.__name__)
             .name("reviews")
             .build()
             .passport
         )
         source = (
-            self._dataset_builder.from_source_filepath(self._source_filepath)
+            self._dataset_builder.from_file(self._source_config)
             .passport(passport)
-            .as_pandas()
             .to_parquet()
             .build()
             .dataset
         )
         return source
-
-    def save_target_data(self, data: Union[pd.DataFrame, DataFrame]) -> Dataset:
-        """Logic executed after stage execution"""
-        passport = (
-            DatasetPassportBuilder()
-            .phase(PhaseDef.DATAPREP)
-            .stage(DataPrepStageDef.INGEST)
-            .source(self._source.passport)
-            .creator(self.__class__.__name__)
-            .name("reviews")
-            .build()
-            .passport
-        )
-        target = (
-            self._dataset_builder.from_dataframe(data)
-            .passport(passport)
-            .as_pandas()
-            .to_parquet()
-            .build()
-            .dataset
-        )
-        self._repo.add(asset=target)
-        self._state.create(passport=target.passport)
-        return target

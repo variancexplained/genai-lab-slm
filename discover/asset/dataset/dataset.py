@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Friday January 3rd 2025 03:14:47 am                                                 #
+# Modified   : Saturday January 4th 2025 09:13:51 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,6 @@ from pyspark.sql import DataFrame
 from discover.analytics.dqa import DQA
 from discover.asset.base.asset import Asset
 from discover.asset.dataset.identity import DatasetPassport
-from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
 from discover.infra.utils.file.info import FileInfo, FileMeta
 from discover.infra.workspace.service import Workspace
@@ -44,7 +43,6 @@ class Dataset(Asset):
         self,
         workspace: Workspace,
         passport: DatasetPassport,
-        dftype: DFType,
         filepath: str,
         file_format: FileFormat,
         dataframe: Union[pd.DataFrame, DataFrame],
@@ -52,7 +50,6 @@ class Dataset(Asset):
     ) -> None:
         super().__init__(passport=DatasetPassport)
         self._passport = passport
-        self._dftype = dftype
         self._filepath = filepath
         self._file_format = file_format
         self._dataframe = dataframe
@@ -122,10 +119,6 @@ class Dataset(Asset):
     @property
     def passport(self) -> DatasetPassport:
         return self._passport
-
-    @property
-    def dftype(self) -> DFType:
-        return self._dftype
 
     @property
     def file_format(self) -> FileFormat:

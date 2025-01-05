@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:42:37 am                                               #
-# Modified   : Monday December 30th 2024 01:29:17 pm                                               #
+# Modified   : Sunday January 5th 2025 12:05:51 am                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -55,5 +55,5 @@ class IDGen:
             raise ValueError("All arguments must be provided and non-empty.")
 
         version = self._version_manager.get_next_version(phase=phase, stage=stage)
-        name = f"{asset_type.value}_{name}_{version}"
+        name = f"{asset_type.value}_{phase.value}_{stage.value}_{name}_{version}"
         return AssetId(name=name, version=version)

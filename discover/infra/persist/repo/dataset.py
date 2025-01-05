@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Friday January 3rd 2025 05:45:23 am                                                 #
+# Modified   : Saturday January 4th 2025 11:47:20 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -66,7 +66,7 @@ class DatasetRepo(AssetRepo):
         """
         return self._dao.count
 
-    def add(self, asset: Asset) -> None:
+    def add(self, asset: Asset, dftype: DFType) -> None:
         """Adds a Dataset asset to the repository.
 
         Args:
@@ -78,7 +78,7 @@ class DatasetRepo(AssetRepo):
             asset.dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
         ):
             self._fao.create(
-                dftype=asset.dftype,
+                dftype=dftype,
                 filepath=asset.filepath,
                 file_format=asset.file_format,
                 dataframe=asset.dataframe,
@@ -88,13 +88,21 @@ class DatasetRepo(AssetRepo):
         # Save the Dataset object.
         self._dao.create(asset=asset)
 
-    def get(self, asset_id: str, spark: Optional[SparkSession] = None) -> "Dataset":
+    def get(
+        self,
+        asset_id: str,
+        spark: Optional[SparkSession] = None,
+        dftype: Optional[DFType] = None,
+    ) -> "Dataset":
         """
         Retrieve a Dataset by its asset ID and load its data into memory.
 
         Args:
             asset_id (str): The identifier of the dataset to retrieve.
             spark (Optional[SparkSession]): The Spark session for distributed dataframes.
+            dftype (Optional[DFType]): The dataframe type to return. If not provided, it returns
+                the type designated in the dataset. This allows datasets saved as pandas dataframes to
+                be read using another spark or another dataframe type.
 
         Returns:
             Dataset: The reconstituted dataset with its data loaded.
@@ -104,10 +112,9 @@ class DatasetRepo(AssetRepo):
             of the `Dataset`'s `data` object, ensuring immutability in the public API.
         """
         dataset = self._dao.read(asset_id=asset_id)
+        dftype = dftype or dataset.dftype
 
-        df = self._get_data(
-            filepath=dataset.filepath, dftype=dataset.dftype, spark=spark
-        )
+        df = self._get_data(filepath=dataset.filepath, dftype=dftype, spark=spark)
         setattr(dataset, "_dataframe", df)
         return dataset
 

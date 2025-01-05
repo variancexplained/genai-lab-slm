@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Monday December 30th 2024 02:40:22 am                                               #
+# Modified   : Saturday January 4th 2025 04:49:59 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -44,8 +44,11 @@ def stage_logger(func):
         logger = logging.getLogger(f"{func.__qualname__}")
 
         try:
+            # Format stage title
+            dt = dt4mtr.to_HTTP_format(dt=datetime.now())
+            stage_title = f"{self.stage.label} {dt}"
             # Print title and dataframe header
-            printer.print_title(title=self.stage.label)
+            printer.print_title(title=stage_title)
             # Formatting the current time using the date formatter in HTTP format.
             # This is logged with the message indicating the start of the method.
             start = datetime.now()

@@ -4,20 +4,20 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/stage/data_prep/quality.py                                           #
+# Filename   : /discover/archive/flow/stage/data_prep/quality.py                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday November 22nd 2024 12:15:07 am                                               #
-# Modified   : Friday December 27th 2024 05:21:00 pm                                               #
+# Modified   : Saturday January 4th 2025 06:17:53 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Stage Module"""
-from discover.core.flow import DataPrepStageDef, PhaseDef
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.stage.base import DataPrepStage
 
 
@@ -26,13 +26,13 @@ class DataQualityStage(DataPrepStage):
     """
     Stage for cleaning data in the data preparation pipeline.
 
-    This class inherits from `DataPrepStageDef` and focuses on data cleaning tasks
+    This class inherits from `StageDef` and focuses on data cleaning tasks
     to ensure data quality and consistency before further processing. It sets up
     the configuration and execution logic needed for data cleaning.
 
     Args:
         phase (PhaseDef): The phase of the data pipeline.
-        stage (DataPrepStageDef): The specific stage within the data pipeline.
+        stage (StageDef): The specific stage within the data pipeline.
         source_config (dict): Configuration for the data source.
         destination_config (dict): Configuration for the data destination.
         force (bool, optional): Whether to force execution, even if the output already
@@ -43,7 +43,7 @@ class DataQualityStage(DataPrepStage):
     def __init__(
         self,
         phase: PhaseDef,
-        stage: DataPrepStageDef,
+        stage: StageDef,
         source_config: dict,
         destination_config: dict,
         force: bool = False,

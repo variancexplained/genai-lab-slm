@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:33:59 am                                              #
-# Modified   : Thursday January 2nd 2025 05:46:19 pm                                               #
+# Modified   : Saturday January 4th 2025 06:17:53 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -36,7 +36,7 @@ class Task(ABC):
 
     Args:
         phase (PhaseDef): The phase of the data pipeline.
-        stage (DataPrepStageDef): The specific stage within the data pipeline.
+        stage (StageDef): The specific stage within the data pipeline.
 
     Methods:
     --------

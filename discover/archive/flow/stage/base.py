@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Friday January 3rd 2025 01:01:17 am                                                 #
+# Modified   : Saturday January 4th 2025 06:18:07 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -31,13 +31,7 @@ from discover.asset.base.atype import AssetType
 from discover.container import DiscoverContainer
 from discover.core.dataset import Dataset, DatasetFactory, DFType
 from discover.core.file import FileFormat
-from discover.core.flow import (
-    DataEnrichmentStageDef,
-    DataPrepStageDef,
-    ModelStageDef,
-    PhaseDef,
-    StageDef,
-)
+from discover.core.flow import DataStageDef, ModelStageDef, PhaseDef, StageDef
 from discover.flow.base.task import Task, TaskBuilder
 from discover.infra.exception.config import (
     DatasetConfigurationException,
@@ -124,7 +118,7 @@ class Stage(ABC):
         """Returns the specific stage within the pipeline.
 
         Returns:
-            DataPrepStageDef: The stage associated with this instance.
+            StageDef: The stage associated with this instance.
         """
         return self._stage
 
@@ -196,7 +190,7 @@ class Stage(ABC):
             **kwargs: Additional keyword arguments for extended functionality.
 
         Returns:
-            Stage: An instance of DataPrepStageDef.
+            Stage: An instance of StageDef.
 
         Raises:
             ValueError: If a required key is missing from the configuration.
@@ -294,9 +288,9 @@ class ConfigDeserializer:
             PhaseConfigurationError: If the phase value is unrecognized.
         """
         if "dataprep" in phase.strip().lower():
-            return DataPrepStageDef.from_value(stage)
+            return StageDef.from_value(stage)
         elif "enrich" in phase.strip().lower():
-            return DataEnrichmentStageDef.from_value(stage)
+            return DataStageDef.from_value(stage)
         elif "model" in phase.strip().lower():
             return ModelStageDef.from_value(stage)
         else:

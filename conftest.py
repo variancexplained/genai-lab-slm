@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday January 3rd 2025 05:38:08 am                                                 #
+# Modified   : Saturday January 4th 2025 07:14:05 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -229,6 +229,14 @@ def workspace(container):
 @pytest.fixture(scope="session")
 def fao(container):
     return container.io.fao()
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                       FLOW STATE                                                 #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def flowstate(container):
+    return container.io.flowstate()
 
 
 # ------------------------------------------------------------------------------------------------ #

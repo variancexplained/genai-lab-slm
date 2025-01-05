@@ -4,20 +4,20 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/stage/enrich/sentiment.py                                            #
+# Filename   : /discover/archive/flow/stage/enrich/sentiment.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 06:17:19 pm                                            #
-# Modified   : Friday December 27th 2024 05:21:00 pm                                               #
+# Modified   : Saturday January 4th 2025 06:18:07 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Sentiment Classification Stage Module"""
-from discover.core.flow import DataEnrichmentStageDef, PhaseDef
+from discover.core.flow import DataStageDef, PhaseDef
 from discover.flow.stage.enrich.base import DataEnrichmentStage
 
 
@@ -28,7 +28,7 @@ class SentimentClassificationStage(DataEnrichmentStage):
 
     Args:
         phase (PhaseDef): The phase of the pipeline to which this stage belongs.
-        stage (DataEnrichmentStageDef): The specific stage identifier within the phase.
+        stage (DataStageDef): The specific stage identifier within the phase.
         source_config (dict): Configuration for the source dataset, including input paths and schema details.
         destination_config (dict): Configuration for the destination dataset, specifying where enriched data will be saved.
         force (bool, optional): If True, forces the stage to re-run even if outputs already exist. Defaults to False.
@@ -38,7 +38,7 @@ class SentimentClassificationStage(DataEnrichmentStage):
     def __init__(
         self,
         phase: PhaseDef,
-        stage: DataEnrichmentStageDef,
+        stage: DataStageDef,
         source_config: dict,
         destination_config: dict,
         force: bool = False,

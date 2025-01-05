@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 07:42:03 pm                                               #
-# Modified   : Thursday January 2nd 2025 06:46:18 am                                               #
+# Modified   : Saturday January 4th 2025 06:17:53 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,12 +26,12 @@ from pydantic.dataclasses import dataclass
 
 from discover.core.dstruct import DataClass
 from discover.core.flow import (
-    DataPrepStageDef,
-    EDADataPrepStageDef,
-    ModelingDataPrepStageDef,
-    OpportunityDataPrepStageDef,
+    EDAStageDef,
+    ModelingStageDef,
+    OpportunityStageDef,
     Phase,
-    SentimentDataPrepStageDef,
+    SentimentStageDef,
+    StageDef,
 )
 
 
@@ -40,12 +40,12 @@ from discover.core.flow import (
 class Profile(DataClass):
     phase: Phase  # Phase i.e. DataPrep, Analysis
     stage: Union[
-        DataPrepStageDef,
+        StageDef,
         Phase,
-        EDADataPrepStageDef,
-        ModelingDataPrepStageDef,
-        SentimentDataPrepStageDef,
-        OpportunityDataPrepStageDef,
+        EDAStageDef,
+        ModelingStageDef,
+        SentimentStageDef,
+        OpportunityStageDef,
     ]  # Stage within Phase, i.e. DQA
     task: str  # Class name for the task to which the context applies.
     start_time: datetime  # Task start time

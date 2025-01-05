@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday January 4th 2025 04:18:13 pm                                               #
+# Modified   : Saturday January 4th 2025 11:44:17 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from __future__ import annotations
 import inspect
 import logging
 from datetime import datetime
-from typing import Optional, Union
+from typing import Dict, Optional, Union
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
@@ -59,7 +59,6 @@ class DatasetBuilder(AssetBuilder):
         self._dataframe = None
         self._dataset = None
         self._filepath = None
-        self._dftype = None
         self._file_format = None
         self._source_filepath = None
         self._source_file_format = None
@@ -77,7 +76,6 @@ class DatasetBuilder(AssetBuilder):
         self._dataframe = None
         self._dataset = None
         self._filepath = None
-        self._dftype = None
         self._file_format = None
         self._source_filepath = None
         self._source_file_format = None
@@ -111,9 +109,7 @@ class DatasetBuilder(AssetBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def from_source_filepath(
-        self, filepath: str, file_format: FileFormat = FileFormat.PARQUET
-    ) -> DatasetBuilder:
+    def from_file(self, config: Dict[str, str]) -> DatasetBuilder:
         """
         Sets the source filepath, format, and DataFrame type.
 
@@ -124,8 +120,9 @@ class DatasetBuilder(AssetBuilder):
         Returns:
             DatasetBuilder: The current builder instance for chaining.
         """
-        self._source_filepath = filepath
-        self._source_file_format = file_format
+        self._source_filepath = config["filepath"]
+        self._source_file_format = FileFormat.from_value(config["file_format"])
+        self._source_dftype = DFType.from_value(config["dftype"])
         return self
 
     # -------------------------------------------------------------------------------------------- #
@@ -142,34 +139,6 @@ class DatasetBuilder(AssetBuilder):
             DatasetBuilder: The current builder instance for chaining.
         """
         self._dataframe = dataframe
-        if isinstance(dataframe, DataFrame):
-            self._dftype = DFType.SPARK
-        else:
-            self._dftype = DFType.PANDAS
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                 DATAFRAME TYPE                                               #
-    # -------------------------------------------------------------------------------------------- #
-    def as_pandas(self) -> DatasetBuilder:
-        """
-        Sets the dataframe type to pandas
-
-        Returns:
-            DatasetBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.PANDAS
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def as_spark(self) -> DatasetBuilder:
-        """
-        Sets the dataframe type to spark
-
-        Returns:
-            DatasetBuilder: The current builder instance for chaining.
-        """
-        self._dftype = DFType.SPARK
         return self
 
     # -------------------------------------------------------------------------------------------- #
@@ -227,25 +196,12 @@ class DatasetBuilder(AssetBuilder):
         self._dataset = Dataset(
             workspace=self._workspace,
             passport=self._passport,
-            dftype=self._dftype,
             filepath=self._filepath,
             file_format=self._file_format,
             dataframe=self._dataframe,
         )
 
         return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def _get_dftype(self) -> str:
-        """Returns the DataFrame type `dftype` of the DataFrame"""
-        if isinstance(self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame)):
-            return DFType.PANDAS
-        elif isinstance(self._dataframe, DataFrame):
-            return DFType.SPARK
-        else:
-            msg = f"Invalid DataFrame type. Expected a pandas or spark DataFrame object. Received a {type(self._dataframe)} type."
-            self._logger.error(msg)
-            raise TypeError(msg)
 
     # -------------------------------------------------------------------------------------------- #
     def _get_filepath(self) -> str:
@@ -267,11 +223,11 @@ class DatasetBuilder(AssetBuilder):
     # -------------------------------------------------------------------------------------------- #
     def _read_data(self) -> Union[pd.DataFrame, DataFrame]:
 
-        if self._dftype == DFType.SPARK:
+        if self._source_dftype == DFType.SPARK:
             try:
                 return self._fao.read(
                     filepath=self._source_filepath,
-                    dftype=self._dftype,
+                    dftype=self._source_dftype,
                     spark=self._spark,
                 )
             except Exception as e:
@@ -279,7 +235,9 @@ class DatasetBuilder(AssetBuilder):
                 self._logger.error(msg)
                 raise Exception(msg) from e
         else:
-            return self._fao.read(filepath=self._source_filepath, dftype=self._dftype)
+            return self._fao.read(
+                filepath=self._source_filepath, dftype=self._source_dftype
+            )
 
     # -------------------------------------------------------------------------------------------- #
     def _validate(self) -> None:
@@ -290,10 +248,6 @@ class DatasetBuilder(AssetBuilder):
             errors.append(
                 f"File format must be a FileFormat type. Received a {type(self._file_format)} type."
             )
-
-        # Validate dataframe format
-        if not isinstance(self._dftype, DFType):
-            errors.append("DataFrame type `dftype` is required for the DatasetBuildr.")
 
         # Validate the target passport before performing checks that depend upon valid passport.
         if not isinstance(self._passport, DatasetPassport):
@@ -306,10 +260,6 @@ class DatasetBuilder(AssetBuilder):
             errors.append(
                 "Either a source filepath or a source dataframe must be provided to the DatasetBuilder."
             )
-
-        # Ensure spark session is provided for spark dataframes
-        if self._dftype == DFType.SPARK and self._spark is None:
-            errors.append("For spark dataframes, a spark context must be provided.")
 
         # Ensure dataframe is a valid type
         if self._dataframe is not None:
@@ -354,7 +304,6 @@ class DatasetPassportBuilder(AssetBuilder):
         self._source: Optional[Dataset] = None
         self._parent: Optional[DatasetPassport] = None
         self._file_format = FileFormat.PARQUET
-        self._dftype: Optional[DatasetPassport] = None
         self._dataset_passport: Optional[DatasetPassport] = None
 
     @property

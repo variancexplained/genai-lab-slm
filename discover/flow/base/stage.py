@@ -11,115 +11,127 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Friday January 3rd 2025 06:43:47 am                                                 #
+# Modified   : Saturday January 4th 2025 11:48:58 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 import logging
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Dict, List, Optional
 
 import pandas as pd
 from git import Union
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, SparkSession
 
 from discover.archive.flow.task.base import Task
-from discover.asset.dataset.builder import DatasetBuilder
+from discover.asset.dataset.builder import DatasetBuilder, DatasetPassportBuilder
 from discover.asset.dataset.dataset import Dataset
+from discover.core.dtypes import DFType
+from discover.core.flow import PhaseDef, StageDef
 from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
+from discover.infra.service.logging.stage import stage_logger
 
 
 # ------------------------------------------------------------------------------------------------ #
 class Stage(ABC):
-    """
-    Abstract base class for executing a stage in a data processing pipeline.
-
-    A `Stage` represents a transformation process where a `source` dataset is processed
-    through a series of `tasks`, resulting in a `target` dataset. The class also handles
-    metadata management and persistence of datasets via a repository and flow state.
-
-    Args:
-        source (Dataset): The input dataset to be processed.
-        tasks (List[Task]): A list of tasks to execute sequentially on the source dataset.
-        target (Dataset): The output dataset to store the results after processing.
-        state (FlowState): The flow state for managing and persisting metadata (e.g., passports).
-        repo (DatasetRepo): Repository for storing the resulting dataset.
-
-    Attributes:
-        _source (Dataset): The input dataset that will be processed in the stage.
-        _tasks (List[Task]): The list of tasks that define the processing steps.
-        _target (Dataset): The output dataset that will hold the final processed data.
-        _state (FlowState): The flow state for managing and persisting metadata such as passports.
-        _repo (DatasetRepo): The repository used to persist the target dataset.
-        _logger (Logger): Logger instance for capturing execution details and errors.
-
-    Methods:
-        run() -> Dataset:
-            Executes the processing pipeline by applying all tasks to the source dataset,
-            updating the target dataset, and persisting both the dataset and metadata.
-    """
 
     def __init__(
         self,
+        source_config: Dict[str, str],
         tasks: List[Task],
         state: FlowState,
         repo: DatasetRepo,
         dataset_builder: DatasetBuilder,
+        spark: Optional[SparkSession] = None,
     ) -> None:
-        """Initializes the Stage with source, tasks, target, state, and repository."""
+        self._source_config = source_config
         self._tasks = tasks
         self._state = state
         self._repo = repo
         self._dataset_builder = dataset_builder
+        self._spark = spark
+
+        self._source = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
+    @property
+    @abstractmethod
+    def phase(self) -> PhaseDef:
+        pass
+
+    @property
+    @abstractmethod
+    def stage(self) -> StageDef:
+        pass
+
+    @property
+    @abstractmethod
+    def dftype(self) -> DFType:
+        pass
+
+    @stage_logger
     def run(self) -> Dataset:
-        """
-        Executes the processing pipeline by applying all tasks to the source dataset,
-        updating the target dataset, and persisting both the dataset and metadata.
-
-        The method performs the following steps:
-        1. Executes each task sequentially, applying them to the source dataset.
-        2. Updates the target dataset with the final processed data.
-        3. Persists the target dataset in the repository.
-        4. Persists the passport associated with the target dataset in the flow state.
-
-        Args:
-            None
-
-        Returns:
-            Dataset: The processed target dataset, updated and persisted.
-
-        Raises:
-            RuntimeError: If any task execution fails, an error is logged and the exception is raised.
-        """
         # Step 1: Get source data
-        self._source = self.get_source_data()
+        source = self.get_source_dataset()
 
         # Step 2: Execute all tasks sequentially
-        data = self._source.dataframe
+        dataframe = source.dataframe
         for task in self._tasks:
             try:
-                data = task.run(data)
+                dataframe = task.run(dataframe)
             except Exception as e:
                 msg = f"Error in task {task.__class__.__name__}: {e}"
                 self._logger.error(msg)
                 raise RuntimeError(msg)
 
-        # Step 4: Save target data
-        self._target = self.save_target_data(data)
+        # Step 3: Save target data
+        self._target = self.save_target_dataset(source=source, dataframe=dataframe)
 
         return self._target
 
-    @abstractmethod
-    def get_source_data(self) -> Dataset:
-        """Logic executed prior at the onset of stage execution"""
-        pass
+    def get_source_dataset(self) -> Dataset:
+        """Obtrains the source data from the state and repo
 
-    @abstractmethod
-    def save_target_data(self, data: Union[pd.DataFrame, DataFrame]) -> Dataset:
+        Args:
+            dftype (Optional[DFType]): The dataframe type to return. If not provided,
+                it will return the dataframe type designated in the dataset object.
+                This allows datasets saved as pandas dataframes to
+                be read using another spark or another dataframe type.
+        """
+        # Extracts the phase and stage from the source configuration
+        source_phase = PhaseDef.from_value(self._source_config["phase"])
+        source_stage = StageDef.from_value(self._source_config["stage"])
+        # Reads the source passport from the flow state.
+        passport = self._state.read(phase=source_phase, stage=source_stage)
+        # Obtains the source dataset from the repository.
+        return self._repo.get(
+            asset_id=passport.asset_id, spark=self._spark, dftype=self.dftype
+        )
+
+    def save_target_dataset(
+        self, source: Dataset, dataframe: Union[pd.DataFrame, DataFrame]
+    ) -> Dataset:
         """Logic executed after stage execution"""
-        pass
+        passport = (
+            DatasetPassportBuilder()
+            .phase(self.phase)
+            .stage(self.stage)
+            .source(source.passport)
+            .creator(self.__class__.__name__)
+            .name("reviews")
+            .build()
+            .passport
+        )
+        target = (
+            self._dataset_builder.from_dataframe(dataframe)
+            .passport(passport)
+            .to_parquet()
+            .build()
+            .dataset
+        )
+        self._repo.add(asset=target, dftype=self.dftype)
+        self._state.create(passport=target.passport)
+        return target

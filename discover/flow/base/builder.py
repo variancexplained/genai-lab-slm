@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Friday January 3rd 2025 07:02:06 am                                                 #
+# Modified   : Saturday January 4th 2025 09:16:30 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -20,76 +20,47 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import Type
+from typing import Any, Dict, Type
 
 from dependency_injector.wiring import Provide, inject
+from pyspark.sql import SparkSession
 
 from discover.asset.dataset.builder import DatasetBuilder
 from discover.container import DiscoverContainer
+from discover.core.dtypes import DFType
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import TaskBuilder
 from discover.infra.config.flow import FlowConfigReader
 from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
-from discover.infra.service.spark.pool import SparkSessionPool
 
 
 # ------------------------------------------------------------------------------------------------ #
 class StageBuilder(ABC):
-    """
-    Abstract base class for constructing a data processing pipeline stage.
+    """Abstract base class for building stages in a data processing pipeline.
 
-    The `StageBuilder` class facilitates the configuration and construction of a `Stage` object.
-    It manages dependencies for dataset creation, task building, and metadata handling, ensuring
-    all required components are in place before building the stage.
-
-    Args:
-        config_reader_cls (Type[FlowConfigReader], optional): Class responsible for reading flow configurations.
-            Defaults to `FlowConfigReader`.
-        repo (DatasetRepo, optional): Repository used to manage datasets.
-            Defaults to the provided `DiscoverContainer.io.dataset_repo`.
-        state (FlowState, optional): The state managing metadata and flow details.
-            Defaults to the provided `DiscoverContainer.io.flowstate`.
-        dataset_builder_cls (Type[DatasetBuilder], optional): Class used for building datasets.
-            Defaults to `DatasetBuilder`.
-        dataset_builder_from_file_cls (Type[DatasetBuilder], optional): Class used for building datasets from files.
-            Defaults to `DatasetBuilder`.
-        task_builder_cls (Type[TaskBuilder], optional): Class used for building tasks in the pipeline.
-            Defaults to `TaskBuilder`.
+    This class serves as a blueprint for constructing stages, which are integral
+    components of a data processing workflow. It manages configuration reading,
+    dataset handling, flow state management, task building, and Spark session pooling.
 
     Attributes:
-        _config_reader (FlowConfigReader): Instance responsible for reading flow configurations.
-        _repo (DatasetRepo): Repository used to manage datasets.
-        _state (FlowState): Instance responsible for managing metadata and flow states.
-        _dataset_builder (DatasetBuilder): Instance used for constructing datasets.
-        _dataset_builder_from_file (DatasetBuilder): Instance used for building datasets from files.
-        _task_builder (TaskBuilder): Instance used for constructing tasks.
-        _source (Optional[Dataset]): The source dataset for the stage (initially `None`).
-        _source_passport (Optional[DatasetPassport]): The passport for the source dataset (initially `None`).
-        _tasks (List[Task]): A list of tasks for the pipeline (initially empty).
-        _task_configs (List[Any]): Configuration details for tasks (initially empty).
-        _target (Optional[Dataset]): The target dataset for the stage (initially `None`).
-        _target_passport (Optional[DatasetPassport]): The passport for the target dataset (initially `None`).
-        _logger (Logger): Logger instance for tracking stage construction and errors.
+        _config_reader (FlowConfigReader): Instance of the FlowConfigReader class for reading configuration.
+        _repo (DatasetRepo): Repository instance for handling dataset operations.
+        _state (FlowState): The current state of the flow, provided by the container.
+        _dataset_builder (DatasetBuilder): Instance of the DatasetBuilder class for constructing datasets.
+        _task_builder (TaskBuilder): Instance of the TaskBuilder class for creating tasks.
+        _source_config (Optional[dict]): Configuration for the data source, initially set to None.
+        _tasks (List[Any]): List of tasks built by this stage, initially empty.
+        _task_configs (List[dict]): List of configurations for tasks, initially empty.
+        _logger (logging.Logger): Logger for the StageBuilder class, initialized with the class name.
 
-    Methods:
-        stage() -> Stage:
-            Abstract property that, when implemented, returns the constructed `Stage`.
-
-        reset() -> None:
-            Resets the internal state of the builder, clearing all datasets, passports, tasks, and configurations.
-
-        source_passport(passport: DatasetPassport) -> StageBuilder:
-            Sets the source passport for the stage and returns the builder instance for chaining.
-
-        target_passport(passport: DatasetPassport) -> StageBuilder:
-            Sets the target passport for the stage and returns the builder instance for chaining.
-
-        build() -> StageBuilder:
-            Abstract method that must be implemented in subclasses to build the `Stage`.
-
-        _validate() -> None:
-            Validates the passports for the source and target datasets. If they are invalid, raises a `ValueError`.
+    Args:
+        config_reader_cls (Type[FlowConfigReader]): Class responsible for reading the flow configuration.
+        repo (DatasetRepo): Dataset repository provided by the dependency injection container.
+        state (FlowState): Current state of the flow, injected by the container.
+        dataset_builder_cls (Type[DatasetBuilder]): Class responsible for building datasets.
+        task_builder_cls (Type[TaskBuilder]): Class responsible for building tasks.
     """
 
     @inject
@@ -99,25 +70,18 @@ class StageBuilder(ABC):
         repo: DatasetRepo = Provide[DiscoverContainer.io.dataset_repo],
         state: FlowState = Provide[DiscoverContainer.io.flowstate],
         dataset_builder_cls: Type[DatasetBuilder] = DatasetBuilder,
-        dataset_builder_from_file_cls: Type[DatasetBuilder] = DatasetBuilder,
-        spark_session_pool: SparkSessionPool = Provide[
-            DiscoverContainer.spark.session_pool
-        ],
         task_builder_cls: Type[TaskBuilder] = TaskBuilder,
     ) -> None:
         self._config_reader = config_reader_cls()
         self._repo = repo
         self._state = state
         self._dataset_builder = dataset_builder_cls()
-        self._dataset_builder_from_file = dataset_builder_from_file_cls()
-        self._spark_session_pool = spark_session_pool
         self._task_builder = task_builder_cls()
 
-        self._source = None
+        self._source_config = None
+        self._spark = None
         self._tasks = []
         self._task_configs = []
-        self._target = None
-        self._target_passport = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -139,11 +103,47 @@ class StageBuilder(ABC):
 
         This ensures a clean state for the next stage build process.
         """
-        self._source = None
+        self._source_config = None
         self._tasks = []
         self._task_configs = []
-        self._target = None
-        self._target_passport = None
+        self._spark = None
+
+    def spark(self, spark: SparkSession) -> StageBuilder:
+        """
+        Sets the spark session for the buildr
+
+        Args:
+            spark (SparkSession): Spark session.
+
+        Returns:
+            StageBuilder: The current instance of the builder for method chaining.
+        """
+        self._spark = spark
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                 DATAFRAME TYPE                                               #
+    # -------------------------------------------------------------------------------------------- #
+    def as_pandas(self) -> StageBuilder:
+        """
+        Sets the dataframe type to pandas
+
+        Returns:
+            DatasetBuilder: The current builder instance for chaining.
+        """
+        self._dftype = DFType.PANDAS
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def as_spark(self) -> StageBuilder:
+        """
+        Sets the dataframe type to spark
+
+        Returns:
+            DatasetBuilder: The current builder instance for chaining.
+        """
+        self._dftype = DFType.SPARK
+        return self
 
     @abstractmethod
     def build(self) -> StageBuilder:
@@ -166,3 +166,35 @@ class StageBuilder(ABC):
             ValueError: If either the source or target passport is not a valid `DatasetPassport`.
         """
         pass
+
+    def _get_config(
+        self, phase: PhaseDef, stage: StageDef, config: str
+    ) -> Dict[str, Any]:
+        """
+        Retrieves the configuration for the stage source
+
+        Args:
+            phase (PhaseDef): The phase for which the source config is being retrieved
+            stage (StageDef): The stage for which the source config is being retrieved
+            config (str): Either `source_config`, `target_config`, or `tasks`.
+
+        Returns:
+            Dict[str,Dict[str,str]]: Dictionary containing the source configuration
+
+        Raises:
+            KeyError: if the configuration isn't found.
+            Exception: if an unrecognized exception occurred.
+
+        """
+        try:
+            return self._config_reader.get_config(section="phases", namespace=False)[
+                phase.value
+            ]["stages"][stage.value][config]
+        except KeyError as e:
+            msg = f"Configuration Error. Unable to obtain the {config} configuration from phase {phase.value} and stage {stage.value}. Check your config.yaml file.\n{e}"
+            self._logger.error(msg)
+            raise RuntimeError(msg)
+        except Exception as e:
+            msg = f"Unrecognized error occurred while accessing the {config} configuration from phase {phase.value} and stage {stage.value}.\n{e}"
+            self._logger.error(msg)
+            raise RuntimeError(msg)
