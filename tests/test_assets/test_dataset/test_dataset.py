@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 2nd 2025 11:16:12 am                                               #
-# Modified   : Friday January 3rd 2025 03:27:53 am                                                 #
+# Modified   : Thursday January 16th 2025 04:31:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -81,10 +81,10 @@ class TestDataset:  # pragma: no cover
         assert dataset.dftype == DFType.PANDAS
         assert dataset.file_format == FileFormat.CSV
         assert dataset.size > 0
-        assert isinstance(dataset.file_meta, FileMeta)
-        assert isinstance(dataset.file_meta.created, datetime)
-        assert isinstance(dataset.file_meta.accessed, datetime)
-        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file, FileMeta)
+        assert isinstance(dataset.file.created, datetime)
+        assert isinstance(dataset.file.accessed, datetime)
+        assert isinstance(dataset.file.created, datetime)
 
         # Avoid file already exists errors.
         repo = workspace.dataset_repo
@@ -120,10 +120,10 @@ class TestDataset:  # pragma: no cover
         assert dataset.dftype == DFType.PANDAS
         assert dataset.file_format == FileFormat.PARQUET
         assert dataset.size > 0
-        assert isinstance(dataset.file_meta, FileMeta)
-        assert isinstance(dataset.file_meta.created, datetime)
-        assert isinstance(dataset.file_meta.accessed, datetime)
-        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file, FileMeta)
+        assert isinstance(dataset.file.created, datetime)
+        assert isinstance(dataset.file.accessed, datetime)
+        assert isinstance(dataset.file.created, datetime)
 
         # Avoid file already exists errors.
         repo = workspace.dataset_repo
@@ -156,10 +156,10 @@ class TestDataset:  # pragma: no cover
         assert dataset.dftype == DFType.SPARK
         assert dataset.file_format == FileFormat.CSV
         assert dataset.size > 0
-        assert isinstance(dataset.file_meta, FileMeta)
-        assert isinstance(dataset.file_meta.created, datetime)
-        assert isinstance(dataset.file_meta.accessed, datetime)
-        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file, FileMeta)
+        assert isinstance(dataset.file.created, datetime)
+        assert isinstance(dataset.file.accessed, datetime)
+        assert isinstance(dataset.file.created, datetime)
 
         # Avoid file already exists errors.
         repo = workspace.dataset_repo
@@ -194,10 +194,10 @@ class TestDataset:  # pragma: no cover
         assert dataset.dftype == DFType.SPARK
         assert dataset.file_format == FileFormat.PARQUET
         assert dataset.size > 0
-        assert isinstance(dataset.file_meta, FileMeta)
-        assert isinstance(dataset.file_meta.created, datetime)
-        assert isinstance(dataset.file_meta.accessed, datetime)
-        assert isinstance(dataset.file_meta.created, datetime)
+        assert isinstance(dataset.file, FileMeta)
+        assert isinstance(dataset.file.created, datetime)
+        assert isinstance(dataset.file.accessed, datetime)
+        assert isinstance(dataset.file.created, datetime)
 
         # Avoid file already exists errors.
         repo = workspace.dataset_repo

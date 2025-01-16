@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Saturday January 4th 2025 11:47:20 pm                                               #
+# Modified   : Thursday January 16th 2025 05:39:57 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -79,8 +79,8 @@ class DatasetRepo(AssetRepo):
         ):
             self._fao.create(
                 dftype=dftype,
-                filepath=asset.filepath,
-                file_format=asset.file_format,
+                filepath=asset.file.path,
+                file_format=asset.file.format,
                 dataframe=asset.dataframe,
                 overwrite=False,
             )
@@ -166,10 +166,10 @@ class DatasetRepo(AssetRepo):
             does not exist or cannot be identified.
         """
         asset_meta = self.get_metadata(asset_id=asset_id)
-        self._fao.delete(filepath=asset_meta.filepath)
+        self._fao.delete(filepath=asset_meta.file.path)
         self._dao.delete(asset_id=asset_id)
-        self._logger.info(
-            f"Dataset {asset_meta.asset_id}, including its file at {asset_meta.filepath} has been removed from the repository."
+        self._logger.debug(
+            f"Dataset {asset_meta.asset_id}, including its file at {asset_meta.file.path} has been removed from the repository."
         )
 
     def reset(self) -> None:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday December 29th 2024 01:22:15 pm                                               #
-# Modified   : Friday January 3rd 2025 06:03:21 am                                                 #
+# Modified   : Thursday January 16th 2025 04:31:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -108,18 +108,18 @@ class TestDatasetBuilderSparkCSV:  # pragma: no cover
         assert isinstance(dataset.dataframe, DataFrame)
 
         # Evaluate File Info
-        logger.info(dataset.file_meta)
-        assert isinstance(dataset.file_meta, FileMeta)
-        assert isinstance(dataset.file_meta.filepath, str)
-        assert os.path.exists(dataset.file_meta.filepath)
-        assert isinstance(dataset.file_meta.file_type, str)
-        assert dataset.file_meta.file_type == "csv"
-        assert dataset.file_meta.isdir is True
-        assert dataset.file_meta.file_count > 1
-        assert isinstance(dataset.file_meta.created, datetime)
-        assert isinstance(dataset.file_meta.accessed, datetime)
-        assert isinstance(dataset.file_meta.modified, datetime)
-        assert isinstance(dataset.file_meta.size, int)
+        logger.info(dataset.file)
+        assert isinstance(dataset.file, FileMeta)
+        assert isinstance(dataset.file.path, str)
+        assert os.path.exists(dataset.file.path)
+        assert isinstance(dataset.file.format, str)
+        assert dataset.file.format == "csv"
+        assert dataset.file.isdir is True
+        assert dataset.file.file_count > 1
+        assert isinstance(dataset.file.created, datetime)
+        assert isinstance(dataset.file.accessed, datetime)
+        assert isinstance(dataset.file.modified, datetime)
+        assert isinstance(dataset.file.size, int)
         assert dataset.size > 0
 
         # Check the data from repository
@@ -337,18 +337,18 @@ class TestDatasetBuilderSparkPARQUET:  # pragma: no cover
         assert isinstance(dataset.dataframe, DataFrame)
 
         # Evaluate File Info
-        logger.info(dataset.file_meta)
-        assert isinstance(dataset.file_meta, FileMeta)
-        assert isinstance(dataset.file_meta.filepath, str)
-        assert os.path.exists(dataset.file_meta.filepath)
-        assert isinstance(dataset.file_meta.file_type, str)
-        assert dataset.file_meta.file_type == "parquet"
-        assert dataset.file_meta.isdir is True
-        assert dataset.file_meta.file_count > 1
-        assert isinstance(dataset.file_meta.created, datetime)
-        assert isinstance(dataset.file_meta.accessed, datetime)
-        assert isinstance(dataset.file_meta.modified, datetime)
-        assert isinstance(dataset.file_meta.size, int)
+        logger.info(dataset.file)
+        assert isinstance(dataset.file, FileMeta)
+        assert isinstance(dataset.file.path, str)
+        assert os.path.exists(dataset.file.path)
+        assert isinstance(dataset.file.format, str)
+        assert dataset.file.format == "parquet"
+        assert dataset.file.isdir is True
+        assert dataset.file.file_count > 1
+        assert isinstance(dataset.file.created, datetime)
+        assert isinstance(dataset.file.accessed, datetime)
+        assert isinstance(dataset.file.modified, datetime)
+        assert isinstance(dataset.file.size, int)
         assert dataset.size > 0
 
         # Check the data from repository

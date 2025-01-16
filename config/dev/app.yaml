@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Thursday January 2nd 2025 06:08:45 am                                               #
+# Modified   : Thursday January 16th 2025 04:45:56 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -32,9 +32,9 @@ workspace:
   name: Development Workspace
   location: workspace/dev
   metadata:
-    dataset: workspace/dev/metadata/datasets/datasets
-    model: workspace/dev/metadata/models/models
-    experiment: workspace/dev/metadata/experiments/experiments
+    datasets: workspace/dev/metadata/datasets/datasets
+    models: workspace/dev/metadata/models/models
+    experiments: workspace/dev/metadata/experiments/experiments
   files: workspace/dev/files/
   ops:
     version: workspace/dev/ops/version/version

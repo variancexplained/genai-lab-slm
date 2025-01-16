@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 2nd 2025 06:30:50 pm                                               #
-# Modified   : Saturday January 4th 2025 11:55:25 pm                                               #
+# Modified   : Wednesday January 8th 2025 04:07:02 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -52,28 +52,17 @@ class TestDQCStage:  # pragma: no cover
         builder = DataQualityCheckStageBuilder()
         stage = (
             builder.spark(spark)
-            .detect_emails()
-            .detect_phone_numbers()
-            .detect_urls()
-            .detect_non_english_app_names()
-            .detect_non_english_reviews()
+            .detect_privacy_issues()
+            .detect_non_english()
+            .detect_duplication()
+            .detect_invalid_characters()
+            .detect_invalid_values()
             .detect_short_reviews(threshold=3)
-            .detect_duplicate_review_ids()
-            .detect_duplicate_reviews()
-            .detect_duplicate_rows()
-            .detect_accents()
-            .detect_control_chars()
             .detect_elongation(threshold=4, max_elongation=3)
             .detect_excess_special_chars(
                 threshold=0.35, threshold_type="proportion", unit="character"
             )
             .detect_excess_whitespace()
-            .detect_html()
-            .detect_invalid_categories()
-            .detect_invalid_ratings()
-            .detect_invalid_review_dates(
-                range_min=2020, range_max=2024, range_type="year"
-            )
             .detect_repeated_chars(min_repetitions=4)
             .detect_repeated_phrases(
                 threshold=1, threshold_type="count", min_repetitions=2

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Saturday January 4th 2025 09:13:51 pm                                               #
+# Modified   : Thursday January 16th 2025 05:32:36 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,10 +26,12 @@ import pandas as pd
 from pyspark.sql import DataFrame
 
 from discover.analytics.dqa import DQA
+from discover.analytics.summary import DatasetSummarizer
 from discover.asset.base.asset import Asset
 from discover.asset.dataset.identity import DatasetPassport
 from discover.core.file import FileFormat
-from discover.infra.utils.file.info import FileInfo, FileMeta
+from discover.infra.utils.data.info import DataFrameInfo
+from discover.infra.utils.file.info import FileMeta
 from discover.infra.workspace.service import Workspace
 
 # ------------------------------------------------------------------------------------------------ #
@@ -46,15 +48,24 @@ class Dataset(Asset):
         filepath: str,
         file_format: FileFormat,
         dataframe: Union[pd.DataFrame, DataFrame],
-        file_info_cls: Type[FileInfo] = FileInfo,
+        df_info_cls: Type[DataFrameInfo] = DataFrameInfo,
+        file_meta_cls: Type[FileMeta] = FileMeta,
+        summarizer_cls: Type[DatasetSummarizer] = DatasetSummarizer,
     ) -> None:
-        super().__init__(passport=DatasetPassport)
-        self._passport = passport
+        super().__init__(passport=passport)
+        self._workspace = workspace
         self._filepath = filepath
         self._file_format = file_format
         self._dataframe = dataframe
+
         self._file_meta = None
-        self._file_info = file_info_cls()
+        self._info = None
+        self._dqa = None
+        self._summary = None
+
+        self._df_info = df_info_cls()
+        self._file_meta_cls = file_meta_cls
+        self._summarizer = summarizer_cls()
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -93,57 +104,30 @@ class Dataset(Asset):
         return self._passport.asset_id
 
     @property
-    def name(self) -> str:
-        return self._passport.name
-
-    @property
-    def description(self) -> str:
-        return self._passport.description
-
-    @property
-    def version(self) -> str:
-        return self._passport.version
-
-    @property
-    def source(self) -> DatasetPassport:
-        return self._passport.source
-
-    @property
-    def parent(self) -> DatasetPassport:
-        return self._passport.parent
-
-    @property
-    def created(self) -> DatasetPassport:
-        return self._passport.created
-
-    @property
     def passport(self) -> DatasetPassport:
         return self._passport
 
     @property
-    def file_format(self) -> FileFormat:
-        return self._file_format
-
-    @property
-    def filepath(self) -> str:
-        return self._filepath
-
-    @property
-    def size(self) -> int:
-        if not self._file_meta:
-            self._set_file_meta()
-        return self._file_meta.size
-
-    @property
-    def file_meta(self) -> FileMeta:
-        if not self._file_meta:
-            self._set_file_meta()
+    def file(self) -> FileMeta:
+        self._set_file_meta()
         return self._file_meta
 
     @property
+    def info(self) -> pd.DataFrame:
+        if not self._info:
+            self._set_info()
+        return self._info
+
+    @property
+    def summary(self) -> None:
+        self._summarize()
+
+    @property
     def dqa(self) -> DQA:
-        if self._dqa is None:
-            print("This Dataset has no DQA component.")
+        if not self._dqa:
+            msg = "Dataset has no DQA property. Ensure that the Dataset has gone through the Data Quality Assessment Stage. Once complete, pass the Dataset to the Data Quality Analysis class whereby the dqa property is assigned."
+            self._logger.error(msg)
+            return None
         else:
             return self._dqa
 
@@ -167,13 +151,33 @@ class Dataset(Asset):
     def deserialize(self, dataframe: Union[pd.DataFrame, DataFrame]) -> None:
         self._dataframe = dataframe
 
-    def _set_file_meta(self) -> FileMeta:
-        try:
-            self._file_meta = self._file_info.get_file_meta(filepath=self._filepath)
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                "The file does not exist. Either the dataset containing the file has not been persisted."
+    def _set_file_meta(self) -> None:
+        """Sets file metadata if not set or incomplete."""
+        if self._file_meta is None or self._file_meta.size is None:
+            self._file_meta = self._file_meta_cls.create(
+                path=self._filepath, file_format=self._file_format
             )
-        except Exception as e:
-            msg = f"An unexpected error occurred while obtaining file metadata for asset {self._passport.asset_id}.\nFilepath:  {self._filepath}."
-            raise Exception(msg) from e
+
+    def _set_info(self) -> None:
+        """Sets the DataFrame info property"""
+
+        if isinstance(self.dataframe, (pd.DataFrame, pd.core.frame.DataFrame)):
+            self._info = self._df_info.pandas_info(df=self.dataframe)
+        elif isinstance(self.dataframe, DataFrame):
+            self._info = self._df_info.spark_info(df=self.dataframe)
+        else:
+            msg = f"The dataframe member of type {type(self.dataframe)} is not a valid pandas or spark DataFrame object."
+            self._logger.error(msg)
+            raise TypeError(msg)
+
+    def _summarize(self) -> None:
+        """Summarizes the Dataset"""
+
+        if isinstance(self.dataframe, (pd.DataFrame, pd.core.frame.DataFrame)):
+            self._summarizer.summarize_pandas(df=self.dataframe)
+        elif isinstance(self.dataframe, DataFrame):
+            self._summarizer.summarize_spark(df=self.dataframe)
+        else:
+            msg = f"The dataframe member of type {type(self.dataframe)} is not a valid pandas or spark DataFrame object."
+            self._logger.error(msg)
+            raise TypeError(msg)

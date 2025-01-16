@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Saturday January 4th 2025 11:52:02 pm                                               #
+# Modified   : Thursday January 16th 2025 05:21:52 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,11 +22,12 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 from pydantic.dataclasses import dataclass
 
 from discover.core.dstruct import DataClass
+from discover.core.file import FileFormat
 from discover.infra.utils.data.format import format_size
 from discover.infra.utils.date_time.format import ThirdDateFormatter
 
@@ -34,6 +35,202 @@ from discover.infra.utils.date_time.format import ThirdDateFormatter
 d84mtr = ThirdDateFormatter()
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                                  FILE INFO HELPER FUNCTIONS                                      #
+# ------------------------------------------------------------------------------------------------ #
+def get_file_size(self, filepath: str) -> int:
+    """Gets the size of a file in bytes.
+
+    Args:
+        filepath (str): The path to the file.
+
+    Returns:
+        int: The size of the file in bytes.
+    """
+    return os.path.getsize(filepath)
+
+
+# ------------------------------------------------------------------------------------------------ #
+def get_directory_size(directory: str) -> int:
+    """Recursively calculates the total size of a directory in bytes.
+
+    Args:
+        directory (str): The path to the directory.
+
+    Returns:
+        int: The total size of the directory in bytes.
+    """
+    total = 0
+    with os.scandir(directory) as it:
+        for entry in it:
+            if entry.is_file():
+                total += entry.stat().st_size
+            elif entry.is_dir():
+                total += get_directory_size(directory=entry.path)
+    return total
+
+
+# ------------------------------------------------------------------------------------------------ #
+def get_directory_count(directory: str) -> int:
+    """Recursively counts the total number of files and directories in a directory.
+
+    Args:
+        directory (str): The path to the directory.
+
+    Returns:
+        int: The total count of files and directories in the specified directory.
+    """
+    total = 0
+    with os.scandir(directory) as it:
+        for entry in it:
+            if entry.is_file():
+                total += 1
+            elif entry.is_dir():
+                total += get_directory_count(directory=entry.path)
+    return total
+
+
+# ------------------------------------------------------------------------------------------------ #
+def get_size(path: str, in_bytes: bool = True) -> Union[int, str]:
+    """Gets the size of the specified file or directory in a human-readable format.
+
+    Args:
+        path (str): The path to the file or directory.
+        in_bytes (bool): Whether to return size in bytes as integer.
+
+    Returns:
+        Union[int,str]: The size of the file or directory in a formatted string (e.g., '1.23 MB')
+            if in_bytes is False, otherwise an integer is returned.
+
+    Raises:
+        ValueError: If the path is neither a file nor a directory.
+    """
+    if os.path.isfile(path):
+        size = get_file_size(filepath=path)
+    elif os.path.isdir(path):
+        size = get_directory_size(directory=path)
+    else:
+        raise ValueError(f"The path {path} is not valid.")
+    if in_bytes:
+        return size
+    else:
+        return format_size(size_in_bytes=size)
+
+
+# ------------------------------------------------------------------------------------------------ #
+def isdir(filepath: str) -> bool:
+    """Returns True if the filepath is a directory
+
+    Args:
+        filepath (str): The path to the file or directory.
+
+    Returns:
+        True if the filepath is a directory. False otherwise.
+    """
+    return os.path.isdir(filepath)
+
+
+# ------------------------------------------------------------------------------------------------ #
+def get_count(filepath: str) -> int:
+    """Gets the count of items in the specified file or directory.
+
+    Args:
+        filepath (str): The path to the file or directory.
+
+    Returns:
+        int: 1 if the path is a file, or the total number of files and directories
+        in the specified directory (recursively).
+
+    Raises:
+        ValueError: If the filepath is neither a file nor a directory.
+    """
+    if os.path.isfile(filepath):
+        return 1
+    elif os.path.isdir(filepath):
+        return get_directory_count(directory=filepath)
+    else:
+        raise ValueError(f"The filepath {filepath} is not valid.")
+
+
+# ------------------------------------------------------------------------------------------------ #
+def file_created(filepath: str) -> datetime:
+    """Gets the creation time of the specified file.
+
+    Args:
+        filepath (str): The path to the file.
+
+    Returns:
+        datetime: The creation time of the file in HTTP date format.
+    """
+    stat_info = os.stat(filepath)
+    return datetime.fromtimestamp(stat_info.st_ctime)
+
+
+# ------------------------------------------------------------------------------------------------ #
+def file_last_accessed(filepath: str) -> datetime:
+    """Gets the last access time of the specified file.
+
+    Args:
+        filepath (str): The path to the file.
+
+    Returns:
+        datetime: The last access time of the file in HTTP date format.
+    """
+    stat_info = os.stat(filepath)
+    return datetime.fromtimestamp(stat_info.st_atime)
+
+
+# ------------------------------------------------------------------------------------------------ #
+def file_last_modified(filepath: str) -> datetime:
+    """Gets the last modified time of the specified file.
+
+    Args:
+        filepath (str): The path to the file.
+
+    Returns:
+        datetime: The last modified time of the file in HTTP date format.
+    """
+    stat_info = os.stat(filepath)
+    return datetime.fromtimestamp(stat_info.st_mtime)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                      FILE METADATA                                               #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass(config=dict(arbitrary_types_allowed=True))
+class FileMeta(DataClass):
+    """Encapsulates File level metadata."""
+
+    path: str
+    name: str
+    format: FileFormat
+    isdir: Optional[bool] = None
+    file_count: Optional[int] = None
+    created: Optional[datetime] = None
+    accessed: Optional[datetime] = None
+    modified: Optional[datetime] = None
+    size: Optional[int] = None
+
+    @classmethod
+    def create(cls, path: str, file_format: FileFormat) -> FileMeta:
+        if os.path.exists(path):
+            return cls(
+                path=path,
+                name=os.path.basename(path),
+                format=file_format,
+                isdir=isdir(filepath=path),
+                file_count=get_count(filepath=path),
+                created=file_created(filepath=path),
+                accessed=file_last_accessed(filepath=path),
+                modified=file_last_modified(filepath=path),
+                size=get_size(path=path, in_bytes=True),
+            )
+        else:
+            return cls(path=path, name=os.path.basename(path), format=file_format)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                            PARQUET FILE DETECTOR (IN-PROGRESS)                                   #
 # ------------------------------------------------------------------------------------------------ #
 class ParquetFileDetector:
     """
@@ -113,6 +310,8 @@ class ParquetFileDetector:
             return False
 
 
+# ------------------------------------------------------------------------------------------------ #
+#                              FILE TYPE DETECTOR    (IN-PROGRESS)                                 #
 # ------------------------------------------------------------------------------------------------ #
 class FileTypeDetector:
     """A class to detect the file type based on magic numbers, including handling directories."""
@@ -221,184 +420,3 @@ class FileTypeDetector:
             msg = "Unable to determine file type. We're assuming parquet."
             self._logger.debug(msg)
             return "parquet"
-
-
-# ------------------------------------------------------------------------------------------------ #
-@dataclass(config=dict(arbitrary_types_allowed=True))
-class FileMeta(DataClass):
-    """Encapsulates File level metadata."""
-
-    filepath: str
-    filename: str
-    file_type: str
-    isdir: bool
-    file_count: int
-    created: datetime
-    accessed: datetime
-    modified: datetime
-    size: int
-
-
-# ------------------------------------------------------------------------------------------------ #
-class FileInfo:
-    """Utility class for retrieving statistics and metadata about files and directories.
-
-    This class provides methods to calculate the size, creation time, last access time,
-    last modified time, and file/directory counts. It supports both files and directories,
-    handling recursive operations for directories when necessary.
-    """
-
-    def get_file_meta(self, filepath: str) -> FileMeta:
-        ftd = FileTypeDetector()
-        file_type = ftd.get_file_type(filepath)
-
-        return FileMeta(
-            filepath=filepath,
-            filename=os.path.basename(filepath),
-            file_type=file_type,
-            isdir=self.isdir(filepath=filepath),
-            file_count=self.get_count(filepath=filepath),
-            created=self.file_created(filepath=filepath),
-            accessed=self.file_last_accessed(filepath=filepath),
-            modified=self.file_last_modified(filepath=filepath),
-            size=self.get_size(path=filepath, in_bytes=True),
-        )
-
-    def isdir(self, filepath: str) -> bool:
-        """Returns True if the filepath is a directory
-
-        Args:
-            filepath (str): The path to the file or directory.
-
-        Returns:
-            True if the filepath is a directory. False otherwise.
-        """
-        return os.path.isdir(filepath)
-
-    def get_count(self, filepath: str) -> int:
-        """Gets the count of items in the specified file or directory.
-
-        Args:
-            filepath (str): The path to the file or directory.
-
-        Returns:
-            int: 1 if the path is a file, or the total number of files and directories
-            in the specified directory (recursively).
-
-        Raises:
-            ValueError: If the filepath is neither a file nor a directory.
-        """
-        if os.path.isfile(filepath):
-            return 1
-        elif os.path.isdir(filepath):
-            return self._get_directory_count(directory=filepath)
-        else:
-            raise ValueError(f"The filepath {filepath} is not valid.")
-
-    def file_created(self, filepath: str) -> datetime:
-        """Gets the creation time of the specified file.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            datetime: The creation time of the file in HTTP date format.
-        """
-        stat_info = os.stat(filepath)
-        return datetime.fromtimestamp(stat_info.st_ctime)
-
-    def file_last_accessed(self, filepath: str) -> datetime:
-        """Gets the last access time of the specified file.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            datetime: The last access time of the file in HTTP date format.
-        """
-        stat_info = os.stat(filepath)
-        return datetime.fromtimestamp(stat_info.st_atime)
-
-    def file_last_modified(self, filepath: str) -> datetime:
-        """Gets the last modified time of the specified file.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            datetime: The last modified time of the file in HTTP date format.
-        """
-        stat_info = os.stat(filepath)
-        return datetime.fromtimestamp(stat_info.st_mtime)
-
-    def get_size(self, path: str, in_bytes: bool = True) -> Union[int, str]:
-        """Gets the size of the specified file or directory in a human-readable format.
-
-        Args:
-            path (str): The path to the file or directory.
-            in_bytes (bool): Whether to return size in bytes as integer.
-
-        Returns:
-            Union[int,str]: The size of the file or directory in a formatted string (e.g., '1.23 MB')
-                if in_bytes is False, otherwise an integer is returned.
-
-        Raises:
-            ValueError: If the path is neither a file nor a directory.
-        """
-        if os.path.isfile(path):
-            size = self._get_file_size(filepath=path)
-        elif os.path.isdir(path):
-            size = self._get_directory_size(directory=path)
-        else:
-            raise ValueError(f"The path {path} is not valid.")
-        if in_bytes:
-            return size
-        else:
-            return format_size(size_in_bytes=size)
-
-    def _get_file_size(self, filepath: str) -> int:
-        """Gets the size of a file in bytes.
-
-        Args:
-            filepath (str): The path to the file.
-
-        Returns:
-            int: The size of the file in bytes.
-        """
-        return os.path.getsize(filepath)
-
-    def _get_directory_size(self, directory: str) -> int:
-        """Recursively calculates the total size of a directory in bytes.
-
-        Args:
-            directory (str): The path to the directory.
-
-        Returns:
-            int: The total size of the directory in bytes.
-        """
-        total = 0
-        with os.scandir(directory) as it:
-            for entry in it:
-                if entry.is_file():
-                    total += entry.stat().st_size
-                elif entry.is_dir():
-                    total += self._get_directory_size(directory=entry.path)
-        return total
-
-    def _get_directory_count(self, directory: str) -> int:
-        """Recursively counts the total number of files and directories in a directory.
-
-        Args:
-            directory (str): The path to the directory.
-
-        Returns:
-            int: The total count of files and directories in the specified directory.
-        """
-        total = 0
-        with os.scandir(directory) as it:
-            for entry in it:
-                if entry.is_file():
-                    total += 1
-                elif entry.is_dir():
-                    total += self._get_directory_count(directory=entry.path)
-        return total

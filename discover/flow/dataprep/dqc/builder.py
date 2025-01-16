@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Saturday January 4th 2025 08:44:54 pm                                               #
+# Modified   : Wednesday January 8th 2025 04:04:13 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -135,37 +135,112 @@ class DataQualityCheckStageBuilder(StageBuilder):
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
 
-    def detect_accents(self) -> DataQualityCheckStageBuilder:
-        self._detect_accents = self._task_configs["detect_accents"]
-        self._tasks.append(self._task_builder.build(self._detect_accents))
+    # -------------------------------------------------------------------------------------------- #
+    def detect_privacy_issues(self) -> DataQualityCheckStageBuilder:
+        self.detect_emails()
+        self.detect_phone_numbers()
+        self.detect_urls()
         return self
 
-    def detect_control_chars(self) -> DataQualityCheckStageBuilder:
-        self._detect_control_chars = self._task_configs["detect_control_chars"]
-        self._tasks.append(self._task_builder.build(self._detect_control_chars))
+    def detect_urls(self) -> None:
+        self._detect_urls = self._task_configs["detect_urls"]
+        self._tasks.append(self._task_builder.build(self._detect_urls))
 
+    def detect_phone_numbers(self) -> None:
+        self._detect_phone_numbers = self._task_configs["detect_phone_numbers"]
+        self._tasks.append(self._task_builder.build(self._detect_phone_numbers))
+
+    def detect_emails(self) -> None:
+        self._detect_emails = self._task_configs["detect_emails"]
+        self._tasks.append(self._task_builder.build(self._detect_emails))
+
+    # -------------------------------------------------------------------------------------------- #
+    def detect_duplication(self) -> DataQualityCheckStageBuilder:
+        self.detect_duplicate_review_ids()
+        self.detect_duplicate_reviews()
+        self.detect_duplicate_rows()
         return self
 
-    def detect_duplicate_review_ids(self) -> DataQualityCheckStageBuilder:
+    def detect_duplicate_review_ids(self) -> None:
         self._detect_duplicate_review_ids = self._task_configs[
             "detect_duplicate_review_ids"
         ]
         self._tasks.append(self._task_builder.build(self._detect_duplicate_review_ids))
 
-        return self
-
-    def detect_duplicate_reviews(self) -> DataQualityCheckStageBuilder:
+    def detect_duplicate_reviews(self) -> None:
         self._detect_duplicate_reviews = self._task_configs["detect_duplicate_reviews"]
         self._tasks.append(self._task_builder.build(self._detect_duplicate_reviews))
 
-        return self
-
-    def detect_duplicate_rows(self) -> DataQualityCheckStageBuilder:
+    def detect_duplicate_rows(self) -> None:
         self._detect_duplicate_rows = self._task_configs["detect_duplicate_rows"]
         self._tasks.append(self._task_builder.build(self._detect_duplicate_rows))
 
+    # -------------------------------------------------------------------------------------------- #
+    def detect_invalid_characters(self) -> DataQualityCheckStageBuilder:
+        self.detect_accents()
+        self.detect_control_chars()
+        self.detect_html()
         return self
 
+    def detect_accents(self) -> None:
+        self._detect_accents = self._task_configs["detect_accents"]
+        self._tasks.append(self._task_builder.build(self._detect_accents))
+
+    def detect_control_chars(self) -> None:
+        self._detect_control_chars = self._task_configs["detect_control_chars"]
+        self._tasks.append(self._task_builder.build(self._detect_control_chars))
+
+    def detect_html(self) -> None:
+        self._detect_html = self._task_configs["detect_html"]
+        self._tasks.append(self._task_builder.build(self._detect_html))
+
+    # -------------------------------------------------------------------------------------------- #
+    def detect_invalid_values(self) -> DataQualityCheckStageBuilder:
+        self.detect_invalid_categories()
+        self.detect_invalid_ratings()
+        self.detect_invalid_review_dates()
+        return self
+
+    def detect_invalid_categories(self) -> None:
+        self._detect_invalid_categories = self._task_configs[
+            "detect_invalid_categories"
+        ]
+        self._tasks.append(self._task_builder.build(self._detect_invalid_categories))
+
+    def detect_invalid_ratings(self) -> None:
+        self._detect_invalid_ratings = self._task_configs["detect_invalid_ratings"]
+        self._tasks.append(self._task_builder.build(self._detect_invalid_ratings))
+
+    def detect_invalid_review_dates(
+        self, range_min: int = 2008, range_max: int = 2024, range_type: str = "year"
+    ) -> None:
+        self._detect_invalid_review_dates = self._task_configs[
+            "detect_invalid_review_dates"
+        ]
+        self._detect_invalid_review_dates["params"]["ramge_min"] = range_min
+        self._detect_invalid_review_dates["params"]["ramge_max"] = range_max
+        self._detect_invalid_review_dates["params"]["ramge_type"] = range_type
+        self._tasks.append(self._task_builder.build(self._detect_invalid_review_dates))
+
+    # -------------------------------------------------------------------------------------------- #
+    def detect_non_english(self) -> DataQualityCheckStageBuilder:
+        self.detect_non_english_app_names()
+        self.detect_non_english_reviews()
+        return self
+
+    def detect_non_english_app_names(self) -> None:
+        self._detect_non_english_app_names = self._task_configs[
+            "detect_non_english_app_names"
+        ]
+        self._tasks.append(self._task_builder.build(self._detect_non_english_app_names))
+
+    def detect_non_english_reviews(self) -> None:
+        self._detect_non_english_reviews = self._task_configs[
+            "detect_non_english_reviews"
+        ]
+        self._tasks.append(self._task_builder.build(self._detect_non_english_reviews))
+
+    # -------------------------------------------------------------------------------------------- #
     def detect_elongation(
         self, threshold: int = 4, max_elongation: int = 3
     ) -> DataQualityCheckStageBuilder:
@@ -175,12 +250,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_elongation))
         return self
 
-    def detect_emails(self) -> DataQualityCheckStageBuilder:
-        self._detect_emails = self._task_configs["detect_emails"]
-        self._tasks.append(self._task_builder.build(self._detect_emails))
-
-        return self
-
+    # -------------------------------------------------------------------------------------------- #
     def detect_excess_special_chars(
         self,
         threshold: float = 0.35,
@@ -196,65 +266,13 @@ class DataQualityCheckStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_excess_special_chars))
         return self
 
+    # -------------------------------------------------------------------------------------------- #
     def detect_excess_whitespace(self) -> DataQualityCheckStageBuilder:
         self._detect_excess_whitespace = self._task_configs["detect_excess_whitespace"]
         self._tasks.append(self._task_builder.build(self._detect_excess_whitespace))
         return self
 
-    def detect_html(self) -> DataQualityCheckStageBuilder:
-        self._detect_html = self._task_configs["detect_html"]
-        self._tasks.append(self._task_builder.build(self._detect_html))
-
-        return self
-
-    def detect_invalid_categories(self) -> DataQualityCheckStageBuilder:
-        self._detect_invalid_categories = self._task_configs[
-            "detect_invalid_categories"
-        ]
-        self._tasks.append(self._task_builder.build(self._detect_invalid_categories))
-
-        return self
-
-    def detect_invalid_ratings(self) -> DataQualityCheckStageBuilder:
-        self._detect_invalid_ratings = self._task_configs["detect_invalid_ratings"]
-        self._tasks.append(self._task_builder.build(self._detect_invalid_ratings))
-
-        return self
-
-    def detect_invalid_review_dates(
-        self, range_min: int = 2020, range_max: int = 2024, range_type: str = "year"
-    ) -> DataQualityCheckStageBuilder:
-        self._detect_invalid_review_dates = self._task_configs[
-            "detect_invalid_review_dates"
-        ]
-        self._detect_invalid_review_dates["params"]["ramge_min"] = range_min
-        self._detect_invalid_review_dates["params"]["ramge_max"] = range_max
-        self._detect_invalid_review_dates["params"]["ramge_type"] = range_type
-        self._tasks.append(self._task_builder.build(self._detect_invalid_review_dates))
-
-        return self
-
-    def detect_non_english_app_names(self) -> DataQualityCheckStageBuilder:
-        self._detect_non_english_app_names = self._task_configs[
-            "detect_non_english_app_names"
-        ]
-        self._tasks.append(self._task_builder.build(self._detect_non_english_app_names))
-
-        return self
-
-    def detect_non_english_reviews(self) -> DataQualityCheckStageBuilder:
-        self._detect_non_english_reviews = self._task_configs[
-            "detect_non_english_reviews"
-        ]
-        self._tasks.append(self._task_builder.build(self._detect_non_english_reviews))
-
-        return self
-
-    def detect_phone_numbers(self) -> DataQualityCheckStageBuilder:
-        self._detect_phone_numbers = self._task_configs["detect_phone_numbers"]
-        self._tasks.append(self._task_builder.build(self._detect_phone_numbers))
-        return self
-
+    # -------------------------------------------------------------------------------------------- #
     def detect_repeated_chars(
         self, min_repetitions: int = 4
     ) -> DataQualityCheckStageBuilder:
@@ -264,6 +282,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
 
         return self
 
+    # -------------------------------------------------------------------------------------------- #
     def detect_repeated_phrases(
         self,
         threshold: int = 1,
@@ -278,6 +297,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
 
         return self
 
+    # -------------------------------------------------------------------------------------------- #
     def detect_repeated_sequences(
         self,
         length_of_sequence: int = 3,
@@ -300,6 +320,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
 
         return self
 
+    # -------------------------------------------------------------------------------------------- #
     def detect_repeated_words(
         self,
         threshold: int = 1,
@@ -314,16 +335,11 @@ class DataQualityCheckStageBuilder(StageBuilder):
 
         return self
 
+    # -------------------------------------------------------------------------------------------- #
     def detect_short_reviews(self, threshold: int = 3) -> DataQualityCheckStageBuilder:
         self._detect_short_reviews = self._task_configs["detect_short_reviews"]
         self._detect_short_reviews["params"]["threshold"] = threshold
         self._tasks.append(self._task_builder.build(self._detect_short_reviews))
-        return self
-
-    def detect_urls(self) -> DataQualityCheckStageBuilder:
-        self._detect_urls = self._task_configs["detect_urls"]
-        self._tasks.append(self._task_builder.build(self._detect_urls))
-
         return self
 
     def build(self) -> DataQualityCheckStageBuilder:
