@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Thursday January 16th 2025 09:20:05 pm                                              #
+# Modified   : Friday January 17th 2025 05:34:55 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -76,6 +76,9 @@ class DQA(Analysis):
         self._row_uniqueness = None
         self._review_id_uniqueness = None
         self._review_uniqueness = None
+        self._duplicate_rows = None
+        self._duplicate_review_ids = None
+        self._duplicate_reviews = None
 
         # Privacy Measures
         self._privacy = None
@@ -163,16 +166,34 @@ class DQA(Analysis):
         return self._row_uniqueness
 
     @property
+    def duplicate_rows(self) -> int:
+        if not self._duplicate_rows:
+            self._duplicate_rows = self._compute_duplicate_rows()
+        return self._duplicate_rows
+
+    @property
     def review_id_uniqueness(self) -> float:
         if not self._review_id_uniqueness:
             self._review_id_uniqueness = self._compute_review_id_uniqueness()
         return self._review_id_uniqueness
 
     @property
+    def duplicate_review_ids(self) -> int:
+        if not self._duplicate_review_ids:
+            self._duplicate_review_ids = self._compute_duplicate_review_ids()
+        return self._duplicate_review_ids
+
+    @property
     def review_uniqueness(self) -> float:
         if not self._review_uniqueness:
             self._review_uniqueness = self._compute_review_uniqueness()
         return self._review_uniqueness
+
+    @property
+    def duplicate_reviews(self) -> int:
+        if not self._duplicate_reviews:
+            self._duplicate_reviews = self._compute_duplicate_reviews()
+        return self._duplicate_reviews
 
     @property
     def relevance(self) -> float:
@@ -431,6 +452,11 @@ class DQA(Analysis):
                 "Review Id Uniqueness",
                 "Review Uniqueness",
             ],
+            "Duplicates": [
+                self.duplicate_rows,
+                self.duplicate_review_ids,
+                self.duplicate_reviews,
+            ],
             "Score": [
                 self.row_uniqueness,
                 self.review_id_uniqueness,
@@ -452,15 +478,30 @@ class DQA(Analysis):
         self._row_uniqueness = self._df.loc[~self._df[column]].shape[0] / self._N
         return self._row_uniqueness
 
+    def _compute_duplicate_rows(self) -> int:
+        column = self._config.uniqueness.columns.row
+        self._duplicate_rows = self._df.loc[self._df[column]].shape[0]
+        return self._duplicate_rows
+
     def _compute_review_id_uniqueness(self) -> float:
         column = self._config.uniqueness.columns.review_id
         self._review_id_uniqueness = self._df.loc[~self._df[column]].shape[0] / self._N
         return self._review_id_uniqueness
 
+    def _compute_duplicate_review_ids(self) -> int:
+        column = self._config.uniqueness.columns.review_id
+        self._duplicate_review_ids = self._df.loc[self._df[column]].shape[0]
+        return self._duplicate_review_ids
+
     def _compute_review_uniqueness(self) -> float:
         column = self._config.uniqueness.columns.review
         self._review_uniqueness = self._df.loc[~self._df[column]].shape[0] / self._N
         return self._review_uniqueness
+
+    def _compute_duplicate_reviews(self) -> int:
+        column = self._config.uniqueness.columns.review
+        self._duplicate_reviews = self._df.loc[self._df[column]].shape[0]
+        return self._duplicate_reviews
 
     # -------------------------------------------------------------------------------------------- #
     #                                     PRIVACY                                                  #
