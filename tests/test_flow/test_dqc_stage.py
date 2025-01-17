@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 2nd 2025 06:30:50 pm                                               #
-# Modified   : Wednesday January 8th 2025 04:07:02 am                                              #
+# Modified   : Thursday January 16th 2025 09:05:44 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -25,7 +25,7 @@ from pyspark.sql import DataFrame
 
 from discover.asset.dataset.dataset import Dataset
 from discover.core.flow import PhaseDef, StageDef
-from discover.flow.dataprep.dqc.builder import DataQualityCheckStageBuilder
+from discover.flow.dataprep.dqa.builder import DataQualityCheckStageBuilder
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

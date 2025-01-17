@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Thursday January 2nd 2025 11:02:49 am                                               #
+# Modified   : Thursday January 16th 2025 09:20:05 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -643,7 +643,7 @@ class DQA(Analysis):
 
     def _convert_labels(self, txt) -> str:
         """Converts column names to Title case labels."""
-        txt = txt.replace("dp_", "")
+        txt = txt.replace("dqa_", "")
         txt = txt.replace("_", " ")
         txt = txt.title()
         return txt

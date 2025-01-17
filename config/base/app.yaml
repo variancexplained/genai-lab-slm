@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 11:24:51 am                                               #
-# Modified   : Tuesday December 31st 2024 09:27:22 am                                              #
+# Modified   : Thursday January 16th 2025 09:23:09 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -182,43 +182,43 @@ dqa:
       review: 0.6
       date: 0.1
     columns:
-      rating_validity: dp_validity_invalid_rating
-      category_validity: dp_validity_invalid_category
-      date_validity: dp_validity_invalid_review_date
+      rating_validity: dqa_validity_invalid_rating
+      category_validity: dqa_validity_invalid_category
+      date_validity: dqa_validity_invalid_review_date
       review_validity:
-      - dp_validity_contains_ctrl_chars
-      - dp_validity_contains_accents
-      - dp_validity_contains_html_chars
-      - dp_validity_contains_excess_whitespace
-      - dp_validity_contains_excess_special_chars
-      - dp_validity_contains_elongation
-      - dp_validity_contains_excess_character_repetition
-      - dp_validity_contains_excess_sequence_repetition
-      - dp_validity_contains_excess_word_repetition
-      - dp_validity_contains_excess_phrase_repetition
+      - dqa_validity_contains_ctrl_chars
+      - dqa_validity_contains_accents
+      - dqa_validity_contains_html_chars
+      - dqa_validity_contains_excess_whitespace
+      - dqa_validity_contains_excess_special_chars
+      - dqa_validity_contains_elongation
+      - dqa_validity_contains_excess_character_repetition
+      - dqa_validity_contains_excess_sequence_repetition
+      - dqa_validity_contains_excess_word_repetition
+      - dqa_validity_contains_excess_phrase_repetition
   relevance:
     weights:
       language: 0.4
       review_length: 0.6
     columns:
       language:
-      - dp_relevance_contains_non_english_app_name
-      - dp_relevance_contains_non_english_text
-      review_length: dp_relevance_short_review
+      - dqa_relevance_contains_non_english_app_name
+      - dqa_relevance_contains_non_english_text
+      review_length: dqa_relevance_short_review
   uniqueness:
     weights:
       row: 0.3
       review_id: 0.2
       review: 0.5
     columns:
-      row: dp_uniqueness_duplicate_row
-      review_id:  dp_uniqueness_duplicate_review_id
-      review: dp_uniqueness_duplicate_review
+      row: dqa_uniqueness_duplicate_row
+      review_id:  dqa_uniqueness_duplicate_review_id
+      review: dqa_uniqueness_duplicate_review
   privacy:
     columns:
-      - dp_privacy_contains_url
-      - dp_privacy_contains_email
-      - dp_privacy_contains_phone
+      - dqa_privacy_contains_url
+      - dqa_privacy_contains_email
+      - dqa_privacy_contains_phone
 
 
 

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Saturday January 4th 2025 06:31:49 pm                                               #
+# Modified   : Thursday January 16th 2025 07:14:48 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,7 +28,7 @@ class StageDef(Enum):
     # Data prep phase
     RAW = ("raw", 0, "Raw Data Stage")
     INGEST = ("ingest", 1, "Data Ingestion Stage")
-    DQC = ("dqc", 2, "Data Quality Check Stage")
+    DQA = ("dqa", 2, "Data Quality Assessment Stage")
     SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")

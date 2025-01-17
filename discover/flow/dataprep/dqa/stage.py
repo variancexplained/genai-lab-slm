@@ -4,19 +4,19 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/dataprep/dqc/stage.py                                                #
+# Filename   : /discover/flow/dataprep/dqa/stage.py                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Saturday January 4th 2025 11:58:16 pm                                               #
+# Modified   : Thursday January 16th 2025 07:15:18 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
-"""Data Quality Check Stage Module"""
+"""Data Quality Assessment Stage Module"""
 from typing import Dict, List, Optional
 
 from pyspark.sql import SparkSession
@@ -31,14 +31,14 @@ from discover.infra.persist.repo.dataset import DatasetRepo
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataQualityCheckStage(Stage):
+class DataQualityAssessmentStage(Stage):
     """
     Represents a stage in the data pipeline focused on data quality checks. This stage is responsible for
     validating and ensuring the integrity of data before further processing.
 
     Attributes:
         __PHASE (PhaseDef): Defines the phase of the data pipeline, set to DATAPREP.
-        __STAGE (StageDef): Defines the stage of the data pipeline, set to Data Quality Check (DQC).
+        __STAGE (StageDef): Defines the stage of the data pipeline, set to Data Quality Assessment (DQA).
         __DFTYPE (DFType): Specifies the data frame type used in this stage, set to SPARK.
 
     Args:
@@ -56,7 +56,7 @@ class DataQualityCheckStage(Stage):
     """
 
     __PHASE = PhaseDef.DATAPREP
-    __STAGE = StageDef.DQC
+    __STAGE = StageDef.DQA
     __DFTYPE = DFType.SPARK
 
     def __init__(

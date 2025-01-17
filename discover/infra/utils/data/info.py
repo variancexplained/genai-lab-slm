@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 16th 2025 02:49:20 pm                                              #
-# Modified   : Thursday January 16th 2025 03:07:00 pm                                              #
+# Modified   : Thursday January 16th 2025 08:07:29 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -27,7 +27,9 @@ from pyspark.sql.types import (
     DoubleType,
     IntegerType,
     LongType,
+    ShortType,
     StringType,
+    TimestampNTZType,
 )
 
 
@@ -122,6 +124,16 @@ class DataFrameInfo:
             avg_length = df.select(_sum(length(col(column)))).first()[0] or 0
             num_non_nulls = df.filter(col(column).isNotNull()).count()
             size_estimate = num_non_nulls * avg_length
+        elif isinstance(data_type, ShortType):
+            # Short type (smallint) types have fixed sizes 2.
+            size_per_value = 2
+            num_non_nulls = df.filter(col(column).isNotNull()).count()
+            size_estimate = num_non_nulls * size_per_value
+        elif isinstance(data_type, TimestampNTZType):
+            # TimestampNTZType is eight bytes
+            size_per_value = 8
+            num_non_nulls = df.filter(col(column).isNotNull()).count()
+            size_estimate = num_non_nulls * size_per_value
         elif isinstance(data_type, (IntegerType, LongType)):
             # Integer and Long types have fixed sizes (4 and 8 bytes respectively)
             size_per_value = 4 if isinstance(data_type, IntegerType) else 8

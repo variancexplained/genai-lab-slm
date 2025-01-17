@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/flow/dataprep/dqc/builder.py                                              #
+# Filename   : /discover/flow/dataprep/dqa/builder.py                                              #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Wednesday January 8th 2025 04:04:13 am                                              #
+# Modified   : Thursday January 16th 2025 07:31:51 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -21,12 +21,12 @@ from __future__ import annotations
 
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
-from discover.flow.dataprep.dqc.stage import DataQualityCheckStage
+from discover.flow.dataprep.dqa.stage import DataQualityAssessmentStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DataQualityCheckStageBuilder(StageBuilder):
-    """Builder class for the Data Quality Check (DQC) stage in a data processing pipeline.
+class DataQualityAssessmentStageBuilder(StageBuilder):
+    """Builder class for the Data Quality Assessment (DQA) stage in a data processing pipeline.
 
     This class extends the `StageBuilder` to specifically handle the construction
     of a data quality check stage, which includes a variety of data validation and
@@ -35,7 +35,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
 
     Attributes:
         __PHASE (PhaseDef): The phase definition for Data Preparation.
-        __STAGE (StageDef): The stage definition for Data Quality Check.
+        __STAGE (StageDef): The stage definition for Data Quality Assessment.
         _detect_accents (Optional[dict]): Configuration for accent detection.
         _detect_control_chars (Optional[dict]): Configuration for control character detection.
         _detect_duplicate_review_ids (Optional[dict]): Configuration for duplicate review ID detection.
@@ -59,7 +59,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         _detect_repeated_words (Optional[dict]): Configuration for repeated word detection.
         _detect_short_reviews (Optional[dict]): Configuration for short review detection.
         _detect_urls (Optional[dict]): Configuration for URL detection.
-        _config (dict): Configuration for the DQC stage tasks.
+        _config (dict): Configuration for the DQA stage tasks.
         _spark (Optional[Any]): Spark session, initialized as None.
         _tasks (List[Any]): List of tasks built by this stage.
         _logger (logging.Logger): Logger instance for this class.
@@ -69,7 +69,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
     """
 
     __PHASE = PhaseDef.DATAPREP
-    __STAGE = StageDef.DQC
+    __STAGE = StageDef.DQA
 
     def __init__(self) -> None:
         super().__init__()
@@ -136,7 +136,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         )
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_privacy_issues(self) -> DataQualityCheckStageBuilder:
+    def detect_privacy_issues(self) -> DataQualityAssessmentStageBuilder:
         self.detect_emails()
         self.detect_phone_numbers()
         self.detect_urls()
@@ -155,7 +155,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_emails))
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_duplication(self) -> DataQualityCheckStageBuilder:
+    def detect_duplication(self) -> DataQualityAssessmentStageBuilder:
         self.detect_duplicate_review_ids()
         self.detect_duplicate_reviews()
         self.detect_duplicate_rows()
@@ -176,7 +176,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_duplicate_rows))
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_invalid_characters(self) -> DataQualityCheckStageBuilder:
+    def detect_invalid_characters(self) -> DataQualityAssessmentStageBuilder:
         self.detect_accents()
         self.detect_control_chars()
         self.detect_html()
@@ -195,7 +195,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_html))
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_invalid_values(self) -> DataQualityCheckStageBuilder:
+    def detect_invalid_values(self) -> DataQualityAssessmentStageBuilder:
         self.detect_invalid_categories()
         self.detect_invalid_ratings()
         self.detect_invalid_review_dates()
@@ -223,7 +223,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_invalid_review_dates))
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_non_english(self) -> DataQualityCheckStageBuilder:
+    def detect_non_english(self) -> DataQualityAssessmentStageBuilder:
         self.detect_non_english_app_names()
         self.detect_non_english_reviews()
         return self
@@ -243,7 +243,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
     # -------------------------------------------------------------------------------------------- #
     def detect_elongation(
         self, threshold: int = 4, max_elongation: int = 3
-    ) -> DataQualityCheckStageBuilder:
+    ) -> DataQualityAssessmentStageBuilder:
         self._detect_elongation = self._task_configs["detect_elongation"]
         self._detect_elongation["params"]["threshold"] = threshold
         self._detect_elongation["params"]["max_elongation"] = max_elongation
@@ -256,7 +256,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         threshold: float = 0.35,
         threshold_type: str = "proportion",
         unit: str = "character",
-    ) -> DataQualityCheckStageBuilder:
+    ) -> DataQualityAssessmentStageBuilder:
         self._detect_excess_special_chars = self._task_configs[
             "detect_excess_special_chars"
         ]
@@ -267,7 +267,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_excess_whitespace(self) -> DataQualityCheckStageBuilder:
+    def detect_excess_whitespace(self) -> DataQualityAssessmentStageBuilder:
         self._detect_excess_whitespace = self._task_configs["detect_excess_whitespace"]
         self._tasks.append(self._task_builder.build(self._detect_excess_whitespace))
         return self
@@ -275,7 +275,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
     # -------------------------------------------------------------------------------------------- #
     def detect_repeated_chars(
         self, min_repetitions: int = 4
-    ) -> DataQualityCheckStageBuilder:
+    ) -> DataQualityAssessmentStageBuilder:
         self._detect_repeated_chars = self._task_configs["detect_repeated_chars"]
         self._detect_repeated_chars["params"]["min_repetitions"] = min_repetitions
         self._tasks.append(self._task_builder.build(self._detect_repeated_chars))
@@ -288,7 +288,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         threshold: int = 1,
         threshold_type: str = "count",
         min_repetitions: int = 2,
-    ) -> DataQualityCheckStageBuilder:
+    ) -> DataQualityAssessmentStageBuilder:
         self._detect_repeated_phrases = self._task_configs["detect_repeated_phrases"]
         self._detect_repeated_phrases["params"]["threshold"] = threshold
         self._detect_repeated_phrases["params"]["threshold_type"] = threshold_type
@@ -305,7 +305,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         threshold: int = 3,
         threshold_type: str = "count",
         unit: str = "character",
-    ) -> DataQualityCheckStageBuilder:
+    ) -> DataQualityAssessmentStageBuilder:
         self._detect_repeated_sequences = self._task_configs[
             "detect_repeated_sequences"
         ]
@@ -326,7 +326,7 @@ class DataQualityCheckStageBuilder(StageBuilder):
         threshold: int = 1,
         threshold_type: str = "count",
         min_repetitions: int = 3,
-    ) -> DataQualityCheckStageBuilder:
+    ) -> DataQualityAssessmentStageBuilder:
         self._detect_repeated_words = self._task_configs["detect_repeated_words"]
         self._detect_repeated_words["params"]["threshold"] = threshold
         self._detect_repeated_words["params"]["threshold_type"] = threshold_type
@@ -336,22 +336,24 @@ class DataQualityCheckStageBuilder(StageBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_short_reviews(self, threshold: int = 3) -> DataQualityCheckStageBuilder:
+    def detect_short_reviews(
+        self, threshold: int = 3
+    ) -> DataQualityAssessmentStageBuilder:
         self._detect_short_reviews = self._task_configs["detect_short_reviews"]
         self._detect_short_reviews["params"]["threshold"] = threshold
         self._tasks.append(self._task_builder.build(self._detect_short_reviews))
         return self
 
-    def build(self) -> DataQualityCheckStageBuilder:
+    def build(self) -> DataQualityAssessmentStageBuilder:
         """
         Builds the Ingest stage by validating configurations, constructing datasets,
         and assembling tasks.
 
         Returns:
-            DataQualityCheckStageBuilder: The builder instance with the constructed stage.
+            DataQualityAssessmentStageBuilder: The builder instance with the constructed stage.
         """
         self._validate()
-        self._stage = DataQualityCheckStage(
+        self._stage = DataQualityAssessmentStage(
             source_config=self._source_config,
             tasks=self._tasks,
             state=self._state,
@@ -375,55 +377,55 @@ class DataQualityCheckStageBuilder(StageBuilder):
         errors = []
         if self._detect_control_chars is None:
             errors.append(
-                "detect_control_chars is a required step in the DataQualityCheck Stage."
+                "detect_control_chars is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_duplicate_review_ids is None:
             errors.append(
-                "detect_duplicate_review_ids is a required step in the DataQualityCheck Stage."
+                "detect_duplicate_review_ids is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_duplicate_reviews is None:
             errors.append(
-                "detect_duplicate_reviews is a required step in the DataQualityCheck Stage."
+                "detect_duplicate_reviews is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_duplicate_rows is None:
             errors.append(
-                "detect_duplicate_rows is a required step in the DataQualityCheck Stage."
+                "detect_duplicate_rows is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_elongation is None:
             errors.append(
-                "detect_elongation is a required step in the DataQualityCheck Stage."
+                "detect_elongation is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_emails is None:
             errors.append(
-                "detect_emails is a required step in the DataQualityCheck Stage."
+                "detect_emails is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_excess_whitespace is None:
             errors.append(
-                "detect_excess_whitespace is a required step in the DataQualityCheck Stage."
+                "detect_excess_whitespace is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_html is None:
             errors.append(
-                "detect_html is a required step in the DataQualityCheck Stage."
+                "detect_html is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_invalid_categories is None:
             errors.append(
-                "detect_invalid_categories is a required step in the DataQualityCheck Stage."
+                "detect_invalid_categories is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_invalid_ratings is None:
             errors.append(
-                "detect_invalid_ratings is a required step in the DataQualityCheck Stage."
+                "detect_invalid_ratings is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_invalid_review_dates is None:
             errors.append(
-                "detect_invalid_review_dates is a required step in the DataQualityCheck Stage."
+                "detect_invalid_review_dates is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_phone_numbers is None:
             errors.append(
-                "detect_phone_numbers is a required step in the DataQualityCheck Stage."
+                "detect_phone_numbers is a required step in the DataQualityAssessment Stage."
             )
         if self._detect_urls is None:
             errors.append(
-                "detect_urls is a required step in the DataQualityCheck Stage."
+                "detect_urls is a required step in the DataQualityAssessment Stage."
             )
 
         if errors:

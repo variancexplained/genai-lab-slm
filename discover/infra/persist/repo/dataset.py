@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Thursday January 16th 2025 05:39:57 pm                                              #
+# Modified   : Thursday January 16th 2025 06:54:26 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -114,7 +114,7 @@ class DatasetRepo(AssetRepo):
         dataset = self._dao.read(asset_id=asset_id)
         dftype = dftype or dataset.dftype
 
-        df = self._get_data(filepath=dataset.filepath, dftype=dftype, spark=spark)
+        df = self._get_data(filepath=dataset.file.path, dftype=dftype, spark=spark)
         setattr(dataset, "_dataframe", df)
         return dataset
 
