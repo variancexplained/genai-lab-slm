@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Thursday January 16th 2025 07:31:51 pm                                              #
+# Modified   : Friday January 17th 2025 11:00:10 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,6 +19,7 @@
 """Acquire Stage Builder Module"""
 from __future__ import annotations
 
+from discover.asset.dataset.identity import DatasetConfig
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
 from discover.flow.dataprep.dqa.stage import DataQualityAssessmentStage
@@ -74,6 +75,12 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
     def __init__(self) -> None:
         super().__init__()
 
+        self._stage = None
+
+        self._phase = self.__PHASE
+        self._source_config = None
+        self._target_config = None
+
         self._detect_accents = None
         self._detect_control_chars = None
         self._detect_duplicate_review_ids = None
@@ -100,13 +107,16 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
 
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
-        )
-        self._source_config = self._get_config(
-            phase=self.__PHASE, stage=self.__STAGE, config="source_config"
         )
 
     def reset(self) -> None:
         super().reset()
+
+        self._stage = None
+
+        self._phase = self.__PHASE
+        self._source_stage = None
+        self._target_stage = None
         self._detect_accents = None
         self._detect_control_chars = None
         self._detect_duplicate_review_ids = None
@@ -134,6 +144,18 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                 SOURCE AND TARGET DATASETS                                   #
+    # -------------------------------------------------------------------------------------------- #
+    def source(self, source_config: DatasetConfig) -> DataQualityAssessmentStageBuilder:
+        self._source_config = source_config
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def target(self, target_config: DatasetConfig) -> DataQualityAssessmentStageBuilder:
+        self._target_config = target_config
+        return self
 
     # -------------------------------------------------------------------------------------------- #
     def detect_privacy_issues(self) -> DataQualityAssessmentStageBuilder:
@@ -355,6 +377,7 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._validate()
         self._stage = DataQualityAssessmentStage(
             source_config=self._source_config,
+            target_config=self._target_config,
             tasks=self._tasks,
             state=self._state,
             repo=self._repo,

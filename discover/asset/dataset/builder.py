@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday January 4th 2025 11:44:17 pm                                               #
+# Modified   : Friday January 17th 2025 10:34:55 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from __future__ import annotations
 import inspect
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
@@ -31,7 +31,7 @@ from pyspark.sql import DataFrame, SparkSession
 from discover.asset.base.atype import AssetType
 from discover.asset.base.builder import AssetBuilder
 from discover.asset.dataset.dataset import Dataset
-from discover.asset.dataset.identity import DatasetPassport
+from discover.asset.dataset.identity import DatasetConfig, DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
@@ -109,20 +109,20 @@ class DatasetBuilder(AssetBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def from_file(self, config: Dict[str, str]) -> DatasetBuilder:
+    def from_file(self, config: DatasetConfig) -> DatasetBuilder:
         """
         Sets the source filepath, format, and DataFrame type.
 
         Args:
-            filepath (str): Path to source file.
-            file_format (FileFormat): The format of the source file
+            config (DatasetConfig): DatasetConfig object containing source filepath,
+            andd file_format
 
         Returns:
             DatasetBuilder: The current builder instance for chaining.
         """
-        self._source_filepath = config["filepath"]
-        self._source_file_format = FileFormat.from_value(config["file_format"])
-        self._source_dftype = DFType.from_value(config["dftype"])
+        self._source_filepath = config.filepath
+        self._source_file_format = config.file_format
+        self._source_dftype = config.dftype
         return self
 
     # -------------------------------------------------------------------------------------------- #

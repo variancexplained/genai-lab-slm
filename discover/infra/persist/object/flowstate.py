@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 02:49:35 am                                              #
-# Modified   : Friday January 3rd 2025 03:27:53 am                                                 #
+# Modified   : Friday January 17th 2025 10:40:19 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -76,7 +76,9 @@ class FlowState(DAO):
             ObjectDatabaseNotFoundError: If the database file cannot be located.
             ObjectIOException: If any other error occurs while writing to the database.
         """
-        key = self._format_key(phase=passport.phase, stage=passport.stage)
+        key = self._format_key(
+            phase=passport.phase, stage=passport.stage, name=passport.name
+        )
         try:
             with shelve.open(self._db_path) as db:
                 db[key] = passport
@@ -95,6 +97,7 @@ class FlowState(DAO):
         self,
         phase: PhaseDef,
         stage: StageDef,
+        name: str = "review",
     ) -> DatasetPassport:
         """
         Retrieves a dataset passport for a specific phase, stage, and state,
@@ -103,6 +106,7 @@ class FlowState(DAO):
         Args:
             phase (PhaseDef): The phase identifier.
             stage (StageDef): The stage identifier.
+            name (str): Name of the dataset. Defaults to 'review'.
 
         Returns:
             DatasetPassport: The retrieved and updated dataset passport.
@@ -112,7 +116,7 @@ class FlowState(DAO):
             ObjectDatabaseNotFoundError: If the database file cannot be located.
             ObjectIOException: If any other error occurs while accessing the database.
         """
-        key = self._format_key(phase=phase, stage=stage)
+        key = self._format_key(phase=phase, stage=stage, name=name)
         try:
             with shelve.open(self._db_path) as db:
                 passport = db[key]
@@ -160,19 +164,20 @@ class FlowState(DAO):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def delete(self, phase: PhaseDef, stage: StageDef) -> None:
+    def delete(self, phase: PhaseDef, stage: StageDef, name: str = "review") -> None:
         """Deletes an flow state by its phase and stage from the database.
 
         Args:
             phase (PhaseDef): The phase identifier.
             stage (StageDef): The stage identifier.
+            name (str): Name of the dataset. Defaults to 'review'.
 
         Raises:
             ObjectNotFoundError: If the asset is not found in the database.
             ObjectDatabaseNotFoundError: If the database file is not found.
             ObjectIOException: If an unknown exception occurs during deletion.
         """
-        key = self._format_key(phase=phase, stage=stage)
+        key = self._format_key(phase=phase, stage=stage, name=name)
         try:
             with shelve.open(self._db_path) as db:
                 del db[key]
@@ -189,12 +194,13 @@ class FlowState(DAO):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def exists(self, phase: PhaseDef, stage: StageDef) -> bool:
+    def exists(self, phase: PhaseDef, stage: StageDef, name: str = "review") -> bool:
         """Checks if a flow state exists in the database.
 
         Args:
             phase (PhaseDef): The phase identifier.
             stage (StageDef): The stage identifier.
+            name (str): Name of the dataset. Defaults to 'review'.
 
         Returns:
             bool: True if the asset exists, False otherwise.
@@ -203,7 +209,7 @@ class FlowState(DAO):
             ObjectDatabaseNotFoundError: If the database file is not found.
             ObjectIOException: If an unknown exception occurs during the check.
         """
-        key = self._format_key(phase=phase, stage=stage)
+        key = self._format_key(phase=phase, stage=stage, name=name)
         try:
             with shelve.open(self._db_path) as db:
                 return key in db
@@ -216,16 +222,16 @@ class FlowState(DAO):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def _format_key(self, phase: PhaseDef, stage: StageDef) -> str:
+    def _format_key(self, phase: PhaseDef, stage: StageDef, name: str) -> str:
         """
         Formats the key for accessing a dataset passport in the database.
 
         Args:
             phase (PhaseDef): The phase identifier.
             stage (StageDef): The stage identifier.
-            state (FlowStateDef): The state of the passport.
+            name (str): The name associated with the asset.
 
         Returns:
             str: A formatted key string representing the combination of phase, stage, and state.
         """
-        return f"{phase.value}_{stage.value}"
+        return f"{phase.value}_{stage.value}_{name}"

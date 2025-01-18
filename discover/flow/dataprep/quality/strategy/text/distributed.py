@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Friday January 3rd 2025 01:48:05 am                                                 #
+# Modified   : Friday January 17th 2025 08:17:21 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -499,19 +499,12 @@ class RegexThresholdRemoveStrategy(RegexRemoveStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class CustomRemoveStrategy(RepairStrategy):
+class RemoveDetectedAnomalyStrategy(RepairStrategy):
     """
     Removes rows from a PySpark DataFrame based on anomalies detected.
 
-    This strategy leverages a detection strategy for detection. If the detection results
-    column (`new_column`) does not existi n the DataFrame, the detection strategy is
-    applied to generate it. Rows flagged as anomalies in the detection results column are removed.
-
     Args:
-        column (str): The name of the column to evaluate.
-        new_column (str, optional): The name of the column to store detection results.
-        detect_strategy (Type[DetectStrategy], optional): The detection strategy
-            class to use for anomaly detection. Defaults to `RegexDetectStrategy`.
+        indicator_column (str): The column containing the binary anomaly indicator.
         **kwargs: Additional keyword arguments passed to the detection strategy.
 
     Methods:
@@ -521,14 +514,10 @@ class CustomRemoveStrategy(RepairStrategy):
 
     def __init__(
         self,
-        column: str,
-        new_column: str = None,
-        detect_strategy: Type[DetectStrategy] = RegexDetectStrategy,
+        indicator_column: str,
         **kwargs,
     ) -> None:
-        self._column = column
-        self._new_column = new_column
-        self._detect_strategy = detect_strategy
+        self._indicator_column = indicator_column
         self._kwargs = kwargs
 
     def repair(self, data: DataFrame) -> DataFrame:
@@ -543,22 +532,16 @@ class CustomRemoveStrategy(RepairStrategy):
 
         Raises:
             KeyError: If the column specified for detection does not exist in the DataFrame.
-            ValueError: If the detection strategy fails to process the data.
+
         """
         # Ensure the column exists
-        if self._column not in data.columns:
-            raise KeyError(f"Column '{self._column}' does not exist in the DataFrame.")
-
-        # Apply detection strategy
-        strategy = self._detect_strategy(
-            column=self._column,
-            new_column=self._new_column,
-            **self._kwargs,
-        )
-        data = strategy.detect(data)
+        if self._indicator_column not in data.columns:
+            raise KeyError(
+                f"Column '{self._indicator_column}' does not exist in the DataFrame."
+            )
 
         # Filter out rows where anomalies are detected
-        data = data.filter(~F.col(self._new_column))
+        data = data.filter(~F.col(self._indicator_column))
         return data
 
 
@@ -1052,51 +1035,34 @@ class NonEnglishDetectStrategy(DetectStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class NonEnglishRemovalStrategy(CustomRemoveStrategy):
+class NonEnglishRemovalStrategy(RepairStrategy):
     """
-    A strategy for removing rows containing non-English text.
+    A strategy for removing rows containing non-English flagged during the detection stage.
 
-    This strategy detects non-English text in a specified column using a detection
-    strategy (defaulting to `NonEnglishDetectStrategy`) and removes rows flagged
-    as containing non-English text.
+    This strategy removes observations previously flagged as containing non-English text
+    in a specified anomaly indicator column.
 
     Args:
-        column (str): The name of the column to evaluate.
-        new_column (str, optional): The name of the column to store detection results.
-            Defaults to None, in which case the column name is used.
-        detect_strategy (Type[DetectStrategy], optional): The detection strategy class
-            to use for identifying non-English text. Defaults to `NonEnglishDetectStrategy`.
-        **kwargs: Additional keyword arguments passed to the parent class or detection strategy.
+        indicator_column (str): The name of anomaly indicator column.
 
     Methods:
-        Inherits methods from `CustomRemoveStrategy`, which include functionality
-        for applying the detection strategy and removing rows flagged as anomalies.
+        Inherits methods from `RemoveDetectedAnomalyStrategy`, which removes observations
+        containing Non-English text.
     """
 
     def __init__(
         self,
-        column: str,
-        new_column: str = None,
-        detect_strategy: Type[DetectStrategy] = NonEnglishDetectStrategy,
+        indicator_column: str,
         **kwargs,
     ) -> None:
-        """
-        Initializes the NonEnglishRemovalStrategy.
+        self._indicator_column = indicator_column
 
-        Args:
-            column (str): The name of the column to evaluate.
-            new_column (str, optional): The name of the column to store detection results.
-                Defaults to None, in which case the column name is used.
-            detect_strategy (Type[DetectStrategy], optional): The detection strategy class
-                to use for identifying non-English text. Defaults to `NonEnglishDetectStrategy`.
-            **kwargs: Additional keyword arguments passed to the parent class or detection strategy.
-        """
-        super().__init__(
-            column=column,
-            new_column=new_column,
-            detect_strategy=detect_strategy,
-            **kwargs,
-        )
+    def repair(self, data: DataFrame) -> DataFrame:
+
+        # Filter out rows where anomalies are detected
+        data = data.filter(~F.col(self._indicator_column))
+
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -1176,18 +1142,74 @@ class ShortReviewDetectStrategy(DetectStrategy):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class ShortReviewRemovalStrategy(CustomRemoveStrategy):
+class ShortReviewRemovalStrategy(RepairStrategy):
+    """A strategy for removing short reviews from a DataFrame.
+
+    This class defines a repair strategy that identifies and removes reviews shorter than a specified threshold.
+    It leverages a detection strategy to flag reviews based on their length and filters out the flagged rows.
+
+    Args:
+        column (str): The name of the column containing the reviews to be processed.
+        new_column (str, optional): The name of the column to store detection results. If None, the detection
+            results will replace the existing column. Defaults to None.
+        threshold (int, optional): The minimum length of reviews to keep. Reviews shorter than this threshold
+            will be flagged for removal. Defaults to 3.
+        detect_less_than_threshold (bool, optional): Flag indicating whether to detect reviews shorter than
+            the threshold. If False, reviews longer than the threshold are flagged. Defaults to True.
+        detect_strategy (Type[ShortReviewDetectStrategy], optional): The detection strategy class used to
+            identify short reviews. Defaults to ShortReviewDetectStrategy.
+        **kwargs: Additional keyword arguments passed to the base RepairStrategy class.
+
+    Attributes:
+        _column (str): The name of the column containing the reviews to be processed.
+        _new_column (str): The name of the column to store detection results.
+        _threshold (int): The minimum length of reviews to keep.
+        _detect_less_than_threshold (bool): Indicates whether to detect reviews shorter than the threshold.
+        _detect_strategy (Type[ShortReviewDetectStrategy]): The detection strategy class used to identify
+            short reviews.
+
+    Methods:
+        repair(data: DataFrame) -> DataFrame: Applies the repair strategy to the given DataFrame by detecting
+            and removing short reviews.
+    """
 
     def __init__(
         self,
         column: str,
         new_column: str = None,
-        detect_strategy: Type[DetectStrategy] = ShortReviewDetectStrategy,
+        threshold: int = 3,
+        clean_less_than_threshold: bool = True,
+        detect_strategy: Type[ShortReviewDetectStrategy] = ShortReviewDetectStrategy,
         **kwargs,
     ) -> None:
-        super().__init__(
-            column=column,
-            new_column=new_column,
-            detect_strategy=detect_strategy,
-            **kwargs,
+        super().__init__()
+        self._column = column
+        self._new_column = new_column
+        self._threshold = threshold
+        self._clean_less_than_threshold = clean_less_than_threshold
+        self._detect_strategy = detect_strategy
+
+    def repair(self, data: DataFrame) -> DataFrame:
+        """Applies the repair strategy to the given DataFrame by detecting and removing short reviews.
+
+        Args:
+            data (DataFrame): The input DataFrame containing the reviews.
+
+        Returns:
+            DataFrame: The DataFrame with short reviews removed.
+        """
+        # Construct the anomaly detection strategy
+        detect_strategy = self._detect_strategy(
+            column=self._column,
+            new_column=self._new_column,
+            threshold=self._threshold,
+            detect_less_than_threshold=self._clean_less_than_threshold,
         )
+
+        # Execute anomaly detection
+        data = detect_strategy.detect(data=data)
+
+        # Filter out rows where anomalies are detected
+        data = data.filter(~F.col(self._new_column))
+
+        return data

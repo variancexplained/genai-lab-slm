@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 01:35:04 am                                              #
-# Modified   : Saturday January 4th 2025 04:36:50 pm                                               #
+# Modified   : Friday January 17th 2025 10:34:27 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,33 +28,23 @@ from pydantic.dataclasses import dataclass
 from discover.asset.base.atype import AssetType
 from discover.asset.base.identity import Passport
 from discover.core.dstruct import DataClass
+from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
 from discover.core.flow import PhaseDef, StageDef
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                       DATA SOURCE                                                #
+#                                      DATASET CONFIG                                              #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class SourceDataConfig(DataClass):
-    file_format: FileFormat
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     SOURCE DATASET                                               #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class SourceDatasetConfig(SourceDataConfig):
+class DatasetConfig(DataClass):
     phase: PhaseDef
     stage: StageDef
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     SOURCE FILE                                                  #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class SourceFileConfig(SourceDataConfig):
-    filepath: str
+    name: str
+    file_format: FileFormat
+    asset_type: str = "dataset"
+    filepath: Optional[str] = None
+    dftype: Optional[DFType] = DFType.PANDAS
 
 
 # ------------------------------------------------------------------------------------------------ #

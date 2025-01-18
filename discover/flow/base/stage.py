@@ -11,14 +11,14 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Thursday January 16th 2025 05:29:58 pm                                              #
+# Modified   : Friday January 17th 2025 10:39:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 import logging
 from abc import ABC, abstractmethod
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import pandas as pd
 from git import Union
@@ -26,6 +26,7 @@ from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.dataset.builder import DatasetBuilder, DatasetPassportBuilder
 from discover.asset.dataset.dataset import Dataset
+from discover.asset.dataset.identity import DatasetConfig
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
@@ -44,7 +45,8 @@ class Stage(ABC):
     implement specific details for the phase, stage, and dataframe type.
 
     Args:
-        source_config (Dict[str, str]): Configuration details for the data source.
+        source_config (Dict[str, str]): Configuration details for the source dataset.
+        target_config ((Dict[str, str]): Configuration details for the target dataset.
         tasks (List[Task]): List of tasks to be executed sequentially.
         state (FlowState): State management for the flow.
         repo (DatasetRepo): Repository for dataset storage and retrieval.
@@ -52,7 +54,8 @@ class Stage(ABC):
         spark (Optional[SparkSession]): Optional Spark session for data processing.
 
     Attributes:
-        _source_config (Dict[str, str]): Configuration details for the data source.
+        _source_config (Dict[str, str]): Configuration details for the source dataset.
+        _target_config (Dict[str, str]): Configuration details for the target dataset.
         _tasks (List[Task]): List of tasks to be executed sequentially.
         _state (FlowState): State management for the flow.
         _repo (DatasetRepo): Repository for dataset storage and retrieval.
@@ -69,12 +72,13 @@ class Stage(ABC):
         _run(): Internal method to run the stage tasks and save results.
         get_source_dataset(): Retrieves the source dataset based on the configuration.
         save_target_dataset(source, dataframe): Saves the target dataset after processing.
-        _get_endpoint(): Retrieves the endpoint dataset from the state and repository.
+        _get_target(): Retrieves the target dataset from the state and repository.
     """
 
     def __init__(
         self,
-        source_config: Dict[str, str],
+        source_config: DatasetConfig,
+        target_config: DatasetConfig,
         tasks: List[Task],
         state: FlowState,
         repo: DatasetRepo,
@@ -85,6 +89,7 @@ class Stage(ABC):
 
         Args:
             source_config (Dict[str, str]): Configuration for the source data.
+            target_config ((Dict[str, str]): Configuration details for the target dataset.
             tasks (List[Task]): List of tasks to execute in the stage.
             state (FlowState): Flow state management object.
             repo (DatasetRepo): Dataset repository for storage and retrieval.
@@ -92,6 +97,7 @@ class Stage(ABC):
             spark (Optional[SparkSession]): Optional Spark session for processing.
         """
         self._source_config = source_config
+        self._target_config = target_config
         self._tasks = tasks
         self._state = state
         self._repo = repo
@@ -144,8 +150,8 @@ class Stage(ABC):
     def run(self, force: bool = False) -> Dataset:
         """Executes the stage, optionally forcing re-execution.
 
-        This method checks if the stage endpoint already exists. If `force`
-        is False and the endpoint exists, it retrieves the dataset from the state.
+        This method checks if the stage target already exists. If `force`
+        is False and the target exists, it retrieves the dataset from the state.
         Otherwise, it executes the stage's tasks and saves the result.
 
         Args:
@@ -154,12 +160,23 @@ class Stage(ABC):
         Returns:
             Dataset: The resulting dataset after stage execution.
         """
-        # If the endpoint exists and we're not forcing execution, return the endpoint
-        if self._state.exists(phase=self.phase, stage=self.stage) and not force:
-            return self._get_endpoint()
-        # If the state exists, and we're forcing remove the endpoint
-        elif self._state.exists(phase=self.phase, stage=self.stage):
-            self._remove_endpoint()
+        # If the target exists and we're not forcing execution, return the target
+        if (
+            self._state.exists(
+                phase=self._target_config.phase,
+                stage=self._target_config.stage,
+                name=self._target_config.name,
+            )
+            and not force
+        ):
+            return self._get_target()
+        # If the state exists, and we're forcing remove the target
+        elif self._state.exists(
+            phase=self._target_config.phase,
+            stage=self._target_config.stage,
+            name=self._target_config.name,
+        ):
+            self._remove_target()
         # Run the stage pipeline.
         return self._run()
 
@@ -198,9 +215,11 @@ class Stage(ABC):
         Example:
             >>> source_dataset = stage.get_source_dataset()
         """
-        source_phase = PhaseDef.from_value(self._source_config["phase"])
-        source_stage = StageDef.from_value(self._source_config["stage"])
-        passport = self._state.read(phase=source_phase, stage=source_stage)
+        passport = self._state.read(
+            phase=self._source_config.phase,
+            stage=self._source_config.stage,
+            name=self._source_config.name,
+        )
         return self._repo.get(
             asset_id=passport.asset_id, spark=self._spark, dftype=self.dftype
         )
@@ -225,11 +244,11 @@ class Stage(ABC):
         """
         passport = (
             DatasetPassportBuilder()
-            .phase(self.phase)
-            .stage(self.stage)
+            .phase(self._target_config.phase)
+            .stage(self._target_config.stage)
             .source(source.passport)
             .creator(self.__class__.__name__)
-            .name("reviews")
+            .name(self._target_config.name)
             .build()
             .passport
         )
@@ -244,15 +263,15 @@ class Stage(ABC):
         self._state.create(passport=target.passport)
         return target
 
-    def _get_endpoint(self) -> Dataset:
-        """Retrieves the endpoint dataset from the state and repository.
+    def _get_target(self) -> Dataset:
+        """Retrieves the target dataset from the state and repository.
 
         Reads the dataset passport from the flow state and retrieves the dataset
         from the repository. Handles exceptions related to data integrity and
         unexpected errors.
 
         Returns:
-            Dataset: The endpoint dataset.
+            Dataset: The target dataset.
 
         Raises:
             ObjectNotFoundError: If the dataset is not found in the repository despite
@@ -260,33 +279,34 @@ class Stage(ABC):
             Exception: For other unknown exceptions during retrieval.
 
         Example:
-            >>> endpoint_dataset = stage._get_endpoint()
+            >>> target_dataset = stage._get_target()
         """
-        passport = self._state.read(phase=self.phase, stage=self.stage)
+        passport = self._state.read(
+            phase=self._target_config.phase,
+            stage=self._target_config.stage,
+            name=self._target_config.name,
+        )
         try:
             return self._repo.get(
                 asset_id=passport.asset_id, dftype=self.dftype, spark=self._spark
             )
         except ObjectNotFoundError as e:
-            msg = (
-                f"Data Integrity Error. The endpoint for phase {self.phase.value} "
-                f"and stage {self.stage.value} was found in flow state, but not found "
-                f"in the repository.\n{e}"
-            )
+            msg = f"Data Integrity Error encountered while reading target dataset {self._target_config}. Flow state exists, but dataset does not exist in the repository.\n{e}"
             self._logger.error(msg)
             raise
         except Exception as e:
-            msg = (
-                f"Unknown exception occurred while reading endpoint for phase {self.phase.value} "
-                f"and stage {self.stage.value}.\n{e}"
-            )
+            msg = f"Unknown exception occurred while reading target dataset {self._target_config}.\n{e}"
             self._logger.exception(msg)
             raise
 
-    def _remove_endpoint(self) -> None:
-        """Removes a stage endpoint from flow state and the dataset repository"""
-        # Obtain the passport containing the asset id for the endpoint
-        passport = self._state.read(phase=self.phase, stage=self.stage)
+    def _remove_target(self) -> None:
+        """Removes a stage target from flow state and the dataset repository"""
+        # Obtain the passport containing the asset id for the target
+        passport = self._state.read(
+            phase=self._target_config.phase,
+            stage=self._target_config.stage,
+            name=self._target_config.name,
+        )
         # Remove the dataset from the repository if it exists
         try:
             self._repo.remove(asset_id=passport.asset_id)
@@ -298,4 +318,8 @@ class Stage(ABC):
             self._logger.exception(msg)
             raise RuntimeError(msg)
         # Delete the passport from flow state
-        self._state.delete(phase=self.phase, stage=self.stage)
+        self._state.delete(
+            phase=self._target_config.phase,
+            stage=self._target_config.stage,
+            name=self._target_config.name,
+        )

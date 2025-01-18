@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Friday January 17th 2025 12:12:46 am                                                #
+# Modified   : Friday January 17th 2025 08:54:41 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -78,7 +78,7 @@ phases:
               timezone: America/New_York
 
 # ------------------------------------------------------------------------------------------------ #
-#                             DATA QUALITY CHECK STAGE PIPELINE                                    #
+#                            DATA QUALITY ANALYSIS STAGE PIPELINE                                  #
 # ------------------------------------------------------------------------------------------------ #
       dqa:
         phase: dataprep
@@ -379,15 +379,13 @@ phases:
             class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.dataprep.quality.relevance
             params:
-              column: app_name
-              new_column: dqa_relevance_contains_non_english_app_name
+              indicator_column: dqa_relevance_contains_non_english_app_name
               mode: repair
           clean_non_english_reviews:
             class_name: DetectOrRepairNonEnglishTask
             module: discover.flow.dataprep.quality.relevance
             params:
-              column: content
-              new_column: dqa_relevance_contains_non_english_text
+              indicator_column: dqa_relevance_contains_non_english_text
               mode: repair
           clean_excess_special_chars:
             class_name: DetectOrRepairExcessiveSpecialCharsTask
@@ -398,23 +396,6 @@ phases:
               threshold: 0.35
               threshold_type: proportion
               unit: character
-              mode: repair
-          clean_duplicate_rows:
-            class_name: DetectOrRepairUniquenessTask
-            module: discover.flow.dataprep.quality.unique
-            params:
-              column:
-                - id
-                - app_id
-                - app_name
-                - category_id
-                - author
-                - rating
-                - content
-                - vote_sum
-                - vote_count
-                - date
-              new_column: dqa_uniqueness_duplicate_row
               mode: repair
           clean_duplicate_review_ids:
             class_name: DetectOrRepairUniquenessTask
@@ -531,212 +512,6 @@ phases:
               new_column: dqa_validity_invalid_review_date
               mode: repair
               range_min: 2007
-              range_max: 2024
-              range_type: year
-# ------------------------------------------------------------------------------------------------ #
-#                               Data Quality Verification Stage Pipeline                           #
-# ------------------------------------------------------------------------------------------------ #
-      dqv:
-        phase: dataprep
-        stage: dqv
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: semiclean
-          name: review
-          dftype: spark
-          file_format: parquet
-        target_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: dqv
-          name: review
-          dftype: spark
-          file_format: parquet
-        tasks:
-          - class_name: DetectOrRepairURLTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_privacy_contains_url
-              mode: detect
-          - class_name: DetectOrRepairEmailAddressTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_privacy_contains_email
-              mode: detect
-          - class_name: DetectOrRepairPhoneNumberTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_privacy_contains_phone
-              mode: detect
-          - class_name: DetectOrRepairControlCharsTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_ctrl_chars
-              mode: detect
-          - class_name: DetectOrRepairAccentedCharsTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_accents
-              mode: detect
-          - class_name: DetectOrRepairHTMLCharsTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_html_chars
-              mode: detect
-          - class_name: DetectOrRepairExcessiveWhitespaceTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_excess_whitespace
-              mode: detect
-          - class_name: DetectOrRepairNonEnglishTask
-            module: discover.flow.dataprep.quality.relevance
-            params:
-              column: app_name
-              new_column: dqa_relevance_contains_non_english_app_name
-              mode: detect
-          - class_name: DetectOrRepairNonEnglishTask
-            module: discover.flow.dataprep.quality.relevance
-            params:
-              column: content
-              new_column: dqa_relevance_contains_non_english_text
-              mode: detect
-          - class_name: DetectOrRepairExcessiveSpecialCharsTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_excess_special_chars
-              threshold: 0.35
-              threshold_type: proportion
-              unit: character
-              mode: detect
-          - class_name: DetectOrRepairUniquenessTask
-            module: discover.flow.dataprep.quality.unique
-            params:
-              column:
-                - id
-                - app_id
-                - app_name
-                - category_id
-                - author
-                - rating
-                - content
-                - vote_sum
-                - vote_count
-                - date
-              new_column: dqa_uniqueness_duplicate_row
-              mode: detect
-          - class_name: DetectOrRepairUniquenessTask
-            module: discover.flow.dataprep.quality.unique
-            params:
-              column:
-                - id
-              new_column: dqa_uniqueness_duplicate_review_id
-              mode: detect
-          - class_name: DetectOrRepairUniquenessTask
-            module: discover.flow.dataprep.quality.unique
-            params:
-              column:
-                - app_id
-                - author
-                - content
-              new_column: dqa_uniqueness_duplicate_review
-              mode: detect
-          - class_name: DetectOrRepairElongationTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              threshold: 4
-              max_elongation: 3
-              new_column: dqa_validity_contains_elongation
-              mode: detect
-          - class_name: DetectOrRepairRepeatedSequenceTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              length_of_sequence: 2
-              min_repetitions: 3
-              threshold: 3
-              theshold_type: count
-              unit: character
-              new_column: dqa_validity_contains_excess_sequence_repetition
-              mode: detect
-          - class_name: DetectOrRepairRepeatedCharactersTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_excess_character_repetition
-              min_repetitions: 4
-              mode: detect
-          - class_name: DetectOrRepairRepeatedWordsTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_excess_word_repetition
-              threshold: 1
-              threshold_type: count
-              min_repetitions: 3
-              mode: detect
-          - class_name: DetectOrRepairRepeatedPhraseTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: content
-              new_column: dqa_validity_contains_excess_phrase_repetition
-              threshold: 1
-              threshold_type: count
-              min_repetitions: 2
-              mode: detect
-          - class_name: DetectOrRepairShortReviewsTask
-            module: discover.flow.dataprep.quality.relevance
-            params:
-              column: content
-              new_column: dqa_relevance_short_review
-              threshold: 4
-              detect_less_than_threshold: True
-              mode: detect
-          - class_name: DetectOrRepairCategoryAnomalyTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: category
-              new_column: dqa_validity_invalid_category
-              mode: detect
-              valid_categories:
-                - 'Book'
-                - 'Business'
-                - 'Education'
-                - 'Entertainment'
-                - 'Finance'
-                - 'Food & Drink'
-                - 'Health & Fitness'
-                - 'Lifestyle'
-                - 'Medical'
-                - 'Photo & Video'
-                - 'Productivity'
-                - 'Reference'
-                - 'Social Networking'
-                - 'Utilities'
-          - class_name: DetectOrRepairRatingAnomalyTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: rating
-              new_column: dqa_validity_invalid_rating
-              mode: detect
-              range_min: 1
-              range_max: 5
-          - class_name: DetectOrRepairReviewDateAnomalyTask
-            module: discover.flow.dataprep.quality.validity
-            params:
-              column: date
-              new_column: dqa_validity_invalid_review_date
-              mode: detect
-              range_min: 2020
               range_max: 2024
               range_type: year
 # ------------------------------------------------------------------------------------------------ #

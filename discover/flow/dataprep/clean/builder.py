@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Friday January 17th 2025 05:22:51 am                                                #
+# Modified   : Friday January 17th 2025 11:17:36 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,6 +19,7 @@
 """Data Cleaning Stage Builder Module"""
 from __future__ import annotations
 
+from discover.asset.dataset.identity import DatasetConfig
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
 from discover.flow.dataprep.clean.stage import DataCleaningStage
@@ -33,6 +34,9 @@ class DataCleaningStageBuilder(StageBuilder):
     def __init__(self) -> None:
         super().__init__()
 
+        self._source_config = None
+        self._target_config = None
+
         self._clean_accents = None
         self._clean_control_chars = None
         self._clean_duplicate_review_ids = None
@@ -59,13 +63,12 @@ class DataCleaningStageBuilder(StageBuilder):
 
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
-        )
-        self._source_config = self._get_config(
-            phase=self.__PHASE, stage=self.__STAGE, config="source_config"
         )
 
     def reset(self) -> None:
         super().reset()
+        self._source_config = None
+        self._target_config = None
         self._clean_accents = None
         self._clean_control_chars = None
         self._clean_duplicate_review_ids = None
@@ -93,6 +96,18 @@ class DataCleaningStageBuilder(StageBuilder):
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                 SOURCE AND TARGET DATASETS                                   #
+    # -------------------------------------------------------------------------------------------- #
+    def source(self, source_config: DatasetConfig) -> DataCleaningStageBuilder:
+        self._source_config = source_config
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def target(self, target_config: DatasetConfig) -> DataCleaningStageBuilder:
+        self._target_config = target_config
+        return self
 
     # -------------------------------------------------------------------------------------------- #
     def clean_privacy_issues(self) -> DataCleaningStageBuilder:
@@ -114,25 +129,22 @@ class DataCleaningStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._clean_emails))
 
     # -------------------------------------------------------------------------------------------- #
-    def clean_duplication(self) -> DataCleaningStageBuilder:
-        self.clean_duplicate_review_ids()
-        self.clean_duplicate_reviews()
-        self.clean_duplicate_rows()
-        return self
-
-    def clean_duplicate_review_ids(self) -> None:
+    def clean_duplicate_review_ids(self) -> DataCleaningStageBuilder:
         self._clean_duplicate_review_ids = self._task_configs[
             "clean_duplicate_review_ids"
         ]
         self._tasks.append(self._task_builder.build(self._clean_duplicate_review_ids))
+        return self
 
-    def clean_duplicate_reviews(self) -> None:
+    def clean_duplicate_reviews(self) -> DataCleaningStageBuilder:
         self._clean_duplicate_reviews = self._task_configs["clean_duplicate_reviews"]
         self._tasks.append(self._task_builder.build(self._clean_duplicate_reviews))
+        return self
 
-    def clean_duplicate_rows(self) -> None:
+    def clean_duplicate_rows(self) -> DataCleaningStageBuilder:
         self._clean_duplicate_rows = self._task_configs["clean_duplicate_rows"]
         self._tasks.append(self._task_builder.build(self._clean_duplicate_rows))
+        return self
 
     # -------------------------------------------------------------------------------------------- #
     def clean_invalid_characters(self) -> DataCleaningStageBuilder:
@@ -308,6 +320,7 @@ class DataCleaningStageBuilder(StageBuilder):
         self._validate()
         self._stage = DataCleaningStage(
             source_config=self._source_config,
+            target_config=self._target_config,
             tasks=self._tasks,
             state=self._state,
             repo=self._repo,
@@ -328,58 +341,42 @@ class DataCleaningStageBuilder(StageBuilder):
         """
         super()._validate()
         errors = []
+        if self._clean_non_english_app_names is None:
+            errors.append(
+                "clean_non_english_app_names is a required step in the DataCleaning Stage."
+            )
+        if self._clean_non_english_reviews is None:
+            errors.append(
+                "clean_non_english_reviews is a required step in the DataCleaning Stage."
+            )
+        if self._clean_accents is None:
+            errors.append("clean_accents is a required step in the DataCleaning Stage.")
         if self._clean_control_chars is None:
             errors.append(
-                "clean_control_chars is a required step in the DataQualityAssessment Stage."
+                "clean_control_chars is a required step in the DataCleaning Stage."
             )
         if self._clean_duplicate_review_ids is None:
             errors.append(
-                "clean_duplicate_review_ids is a required step in the DataQualityAssessment Stage."
-            )
-        if self._clean_duplicate_reviews is None:
-            errors.append(
-                "clean_duplicate_reviews is a required step in the DataQualityAssessment Stage."
-            )
-        if self._clean_duplicate_rows is None:
-            errors.append(
-                "clean_duplicate_rows is a required step in the DataQualityAssessment Stage."
+                "clean_duplicate_review_ids is a required step in the DataCleaning Stage."
             )
         if self._clean_elongation is None:
             errors.append(
-                "clean_elongation is a required step in the DataQualityAssessment Stage."
+                "clean_elongation is a required step in the DataCleaning Stage."
             )
         if self._clean_emails is None:
-            errors.append(
-                "clean_emails is a required step in the DataQualityAssessment Stage."
-            )
+            errors.append("clean_emails is a required step in the DataCleaning Stage.")
         if self._clean_excess_whitespace is None:
             errors.append(
-                "clean_excess_whitespace is a required step in the DataQualityAssessment Stage."
+                "clean_excess_whitespace is a required step in the DataCleaning Stage."
             )
         if self._clean_html is None:
-            errors.append(
-                "clean_html is a required step in the DataQualityAssessment Stage."
-            )
-        if self._clean_invalid_categories is None:
-            errors.append(
-                "clean_invalid_categories is a required step in the DataQualityAssessment Stage."
-            )
-        if self._clean_invalid_ratings is None:
-            errors.append(
-                "clean_invalid_ratings is a required step in the DataQualityAssessment Stage."
-            )
-        if self._clean_invalid_review_dates is None:
-            errors.append(
-                "clean_invalid_review_dates is a required step in the DataQualityAssessment Stage."
-            )
+            errors.append("clean_html is a required step in the DataCleaning Stage.")
         if self._clean_phone_numbers is None:
             errors.append(
-                "clean_phone_numbers is a required step in the DataQualityAssessment Stage."
+                "clean_phone_numbers is a required step in the DataCleaning Stage."
             )
         if self._clean_urls is None:
-            errors.append(
-                "clean_urls is a required step in the DataQualityAssessment Stage."
-            )
+            errors.append("clean_urls is a required step in the DataCleaning Stage.")
 
         if errors:
             self.reset()

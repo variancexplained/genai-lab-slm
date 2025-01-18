@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Saturday January 4th 2025 08:29:59 pm                                               #
+# Modified   : Friday January 17th 2025 09:53:27 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,9 +19,10 @@
 """Acquire Stage Builder Module"""
 from __future__ import annotations
 
-from typing import Dict, List
+from typing import List
 
 from discover.asset.dataset.builder import DatasetBuilder
+from discover.asset.dataset.identity import DatasetConfig
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
 from discover.flow.base.task import Task
@@ -58,6 +59,8 @@ class IngestStageBuilder(StageBuilder):
             None
         """
         super().__init__()
+        self._source_config = None
+        self._target_config = None
         self._encoding = None
         self._datatypes = None
         self._newlines = None
@@ -69,37 +72,39 @@ class IngestStageBuilder(StageBuilder):
 
     def reset(self) -> None:
         super().reset()
+        self._source_config = None
+        self._target_config = None
         self._encoding = None
         self._datatypes = None
         self._newlines = None
         self._convert_datetime_utc = None
 
-    def source_filepath(
-        self, filepath: str = None, from_config: bool = True
-    ) -> IngestStageBuilder:
+    def source(self, source_config: DatasetConfig) -> IngestStageBuilder:
         """
-        Sets the source file path for the Ingest stage, either from a configuration or directly.
-
-        This method configures the source file path for the data pipeline. If the `from_config` parameter
-        is set to `True`, the file path is loaded from a predefined configuration based on the environment.
-        If `from_config` is `False`, the file path is set directly using the provided `filepath` argument.
+        Sets the source config, including the file path for the Ingest stage.
 
         Args:
-            filepath (str, optional): The file path to the source data. This argument is used only if `from_config` is `False`.
-            from_config (bool, optional): Determines whether to load the file path from the environment-specific configuration.
-                If `True`, the file path is loaded from the configuration; otherwise, it is set directly using the `filepath` argument.
+            source_config (DatasetConfig): Dataset config including the source filepath
 
         Returns:
             IngestStageBuilder: The builder instance for method chaining, allowing further configurations or task additions.
 
-        Raises:
-            ValueError: If `from_config` is `False` and no `filepath` is provided.
         """
+        self._source_config = source_config
+        return self
 
-        if from_config:
-            self._source_config = self._get_source_config()
-        else:
-            self._source_config = {"filepath": filepath}
+    def target(self, target_config: DatasetConfig) -> IngestStageBuilder:
+        """
+        Sets the target dataset config.
+
+        Args:
+            target_config (DatasetConfig): Target dataset config.
+
+        Returns:
+            IngestStageBuilder: The builder instance for method chaining, allowing further configurations or task additions.
+
+        """
+        self._target_config = target_config
         return self
 
     def encoding(self) -> IngestStageBuilder:
@@ -154,6 +159,7 @@ class IngestStageBuilder(StageBuilder):
         self._tasks = self._build_tasks()
         self._stage = IngestStage(
             source_config=self._source_config,
+            target_config=self._target_config,
             tasks=self._tasks,
             state=self._state,
             repo=self._repo,
@@ -186,8 +192,10 @@ class IngestStageBuilder(StageBuilder):
         """
         super()._validate()
         errors = []
-        if not isinstance(self._source_config, Dict):
-            errors.append("Source filepath is required for the IngestStage.")
+        if not isinstance(self._source_config, DatasetConfig):
+            errors.append("Source dataset config is required for the IngestStage.")
+        if not isinstance(self._target_config, DatasetConfig):
+            errors.append("Target dataset config is required for the IngestStage.")
         if self._encoding is None:
             errors.append("The encoding step is required for the IngestStage.")
         if self._datatypes is None:
