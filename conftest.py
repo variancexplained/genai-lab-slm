@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday January 4th 2025 07:14:05 pm                                               #
+# Modified   : Sunday January 19th 2025 02:21:23 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,11 +26,11 @@ from pyspark.sql import SparkSession
 
 from discover.asset.base.atype import AssetType
 from discover.asset.dataset.builder import DatasetBuilder
-from discover.asset.dataset.identity import DatasetPassport
+from discover.asset.dataset.identity import DatasetConfig, DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
-from discover.core.flow import PhaseDef, TestStageDef
+from discover.core.flow import PhaseDef, StageDef, TestStageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
 
@@ -311,4 +311,19 @@ def dataset_spark_csv(ds_passport, spark_df):
 def dataset_spark_parquet(ds_passport, spark_df):
     return (
         DatasetBuilder().passport(ds_passport).from_dataframe(spark_df).build().dataset
+    )
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                        FEATURE ENGINEERING SOURCE DATASET CONFIG                                 #
+# ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def clean_dataset_config():
+    return DatasetConfig(
+        phase=PhaseDef.DATAPREP,
+        stage=StageDef.CLEAN,
+        name="review",
+        file_format=FileFormat.PARQUET,
+        asset_type="dataset",
+        dftype=DFType.SPARKNLP,
     )

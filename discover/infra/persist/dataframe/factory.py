@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 02:21:28 pm                                             #
-# Modified   : Thursday January 2nd 2025 06:44:28 am                                               #
+# Modified   : Sunday January 19th 2025 01:17:30 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -51,12 +51,14 @@ class DataFrameIOFactory(IOFactory):
         "pandas_parquet": PandasDataFrameParquetReader,
         "spark_csv": SparkDataFrameCSVReader,
         "spark_parquet": SparkDataFrameParquetReader,
+        "sparknlp_parquet": SparkDataFrameParquetReader,
     }
     __writer_map = {
         "pandas_csv": PandasDataFrameCSVWriter,
         "pandas_parquet": PandasDataFrameParquetWriter,
         "spark_csv": SparkDataFrameCSVWriter,
         "spark_parquet": SparkDataFrameParquetWriter,
+        "sparknlp_parquet": SparkDataFrameParquetWriter,
     }
 
     def __init__(self, config: dict) -> None:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Saturday January 4th 2025 11:59:30 pm                                               #
+# Modified   : Sunday January 19th 2025 01:46:22 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -103,7 +103,7 @@ DTYPES = {
     "content": "string",
     "vote_count": "int64",
     "vote_sum": "int64",
-    "date": "datetime64[ns]",
+    "date": "datetime64[ms]",
 }
 
 # ------------------------------------------------------------------------------------------------ #

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Friday January 17th 2025 08:54:41 pm                                                #
+# Modified   : Sunday January 19th 2025 05:54:03 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -70,12 +70,11 @@ phases:
             module: discover.flow.dataprep.ingest.task
             params:
               column: content
-          convert_datetime_utc:
-            class_name: ConvertDateTimeUTC
+          convert_datetime_ns_to_ms:
+            class_name: ConvertDateTimeNStoMS
             module: discover.flow.dataprep.ingest.task
             params:
               column: date
-              timezone: America/New_York
 
 # ------------------------------------------------------------------------------------------------ #
 #                            DATA QUALITY ANALYSIS STAGE PIPELINE                                  #
@@ -514,176 +513,87 @@ phases:
               range_min: 2007
               range_max: 2024
               range_type: year
-# ------------------------------------------------------------------------------------------------ #
-#                                 Data Cleaning Stage Pipeline                                     #
-# ------------------------------------------------------------------------------------------------ #
-      clean:
-        phase: dataprep
-        stage: clean
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: dqv
-          name: review
-          dftype: spark
-          file_format: parquet
-        target_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: clean
-          name: review
-          dftype: spark
-          file_format: parquet
-        tasks:
-          - class_name: DropColumnsTask
-            module: discover.flow.dataprep.quality.relevance
-            params:
-              columns: []
-              prefix:
-                - dqa_
-# ================================================================================================ #
-#                                 Data Enrichment Phase                                            #
-# ================================================================================================ #
-  enrichment:
-    stages:
-      sentiment:
-        phase: enrichment
-        stage: sentiment
-        source_config:
-          asset_type: dataset
-          phase: dataprep
-          stage: clean
-          name: review
-          dftype: pandas
-          file_format: parquet
-        target_config:
-          asset_type: dataset
-          phase: enrichment
-          stage: sentiment
-          name: review
-          dftype: pandas
-          file_format: parquet
-        tasks:
-          - class_name: SentimentClassificationTask
-            module: discover.flow.task.model.sentiment
-            params:
-              column: content
-              new_column: en_sentiment
-              model_name: tabularisai/robust-sentiment-analysis
-              cache_filepath: models/sentiment/inference/sentiments_prod.csv
-              device_local: False
-      quantitative:
-        phase: enrichment
-        stage: quantitative
-        source_config:
-          asset_type: dataset
-          phase: enrichment
-          stage: sentiment
-          name: review
-          dftype: sparknlp
-          file_format: parquet
-        target_config:
-          asset_type: dataset
-          phase: enrichment
-          stage: quantitative
-          name: review
-          dftype: sparknlp
-          file_format: parquet
-        tasks:
-          - class_name: NLPTask
-            module: discover.flow.task.enrich.tqa
-            params:
-              column: content
-          - class_name: ComputeTextQualityTask
-            module: discover.flow.task.enrich.tqa
-            params:
-              weight_noun: 0.3
-              weight_adjective: 0.3
-              weight_verb: 0.2
-              weight_adverb: 0.2
-              weight_syntactic: 0.5
-              weight_lexical: 0.5
-          - class_name: ComputeReviewLengthPS
-            module: discover.flow.task.enrich.review
-            params:
-              column: content
-              new_column: en_review_length
-          - class_name: ComputeReviewAgeTask
-            module: discover.flow.task.enrich.review
-            params:
-              column: date
-              new_column: en_review_age
-          - class_name: ComputeReviewMonthTask
-            module: discover.flow.task.enrich.review
-            params:
-              column: date
-              new_column: en_review_month
-          - class_name: ComputeReviewDayofWeekTask
-            module: discover.flow.task.enrich.review
-            params:
-              column: date
-              new_column: en_review_day_of_week
-          - class_name: ComputeReviewHourTask
-            module: discover.flow.task.enrich.review
-            params:
-              column: date
-              new_column: en_review_hour
-          - class_name: ComputePercentDeviationTask
-            module: discover.flow.task.enrich.review
-            params:
-              by: category
-              column: rating
-              new_column: en_rating_pct_deviation
-          - class_name: ComputePercentDeviationTask
-            module: discover.flow.task.enrich.review
-            params:
-              by: category
-              column: en_review_length_pct_deviation
-          - class_name: ComputePercentDeviationTask
-            module: discover.flow.task.enrich.review
-            params:
-              by: category
-              column: en_review_age
-      app:
-        phase: enrichment
-        stage: app
-        source_config:
-          asset_type: dataset
-          phase: enrichment
-          stage: quantitative
-          name: review
-          dftype: spark
-          file_format: parquet
-        target_config:
-          asset_type: dataset
-          phase: enrichment
-          stage: app
-          name: app
-          dftype: spark
-          file_format: parquet
-        tasks:
-          - class_name: AppAggregationTask
-            module: discover.flow.task.enrich.app
-            params: {}
-      category:
-        phase: enrichment
-        stage: category
-        source_config:
-          asset_type: dataset
-          phase: enrichment
-          stage: quantitative
-          name: review
-          dftype: spark
-          file_format: parquet
-        target_config:
-          asset_type: dataset
-          phase: enrichment
-          stage: category
-          name: category
-          dftype: spark
-          file_format: parquet
-        tasks:
-          - class_name: CategoryAggregationTask
-            module: discover.flow.task.enrich.category
-            params: {}
 
+# ================================================================================================ #
+#                                FEATURE ENGINEERING PHASES                                        #
+# ================================================================================================ #
+  feature:
+    stages:
+      tqa_syntactic:
+        phase: feature
+        stage: tqa_syntactic
+        source_config:
+          asset_type: dataset
+          phase: dataprep
+          stage: clean
+          name: review
+          dftype: sparknlp
+          file_format: parquet
+        target_config:
+          asset_type: dataset
+          phase: feature
+          stage: tqa_syntactic
+          name: review
+          dftype: sparknlp
+          file_format: parquet
+        tasks:
+          noun_phrase_count:
+            class_name: NounPhraseCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_syntactic_noun_phrases
+              new_column: tqa_syntactic_noun_phrase_count
+              normalized: True
+          adjective_noun_pair_count:
+            class_name: AdjectiveNounPairCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_syntactic_adjective_noun_pairs
+              new_column: tqa_syntactic_adjective_noun_pair_count
+              normalized: True
+          aspect_verb_pair_count:
+            class_name: AspectVerbPairCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_syntactic_aspect_verb_pairs
+              new_column: tqa_syntactic_aspect_verb_pair_count
+              normalized: True
+          adverb_phrase_count:
+            class_name: AdverbPhraseCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_syntactic_adverb_phrases
+              new_column: tqa_syntactic_adverb_phrase_count
+              normalized: True
+          noun_count:
+            class_name: NounCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_pos
+              new_column: tqa_syntactic_noun_count
+              pos: NN
+              normalized: True
+          verb_count:
+            class_name: VerbCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_pos
+              new_column: tqa_syntactic_verb_count
+              pos: VB
+              normalized: True
+          adverb_count:
+            class_name: AdverbCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_pos
+              new_column: tqa_syntactic_adverb_count
+              pos: RB
+              normalized: True
+          adjective_count:
+            class_name: AdjectiveCount
+            module: discover.flow.feature.tqa.syntactic.task
+            params:
+              column: tqa_pos
+              new_column: tqa_syntactic_adjective_count
+              pos: JJ
+              normalized: True

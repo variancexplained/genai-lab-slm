@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Thursday January 16th 2025 07:14:48 pm                                              #
+# Modified   : Sunday January 19th 2025 11:35:14 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,15 +32,15 @@ class StageDef(Enum):
     SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")
-    # Enrichment Phase
-    TQA = ("tqa", 0, "Text Quality Analysis")
-    SENTIMENT = ("sentiment", 1, "Sentiment Classification Stage")
-    ASPECT = ("aspect", 2, "Aspect Extraction Stage")
-    TOPIC = ("topic", 3, "Topic Analysis Stage")
-    APP = ("app", 4, "App Aggregation Stage")
-    CATEGORY = ("category", 5, "Category Aggregation Stage")
-    STATS = ("stats", 6, "Statistical Features Stage ")
-    SEGMENTATION = ("segmentation", 7, "User Segmentation Stage")
+    # Feature Engineering Phase
+    TQA_SYNTACTIC = ("tqa_syntactic", 0, "Syntactic Text Quality Analysis Stage")
+    TQA_SENTIMENT = ("tqa_sentiment", 1, "Sentiment Text Quality Analysis Stage")
+    TQA_LEXICAL = ("tqa_lexical", 2, "Lexical Text Quality Analysis Stage")
+    TQA_SCORE = ("tqa_score", 3, "Text Quality Analysis Score Stage")
+    SENTIMENT = ("sentiment", 4, "Sentiment Classification Stage")
+    # Modeling Phase
+    ABSA_FT = ("absa_ft", 0, "Fine-Tuned ABSA Modeling Stage")
+    ABSA_CUSTOM = ("absa_custom", 1, "Custom ABSA Modeling Stage")
 
     @classmethod
     def from_value(cls, value) -> StageDef:
@@ -65,7 +65,7 @@ class TestStageDef(Enum):
     FUNCTIONAL_TEST = ("functional", 2, "Functional Testing")
     SYSTEM_TEST = ("system", 3, "System Testing")
     PERFORMANCE_TEST = ("performance", 4, "Performance Testing")
-    SMOKE_TEST = ("smoke", 4, "Smoke Testing")
+    SMOKE_TEST = ("smoke", 5, "Smoke Testing")
 
     @classmethod
     def from_value(cls, value) -> TestStageDef:
@@ -85,13 +85,10 @@ class TestStageDef(Enum):
 
 # ------------------------------------------------------------------------------------------------ #
 class PhaseDef(Enum):
-    ACQUISITION = ("acquisition", 0, "Data Acquisition Phase")
-    DATAPREP = ("dataprep", 1, "Data Preparation Phase")
-    ENRICHMENT = ("enrichment", 2, "Data Enrichment Phase")
-    EDA = ("eda", 3, "Exploratory Data Analysis")
-    ABSA_FT = ("absa_ft", 4, "ABSA Model Fine-Tuning Phase")
-    ABSA_CD = ("absa_cd", 5, "ABSA Custom Model Development Phase")
-    TESTING = ("test", 6, "Testing Phase")
+    DATAPREP = ("dataprep", 0, "Data Preparation Phase")
+    FEATURE = ("feature", 1, "Feature Engineering Phase")
+    ABSA = ("absa", 2, "ABSA Modeling Phase")
+    TESTING = ("test", 9, "Testing Phase")
 
     def __new__(cls, name: str, id: int, label: str):
         obj = object.__new__(cls)

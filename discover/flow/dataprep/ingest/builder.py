@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Friday January 17th 2025 09:53:27 pm                                                #
+# Modified   : Sunday January 19th 2025 01:32:41 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -137,14 +137,14 @@ class IngestStageBuilder(StageBuilder):
         self._newlines = self._task_config["newlines"]
         return self
 
-    def convert_datetime_utc(self) -> IngestStageBuilder:
+    def convert_datetime_ns_to_ms(self) -> IngestStageBuilder:
         """
         Configures the datetime conversion task for the Ingest stage.
 
         Returns:
             IngestStageBuilder: The builder instance for method chaining.
         """
-        self._convert_datetime_utc = self._task_config["convert_datetime_utc"]
+        self._convert_datetime_ns_to_ms = self._task_config["convert_datetime_ns_to_ms"]
         return self
 
     def build(self) -> IngestStageBuilder:

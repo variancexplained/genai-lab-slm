@@ -6,6 +6,7 @@
 # Coverage
 *.coverage
 .coverage.*
+.coverage*
 
 # Data
 data/ext/
@@ -40,6 +41,7 @@ lib64
 
 # Logs
 logs/
+*.log
 
 # Models
 models
@@ -52,6 +54,8 @@ pip-log.txt
 
 # Unit test / coverage reports
 .coverage
+.coveragent
+.coveragerc
 .tox
 nosetests.xml
 

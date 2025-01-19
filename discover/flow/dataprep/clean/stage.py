@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Friday January 17th 2025 11:15:36 pm                                                #
+# Modified   : Saturday January 18th 2025 05:10:29 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -21,7 +21,8 @@ from typing import List, Optional
 
 from pyspark.sql import SparkSession
 
-from discover.asset.dataset.builder import DatasetBuilder
+from discover.asset.dataset.builder import DatasetBuilder, DatasetPassportBuilder
+from discover.asset.dataset.dataset import Dataset
 from discover.asset.dataset.identity import DatasetConfig
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
@@ -98,3 +99,47 @@ class DataCleaningStage(Stage):
     def dftype(self) -> DFType:
         """Returns the data frame type used in this stage."""
         return self.__DFTYPE
+
+    def approve(self, dataset: Dataset) -> Dataset:
+        """Approves the cleaned Dataset.
+
+        This method elevates the dataset from `semiclean` to 'clean' status,
+        removes the anomaly detection annotations, updates the flowstate,
+        and persists the dataset in the repository.
+
+        Args:
+            dataset (Dataset): Dataset to approve
+        """
+        # Drop annotation columns from the dataset.
+        df = dataset.dataframe.drop(
+            list(dataset.dataframe.filter(regex="dqa_")), axis=1
+        )
+
+        # Create the passport for the new dataset
+        passport = (
+            DatasetPassportBuilder()
+            .phase(PhaseDef.DATAPREP)
+            .stage(StageDef.CLEAN)
+            .source(dataset.passport)
+            .creator(self.__class__.__name__)
+            .name(dataset.name)
+            .build()
+            .passport
+        )
+
+        # Create the new dataset with the cleaned dataframe
+        clean_dataset = (
+            self._dataset_builder.from_dataframe(dataframe=df)
+            .passport(passport)
+            .to_parquet()
+            .build()
+            .dataset
+        )
+
+        # Add the dataset to the repository
+        self._repo.add(asset=clean_dataset, dftype=DFType.PANDAS)
+
+        # Update the flow state
+        self._state.create(passport=passport)
+
+        return clean_dataset

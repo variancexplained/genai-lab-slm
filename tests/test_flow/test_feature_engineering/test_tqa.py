@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_flow/test_dqc_stage.py                                                  #
+# Filename   : /tests/test_flow/test_feature_engineering/test_tqa.py                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Thursday January 2nd 2025 06:30:50 pm                                               #
-# Modified   : Sunday January 19th 2025 01:01:00 pm                                                #
+# Created    : Sunday January 19th 2025 12:26:24 pm                                                #
+# Modified   : Sunday January 19th 2025 06:01:14 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -28,7 +28,7 @@ from discover.asset.dataset.identity import DatasetConfig
 from discover.core.dtypes import DFType
 from discover.core.file import FileFormat
 from discover.core.flow import PhaseDef, StageDef
-from discover.flow.dataprep.dqa.builder import DataQualityAssessmentStageBuilder
+from discover.flow.feature.tqa.syntactic.builder import TQASyntacticStageBuilder
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -41,11 +41,11 @@ double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
 
-@pytest.mark.dqc
-class TestDQCStage:  # pragma: no cover
+@pytest.mark.tqa
+class TestTQA:  # pragma: no cover
     # ============================================================================================ #
-    def test_noun_phrase_count(
-        self, workspace, flowstate, spark, clean_dataset_config, caplog
+    def test_phrase_and_pos_counts(
+        self, workspace, flowstate, sparknlp, clean_dataset_config, caplog
     ) -> None:
         start = datetime.now()
         logger.info(
@@ -63,34 +63,48 @@ class TestDQCStage:  # pragma: no cover
             dftype=DFType.SPARKNLP,
         )
         # Construct the stage
-        builder = DataQualityAssessmentStageBuilder()
+        builder = TQASyntacticStageBuilder()
         stage = (
-            builder.spark(spark)
+            builder.spark(sparknlp)
             .source(clean_dataset_config)
             .target(target)
             .noun_phrase_count()
+            .adjective_noun_pair_count()
+            .aspect_verb_pair_count()
+            .adverb_phrase_count()
+            .noun_count()
+            .verb_count()
+            .adverb_count()
+            .adjective_count()
             .build()
             .stage
         )
 
         # Run the stage
-        target = stage.run()
+        target = stage.run(force=True)
 
         assert isinstance(target, Dataset)
         assert isinstance(target.dataframe, DataFrame)
-        logging.info(target.dataframe.head())
-        logging.info(target.passport)
-        logging.info(target.passport.source)
+
+        # Check counts
+        logging.info(
+            target.dataframe.select(
+                "tqa_syntactic_noun_phrase_count",
+                "tqa_syntactic_adjective_noun_pair_count",
+                "tqa_syntactic_aspect_verb_pair_count",
+                "tqa_syntactic_adverb_phrase_count",
+                "tqa_syntactic_noun_count",
+                "tqa_syntactic_verb_count",
+                "tqa_syntactic_adverb_count",
+                "tqa_syntactic_adjective_count",
+            ).show(truncate=False, n=20)
+        )
 
         # Check repository
         dataset = workspace.dataset_repo.get(
-            asset_id=target.asset_id, dftype=stage.dftype, spark=spark
+            asset_id=target.asset_id, dftype=stage.dftype, spark=sparknlp
         )
         assert target == dataset
-
-        # Remove it from the repository
-        workspace.dataset_repo.remove(asset_id=target.asset_id)
-        flowstate.delete(phase=PhaseDef.DATAPREP, stage=StageDef.DQC)
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

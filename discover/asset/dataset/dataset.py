@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Thursday January 16th 2025 05:32:36 pm                                              #
+# Modified   : Sunday January 19th 2025 02:24:04 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -72,7 +72,7 @@ class Dataset(Asset):
     def __eq__(self, other: object) -> bool:
         """Checks equality between two Asset objects based on their asset ID."""
         if isinstance(other, Dataset):
-            if self._passport == other.passport and self.filepath == other.filepath:
+            if self._passport == other.passport and self.file.path == other.file.path:
                 return True
             else:
                 return False

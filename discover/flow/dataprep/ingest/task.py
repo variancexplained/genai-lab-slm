@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:54:25 am                                              #
-# Modified   : Saturday January 4th 2025 08:28:35 pm                                               #
+# Modified   : Sunday January 19th 2025 01:30:28 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -162,42 +162,22 @@ class RemoveNewlinesTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class ConvertDateTimeUTC(Task):
+class ConvertDateTimeNStoMS(Task):
     """
-    A task that converts datetime values in a specified column of a DataFrame to UTC.
-    It handles both naive and aware timestamps, performing necessary localization
-    based on the given timezone, and accounts for Daylight Saving Time (DST) transitions.
+    A task that converts datetime from nanosecond to  microsecond precision.
 
     Args:
         column (str): The name of the column containing the datetime values to convert.
                       Defaults to "date".
-        timezone (str): The timezone of the input timestamps. Defaults to "America/New_York".
-        **kwargs: Additional keyword arguments to pass to the parent class.
 
     Methods:
         run(data: pd.DataFrame) -> pd.DataFrame:
             Executes the conversion process, applying the UTC conversion to the specified column.
-
-        _convert_to_utc(ts):
-            Converts a single timestamp to UTC, handling both naive and aware datetime values.
-            Adjusts for non-existent and ambiguous times during DST transitions.
     """
 
-    def __init__(
-        self, column: str = "date", timezone: str = "America/New_York", **kwargs
-    ) -> None:
-        """
-        Initializes the ConvertDateTimeUTC task.
-
-        Args:
-            column (str): The name of the column containing datetime values to convert. Defaults to "date".
-            timezone (str): The timezone of the input timestamps. Defaults to "America/New_York".
-            **kwargs: Additional keyword arguments passed to the parent class constructor.
-        """
+    def __init__(self, column: str = "date", **kwargs) -> None:
         super().__init__(**kwargs)
         self._column = column
-        self._kwargs = kwargs
-        self._timezone = timezone
 
     @task_logger
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -210,9 +190,16 @@ class ConvertDateTimeUTC(Task):
         Returns:
             pd.DataFrame: The DataFrame with the converted column values in UTC.
         """
-        data[self._column] = data[self._column].parallel_apply(self._localize_dt)
+        data[self._column] = self._convert_datetime_ns_to_ms(data[self._column])
         return data
 
-    def _localize_dt(self, dt):
-        ts = dt.tz_localize(self._timezone, nonexistent="shift_forward")
-        return pd.to_datetime(ts, unit="us")
+    def _convert_datetime_ns_to_ms(self, datetime_series):
+        if not isinstance(datetime_series, pd.Series):
+            raise TypeError("Input must be a pandas Series")
+
+        if pd.api.types.is_datetime64ns_dtype(datetime_series):
+            return datetime_series.astype("datetime64[ms]")
+        elif pd.api.types.is_datetime64ms_dtype(datetime_series):
+            return datetime_series  # already in milliseconds
+        else:
+            return datetime_series  # return original if not datetime64[ns] or [ms]

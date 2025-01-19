@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Friday January 17th 2025 11:17:36 pm                                                #
+# Modified   : Sunday January 19th 2025 12:41:32 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -331,7 +331,7 @@ class DataCleaningStageBuilder(StageBuilder):
 
     def _validate(self) -> None:
         """
-        Validates the configurations and settings for the Ingest stage.
+        Validates the configurations and settings for the DataCleaning stage.
 
         Ensures that required fields such as the source filepath, encoding, datatypes,
         and datetime conversion tasks are defined.
