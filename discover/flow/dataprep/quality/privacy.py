@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday January 3rd 2025 12:57:17 am                                                 #
-# Modified   : Friday January 3rd 2025 12:59:56 am                                                 #
+# Modified   : Monday January 20th 2025 04:23:22 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -64,7 +64,7 @@ class DetectOrRepairURLTask(TextAnomalyDetectRepairTask):
         self,
         column: str = "content",
         new_column: str = "contains_url",
-        replacement: str = "[URL]",
+        replacement: str = "URL",
         mode: str = "detect",
         strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
@@ -129,7 +129,7 @@ class DetectOrRepairEmailAddressTask(TextAnomalyDetectRepairTask):
         self,
         column: str = "content",
         new_column: str = "contains_email",
-        replacement: str = "[EMAIL]",
+        replacement: str = "EMAIL",
         mode: str = "detect",
         strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",

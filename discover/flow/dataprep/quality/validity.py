@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Friday January 3rd 2025 01:02:00 am                                                 #
+# Modified   : Monday January 20th 2025 04:37:58 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,6 @@ from discover.flow.dataprep.quality.base import (
     CategoricalAnomalyDetectRepairTask,
     DiscreteAnomaly,
     IntervalAnomaly,
-    NumericAnomalyDetectRepairTask,
     TextAnomalyDetectRepairTask,
 )
 from discover.flow.dataprep.quality.strategy.categorical import (
@@ -30,7 +29,6 @@ from discover.flow.dataprep.quality.strategy.categorical import (
 )
 from discover.flow.dataprep.quality.strategy.discrete import DiscreteStrategyFactory
 from discover.flow.dataprep.quality.strategy.interval import IntervalStrategyFactory
-from discover.flow.dataprep.quality.strategy.numeric import NumericStrategyFactory
 from discover.flow.dataprep.quality.strategy.text.distributed import (
     TextStrategyFactory as SparkTextStrategyFactory,
 )
@@ -84,6 +82,201 @@ class DetectOrRepairExcessiveSpecialCharsTask(TextAnomalyDetectRepairTask):
         threshold: Union[float, int] = 0.35,
         threshold_type: Literal["count", "proportion"] = "proportion",
         unit: Literal["word", "character"] = "character",
+        **kwargs,
+    ) -> None:
+
+        super().__init__(
+            pattern=self.__PATTERN,
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            strategy_factory_cls=strategy_factory_cls,
+            detect_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
+            threshold=threshold,
+            threshold_type=threshold_type,
+            unit=unit,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairPunctuationTask(TextAnomalyDetectRepairTask):
+    """
+    Class for detecting or repairing excess punctuation.
+
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
+    detecting excess punctuation in text columns and normalizing them to a single occurrence.
+
+    Args:
+        column (str, optional): The name of the column containing the text data where non-ASCII characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of excess punctuation detection. Defaults to "contains_excess_punctuation".
+        replacement (str, optional): The string that will replace non-ASCII characters during repair. Defaults to None,
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str, optional): The strategy to use for detecting excess punctuation in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing excess punctuation. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
+
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of excess punctuation detection. Defaults to "contains_excess_punctuation".
+        replacement (str): The string used to replace the excess characters during repair. Defaults to None,
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str): The strategy to use for detecting excess punctuation.
+        repair_strategy (str): The strategy to use for repairing excess punctuation.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
+    """
+
+    __PATTERN = "punctuation"
+
+    def __init__(
+        self,
+        column: str = "content",
+        new_column: str = "contains_excess_punctuation",
+        replacement: str = None,
+        mode: str = "detect",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
+        detect_strategy: str = "regex",
+        repair_strategy: str = "regex_replace",
+        threshold: Union[float, int] = None,
+        threshold_type: Literal["count", "proportion"] = None,
+        unit: Literal["word", "character"] = None,
+        **kwargs,
+    ) -> None:
+
+        super().__init__(
+            pattern=self.__PATTERN,
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            strategy_factory_cls=strategy_factory_cls,
+            detect_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
+            threshold=threshold,
+            threshold_type=threshold_type,
+            unit=unit,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairEmoticonsTask(TextAnomalyDetectRepairTask):
+    """
+    Class for detecting or repairing emoticons.
+
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
+    detecting excess punctuation in text columns and normalizing them to a single occurrence.
+
+    Args:
+        column (str, optional): The name of the column containing the text data where non-ASCII characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of emoticons detection. Defaults to "contains_emoticons".
+        replacement (str, optional): The pattern to replace the emoticons. Defaults to None.
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str, optional): The strategy to use for detecting emoticons characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected emoticons characters. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
+
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of emoticons detection. Defaults to "contains_emoticons".
+        replacement (str): The string used to replace the excess characters during repair. Defaults to None,
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str): The strategy to use for detecting emoticons.
+        repair_strategy (str): The strategy to use for repairing emoticons.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
+    """
+
+    __PATTERN = "emoticon"
+
+    def __init__(
+        self,
+        column: str = "content",
+        new_column: str = "contains_emoticons",
+        replacement: str = None,
+        mode: str = "detect",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
+        detect_strategy: str = "regex",
+        repair_strategy: str = "regex_replace",
+        threshold: Union[float, int] = None,
+        threshold_type: Literal["count", "proportion"] = None,
+        unit: Literal["word", "character"] = None,
+        **kwargs,
+    ) -> None:
+
+        super().__init__(
+            pattern=self.__PATTERN,
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            strategy_factory_cls=strategy_factory_cls,
+            detect_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
+            threshold=threshold,
+            threshold_type=threshold_type,
+            unit=unit,
+            **kwargs,
+        )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairEmojisTask(TextAnomalyDetectRepairTask):
+    """
+    Class for detecting or repairing emojis.
+
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
+    detecting excess punctuation in text columns and normalizing them to a single occurrence.
+
+    Args:
+        column (str, optional): The name of the column containing the text data where non-ASCII characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of emojis detection. Defaults to "contains_emojis".
+        replacement (str, optional): The pattern to replace the emojis. Defaults to None.
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str, optional): The strategy to use for detecting emojis characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected emojis characters. Defaults to "regex_replace".
+        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
+        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
+        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
+
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of emojis detection. Defaults to "contains_emojis".
+        replacement (str): The string used to replace the excess characters during repair. Defaults to None,
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str): The strategy to use for detecting emojis.
+        repair_strategy (str): The strategy to use for repairing emojis.
+        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
+        threshold_type (str): Specifies if the threshold is based on a count or proportion.
+        unit (str): Specifies whether to apply the threshold to words or characters.
+    """
+
+    __PATTERN = "emoji"
+
+    def __init__(
+        self,
+        column: str = "content",
+        new_column: str = "contains_emojis",
+        replacement: str = None,
+        mode: str = "detect",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
+        detect_strategy: str = "regex",
+        repair_strategy: str = "regex_replace",
+        threshold: Union[float, int] = None,
+        threshold_type: Literal["count", "proportion"] = None,
+        unit: Literal["word", "character"] = None,
         **kwargs,
     ) -> None:
 
@@ -503,76 +696,6 @@ class DetectOrRepairElongationTask(TextAnomalyDetectRepairTask):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairRepeatedCharactersTask(TextAnomalyDetectRepairTask):
-    """
-    Class for detecting or repairing excessive repeated characters in text data.
-
-    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for detecting
-    excessive repeated characters (e.g., "aaa") and replacing them with a specified
-    placeholder string during the repair process.
-
-    Args:
-        column (str, optional): The name of the column containing the text data where repeated characters are to be detected. Defaults to "content".
-        new_column (str, optional): The name of the new column that will store the results of repeated character detection/repair. Defaults to "contains_excess_repeated_characters".
-        replacement (str, optional): The string that will replace excessive repeated characters during repair. Defaults to " ".
-        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
-        detect_strategy (str, optional): The strategy to use for detecting repeated characters in the text. Defaults to "regex".
-        repair_strategy (str, optional): The strategy to use for repairing detected repeated characters. Defaults to "regex_replace".
-        min_repetitions (int, optional): The minimum number of repetitions of a character to be considered excessive. Defaults to 4.
-        threshold (Union[float, int], optional): The threshold value for anomaly detection, either as a count or proportion. Defaults to None.
-        threshold_type (Literal["count", "proportion"], optional): Specifies if the threshold is based on a count or proportion. Defaults to None.
-        unit (Literal["word", "character"], optional): Specifies whether to apply the threshold to words or characters. Defaults to None.
-
-    Attributes:
-        column (str): The name of the column containing the text data.
-        new_column (str): The name of the new column that will store the results of repeated character detection/repair.
-        replacement (str): The string used to replace excessive repeated characters during repair.
-        mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
-        detect_strategy (str): The strategy to use for detecting repeated characters.
-        repair_strategy (str): The strategy to use for repairing repeated characters.
-        min_repetitions (int): The minimum number of repetitions of a character to be considered excessive.
-        threshold (Union[float, int]): The threshold value for anomaly detection, either as a count or proportion.
-        threshold_type (str): Specifies if the threshold is based on a count or proportion.
-        unit (str): Specifies whether to apply the threshold to words or characters.
-    """
-
-    __PATTERN = "character_repetition"
-
-    def __init__(
-        self,
-        column: str = "content",
-        new_column: str = "contains_excess_repeated_characters",
-        replacement: str = " ",
-        mode: str = "detect",
-        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
-        detect_strategy: str = "regex",
-        repair_strategy: str = "regex_replace",
-        min_repetitions: int = 4,
-        threshold: Union[float, int] = None,
-        threshold_type: Literal["count", "proportion"] = None,
-        unit: Literal["word", "character"] = None,
-        **kwargs,
-    ) -> None:
-
-        super().__init__(
-            pattern=self.__PATTERN,
-            column=column,
-            new_column=new_column,
-            mode=mode,
-            strategy_factory_cls=strategy_factory_cls,
-            detect_strategy=detect_strategy,
-            repair_strategy=repair_strategy,
-            threshold=threshold,
-            min_repetitions=min_repetitions,
-            threshold_type=threshold_type,
-            unit=unit,
-            **kwargs,
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
 class DetectOrRepairRepeatedSequenceTask(TextAnomalyDetectRepairTask):
     """
     Class for detecting or repairing excessive repeated sequences in text data.
@@ -693,10 +816,9 @@ class DetectOrRepairRepeatedWordsTask(TextAnomalyDetectRepairTask):
         strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex_threshold",
         repair_strategy: str = "regex_replace",
-        threshold: Union[float, int] = 1,
-        min_repetitions: int = 3,
+        threshold: int = 3,
         threshold_type: Literal["count", "proportion"] = "count",
-        unit: Literal["word", "character"] = None,
+        unit: Literal["word", "character"] = "word",
         **kwargs,
     ) -> None:
 
@@ -709,7 +831,6 @@ class DetectOrRepairRepeatedWordsTask(TextAnomalyDetectRepairTask):
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
-            min_repetitions=min_repetitions,
             threshold_type=threshold_type,
             unit=unit,
             **kwargs,
@@ -782,64 +903,6 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomalyDetectRepairTask):
             min_repetitions=min_repetitions,
             threshold_type=threshold_type,
             unit=unit,
-            **kwargs,
-        )
-
-
-# ------------------------------------------------------------------------------------------------ #
-class DetectOrRepairGibberishTask(NumericAnomalyDetectRepairTask):
-    """
-    Class for detecting or repairing gibberish in numeric data based on a threshold.
-
-    This class extends the `NumericAnomalyDetectRepairTask` class and provides functionality for detecting
-    gibberish in numeric data (e.g., perplexity scores) based on a threshold, and optionally
-    repairing the detected anomalies by setting them to a default value.
-
-    Args:
-        column (str, optional): The name of the column containing numeric data to check for gibberish. Defaults to "pa_perplexity".
-        new_column (str, optional): The name of the new column that will store the results of gibberish detection/repair. Defaults to "contains_gibberish".
-        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
-        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
-        threshold (float, optional): The threshold value for gibberish detection. Defaults to 0.5.
-        relative_error (float, optional): The relative error used for threshold detection. Defaults to 0.001.
-        detect_less_than_threshold (bool, optional): Whether to detect gibberish values less than the threshold. Defaults to True.
-        detect_strategy (str, optional): The strategy to use for detecting gibberish in the numeric data. Defaults to "threshold".
-        repair_strategy (str, optional): The strategy to use for repairing detected gibberish values. Defaults to "threshold".
-
-    Attributes:
-        column (str): The name of the column containing numeric data.
-        new_column (str): The name of the new column to store the results of gibberish detection/repair.
-        mode (str): The mode of operation, either "detect" or "repair".
-        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
-        threshold (float): The threshold value for gibberish detection.
-        relative_error (float): The relative error for threshold detection.
-        detect_less_than_threshold (bool): Flag indicating whether to detect values less than the threshold.
-        detect_strategy (str): The strategy for detecting gibberish in numeric data.
-        repair_strategy (str): The strategy for repairing detected gibberish values.
-    """
-
-    def __init__(
-        self,
-        column: str = "pa_perplexity",
-        new_column: str = "contains_gibberish",
-        mode: str = "detect",
-        strategy_factory_cls: Type[NumericStrategyFactory] = NumericStrategyFactory,
-        threshold: float = 0.5,
-        relative_error: float = 0.001,
-        detect_less_than_threshold: bool = True,
-        detect_strategy: str = "threshold",
-        repair_strategy: str = "threshold",
-        **kwargs,
-    ) -> None:
-        super().__init__(
-            column=column,
-            new_column=new_column,
-            mode=mode,
-            strategy_factory_cls=strategy_factory_cls,
-            detect_strategy=detect_strategy,
-            repair_strategy=repair_strategy,
-            threshold=threshold,
-            detect_less_than_threshold=detect_less_than_threshold,
             **kwargs,
         )
 

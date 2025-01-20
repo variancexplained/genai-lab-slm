@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:26:44 am                                                #
-# Modified   : Sunday January 19th 2025 05:24:43 pm                                                #
+# Modified   : Monday January 20th 2025 12:44:40 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,6 +23,7 @@ from typing import List, Optional
 from pyspark.sql import SparkSession
 from sparknlp.annotator import (
     Chunker,
+    DependencyParserModel,
     DocumentAssembler,
     PerceptronModel,
     SentenceDetector,
@@ -149,49 +150,63 @@ class TQASyntacticStage(Stage):
             Pipeline: The constructed NLP pipeline.
         """
         documentAssembler = (
-            DocumentAssembler().setInputCol("content").setOutputCol("tqa_document")
+            DocumentAssembler()
+            .setInputCol("content")
+            .setOutputCol("tqa_syntactic_document")
         )
 
         sentenceDetector = (
             SentenceDetector()
-            .setInputCols(["tqa_document"])
-            .setOutputCol("tqa_sentence")
+            .setInputCols(["tqa_syntactic_document"])
+            .setOutputCol("tqa_syntactic_sentence")
         )
 
-        tokenizer = Tokenizer().setInputCols(["tqa_sentence"]).setOutputCol("tqa_token")
+        tokenizer = (
+            Tokenizer()
+            .setInputCols(["tqa_syntactic_sentence"])
+            .setOutputCol("tqa_syntactic_token")
+        )
 
         posTagger = (
             PerceptronModel.pretrained()
             .setInputCols(
                 [
-                    "tqa_sentence",
-                    "tqa_token",
+                    "tqa_syntactic_sentence",
+                    "tqa_syntactic_token",
                 ]
             )
-            .setOutputCol("tqa_pos")
+            .setOutputCol("tqa_syntactic_pos")
+        )
+
+        dependencyParser = (
+            DependencyParserModel.pretrained("dependency_parse_bert", "en")
+            .setInputCols(
+                ["tqa_syntactic_sentence", "tqa_syntactic_pos", "tqa_syntactic_token"]
+            )
+            .setOutputCol("tqa_syntactic_dependencies")
         )
 
         noun_phrase_chunker = (
             Chunker()
-            .setInputCols(["tqa_sentence", "tqa_pos"])
+            .setInputCols(["tqa_syntactic_sentence", "tqa_syntactic_pos"])
             .setOutputCol("tqa_syntactic_noun_phrases")
             .setRegexParsers(["<DT>?<JJ>*<NN.*>"])
         )
         adj_noun_chunker = (
             Chunker()
-            .setInputCols(["tqa_sentence", "tqa_pos"])
+            .setInputCols(["tqa_syntactic_sentence", "tqa_syntactic_pos"])
             .setOutputCol("tqa_syntactic_adjective_noun_pairs")
             .setRegexParsers(["<JJ><NN.*>"])
         )
         aspect_verb_chunker = (
             Chunker()
-            .setInputCols(["tqa_sentence", "tqa_pos"])
+            .setInputCols(["tqa_syntactic_sentence", "tqa_syntactic_pos"])
             .setOutputCol("tqa_syntactic_aspect_verb_pairs")
             .setRegexParsers(["<VB(D|G|N|P|Z)?> +<NN.*>|<NN.*> +<VB(D|G|N|P|Z)?>"])
         )
         adverb_phrase_chunker = (
             Chunker()
-            .setInputCols(["tqa_sentence", "tqa_pos"])
+            .setInputCols(["tqa_syntactic_sentence", "tqa_syntactic_pos"])
             .setOutputCol("tqa_syntactic_adverb_phrases")
             .setRegexParsers(["<RB.*>+"])
         )
@@ -202,6 +217,7 @@ class TQASyntacticStage(Stage):
                 sentenceDetector,
                 tokenizer,
                 posTagger,
+                dependencyParser,
                 noun_phrase_chunker,
                 adj_noun_chunker,
                 aspect_verb_chunker,

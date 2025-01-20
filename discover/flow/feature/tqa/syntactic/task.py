@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Sunday January 19th 2025 05:54:11 pm                                                #
+# Modified   : Monday January 20th 2025 01:15:56 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -20,8 +20,8 @@
 import logging
 
 import pyspark.sql.functions as F
-from pyspark.sql import DataFrame
-from pyspark.sql.types import ArrayType, IntegerType
+from pyspark.sql import DataFrame, Row
+from pyspark.sql.types import ArrayType, FloatType, IntegerType
 
 from discover.flow.base.task import Task
 from discover.infra.service.logging.task import task_logger
@@ -129,6 +129,124 @@ class AspectVerbPairCount(PhraseCount):
 class AdverbPhraseCount(PhraseCount):
     def __init__(self, column, new_column, normalized=True, **kwargs):
         super().__init__(column, new_column, normalized, **kwargs)
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                            ASPECT AND RELATED VERB COUNTS                                        #
+# ------------------------------------------------------------------------------------------------ #
+class AspectVerbCount(Task):
+
+    def __init__(
+        self,
+        column: str = "tqa_syntactic_dependencies",
+        new_column: str = "tqa_syntactic_aspect_related_verb_count",
+        normalized: bool = True,
+        **kwargs,
+    ) -> None:
+        super().__init__(**kwargs)
+        self._column = column
+        self._new_column = new_column
+        self._normalized = normalized
+        self._kwargs = kwargs
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    @task_logger
+    def run(self, data: DataFrame) -> DataFrame:
+
+        @F.udf(returnType=FloatType())
+        def count_aspect_related_verbs(annotations: Row, normalized: bool) -> float:
+            """
+            Counts aspect-related verbs based on dependency parsing results.
+
+            Args:
+                annotations: A Row object containing token, pos, and dependency annotations.
+                normalized: Whether to apply log normalization.
+
+            Returns:
+                The count of aspect-related verbs (float), or 0.0 if input is invalid.
+            """
+            if not annotations:
+                return 0.0
+
+            try:
+                tokens = annotations["tqa_syntactic_token"]
+                pos_tags = annotations["tqa_syntactic_pos"]
+                dependencies = annotations["tqa_syntactic_dependencies"]
+
+                if not tokens or not pos_tags or not dependencies:
+                    return 0.0
+
+                aspect_verbs = 0
+                num_tokens = len(tokens)
+                for dep in dependencies:
+                    if dep is None:
+                        continue
+                    if (
+                        hasattr(dep, "relation")
+                        and hasattr(dep, "governor")
+                        and hasattr(dep, "dependent")
+                    ):
+                        if dep.relation in [
+                            "nsubj",
+                            "dobj",
+                            "iobj",
+                            "advcl",
+                            "xcomp",
+                            "ccomp",
+                            "acl",
+                        ]:  # More relevant dependencies for ABSA
+                            governor_index = dep.governor - 1  # 0-based indexing
+                            dependent_index = dep.dependent - 1  # 0-based indexing
+
+                            if (
+                                0 <= governor_index < num_tokens
+                                and 0 <= dependent_index < num_tokens
+                            ):
+                                governor_pos = pos_tags[governor_index]
+                                dependent_pos = pos_tags[dependent_index]
+
+                                if dependent_pos.startswith(
+                                    "NN"
+                                ) and governor_pos.startswith("VB"):
+                                    aspect_verbs += 1
+                                elif governor_pos.startswith(
+                                    "NN"
+                                ) and dependent_pos.startswith("VB"):
+                                    aspect_verbs += 1
+                    else:
+                        print(f"Malformed dependency object: {dep}")
+                        continue
+                if normalized:
+                    return F.log(aspect_verbs + 1)
+                else:
+                    return aspect_verbs
+
+            except (IndexError, TypeError, AttributeError, KeyError) as e:
+                print(f"Error processing annotations: {e}. Annotations: {annotations}")
+                return 0.0
+            except Exception as e:
+                print(f"An unexpected error occurred: {e}. Annotations: {annotations}")
+                return 0.0
+
+        data = data.withColumn(
+            "tqa_aspect_related_verb_count",
+            count_aspect_related_verbs(
+                F.struct(
+                    *[
+                        F.col(x + ".result")
+                        for x in [
+                            "tqa_syntactic_token",
+                            "tqa_syntactic_pos",
+                            "tqa_syntactic_dependencies",
+                        ]
+                    ]
+                ),
+                F.lit(self._normalized),  # Pass the normalization flag as a literal
+            ),
+        )
+
+        return data
 
 
 # ------------------------------------------------------------------------------------------------ #

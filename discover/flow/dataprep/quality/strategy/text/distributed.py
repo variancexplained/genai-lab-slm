@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Friday January 17th 2025 08:17:21 pm                                                #
+# Modified   : Monday January 20th 2025 04:22:02 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -194,7 +194,9 @@ class RegexReplaceStrategy(RepairStrategy):
             # Apply regex replacement
             data = data.withColumn(
                 self._column,
-                F.regexp_replace(F.col(self._column), regex_info.pattern, replacement),
+                F.regexp_replace(
+                    F.col(self._column), f"(?i){regex_info.pattern}", replacement
+                ),
             )
         except Exception as e:
             raise ValueError(f"Failed to apply regex replacement: {e}")
@@ -1080,7 +1082,7 @@ class ShortReviewDetectStrategy(DetectStrategy):
         column (str): The name of the column containing text data to analyze.
         new_column (str, optional): The name of the new column to be added. If not provided,
             defaults to `<column>_short_review_detected`.
-        threshold (int, optional): The word count threshold for determining short or long reviews. Defaults to 3.
+        threshold (int, optional): The word count threshold for determining short or long reviews. Defaults to 10.
         detect_less_than_threshold (bool, optional): If True, flags rows with word count less
             than the threshold. If False, flags rows with word count greater than the threshold. Defaults to True.
         **kwargs: Additional arguments for extended functionality.
@@ -1094,7 +1096,7 @@ class ShortReviewDetectStrategy(DetectStrategy):
         self,
         column: str,
         new_column: str,
-        threshold: int = 3,
+        threshold: int = 10,
         detect_less_than_threshold: bool = True,
         **kwargs,
     ) -> None:
@@ -1153,7 +1155,7 @@ class ShortReviewRemovalStrategy(RepairStrategy):
         new_column (str, optional): The name of the column to store detection results. If None, the detection
             results will replace the existing column. Defaults to None.
         threshold (int, optional): The minimum length of reviews to keep. Reviews shorter than this threshold
-            will be flagged for removal. Defaults to 3.
+            will be flagged for removal. Defaults to 10.
         detect_less_than_threshold (bool, optional): Flag indicating whether to detect reviews shorter than
             the threshold. If False, reviews longer than the threshold are flagged. Defaults to True.
         detect_strategy (Type[ShortReviewDetectStrategy], optional): The detection strategy class used to
@@ -1177,7 +1179,7 @@ class ShortReviewRemovalStrategy(RepairStrategy):
         self,
         column: str,
         new_column: str = None,
-        threshold: int = 3,
+        threshold: int = 10,
         clean_less_than_threshold: bool = True,
         detect_strategy: Type[ShortReviewDetectStrategy] = ShortReviewDetectStrategy,
         **kwargs,
@@ -1211,5 +1213,68 @@ class ShortReviewRemovalStrategy(RepairStrategy):
 
         # Filter out rows where anomalies are detected
         data = data.filter(~F.col(self._new_column))
+
+        return data
+
+
+# ------------------------------------------------------------------------------------------------ #
+class PunctuationNormalizationStrategy(RepairStrategy):
+
+    def __init__(
+        self,
+        column: str,
+        **kwargs,
+    ) -> None:
+        super().__init__()
+        self._column = column
+
+    @staticmethod
+    def repair_text(text):
+        # 1. Retain Emojis and Emoticons (Improved regex)
+        emoji_pattern = re.compile(
+            "["
+            "\U0001F600-\U0001F64F"  # emoticons
+            "\U0001F300-\U0001F5FF"  # symbols & pictographs
+            "\U0001F680-\U0001F6FF"  # transport & map symbols
+            "\U0001F1E0-\U0001F1FF"  # flags (iOS)
+            "\U00002702-\U000027B0"
+            "\U000024C2-\U0001F251"
+            "]+",
+            flags=re.UNICODE,
+        )
+        text = emoji_pattern.sub(r" \g ", text).strip()  # add spaces around emojis
+
+        emoticon_pattern = r"(?::|;|=)(?:-)?(?:\)|\(|D|P|O|S|\||\\|\/])"
+        text = re.sub(
+            emoticon_pattern, r" \g ", text
+        ).strip()  # add spaces around emoticons
+
+        # 2. Remove or normalize other punctuation (now EXCLUDING emojis/emoticons)
+        text = re.sub(
+            r"[^\w\s'-\.,!?\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\U00002702-\U000027B0\U000024C2-\U0001F251]",
+            "",
+            text,
+            flags=re.UNICODE,
+        )  # Allow apostrophes, hyphens, period, comma, question mark, exclamation mark, emojis
+
+        # 3. Normalize multiple periods/exclamation/question marks
+        text = re.sub(r"(\.|\!|\?){2,}", r"\1", text)
+
+        return text
+
+    def repair(self, data: DataFrame) -> DataFrame:
+        """Applies the repair strategy to the given DataFrame by detecting and removing short reviews.
+
+        Args:
+            data (DataFrame): The input DataFrame containing the reviews.
+
+        Returns:
+            DataFrame: The DataFrame with short reviews removed.
+        """
+        # Define a UDF for the repair logic
+        repair_udf = udf(self.repair_text, StringType())
+
+        # Apply the UDF to rows flagged as anomalies
+        data = data.withColumn(self._column, F.trim(repair_udf(F.col(self._column))))
 
         return data

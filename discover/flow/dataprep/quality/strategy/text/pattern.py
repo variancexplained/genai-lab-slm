@@ -11,11 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Saturday January 4th 2025 08:36:26 pm                                               #
+# Modified   : Monday January 20th 2025 05:35:28 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import re
 from dataclasses import dataclass
 from typing import Callable, Dict
 
@@ -56,25 +57,25 @@ class RegexFactory:
         # Static patterns for detecting specific structures
         "email": {
             "pattern": r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
-            "replacement": " ",
+            "replacement": "EMAIL",
         },
         "url": {
             "pattern": r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*",
-            "replacement": " ",
+            "replacement": "URL",
         },
         "phone": {
             "pattern": r"(\+?\d{1,3})?[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}",
-            "replacement": " ",
+            "replacement": "PHONE",
+        },
+        # Special characters
+        "special_chars": {
+            "pattern": r"(?u)[^\w\s'-\.,!?():;=/$@%&*\+\^~`[]\|\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\U00002702-\U000027B0\U00024C2-\U0001F251]",
+            "replacement": "",
         },
         # Linguistic punctuation marks
         "punctuation": {
-            "pattern": r"[.,!?\"'()\-:;]",
-            "replacement": None,
-        },
-        # Non-punctuation special characters
-        "special_chars": {
-            "pattern": r"[^a-zA-Z0-9\s.,!\"''()\\:;-]",
-            "replacement": " ",
+            "pattern": r"(\.|\!|\?){2,}",
+            "replacement": r"\1",
         },
         # Non-ASCII characters
         "non_ascii": {
@@ -106,6 +107,9 @@ class RegexFactory:
             "pattern": r"\n",
             "replacement": " ",
         },
+        # Emoticon
+        "emoticon": {"pattern": r"(?::|;|=)(?:-)?(?:\)|\(|D|P|O|S|\||\\|\/])"},
+        "replacement": r" \g ",
     }
 
     def __init__(self) -> None:
@@ -118,10 +122,10 @@ class RegexFactory:
         """
         self.__DYNAMIC_PATTERN_REPLACEMENT: Dict[str, Callable[..., Regex]] = {
             "elongation": self._elongation,
-            "character_repetition": self._character_repetition,
             "sequence_repetition": self._sequence_repetition,
             "phrase_repetition": self._phrase_repetition,
             "word_repetition": self._word_repetition,
+            "emoji": self._emoji,
         }
 
     def get_regex(self, pattern: str, **kwargs) -> Regex:
@@ -155,9 +159,8 @@ class RegexFactory:
     # ------------------------------------------------------------------------------------------------ #
     # Dynamic pattern generators
     # ------------------------------------------------------------------------------------------------ #
-
     def _elongation(
-        self, threshold: int = 4, max_elongation: int = 3, **kwargs
+        self, threshold: int = 3, max_elongation: int = 2, **kwargs
     ) -> Regex:
         """
         Generates a pattern for detecting elongated characters.
@@ -169,22 +172,33 @@ class RegexFactory:
         Returns:
             Pattern: Regex pattern and replacement logic.
         """
+        if threshold < 2 or max_elongation < 1:
+            raise ValueError("threshold must be >= 2 and max_elongation must be >= 1")
+
         pattern = rf"(.)\1{{{threshold - 1},}}"
-        replacement = r"\1" * max_elongation
+        replacement = r"\1" * min(max_elongation, threshold)
         return Regex(pattern=pattern, replacement=replacement)
 
-    def _character_repetition(self, min_repetitions: int = 4, **kwargs) -> Regex:
-        """
-        Generates a pattern for detecting repeated sequences of characters.
-
-        Args:
-            min_repetitions (int): Minimum number of repetitions to consider a match.
+    def _emoji(self, **kwargs) -> Regex:
+        """Generates a pattern that adds spaces around emojis
 
         Returns:
-            Pattern: Regex pattern and replacement logic.
+            Pattern: Regex pattern and replacement patterns.
         """
-        pattern = f"(.+?)\\1{{{min_repetitions - 1}}}"
-        replacement = r"\1"
+
+        pattern = re.compile(
+            "["
+            "\U0001F600-\U0001F64F"  # emoticons
+            "\U0001F300-\U0001F5FF"  # symbols & pictographs
+            "\U0001F680-\U0001F6FF"  # transport & map symbols
+            "\U0001F1E0-\U0001F1FF"  # flags (iOS)
+            "\U00002702-\U000027B0"
+            "\U000024C2-\U0001F251"
+            "]+",
+            flags=re.UNICODE,
+        )
+
+        replacement = r" \g "
         return Regex(pattern=pattern, replacement=replacement)
 
     def _sequence_repetition(
@@ -200,7 +214,12 @@ class RegexFactory:
         Returns:
             Pattern: Regex pattern and replacement logic.
         """
-        pattern = f"(.{{{length_of_sequence},}})\\1{{{min_repetitions - 1}}}"
+        if length_of_sequence < 1 or min_repetitions < 2:
+            raise ValueError(
+                "length_of_sequence must be >= 1 and min_repetitions must be >= 2"
+            )
+
+        pattern = rf"((?:.{{{length_of_sequence},}}?))\1{{{min_repetitions - 1}}}"
         replacement = r"\1"
         return Regex(pattern=pattern, replacement=replacement)
 
@@ -214,20 +233,28 @@ class RegexFactory:
         Returns:
             Pattern: Regex pattern and replacement logic.
         """
-        pattern = rf"(\b\w+\b(?: \b\w+\b)*)\s*(?:\1\s*){{{min_repetitions - 1},}}"
+        pattern = rf"((?:\b\w+\b(?:\s*[\.,;!?-]+\s*)?)+)\s*(?:\1\s*[\.,;!?-]*\s*){{{min_repetitions-1},}}"
         replacement = r"\1"
         return Regex(pattern=pattern, replacement=replacement)
 
-    def _word_repetition(self, min_repetitions: int = 3, **kwargs) -> Regex:
+    def _word_repetition(
+        self, threshold: int = 3, max_repetitions: int = 1, **kwargs
+    ) -> Regex:
         """
         Generates a pattern for detecting repeated words.
 
         Args:
-            min_repetitions (int): Minimum number of word repetitions to consider a match.
+            min_repetitions (int): Minimum number of word repetitions to consider a match. Defaults to 3
+            max_repetitions (Optional[int]): Maximum number of word repetitions to keep. Defaults to 1.
 
         Returns:
             Pattern: Regex pattern and replacement logic.
         """
-        pattern = rf"(\b\w+\b)\s*(?:\1\s*){{{min_repetitions - 1},}}"
-        replacement = r"\1"
+        if threshold < 2:
+            raise ValueError("min_repetitions must be >= 2")
+        if max_repetitions < 1:
+            raise ValueError("max_repetitions must be >= 1")
+
+        pattern = rf"(\b\w+\b)\s*(?:\1\s*){{{threshold - 1},}}"
+        replacement = r"\1" * min(max_repetitions, threshold)
         return Regex(pattern=pattern, replacement=replacement)
