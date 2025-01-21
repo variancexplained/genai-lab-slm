@@ -4,73 +4,67 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/base/identity.py                                                    #
+# Filename   : /discover/infra/workspace/passport/base.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Thursday January 2nd 2025 06:46:20 am                                               #
+# Created    : Tuesday January 21st 2025 03:21:59 am                                               #
+# Modified   : Tuesday January 21st 2025 05:15:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
-# Copyright  : (c) 2024 John James                                                                 #
+# Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
-"""Base Module for the Asset Dimension"""
+"""Workspace Identity Base Module"""
 from __future__ import annotations
 
+from dataclasses import field
 from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 
 from pydantic.dataclasses import dataclass
 
-from discover.asset.base.atype import AssetType
 from discover.core.dstruct import DataClass
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from discover.core.flow import PhaseDef, StageDef
+from discover.infra.utils.file.fileset import FileFormat
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                     ASSET ID                                                     #
-# ------------------------------------------------------------------------------------------------ #
-@dataclass
-class AssetId(DataClass):
-    name: str
-    version: str
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     PASSPORT                                                     #
+#                                         PASSPORT                                                 #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class Passport(DataClass):
+class AssetPassport(DataClass):
     """
-    Represents a basic passport containing metadata for an asset.
+    Represents a basic passport containing identity metadata for an asset.
 
     The Passport class is a base class that tracks minimal metadata about an asset,
-    such as its unique identifier, lifecycle phase, processing stage, and name.
+    such as its unique identifier, lifecycle phase, processing stage, name, and description.
 
     Attributes:
 
         asset_id (str): A unique identifier for the asset.
-        asset_type (AssetType): Type of asset as specified in AssetType enumeration.
         phase (PhaseDef): The lifecycle phase of the asset (e.g., INGESTION, ANALYSIS).
         stage (StageDef): The processing stage of the asset (e.g., RAW, PROCESSED).
         name (str): A human-readable name for the asset.
+        description (Optional[str]): Description for the asset.
+        file_format (FileFormat): The file format of the asset.
+        creator (Optional[str]): The name of the class that created the asset. Optional.
         created (datetime): Datetime the asset was created.
         version (str): Version of the asset.
     """
 
-    asset_id: Optional[str] = None
-    asset_type: Optional[AssetType] = None
-    phase: Optional[PhaseDef] = None
-    stage: Optional[StageDef] = None
-    name: Optional[str] = None
-    description: Optional[str] = None
-    creator: Optional[str] = None
-    created: Optional[datetime] = None
-    version: Optional[str] = None
+    asset_id: Optional[str] = field(default=None)
+    phase: Optional[PhaseDef] = field(default=None)
+    stage: Optional[StageDef] = field(default=None)
+    name: Optional[str] = field(default=None)
+    description: Optional[str] = field(default=None)
+    creator: Optional[str] = field(default=None)
+    file_format: FileFormat = FileFormat.PARQUET
+    created: Optional[datetime] = field(default=None)
+    version: Optional[str] = field(default=None)
 
     @classmethod
     def _export_config(
@@ -82,7 +76,7 @@ class Passport(DataClass):
             return v
         elif isinstance(v, SEQUENCE_TYPES):
             return type(v)(map(cls._export_config, v))
-        elif isinstance(v, Passport):
+        elif isinstance(v, AssetPassport):
             return v.asset_id
         elif isinstance(v, dict):
             return v

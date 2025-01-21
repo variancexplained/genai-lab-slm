@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Thursday January 2nd 2025 06:46:18 am                                               #
+# Modified   : Tuesday January 21st 2025 05:50:10 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,6 +26,7 @@ from typing import Dict
 from pyspark.sql import SparkSession
 
 from discover.core.dstruct import NestedNamespace
+from discover.core.dtypes import DFType
 
 # ------------------------------------------------------------------------------------------------ #
 # Set up root logger to only log errors
@@ -110,19 +111,16 @@ class SparkSessionPool:
             self._spark.stop()
             self._spark = None
 
-    def get_spark_session(
-        self, spark_session_type: SparkSessionType = SparkSessionType.SPARK
-    ) -> SparkSession:
-        """Retrieves a Spark session based on the specified type.
+    def get_spark_session(self, dftype: DFType = DFType.SPARK) -> SparkSession:
+        """Retrieves a Spark session based on dataframe type.
 
         Args:
-            spark_session_type (SparkSessionType): Type of Spark session to retrieve.
-                Defaults to SparkSessionType.SPARK.
+            dftype (DFType): Type of DataFrame, either spark or sparknlp.
 
         Returns:
             SparkSession: The requested Spark session.
         """
-        if spark_session_type == SparkSessionType.SPARK:
+        if dftype == DFType.SPARK:
             return self.spark
         else:
             return self.sparknlp

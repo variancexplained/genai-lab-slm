@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Monday January 20th 2025 04:37:58 pm                                                #
+# Modified   : Tuesday January 21st 2025 01:23:28 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,6 +32,77 @@ from discover.flow.dataprep.quality.strategy.interval import IntervalStrategyFac
 from discover.flow.dataprep.quality.strategy.text.distributed import (
     TextStrategyFactory as SparkTextStrategyFactory,
 )
+
+
+# ------------------------------------------------------------------------------------------------ #
+class DetectOrRepairSpecialCharsTask(TextAnomalyDetectRepairTask):
+    """Class for detecting or repairing unwanted special characters in text data.
+
+    The following special characters are detected and removed:
+        ": Double quote
+        \': Single quote
+        #: Hash.
+        %: Percent.
+        &: Ampersand.
+        @: At symbol.
+        *: Asterisk.
+        +: Plus sign.
+        \\: Backslash (escaped as \\).
+        /: Forward slash.
+        ^: Caret.
+        ~: Tilde.
+        `: Backtick.
+        _: Underscore.
+        |: Pipe.
+        []: Braces
+
+    This class extends the `TextAnomalyDetectRepairTask` class and provides functionality for
+    detecting excessive special characters in text columns and replacing them with
+    a specified placeholder string during the repair process.
+
+    Args:
+        column (str, optional): The name of the column containing the text data where the unwanted special characters are to be detected. Defaults to "content".
+        new_column (str, optional): The name of the new column that will store the results of special character detection/repair. Defaults to "contains_".
+        replacement (str, optional): The string that will replace unwanted special characters during repair. Defaults to "".
+        mode (str, optional): The mode of operation, either "detect" or "repair". Defaults to "detect".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str, optional): The strategy to use for detecting unwanted special characters in the text. Defaults to "regex".
+        repair_strategy (str, optional): The strategy to use for repairing detected unwanted special characters. Defaults to "regex_replace".
+
+    Attributes:
+        column (str): The name of the column containing the text data.
+        new_column (str): The name of the new column that will store the results of special character detection/repair.
+        replacement (str): The string used to replace unwanted special characters during repair.
+        mode (str): The mode of operation, either "detect" or "repair".
+        strategy_factory_cls (Type[SparkTextStrategyFactory], optional): The class for the strategy factory to use. Defaults to `SparkTextStrategyFactory`.
+        detect_strategy (str): The strategy to use for detecting unwanted special characters.
+        repair_strategy (str): The strategy to use for repairing unwanted special characters.
+    """
+
+    __PATTERN = "special_chars_to_remove"
+
+    def __init__(
+        self,
+        column: str = "content",
+        new_column: str = "contains_unwanted_special_chars",
+        replacement: str = "",
+        mode: str = "detect",
+        strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
+        detect_strategy: str = "regex",
+        repair_strategy: str = "regex_replace",
+        **kwargs,
+    ) -> None:
+
+        super().__init__(
+            pattern=self.__PATTERN,
+            column=column,
+            new_column=new_column,
+            mode=mode,
+            strategy_factory_cls=strategy_factory_cls,
+            detect_strategy=detect_strategy,
+            repair_strategy=repair_strategy,
+            **kwargs,
+        )
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -219,6 +290,7 @@ class DetectOrRepairEmoticonsTask(TextAnomalyDetectRepairTask):
             pattern=self.__PATTERN,
             column=column,
             new_column=new_column,
+            replacement=replacement,
             mode=mode,
             strategy_factory_cls=strategy_factory_cls,
             detect_strategy=detect_strategy,
@@ -742,11 +814,10 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomalyDetectRepairTask):
         replacement: str = " ",
         mode: str = "detect",
         strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
-        detect_strategy: str = "regex_threshold",
+        detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 3,
         length_of_sequence: int = 3,
-        min_repetitions: int = 3,
         threshold_type: Literal["count", "proportion"] = "count",
         unit: Literal["word", "character"] = None,
         **kwargs,
@@ -762,7 +833,6 @@ class DetectOrRepairRepeatedSequenceTask(TextAnomalyDetectRepairTask):
             repair_strategy=repair_strategy,
             threshold=threshold,
             length_of_sequence=length_of_sequence,
-            min_repetitions=min_repetitions,
             threshold_type=threshold_type,
             unit=unit,
             **kwargs,
@@ -814,7 +884,7 @@ class DetectOrRepairRepeatedWordsTask(TextAnomalyDetectRepairTask):
         replacement: str = " ",
         mode: str = "detect",
         strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
-        detect_strategy: str = "regex_threshold",
+        detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: int = 3,
         threshold_type: Literal["count", "proportion"] = "count",
@@ -882,10 +952,9 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomalyDetectRepairTask):
         replacement: str = " ",
         mode: str = "detect",
         strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
-        detect_strategy: str = "regex_threshold",
+        detect_strategy: str = "regex",
         repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = 3,
-        min_repetitions: int = 3,
         threshold_type: Literal["count", "proportion"] = "count",
         unit: Literal["phrase", "character"] = None,
         **kwargs,
@@ -900,7 +969,6 @@ class DetectOrRepairRepeatedPhraseTask(TextAnomalyDetectRepairTask):
             detect_strategy=detect_strategy,
             repair_strategy=repair_strategy,
             threshold=threshold,
-            min_repetitions=min_repetitions,
             threshold_type=threshold_type,
             unit=unit,
             **kwargs,

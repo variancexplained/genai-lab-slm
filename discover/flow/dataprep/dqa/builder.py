@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Friday January 17th 2025 11:00:10 pm                                                #
+# Modified   : Tuesday January 21st 2025 01:01:36 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -74,40 +74,7 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
 
     def __init__(self) -> None:
         super().__init__()
-
-        self._stage = None
-
-        self._phase = self.__PHASE
-        self._source_config = None
-        self._target_config = None
-
-        self._detect_accents = None
-        self._detect_control_chars = None
-        self._detect_duplicate_review_ids = None
-        self._detect_duplicate_reviews = None
-        self._detect_duplicate_rows = None
-        self._detect_elongation = None
-        self._detect_emails = None
-        self._detect_excess_special_chars = None
-        self._detect_excess_whitespace = None
-        self._detect_html = None
-        self._detect_invalid_categories = None
-        self._detect_invalid_ratings = None
-        self._detect_invalid_review_dates = None
-        self._detect_less_than_threshold = None
-        self._detect_non_english_app_names = None
-        self._detect_non_english_reviews = None
-        self._detect_phone_numbers = None
-        self._detect_repeated_chars = None
-        self._detect_repeated_phrases = None
-        self._detect_repeated_sequences = None
-        self._detect_repeated_words = None
-        self._detect_short_reviews = None
-        self._detect_urls = None
-
-        self._task_configs = self._get_config(
-            phase=self.__PHASE, stage=self.__STAGE, config="tasks"
-        )
+        self.reset()
 
     def reset(self) -> None:
         super().reset()
@@ -124,6 +91,7 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._detect_duplicate_rows = None
         self._detect_elongation = None
         self._detect_emails = None
+        self._detect_special_chars = None
         self._detect_excess_special_chars = None
         self._detect_excess_whitespace = None
         self._detect_html = None
@@ -273,6 +241,12 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
+    def detect_special_chars(self) -> DataQualityAssessmentStageBuilder:
+        self._detect_special_chars = self._task_configs["detect_special_chars"]
+        self._tasks.append(self._task_builder.build(self._detect_special_chars))
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
     def detect_excess_special_chars(
         self,
         threshold: float = 0.35,
@@ -295,26 +269,16 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_repeated_chars(
-        self, min_repetitions: int = 4
-    ) -> DataQualityAssessmentStageBuilder:
-        self._detect_repeated_chars = self._task_configs["detect_repeated_chars"]
-        self._detect_repeated_chars["params"]["min_repetitions"] = min_repetitions
-        self._tasks.append(self._task_builder.build(self._detect_repeated_chars))
-
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
     def detect_repeated_phrases(
         self,
-        threshold: int = 1,
-        threshold_type: str = "count",
-        min_repetitions: int = 2,
+        length_of_phrase: int = 2,
+        threshold: int = 3,
+        max_repetitions: int = 1,
     ) -> DataQualityAssessmentStageBuilder:
         self._detect_repeated_phrases = self._task_configs["detect_repeated_phrases"]
+        self._detect_repeated_phrases["params"]["length_of_phrase"] = length_of_phrase
         self._detect_repeated_phrases["params"]["threshold"] = threshold
-        self._detect_repeated_phrases["params"]["threshold_type"] = threshold_type
-        self._detect_repeated_phrases["params"]["min_repetitions"] = min_repetitions
+        self._detect_repeated_phrases["params"]["max_repetitions"] = max_repetitions
         self._tasks.append(self._task_builder.build(self._detect_repeated_phrases))
 
         return self
@@ -323,10 +287,8 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
     def detect_repeated_sequences(
         self,
         length_of_sequence: int = 3,
-        min_repetitions: int = 3,
         threshold: int = 3,
-        threshold_type: str = "count",
-        unit: str = "character",
+        max_repetitions: int = 1,
     ) -> DataQualityAssessmentStageBuilder:
         self._detect_repeated_sequences = self._task_configs[
             "detect_repeated_sequences"
@@ -334,10 +296,8 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._detect_repeated_sequences["params"][
             "length_of_sequence"
         ] = length_of_sequence
-        self._detect_repeated_sequences["params"]["min_repetitions"] = min_repetitions
         self._detect_repeated_sequences["params"]["threshold"] = threshold
-        self._detect_repeated_sequences["params"]["threshold_type"] = threshold_type
-        self._detect_repeated_sequences["params"]["unit"] = unit
+        self._detect_repeated_sequences["params"]["max_repetitions"] = max_repetitions
         self._tasks.append(self._task_builder.build(self._detect_repeated_sequences))
 
         return self
@@ -345,21 +305,19 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
     # -------------------------------------------------------------------------------------------- #
     def detect_repeated_words(
         self,
-        threshold: int = 1,
-        threshold_type: str = "count",
-        min_repetitions: int = 3,
+        threshold: int = 3,
+        max_repetitions: int = 1,
     ) -> DataQualityAssessmentStageBuilder:
         self._detect_repeated_words = self._task_configs["detect_repeated_words"]
         self._detect_repeated_words["params"]["threshold"] = threshold
-        self._detect_repeated_words["params"]["threshold_type"] = threshold_type
-        self._detect_repeated_words["params"]["min_repetitions"] = min_repetitions
+        self._detect_repeated_words["params"]["max_repetitions"] = max_repetitions
         self._tasks.append(self._task_builder.build(self._detect_repeated_words))
 
         return self
 
     # -------------------------------------------------------------------------------------------- #
     def detect_short_reviews(
-        self, threshold: int = 3
+        self, threshold: int = 10
     ) -> DataQualityAssessmentStageBuilder:
         self._detect_short_reviews = self._task_configs["detect_short_reviews"]
         self._detect_short_reviews["params"]["threshold"] = threshold

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday December 29th 2024 11:28:57 am                                               #
-# Modified   : Sunday December 29th 2024 11:34:11 am                                               #
+# Modified   : Tuesday January 21st 2025 10:37:25 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,7 +22,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.infra.utils.file.info import ParquetFileDetector
+from discover.asset.dataset.fileset import ParquetFileDetector
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

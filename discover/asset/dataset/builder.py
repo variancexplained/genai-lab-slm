@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Friday January 17th 2025 10:34:55 pm                                                #
+# Modified   : Tuesday January 21st 2025 06:29:18 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,24 +19,28 @@
 """Dataset Data Component Builder Module"""
 from __future__ import annotations
 
-import inspect
 import logging
 from datetime import datetime
-from typing import Optional, Union
+from typing import Union
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import DataFrame
 
-from discover.asset.base.atype import AssetType
+from discover.asset.base.asset import AssetType
 from discover.asset.base.builder import AssetBuilder
+from discover.asset.dataset.dataframer import (
+    DataFramer,
+    PandasDataFramer,
+    PySparkDataFramer,
+)
 from discover.asset.dataset.dataset import Dataset
-from discover.asset.dataset.identity import DatasetConfig, DatasetPassport
+from discover.asset.dataset.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
-from discover.core.file import FileFormat
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.persist.file.fao import FAO
+from discover.infra.utils.file.fileset import FileFormat
 from discover.infra.workspace.service import Workspace
 
 
@@ -44,6 +48,8 @@ from discover.infra.workspace.service import Workspace
 #                                   DATASET BUILDER                                                 #
 # ================================================================================================ #
 class DatasetBuilder(AssetBuilder):
+
+    __ASSET_TYPE = AssetType.DATASET
 
     @inject
     def __init__(
@@ -55,14 +61,7 @@ class DatasetBuilder(AssetBuilder):
         self._workspace = workspace
         self._fao = fao
 
-        self._passport = None
-        self._dataframe = None
-        self._dataset = None
-        self._filepath = None
-        self._file_format = None
-        self._source_filepath = None
-        self._source_file_format = None
-        self._spark = None
+        self.reset()
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -72,14 +71,22 @@ class DatasetBuilder(AssetBuilder):
 
         Clears all attributes, preparing the builder for a new configuration.
         """
-        self._passport = None
+
+        self._asset_type = self.__ASSET_TYPE
         self._dataframe = None
-        self._dataset = None
-        self._filepath = None
-        self._file_format = None
+        self._phase = None
+        self._stage = None
+        self._name = "review"
+        self._description = None
+        self._creator = None
+        self._dftype = None
+        self._source = None
         self._source_filepath = None
-        self._source_file_format = None
-        self._spark = None
+        self._file_format = FileFormat.PARQUET
+        self._dataframer = None
+
+        self._passport = None
+        self._dataset = None
 
     # -------------------------------------------------------------------------------------------- #
     @property
@@ -95,50 +102,160 @@ class DatasetBuilder(AssetBuilder):
         return dataset
 
     # -------------------------------------------------------------------------------------------- #
-    def passport(self, passport: DatasetPassport) -> DatasetBuilder:
-        """
-        Sets the dataset passport
+    #                                  PASSPORT INFO                                               #
+    # -------------------------------------------------------------------------------------------- #
+    def name(self, name: str) -> DatasetBuilder:
+        """Sets the name of the Dataset
 
         Args:
-            passport (DatasetPassport): The passport for the data source.
+            name (str): The name of the dataset.
 
         Returns:
-            DatasetBuilder: The current builder instance for chaining.
+            DatasetBuilder: The current builder instance.
         """
-        self._passport = passport
+        self._name = name
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def from_file(self, config: DatasetConfig) -> DatasetBuilder:
-        """
-        Sets the source filepath, format, and DataFrame type.
+    def description(self, description: str) -> DatasetBuilder:
+        """Sets the description of the Dataset
 
         Args:
-            config (DatasetConfig): DatasetConfig object containing source filepath,
-            andd file_format
+            description (str): The description of the dataset.
 
         Returns:
-            DatasetBuilder: The current builder instance for chaining.
+            DatasetBuilder: The current builder instance.
         """
-        self._source_filepath = config.filepath
-        self._source_file_format = config.file_format
-        self._source_dftype = config.dftype
+        self._description = description
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def from_dataframe(
-        self, dataframe: Union[pd.DataFrame, DataFrame]
+    def phase(self, phase: PhaseDef = PhaseDef.DATAPREP) -> DatasetBuilder:
+        """Sets the phase for which the Dataset is being created.
+
+        Args:
+            phase (PhaseDef): The project phase for which the dataset is being constructed.
+                Defaults to DataPrep phase.
+
+        Returns:
+            DatasetBuilder: The current builder instance.
+        """
+        self._phase = phase
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def stage(self, stage: StageDef) -> DatasetBuilder:
+        """Sets the stage for which the Dataset is being created.
+
+        Args:
+            stage (StageDef): The stage for which the dataset is being constructed.
+
+        Returns:
+            DatasetBuilder: The current builder instance.
+        """
+        self._stage = stage
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def creator(self, creator: str) -> DatasetBuilder:
+        """Sets the creator of the dataset.
+
+        Args:
+            creator (str): The creator of the dataset. This is typically the name
+                of the class that initiated the build request.
+
+        Returns:
+            DatasetBuilder: The current builder instance.
+        """
+        self._creator = creator
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                 DATA SOURCE                                                  #
+    # -------------------------------------------------------------------------------------------- #
+    def from_file(
+        self, filepath: str, file_format: FileFormat = FileFormat.PARQUET
     ) -> DatasetBuilder:
         """
-        Sets dataframe on the dataset
+        Initializes the build process from a file data source.
 
         Args:
-            dataframe (Union[pd.DataFrame, DataFrame]): Dataframe containing the data
+            filepath (str): The path to the data source
+
+        Returns:
+            DatasetBuilder: The current builder instance.
+        """
+        self._source_filepath = filepath
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def from_dataset(self, dataframe: Union[pd.DataFrame, DataFrame]) -> DatasetBuilder:
+        """
+        Sets the source as a Pandas or PySpark DataFrame.
+
+        Args:
+            dataframe (Union[pd..DataFrame, DataFrame]): Pandas or PySpark DataFrame
 
         Returns:
             DatasetBuilder: The current builder instance for chaining.
         """
         self._dataframe = dataframe
+        # Set the dftype parameter to a default based on the DataFrame type.
+        if isinstance(dataframe, DataFrame):
+            self._dftype = (
+                self._dftype or DFType.SPARK
+            )  # Defaults to Spark (rather than SparkNLP) if not set.
+        else:
+            self._dftype = self._dftype or DFType.PANDAS
+
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def source(self, source: DatasetPassport) -> DatasetBuilder:
+        """Sets the dataset source with the source DatasetPassport
+
+        Args:
+            source (DatasetPassport): The passport for the source of the dataset.
+
+        Returns:
+            DatasetBuilder: The current builder instance for chaining.
+        """
+        self._source = source
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    #                                  DATAFRAME TYPE                                              #
+    # -------------------------------------------------------------------------------------------- #
+    def as_pandas(self) -> DatasetBuilder:
+        """
+        Sets the DataFrame type to Pandas.
+
+        Returns:
+            DatasetBuilder: The current builder instance for chaining.
+        """
+        self._dftype = DFType.PANDAS
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def as_spark(self) -> DatasetBuilder:
+        """
+        Sets the DataFrame type to Spark.
+
+        Returns:
+            DatasetBuilder: The current builder instance for chaining.
+        """
+        self._dftype = DFType.SPARK
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def as_sparknlp(self) -> DatasetBuilder:
+        """
+        Sets the DataFrame type to SparkNLP
+
+        Returns:
+            DatasetBuilder: The current builder instance for chaining.
+        """
+        self._dftype = DFType.SPARKNLP
         return self
 
     # -------------------------------------------------------------------------------------------- #
@@ -166,300 +283,129 @@ class DatasetBuilder(AssetBuilder):
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    #                                       SPARK                                                  #
-    # -------------------------------------------------------------------------------------------- #
-    def spark(self, spark: SparkSession) -> DatasetBuilder:
-        """
-        Sets the spark session required to read spark dataframes.
-
-        Args:
-            spark (SparkSession): The spark session
-
-        Returns:
-            DatasetBuilder: The current builder instance for chaining.
-        """
-        self._spark = spark
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
     #                                      BUILD                                                   #
     # -------------------------------------------------------------------------------------------- #
     def build(self) -> DatasetBuilder:
 
         self._validate()
 
-        if self._source_filepath:
-            self._dataframe = self._read_data()
+        self._passport = self._build_passport()
 
-        self._filepath = self._get_filepath()
+        self._dataframer = self._build_dataframer()
 
-        self._dataset = Dataset(
-            workspace=self._workspace,
-            passport=self._passport,
-            filepath=self._filepath,
-            file_format=self._file_format,
-            dataframe=self._dataframe,
-        )
+        self._dataset = Dataset(passport=self._passport, dataframer=self._dataframer)
 
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def _get_filepath(self) -> str:
-        """
-        Generates the file path for the data component using the workspace and passport.
-
-        Returns:
-            str: The file path for the data component.
-        """
-        filepath = self._workspace.get_filepath(
-            asset_type=self._passport.asset_type,
-            asset_id=self._passport.asset_id,
-            phase=self._passport.phase,
-            file_format=self._file_format,
+    def _build_passport(self) -> DatasetPassport:
+        """Constructs the passport for the dataset."""
+        # Get the asset version for the phase and stage
+        version = self._workspace.get_version(phase=self._phase, stage=self._stage)
+        # Get a unique asset identifier for the asset.
+        asset_id = self._workspace.gen_asset_id(
+            asset_type=self._asset_type,
+            phase=self._phase,
+            stage=self._stage,
+            name=self._name,
+            version=version,
         )
-        self._logger.debug(f"Filepath assigned: {filepath}")
-        return filepath
+        # Get the filepath for asset persistence
+        filepath = self._workspace.get_filepath(
+            asset_id=asset_id, phase=self._phase, file_format=self._file_format
+        )
+        return DatasetPassport(
+            asset_id=asset_id,
+            phase=self._phase,
+            stage=self._stage,
+            name=self._name,
+            description=self._description,
+            creator=self._creator,
+            source=self._source,
+            file_format=self._file_format,
+            filepath=filepath,
+            dftype=self._dftype,
+            created=datetime.now(),
+            version=version,
+        )
+
+    # -------------------------------------------------------------------------------------------- #
+    def _build_dataframer(self) -> DataFramer:
+        """Constructs the DataFramer object"""
+        # If no dataframe were provided,read it from file.
+        if not isinstance(
+            self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+        ):
+            self._dataframe = self._read_data()
+
+        # Instantiate the DataFramer for the DataFrame type
+        if self._dftype == DFType.PANDAS:
+            return PandasDataFramer(df=self._dataframe)
+        else:
+            return PySparkDataFramer(df=self._dataframe)
 
     # -------------------------------------------------------------------------------------------- #
     def _read_data(self) -> Union[pd.DataFrame, DataFrame]:
+        """Reads a PySpark or Pandas DataFrame from file."""
 
-        if self._source_dftype == DFType.SPARK:
+        if self._source_dftype in (DFType.SPARK, DFType.SPARKNLP):
             try:
+                spark = self._workspace.spark.session_pool().get_spark_session(
+                    dftype=self._dftype
+                )
                 return self._fao.read(
                     filepath=self._source_filepath,
-                    dftype=self._source_dftype,
-                    spark=self._spark,
+                    dftype=self._dftype,
+                    spark=spark,
                 )
             except Exception as e:
                 msg = f"Exception encountered while reading from {self._source_filepath}.\n{e}"
                 self._logger.error(msg)
                 raise Exception(msg) from e
         else:
-            return self._fao.read(
-                filepath=self._source_filepath, dftype=self._source_dftype
-            )
+            return self._fao.read(filepath=self._source_filepath, dftype=self._dftype)
 
     # -------------------------------------------------------------------------------------------- #
     def _validate(self) -> None:
         errors = []
 
-        # Validate file format
+        # Validate name
+        if not isinstance(self._name, str):
+            errors.append(
+                f"The dataset `name` is a required string property. Received a {type(self._name)} type."
+            )
+
+        # Validate phase
+        if not isinstance(self._phase, PhaseDef):
+            errors.append(
+                f"The dataset `phase` is required PhaseDef property. Received a {type(self._phase)} type."
+            )
+
+        # Validate stage
+        if not isinstance(self._stage, StageDef):
+            errors.append(
+                f"The dataset `stage` is required StageDef property. Received a {type(self._stage)} type."
+            )
+
+        # Validate File Format
         if not isinstance(self._file_format, FileFormat):
             errors.append(
-                f"File format must be a FileFormat type. Received a {type(self._file_format)} type."
+                f"File format is a required FileFormat property. Received a {type(self._file_format)} type."
             )
 
-        # Validate the target passport before performing checks that depend upon valid passport.
-        if not isinstance(self._passport, DatasetPassport):
+        # Validate DFType
+        if not isinstance(self._dftype, DFType):
             errors.append(
-                "A Dataset requires a target DatasetPassport object for the Dataset."
+                f"The `dftype` is a required DFType property. Received a {type(self._dftype)} type."
             )
 
-        # Ensure a source filepath or source passport is provided
-        if not self._source_filepath and self._dataframe is None:
+        # Validate either the source filepath or the DataFrame was set.
+        if not isinstance(
+            self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+        ) and not isinstance(self._source_filepath, str):
             errors.append(
-                "Either a source filepath or a source dataframe must be provided to the DatasetBuilder."
+                "A source of the data must be set via the `from_dataframe` or the `from_file` method."
             )
-
-        # Ensure dataframe is a valid type
-        if self._dataframe is not None:
-            if not isinstance(
-                self._dataframe, (DataFrame, pd.core.frame.DataFrame, pd.DataFrame)
-            ):
-                errors.append(
-                    f"DataFrame type error. Expected a spark or pandas dataframe. Received a {type(self._dataframe)} object."
-                )
 
         if errors:
             self._report_validation_errors(errors=errors)
-
-
-# ================================================================================================ #
-#                                DATASET PASSPORT BUILDER                                          #
-# ================================================================================================ #
-class DatasetPassportBuilder(AssetBuilder):
-    """
-    Builder class for constructing DatasetPassport objects.
-
-    Args:
-        workspace (Workspace): The workspace instance to use for ID generation.
-    """
-
-    __ASSET_TYPE: AssetType = AssetType.DATASET
-
-    @inject
-    def __init__(
-        self,
-        workspace: Workspace = Provide[DiscoverContainer.workspace.service],
-    ) -> None:
-        self._workspace = workspace
-        self._asset_type = self.__ASSET_TYPE
-        self._asset_id: Optional[str] = None
-        self._phase: Optional[PhaseDef] = None
-        self._stage: Optional[StageDef] = None
-        self._name: Optional[str] = None
-        self._version: Optional[str] = None
-        self._creator: Optional[str] = None
-        self._created: Optional[datetime] = None
-        self._source: Optional[Dataset] = None
-        self._parent: Optional[DatasetPassport] = None
-        self._file_format = FileFormat.PARQUET
-        self._dataset_passport: Optional[DatasetPassport] = None
-
-    @property
-    def passport(self) -> DatasetPassport:
-        """
-        Returns the constructed DatasetPassport and resets the builder.
-
-        Returns:
-            DatasetPassport: The constructed passport.
-
-        Raises:
-            ValueError: If `build()` was not called before accessing this property.
-        """
-        if not self._dataset_passport:
-            raise ValueError("Passport has not been built. Call `build()` first.")
-        passport = self._dataset_passport
-        self.reset()
-        return passport
-
-    def reset(self) -> None:
-        """Resets the builder to its initial state."""
-        self._asset_id = None
-        self._phase = None
-        self._stage = None
-        self._name = None
-        self._creator = None
-        self._created = None
-        self._version = None
-        self._source = None
-        self._parent = None
-        self._file_format = FileFormat.PARQUET
-        self._dftype = None
-        self._dataset_passport = None
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                     IDENTITY                                                 #
-    # -------------------------------------------------------------------------------------------- #
-    def name(self, name: str) -> DatasetPassportBuilder:
-        """Sets the name for the dataset."""
-        self._name = name
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                      FLOW                                                    #
-    # -------------------------------------------------------------------------------------------- #
-    def phase(self, phase: PhaseDef) -> DatasetPassportBuilder:
-        """Sets the phase for the dataset."""
-        self._phase = phase
-        return self
-
-    def stage(self, stage: StageDef) -> DatasetPassportBuilder:
-        """Sets the stage for the dataset."""
-        self._stage = stage
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                    PROVENANCE                                                #
-    # -------------------------------------------------------------------------------------------- #
-    def source(self, source: DatasetPassport) -> DatasetPassportBuilder:
-        """Sets the source dataset."""
-        self._source = source
-        return self
-
-    def parent(self, parent: DatasetPassport) -> DatasetPassportBuilder:
-        """Sets the parent passport."""
-        self._parent = parent
-        return self
-
-    def creator(self, creator: str) -> DatasetPassportBuilder:
-        """Sets the creator of the passport."""
-        self._creator = creator
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                    FILE FORMAT                                               #
-    # -------------------------------------------------------------------------------------------- #
-
-    def csv(self) -> DatasetPassportBuilder:
-        """
-        Sets the file format to CSV and determines the file path.
-
-        Returns:
-            DatasetBuilder: The current builder instance for chaining.
-        """
-        self._file_format = FileFormat.CSV
-        return self
-
-    def parquet(self) -> DatasetPassportBuilder:
-        """
-        Sets the file format to Parquet and determines the file path.
-
-        Returns:
-            DatasetBuilder: The current builder instance for chaining.
-        """
-        self._file_format = FileFormat.PARQUET
-        return self
-
-    def build(self) -> DatasetPassportBuilder:
-        """
-        Builds the DatasetPassport after validating all fields.
-
-        Returns:
-            DatasetPassportBuilder: The builder instance for chaining.
-
-        Raises:
-            ValueError: If validation fails.
-        """
-        self._validate()
-        self._created = datetime.now()
-        self._asset_id, self._version = tuple(self._get_asset_id().as_dict().values())
-        self._creator = self._creator or self._get_caller()
-        self._dataset_passport = DatasetPassport.create(
-            asset_type=self._asset_type,
-            asset_id=self._asset_id,
-            phase=self._phase,
-            stage=self._stage,
-            name=self._name,
-            creator=self._creator,
-            created=self._created,
-            version=self._version,
-            source=self._source,
-            parent=self._parent,
-        )
-        return self
-
-    def _get_asset_id(self) -> str:
-        """Generates a unique asset ID using the workspace."""
-        return self._workspace.gen_asset_id(
-            asset_type=self._asset_type,
-            phase=self._phase,
-            stage=self._stage,
-            name=self._name,
-        )
-
-    def _get_caller(self) -> str:
-        # Get the stack frame of the caller
-        stack = inspect.stack()
-        caller_frame = stack[2]  # The caller of the caller of this method
-
-        # Get the `self` object from the caller's local variables
-        caller_self = caller_frame.frame.f_locals.get("self", None)
-        # Get the class name if available.
-        if caller_self:
-            return caller_self.__class__.__name__
-        else:
-            return "User (not identified)"
-
-    def _validate(self) -> None:
-        """Validates that all required fields are set and properly typed."""
-        errors = []
-        if not isinstance(self._phase, PhaseDef):
-            errors.append(f"Invalid phase: {self._phase} (Expected: PhaseDef)")
-        if not isinstance(self._stage, StageDef):
-            errors.append(f"Invalid stage: {self._stage} (Expected: StageDef)")
-        if not isinstance(self._name, str):
-            errors.append(f"Invalid name: {self._name} (Expected: str)")
-
-        if errors:
-            raise ValueError("\n".join(errors))

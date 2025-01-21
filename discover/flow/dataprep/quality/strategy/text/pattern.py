@@ -11,12 +11,11 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Monday January 20th 2025 05:35:28 pm                                                #
+# Modified   : Tuesday January 21st 2025 01:38:23 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-import re
 from dataclasses import dataclass
 from typing import Callable, Dict
 
@@ -65,11 +64,16 @@ class RegexFactory:
         },
         "phone": {
             "pattern": r"(\+?\d{1,3})?[\s.-]?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}",
-            "replacement": "PHONE",
+            "replacement": " PHONE",
         },
-        # Special characters
+        # Non-Punctuation Special Characters
         "special_chars": {
-            "pattern": r"(?u)[^\w\s'-\.,!?():;=/$@%&*\+\^~`[]\|\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\U00002702-\U000027B0\U00024C2-\U0001F251]",
+            "pattern": r"[^a-zA-Z0-9\s.,!\"''()\\:;-]",
+            "replacement": None,
+        },
+        # Special chars to remove
+        "special_chars_to_remove": {
+            "pattern": r'["\'#%&@*+\\/^~`_|]',
             "replacement": "",
         },
         # Linguistic punctuation marks
@@ -107,9 +111,6 @@ class RegexFactory:
             "pattern": r"\n",
             "replacement": " ",
         },
-        # Emoticon
-        "emoticon": {"pattern": r"(?::|;|=)(?:-)?(?:\)|\(|D|P|O|S|\||\\|\/])"},
-        "replacement": r" \g ",
     }
 
     def __init__(self) -> None:
@@ -125,7 +126,6 @@ class RegexFactory:
             "sequence_repetition": self._sequence_repetition,
             "phrase_repetition": self._phrase_repetition,
             "word_repetition": self._word_repetition,
-            "emoji": self._emoji,
         }
 
     def get_regex(self, pattern: str, **kwargs) -> Regex:
@@ -156,9 +156,9 @@ class RegexFactory:
                 f"Pattern '{pattern}' is not supported. Available patterns: {available_patterns}"
             )
 
-    # ------------------------------------------------------------------------------------------------ #
-    # Dynamic pattern generators
-    # ------------------------------------------------------------------------------------------------ #
+    # -------------------------------------------------------------------------------------------- #
+    #                              DYNAMIC REGEX PATTERNS                                          #
+    # -------------------------------------------------------------------------------------------- #
     def _elongation(
         self, threshold: int = 3, max_elongation: int = 2, **kwargs
     ) -> Regex:
@@ -179,64 +179,7 @@ class RegexFactory:
         replacement = r"\1" * min(max_elongation, threshold)
         return Regex(pattern=pattern, replacement=replacement)
 
-    def _emoji(self, **kwargs) -> Regex:
-        """Generates a pattern that adds spaces around emojis
-
-        Returns:
-            Pattern: Regex pattern and replacement patterns.
-        """
-
-        pattern = re.compile(
-            "["
-            "\U0001F600-\U0001F64F"  # emoticons
-            "\U0001F300-\U0001F5FF"  # symbols & pictographs
-            "\U0001F680-\U0001F6FF"  # transport & map symbols
-            "\U0001F1E0-\U0001F1FF"  # flags (iOS)
-            "\U00002702-\U000027B0"
-            "\U000024C2-\U0001F251"
-            "]+",
-            flags=re.UNICODE,
-        )
-
-        replacement = r" \g "
-        return Regex(pattern=pattern, replacement=replacement)
-
-    def _sequence_repetition(
-        self, length_of_sequence: int = 3, min_repetitions: int = 3, **kwargs
-    ) -> Regex:
-        """
-        Generates a pattern for detecting repeated sequences of characters.
-
-        Args:
-            length_of_sequence (int): Minimum length of the repeating sequence.
-            min_repetitions (int): Minimum number of repetitions to consider a match.
-
-        Returns:
-            Pattern: Regex pattern and replacement logic.
-        """
-        if length_of_sequence < 1 or min_repetitions < 2:
-            raise ValueError(
-                "length_of_sequence must be >= 1 and min_repetitions must be >= 2"
-            )
-
-        pattern = rf"((?:.{{{length_of_sequence},}}?))\1{{{min_repetitions - 1}}}"
-        replacement = r"\1"
-        return Regex(pattern=pattern, replacement=replacement)
-
-    def _phrase_repetition(self, min_repetitions: int = 3, **kwargs) -> Regex:
-        """
-        Generates a pattern for detecting repeated phrases.
-
-        Args:
-            min_repetitions (int): Minimum number of phrase repetitions to consider a match.
-
-        Returns:
-            Pattern: Regex pattern and replacement logic.
-        """
-        pattern = rf"((?:\b\w+\b(?:\s*[\.,;!?-]+\s*)?)+)\s*(?:\1\s*[\.,;!?-]*\s*){{{min_repetitions-1},}}"
-        replacement = r"\1"
-        return Regex(pattern=pattern, replacement=replacement)
-
+    # -------------------------------------------------------------------------------------------- #
     def _word_repetition(
         self, threshold: int = 3, max_repetitions: int = 1, **kwargs
     ) -> Regex:
@@ -244,7 +187,7 @@ class RegexFactory:
         Generates a pattern for detecting repeated words.
 
         Args:
-            min_repetitions (int): Minimum number of word repetitions to consider a match. Defaults to 3
+            threshold (int): Minimum number of word repetitions to consider a match. Defaults to 3
             max_repetitions (Optional[int]): Maximum number of word repetitions to keep. Defaults to 1.
 
         Returns:
@@ -255,6 +198,65 @@ class RegexFactory:
         if max_repetitions < 1:
             raise ValueError("max_repetitions must be >= 1")
 
-        pattern = rf"(\b\w+\b)\s*(?:\1\s*){{{threshold - 1},}}"
+        pattern = rf"\b(\w+)\b\s*(?:(?:\s+\1\b)*){{{threshold - 1},}}"
+        replacement = r"\1" * min(max_repetitions, threshold)
+        return Regex(pattern=pattern, replacement=replacement)
+
+    # -------------------------------------------------------------------------------------------- #
+    def _phrase_repetition(
+        self,
+        length_of_phrase: int = 2,
+        threshold: int = 2,
+        max_repetitions: int = 1,
+        **kwargs,
+    ) -> Regex:
+        """
+        Generates a pattern for detecting repeated phrases.
+
+        Args:
+            length_of_phrase (int): Minimum length of a phrase (in words) to be considered.. Default = 2
+            threshold (int): Minimum number of phrase repetitions to consider a match. Default = 2
+            max_repetitions (int): Number of allowed repetitions after cleaning. Default = 1.
+
+        Returns:
+            Pattern: Regex pattern and replacement logic.
+        """
+        if length_of_phrase < 1:
+            raise ValueError("length_of_phrase must be >= 1")
+        if threshold < 2:
+            raise ValueError("threshold must be >= 2")
+        if max_repetitions < 1:
+            raise ValueError("max_repetitions must be >= 1")
+
+        pattern = rf"(\b\w+\b(?: \b\w+\b)*)\s*(?:\s*\1){{{threshold - 1},}}"
+        replacement = r"\1" * min(max_repetitions, threshold)
+        return Regex(pattern=pattern, replacement=replacement)
+
+    # -------------------------------------------------------------------------------------------- #
+    def _sequence_repetition(
+        self,
+        length_of_sequence: int = 3,
+        threshold: int = 3,
+        max_repetitions: int = 1,
+        **kwargs,
+    ) -> Regex:
+        """
+        Generates a pattern for detecting repeated sequences of characters.
+
+        Args:
+            length_of_sequence (int): Minimum length of a sequence (in characters) to be considered.. Default = 3
+            threshold (int): Minimum number of sequence repetitions to consider a match. Default = 3
+            max_repetitions (int): Number of allowed repetitions after cleaning. Default = 1.
+        Returns:
+            Pattern: Regex pattern and replacement logic.
+        """
+        if length_of_sequence < 1:
+            raise ValueError("length_of_sequence must be >= 1")
+        if threshold < 2:
+            raise ValueError("threshold must be >= 2")
+        if max_repetitions < 1:
+            raise ValueError("max_repetitions must be >= 1")
+
+        pattern = rf"((?i)(.{{{length_of_sequence},}}))\s*(?:\s*\1){{{threshold - 1},}}"
         replacement = r"\1" * min(max_repetitions, threshold)
         return Regex(pattern=pattern, replacement=replacement)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:26:44 am                                                #
-# Modified   : Monday January 20th 2025 12:44:40 pm                                                #
+# Modified   : Monday January 20th 2025 08:49:24 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -20,7 +20,8 @@
 
 from typing import List, Optional
 
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.functions import regexp_replace, trim
 from sparknlp.annotator import (
     Chunker,
     DependencyParserModel,
@@ -85,6 +86,7 @@ class TQASyntacticStage(Stage):
         state: FlowState,
         repo: DatasetRepo,
         dataset_builder: DatasetBuilder,
+        column: str = "content",
         spark: Optional[SparkSession] = None,
     ) -> None:
         super().__init__(
@@ -96,6 +98,7 @@ class TQASyntacticStage(Stage):
             dataset_builder=dataset_builder,
             spark=spark,
         )
+        self._column = column
         self._nlp_pipeline = None
 
     @property
@@ -126,9 +129,15 @@ class TQASyntacticStage(Stage):
         Returns:
             Dataset: The processed target dataset.
         """
+        # Obtain the source dataset
         source = self.get_source_dataset()
+        # Extract the pyspark DataFrame
         dataframe = source.dataframe
-        data = self.nlp_pipeline.fit(dataframe).transform(dataframe)
+        # Clean the DataFrame by removing all non-alphanumeric characters.
+        cleaned_df = self._clean_text(data=dataframe, column_name=self._column)
+        # Process the data through the NLP Pipeline
+        data = self.nlp_pipeline.fit(cleaned_df).transform(dataframe)
+        # Execute the Syntactic Text Quality Analysis Pipeline Tasks
         for task in self._tasks:
             try:
                 data = task.run(data)
@@ -225,3 +234,20 @@ class TQASyntacticStage(Stage):
             ]
         )
         return nlp_pipeline
+
+    def _clean_text(self, data, column: str) -> DataFrame:
+        """Removes all punctuation and special chars from the text.
+
+        Args:
+            data: The PySpark DataFrame.
+            column: The name of the column containing the text.
+        Returns:
+             A new PySpark DataFrame with cleaned text column.
+        """
+        cleaned_df = data.withColumn(
+            column,
+            trim(
+                regexp_replace(data[column], r"[^\w\s]", "")
+            ),  # remove all non word and non whitespace chars
+        )
+        return cleaned_df

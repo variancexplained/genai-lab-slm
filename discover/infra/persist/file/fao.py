@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Thursday January 16th 2025 05:38:43 pm                                              #
+# Modified   : Tuesday January 21st 2025 10:35:09 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,10 +26,9 @@ import pandas as pd
 import pyspark
 from pyspark.sql import SparkSession
 
+from discover.asset.dataset.fileset import FileFormat, FileTypeDetector
 from discover.core.dtypes import DFType
-from discover.core.file import FileFormat
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
-from discover.infra.utils.file.info import FileTypeDetector
 
 DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
 

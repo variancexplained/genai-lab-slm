@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Sunday December 29th 2024 06:01:40 pm                                               #
+# Modified   : Tuesday January 21st 2025 06:24:25 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,10 +25,30 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Union
 
-from discover.asset.base.atype import AssetType
-from discover.asset.base.identity import Passport
+from discover.asset.base.identity import AssetPassport, Passport
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from discover.core.flow import PhaseDef, StageDef
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                        ASSET                                                     #
+# ------------------------------------------------------------------------------------------------ #
+class AssetType(Enum):
+    """Enumerates the different types of assets.
+
+    This enum defines the possible types of assets that can be managed
+    by the system.
+
+    Attributes:
+        DATASET (str): Represents a dataset asset.
+        MODEL (str): Represents a machine learning model asset.
+        EXPERIMENT (str): Represents an experiment asset.
+
+    """
+
+    DATASET = "dataset"
+    MODEL = "model"
+    EXPERIMENT = "experiment"
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -48,7 +68,6 @@ class Asset(ABC):
 
     Attributes:
         asset_id (str): Unique identifier for the asset.
-        asset_type (AssetType): Type of the asset.
         phase (PhaseDef): Phase to which the asset belongs.
         stage (StageDef): Stage to which the asset belongs.
         name (str): Name of the asset.
@@ -111,14 +130,14 @@ class Asset(ABC):
             object.__setattr__(self, key, value)
 
     @property
+    def passport(self) -> AssetPassport:
+        """Returns the Asset Passport."""
+        return self._passport
+
+    @property
     def asset_id(self) -> str:
         """str: Unique identifier for the asset."""
         return self._passport.asset_id
-
-    @property
-    def asset_type(self) -> AssetType:
-        """AssetType: Type of the asset."""
-        return self._passport.asset_type
 
     @property
     def phase(self) -> PhaseDef:

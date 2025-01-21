@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Sunday January 19th 2025 12:41:32 pm                                                #
+# Modified   : Tuesday January 21st 2025 01:02:06 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -33,37 +33,7 @@ class DataCleaningStageBuilder(StageBuilder):
 
     def __init__(self) -> None:
         super().__init__()
-
-        self._source_config = None
-        self._target_config = None
-
-        self._clean_accents = None
-        self._clean_control_chars = None
-        self._clean_duplicate_review_ids = None
-        self._clean_duplicate_reviews = None
-        self._clean_duplicate_rows = None
-        self._clean_elongation = None
-        self._clean_emails = None
-        self._clean_excess_special_chars = None
-        self._clean_excess_whitespace = None
-        self._clean_html = None
-        self._clean_invalid_categories = None
-        self._clean_invalid_ratings = None
-        self._clean_invalid_review_dates = None
-        self._clean_less_than_threshold = None
-        self._clean_non_english_app_names = None
-        self._clean_non_english_reviews = None
-        self._clean_phone_numbers = None
-        self._clean_repeated_chars = None
-        self._clean_repeated_phrases = None
-        self._clean_repeated_sequences = None
-        self._clean_repeated_words = None
-        self._clean_short_reviews = None
-        self._clean_urls = None
-
-        self._task_configs = self._get_config(
-            phase=self.__PHASE, stage=self.__STAGE, config="tasks"
-        )
+        self.reset()
 
     def reset(self) -> None:
         super().reset()
@@ -76,6 +46,7 @@ class DataCleaningStageBuilder(StageBuilder):
         self._clean_duplicate_rows = None
         self._clean_elongation = None
         self._clean_emails = None
+        self._clean_special_chars = None
         self._clean_excess_special_chars = None
         self._clean_excess_whitespace = None
         self._clean_html = None
@@ -217,6 +188,12 @@ class DataCleaningStageBuilder(StageBuilder):
         self._clean_elongation["params"]["threshold"] = threshold
         self._clean_elongation["params"]["max_elongation"] = max_elongation
         self._tasks.append(self._task_builder.build(self._clean_elongation))
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
+    def clean_special_chars(self) -> DataCleaningStageBuilder:
+        self._clean_special_chars = self._task_configs["clean_special_chars"]
+        self._tasks.append(self._task_builder.build(self._clean_special_chars))
         return self
 
     # -------------------------------------------------------------------------------------------- #

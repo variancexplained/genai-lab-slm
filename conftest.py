@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Sunday January 19th 2025 02:21:23 pm                                                #
+# Modified   : Tuesday January 21st 2025 06:31:25 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,15 +24,14 @@ import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
-from discover.asset.base.atype import AssetType
 from discover.asset.dataset.builder import DatasetBuilder
 from discover.asset.dataset.identity import DatasetConfig, DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
-from discover.core.file import FileFormat
 from discover.core.flow import PhaseDef, StageDef, TestStageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
+from discover.infra.utils.file.fileset import FileFormat
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -216,6 +215,19 @@ def spark_df(spark, container):
 
 
 # ------------------------------------------------------------------------------------------------ #
+@pytest.fixture(scope="session")
+def spark_df_dirty(spark, container):
+    """
+    Pytest fixture that converts a pandas DataFrame to a Spark DataFrame.
+    Requires the spark fixture and pandas_df_from_csv fixture.
+    """
+    FILEPATH = "tests/data/dirty_reviews.parquet"
+    iofactory = container.io.iofactory()
+    reader = iofactory.get_reader(dftype=DFType.SPARK, file_format=FileFormat.PARQUET)
+    return reader.read(filepath=FILEPATH, spark=spark)
+
+
+# ------------------------------------------------------------------------------------------------ #
 #                                      WORKSPACE                                                   #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
@@ -248,7 +260,6 @@ def ds_passport():
         asset_id="dataset_test_dataset_v1.0",
         phase=PhaseDef.TESTING,
         stage=TestStageDef.SMOKE_TEST,
-        asset_type=AssetType.DATASET,
         name="test_dataset",
         version="v1.0",
         creator="PyTest",
@@ -262,7 +273,6 @@ def ds_passport():
 @pytest.fixture(scope="session")
 def filepath_csv(workspace, ds_passport):
     return workspace.get_filepath(
-        asset_type=ds_passport.asset_type,
         asset_id=ds_passport.asset_id,
         phase=ds_passport.phase,
         file_format=FileFormat.CSV,
@@ -273,7 +283,6 @@ def filepath_csv(workspace, ds_passport):
 @pytest.fixture(scope="session")
 def filepath_parquet(workspace, ds_passport):
     return workspace.get_filepath(
-        asset_type=ds_passport.asset_type,
         asset_id=ds_passport.asset_id,
         phase=ds_passport.phase,
         file_format=FileFormat.PARQUET,
@@ -324,6 +333,5 @@ def clean_dataset_config():
         stage=StageDef.CLEAN,
         name="review",
         file_format=FileFormat.PARQUET,
-        asset_type="dataset",
         dftype=DFType.SPARKNLP,
     )

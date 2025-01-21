@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Monday January 20th 2025 04:22:02 pm                                                #
+# Modified   : Tuesday January 21st 2025 12:46:28 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -194,9 +194,7 @@ class RegexReplaceStrategy(RepairStrategy):
             # Apply regex replacement
             data = data.withColumn(
                 self._column,
-                F.regexp_replace(
-                    F.col(self._column), f"(?i){regex_info.pattern}", replacement
-                ),
+                F.regexp_replace(F.col(self._column), regex_info.pattern, replacement),
             )
         except Exception as e:
             raise ValueError(f"Failed to apply regex replacement: {e}")
@@ -1213,68 +1211,5 @@ class ShortReviewRemovalStrategy(RepairStrategy):
 
         # Filter out rows where anomalies are detected
         data = data.filter(~F.col(self._new_column))
-
-        return data
-
-
-# ------------------------------------------------------------------------------------------------ #
-class PunctuationNormalizationStrategy(RepairStrategy):
-
-    def __init__(
-        self,
-        column: str,
-        **kwargs,
-    ) -> None:
-        super().__init__()
-        self._column = column
-
-    @staticmethod
-    def repair_text(text):
-        # 1. Retain Emojis and Emoticons (Improved regex)
-        emoji_pattern = re.compile(
-            "["
-            "\U0001F600-\U0001F64F"  # emoticons
-            "\U0001F300-\U0001F5FF"  # symbols & pictographs
-            "\U0001F680-\U0001F6FF"  # transport & map symbols
-            "\U0001F1E0-\U0001F1FF"  # flags (iOS)
-            "\U00002702-\U000027B0"
-            "\U000024C2-\U0001F251"
-            "]+",
-            flags=re.UNICODE,
-        )
-        text = emoji_pattern.sub(r" \g ", text).strip()  # add spaces around emojis
-
-        emoticon_pattern = r"(?::|;|=)(?:-)?(?:\)|\(|D|P|O|S|\||\\|\/])"
-        text = re.sub(
-            emoticon_pattern, r" \g ", text
-        ).strip()  # add spaces around emoticons
-
-        # 2. Remove or normalize other punctuation (now EXCLUDING emojis/emoticons)
-        text = re.sub(
-            r"[^\w\s'-\.,!?\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F1E0-\U0001F1FF\U00002702-\U000027B0\U000024C2-\U0001F251]",
-            "",
-            text,
-            flags=re.UNICODE,
-        )  # Allow apostrophes, hyphens, period, comma, question mark, exclamation mark, emojis
-
-        # 3. Normalize multiple periods/exclamation/question marks
-        text = re.sub(r"(\.|\!|\?){2,}", r"\1", text)
-
-        return text
-
-    def repair(self, data: DataFrame) -> DataFrame:
-        """Applies the repair strategy to the given DataFrame by detecting and removing short reviews.
-
-        Args:
-            data (DataFrame): The input DataFrame containing the reviews.
-
-        Returns:
-            DataFrame: The DataFrame with short reviews removed.
-        """
-        # Define a UDF for the repair logic
-        repair_udf = udf(self.repair_text, StringType())
-
-        # Apply the UDF to rows flagged as anomalies
-        data = data.withColumn(self._column, F.trim(repair_udf(F.col(self._column))))
 
         return data

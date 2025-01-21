@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Thursday January 16th 2025 04:45:40 pm                                              #
+# Modified   : Tuesday January 21st 2025 06:22:29 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,6 +25,7 @@ import logging.config
 
 from dependency_injector import containers, providers
 
+from discover.asset.dataset.identity import IDGen
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.dataframe.factory import DataFrameIOFactory
 from discover.infra.persist.file.fao import FAO
@@ -34,10 +35,9 @@ from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.experiment import ExperimentRepo
 from discover.infra.persist.repo.model import ModelRepo
 from discover.infra.service.spark.pool import SparkSessionPool
-from discover.infra.workspace.idgen import IDGen
-from discover.infra.workspace.location import LocationService
+from discover.infra.workspace.passport.location import LocationService
+from discover.infra.workspace.passport.version import VersionManager
 from discover.infra.workspace.service import Workspace
-from discover.infra.workspace.version import VersionManager
 
 
 # ------------------------------------------------------------------------------------------------ #

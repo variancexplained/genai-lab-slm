@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 08:14:05 pm                                              #
-# Modified   : Saturday January 4th 2025 06:18:07 pm                                               #
+# Modified   : Tuesday January 21st 2025 06:31:00 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,16 +21,15 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
-from typing import Type, Union
+from typing import Union
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.asset.base.atype import AssetType
+from discover.asset.dataset.dataset import Dataset
 from discover.container import DiscoverContainer
-from discover.core.dataset import Dataset, DatasetFactory, DFType
-from discover.core.file import FileFormat
+from discover.core.dtypes import DFType
 from discover.core.flow import DataStageDef, ModelStageDef, PhaseDef, StageDef
 from discover.flow.base.task import Task, TaskBuilder
 from discover.infra.exception.config import (
@@ -39,6 +38,7 @@ from discover.infra.exception.config import (
     StageConfigurationException,
 )
 from discover.infra.service.logging.stage import stage_logger
+from discover.infra.utils.file.fileset import FileFormat
 from discover.infra.workspace.service import Workspace
 
 
@@ -78,7 +78,6 @@ class Stage(ABC):
         stage: StageDef,
         source_config: dict,
         destination_config: dict,
-        dataset_factory_cls: Type[DatasetFactory] = DatasetFactory,
         workspace: Workspace = Provide[DiscoverContainer.workspace.service],
         force: bool = False,
         **kwargs,
@@ -89,8 +88,6 @@ class Stage(ABC):
 
         self._source_config = source_config
         self._destination_config = destination_config
-
-        self._dataset_factory = dataset_factory_cls()
 
         self._workspace = workspace
 
@@ -304,7 +301,7 @@ class ConfigDeserializer:
         Converts raw string values in the dataset configuration to appropriate Enums.
 
         Args:
-            config (dict): The dataset configuration containing keys like "asset_type",
+            config (dict): The dataset configuration containing keys like
                 "phase", "stage", "dftype", and "file_format".
 
         Returns:
@@ -316,9 +313,6 @@ class ConfigDeserializer:
         config_deserialized = config.copy()
 
         try:
-            config_deserialized["asset_type"] = AssetType.from_value(
-                config["asset_type"]
-            )
             config_deserialized["phase"] = PhaseDef.from_value(config["phase"])
             config_deserialized["stage"] = cls.deserialize_stage(
                 phase=config["phase"], stage=config["stage"]
