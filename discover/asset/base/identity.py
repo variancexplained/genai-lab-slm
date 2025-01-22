@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/workspace/passport/base.py                                          #
+# Filename   : /discover/asset/base/identity.py                                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday January 21st 2025 03:21:59 am                                               #
-# Modified   : Tuesday January 21st 2025 05:15:44 pm                                               #
+# Modified   : Wednesday January 22nd 2025 01:42:49 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -61,9 +61,10 @@ class AssetPassport(DataClass):
     stage: Optional[StageDef] = field(default=None)
     name: Optional[str] = field(default=None)
     description: Optional[str] = field(default=None)
-    creator: Optional[str] = field(default=None)
     file_format: FileFormat = FileFormat.PARQUET
+    creator: Optional[str] = field(default=None)
     created: Optional[datetime] = field(default=None)
+    accessed: Optional[datetime] = field(default=None)
     version: Optional[str] = field(default=None)
 
     @classmethod

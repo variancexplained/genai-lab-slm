@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:42:37 am                                               #
-# Modified   : Tuesday January 21st 2025 06:28:39 pm                                               #
+# Modified   : Wednesday January 22nd 2025 01:45:02 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,11 +20,13 @@
 from __future__ import annotations
 
 from dataclasses import field
-from typing import Optional
+from datetime import datetime
+from typing import Dict, Optional
 
 from pydantic.dataclasses import dataclass
 
 from discover.asset.base.identity import AssetPassport
+from discover.asset.dataset.state import DatasetState
 from discover.core.dtypes import DFType
 
 
@@ -47,9 +49,13 @@ class DatasetPassport(AssetPassport):
 
     """
 
+    status: Optional[DatasetState] = DatasetState.CREATED
     source: Optional[DatasetPassport] = field(default=None)
     dftype: Optional[DFType] = DFType.SPARK
     filepath: Optional[str] = field(default=None)
+    eventlog: Dict[datetime, str] = field(
+        default_factory=lambda: ({datetime.now(): "Dataset created."})
+    )
 
     def __post_init__(self) -> None:
         """Sets the description if not already set."""
@@ -70,3 +76,24 @@ class DatasetPassport(AssetPassport):
             self.description += f"from {self.source.asset_id} "
         self.description += f"in the {self.phase.label} - {self.stage.label} "
         self.description += f"on {self.created.strftime('%Y-%m-%d')} at {self.created.strftime('%H:%M:%S')}"
+
+    def access(self) -> None:
+        """Method called by the repository when the dataset is accessed."""
+        dt = datetime.now()
+        self.eventlog[dt] = "Dataset Accessed"
+        self.accessed = dt
+
+    def consume(self) -> None:
+        """Method called when the Dataset has been consumed by a data processing or machine learning pipeline."""
+        self.status = DatasetState.CONSUMED
+        self.eventlog[datetime.now()] = "Dataset Consumed"
+
+    def publish(self) -> None:
+        """Method called when the Dataset is being published to the repository."""
+        self.status = DatasetState.PUBLISHED
+        self.eventlog[datetime.now()] = "Dataset Published"
+
+    def remove(self) -> None:
+        """Method called when the Dataset is being removed from the repository"""
+        self.status = DatasetState.REMOVED
+        self.eventlog[datetime.now()] = "Dataset Removed"

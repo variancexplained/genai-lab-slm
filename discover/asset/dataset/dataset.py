@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Tuesday January 21st 2025 06:23:58 pm                                               #
+# Modified   : Wednesday January 22nd 2025 02:57:10 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Union
+from typing import Dict, Union
 
 import pandas as pd
 from pyspark.sql import DataFrame
@@ -130,7 +130,7 @@ class Dataset(Asset):
         return self._info
 
     @property
-    def summary(self) -> None:
+    def summary(self) -> Dict[str, str]:
         """Prints descriptive and summary statistics on DataFrame columns and observations."""
         self._summary = self._summary or self._get_summary()
 
@@ -162,6 +162,32 @@ class Dataset(Asset):
             dataframe (Union[pd.DataFrame, DataFrame]): The DataFrame contents.
         """
         self._dataframer.dataframe = dataframe
+
+    def register(self) -> Dict[str, str]:
+        """Returns a dictionary containing metadata and brief descriptive statistics for registration.
+
+        Returns:
+            Dict[str,str]: Dictionary containing metadata and descriptive statistics for the Dataset registry.
+        """
+        passport = self._passport.as_dict()
+        passport.update(self.summary)
+        return passport
+
+    def access(self) -> None:
+        """Upddates the Dataset datetime last accessed datetime."""
+        self._passport.access()
+
+    def publish(self) -> None:
+        """Adds a publish event to the Dataset event log and changes the state to `PUBLISHED`."""
+        self._passport.publish()
+
+    def consume(self) -> None:
+        """Updates the Dataset state to `CONSUMED` and adds an event to the event log."""
+        self._passport.consume()
+
+    def remove(self) -> None:
+        """Updates the Dataset status to `REMOVED`."""
+        self._passport.remove()
 
     def _get_fileset(self) -> FileSet:
         """Returns a FileSet object containing the Dataset's file metadata."""

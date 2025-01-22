@@ -11,51 +11,49 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Thursday January 16th 2025 06:54:26 pm                                              #
+# Modified   : Wednesday January 22nd 2025 03:13:01 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repo Module"""
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 import pandas as pd
 from pyspark.sql import SparkSession
 
-from discover.asset.base.asset import Asset
+from discover.asset.base.repo import Repo
+from discover.asset.dataset.dataset import Dataset
 from discover.core.dtypes import DFType
 from discover.infra.config.app import AppConfigReader
-from discover.infra.persist.dataframe.base import DataFrame
-from discover.infra.persist.file.fao import FAO
-from discover.infra.persist.object.base import DAO
-from discover.infra.persist.repo.base import AssetRepo
-
-# ------------------------------------------------------------------------------------------------ #
-if TYPE_CHECKING:
-    from discover.asset.dataset.dataset import Dataset
+from discover.infra.persist.repo.file.base import DataFrame
+from discover.infra.persist.repo.file.fao import FAO
+from discover.infra.persist.repo.object.dao import DAO
+from discover.infra.persist.repo.object.rao import RAO
 
 
 # ------------------------------------------------------------------------------------------------ #
 #                                      DATASET REPO                                                #
 # ------------------------------------------------------------------------------------------------ #
-class DatasetRepo(AssetRepo):
-    """Repository for managing dataset assets and their associated files.
+class DatasetRepo(Repo):
+    """Repository for managing dataset datasets and their associated files.
 
-    This repository extends `AssetRepo` to provide specialized operations for managing datasets,
+    This repository extends `DatasetRepo` to provide specialized operations for managing datasets,
     including the addition, retrieval, and removal of associated files in both Pandas and Spark
     environments. It ensures that files on disk are properly handled when a dataset is added,
     retrieved, deleted, or when the repository is reset.
 
     Args:
         dao (DAO): The data access object used for persistence of dataset metadata.
-        pandas_fao (PandasFAO): Pandas file access object used for managing Pandas DataFrames.
-        spark_fao (SparkFAO): Spark file access object used for managing Spark DataFrames.
+        fao (FAO): File access object for file persistence.
+        rao (RAO): Registry access object for maintaining the repository registry.
     """
 
-    def __init__(self, dao: DAO, fao: FAO) -> None:
+    def __init__(self, dao: DAO, fao: FAO, rao: RAO) -> None:
         super().__init__(dao=dao)  # base class assigns the value to self._dao
         self._fao = fao
+        self._rao = rao
 
     @property
     def count(self) -> int:
@@ -64,29 +62,35 @@ class DatasetRepo(AssetRepo):
         Returns:
             int: The count of datasets in the repository.
         """
-        return self._dao.count
+        return self._rao.count
 
-    def add(self, asset: Asset, dftype: DFType) -> None:
-        """Adds a Dataset asset to the repository.
+    def add(self, dataset: Dataset, dftype: DFType) -> None:
+        """Adds a Dataset dataset to the repository.
 
         Args:
-            asset (Dataset): The dataset object to be added to the repository.
+            dataset (Dataset): The dataset object to be added to the repository.
         """
+
+        # Update the Dataset status to `PUBLISHED`
+        dataset.publish()
 
         # Persist the underlying data to file.
         if isinstance(
-            asset.dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
+            dataset.dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
         ):
             self._fao.create(
                 dftype=dftype,
-                filepath=asset.file.path,
-                file_format=asset.file.format,
-                dataframe=asset.dataframe,
+                filepath=dataset.file.path,
+                file_format=dataset.file.format,
+                dataframe=dataset.dataframer.dataframe,
                 overwrite=False,
             )
 
         # Save the Dataset object.
-        self._dao.create(asset=asset)
+        self._dao.create(dataset=dataset)
+
+        # Register the Dataset
+        self._rao.create(asset=dataset)
 
     def get(
         self,
@@ -95,7 +99,7 @@ class DatasetRepo(AssetRepo):
         dftype: Optional[DFType] = None,
     ) -> "Dataset":
         """
-        Retrieve a Dataset by its asset ID and load its data into memory.
+        Retrieve a Dataset by its dataset ID and load its data into memory.
 
         Args:
             asset_id (str): The identifier of the dataset to retrieve.
@@ -111,11 +115,21 @@ class DatasetRepo(AssetRepo):
             This method uses `setattr` to update the internal `_data` attribute
             of the `Dataset`'s `data` object, ensuring immutability in the public API.
         """
+        # Obtain the dataset object and set the dftype
         dataset = self._dao.read(asset_id=asset_id)
         dftype = dftype or dataset.dftype
 
+        # Read the DataFrame from file
         df = self._get_data(filepath=dataset.file.path, dftype=dftype, spark=spark)
-        setattr(dataset, "_dataframe", df)
+
+        # Deserialize the dataframe
+        dataset.deserialize(dataframe=df)
+
+        # Mark the dataset accessed.
+        dataset.access()
+
+        # Update the registry accordingly
+        self._rao.create(asset=dataset)
         return dataset
 
     def get_metadata(self, asset_id: str) -> "Dataset":
@@ -165,11 +179,18 @@ class DatasetRepo(AssetRepo):
             ValueError: If the file or directory specified by the dataset's filepath
             does not exist or cannot be identified.
         """
-        asset_meta = self.get_metadata(asset_id=asset_id)
-        self._fao.delete(filepath=asset_meta.file.path)
+        # Get the datasets filepath from its file object.
+        dataset_meta = self.get_metadata(asset_id=asset_id)
+        # Delete the files from the respository
+        self._fao.delete(filepath=dataset_meta.passport.filepath)
+        # Update the registry before deleting the object
+        dataset_meta.remove()
+        self._rao.create(asset=dataset_meta)
+        # Remove the Dataset object and metadata from the repository
         self._dao.delete(asset_id=asset_id)
+
         self._logger.debug(
-            f"Dataset {asset_meta.asset_id}, including its file at {asset_meta.file.path} has been removed from the repository."
+            f"Dataset {dataset_meta.asset_id}, including its file at {dataset_meta.file.path} has been removed from the repository."
         )
 
     def reset(self) -> None:
@@ -187,12 +208,12 @@ class DatasetRepo(AssetRepo):
         if AppConfigReader().get_environment().lower() == "test":
             asset_ids = self.get_all(keys_only=True)
 
-            self._logger.info(f"Assets to be deleted: {self.count}")
+            self._logger.info(f"Datasets to be deleted: {self.count}")
 
             for asset_id in asset_ids:
                 self.remove(asset_id=asset_id)
             self._logger.warning(
-                f"{self.__class__.__name__} has been reset. Current asset count: {self.count}"
+                f"{self.__class__.__name__} has been reset. Current dataset count: {self.count}"
             )
         else:
             msg = "Repository reset is only supported in test environment."

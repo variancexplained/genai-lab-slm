@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Tuesday January 21st 2025 06:24:25 pm                                               #
+# Modified   : Tuesday January 21st 2025 09:09:42 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,7 +25,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Union
 
-from discover.asset.base.identity import AssetPassport, Passport
+from discover.asset.base.identity import AssetPassport
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from discover.core.flow import PhaseDef, StageDef
 
@@ -84,7 +84,7 @@ class Asset(ABC):
 
     def __init__(
         self,
-        passport: Passport,
+        passport: AssetPassport,
         **kwargs,
     ) -> None:
         self._passport = passport

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Tuesday January 21st 2025 06:29:18 pm                                               #
+# Modified   : Wednesday January 22nd 2025 02:51:16 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -39,7 +39,7 @@ from discover.asset.dataset.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
-from discover.infra.persist.file.fao import FAO
+from discover.infra.persist.repo.file.fao import FAO
 from discover.infra.utils.file.fileset import FileFormat
 from discover.infra.workspace.service import Workspace
 
@@ -194,7 +194,7 @@ class DatasetBuilder(AssetBuilder):
         Sets the source as a Pandas or PySpark DataFrame.
 
         Args:
-            dataframe (Union[pd..DataFrame, DataFrame]): Pandas or PySpark DataFrame
+            dataframe (Union[pd.DataFrame, DataFrame]): Pandas or PySpark DataFrame
 
         Returns:
             DatasetBuilder: The current builder instance for chaining.
@@ -314,7 +314,8 @@ class DatasetBuilder(AssetBuilder):
         filepath = self._workspace.get_filepath(
             asset_id=asset_id, phase=self._phase, file_format=self._file_format
         )
-        return DatasetPassport(
+        passport = DatasetPassport(
+            assert_type=self._asset_type,
             asset_id=asset_id,
             phase=self._phase,
             stage=self._stage,
@@ -328,6 +329,10 @@ class DatasetBuilder(AssetBuilder):
             created=datetime.now(),
             version=version,
         )
+
+        passport.created()
+
+        return passport
 
     # -------------------------------------------------------------------------------------------- #
     def _build_dataframer(self) -> DataFramer:
@@ -348,7 +353,7 @@ class DatasetBuilder(AssetBuilder):
     def _read_data(self) -> Union[pd.DataFrame, DataFrame]:
         """Reads a PySpark or Pandas DataFrame from file."""
 
-        if self._source_dftype in (DFType.SPARK, DFType.SPARKNLP):
+        if self._dftype in (DFType.SPARK, DFType.SPARKNLP):
             try:
                 spark = self._workspace.spark.session_pool().get_spark_session(
                     dftype=self._dftype

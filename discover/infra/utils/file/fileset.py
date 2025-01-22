@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Tuesday January 21st 2025 02:39:37 pm                                               #
+# Modified   : Tuesday January 21st 2025 08:52:07 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -43,7 +43,7 @@ logger = logging.getLogger(f"{__name__}")
 class FileFormat(Enum):
     CSV = ("csv", ".csv")
     PARQUET = ("parquet", ".parquet")
-    PICKLE = {"pickle", ".pkl"}
+    PICKLE = ("pickle", ".pkl")
 
     @classmethod
     def from_value(cls, value) -> FileFormat:
@@ -53,18 +53,16 @@ class FileFormat(Enum):
                 return member
         raise ValueError(f"No matching {cls.__name__} for value: {value}")
 
-    def __new__(cls, name: str, value: str, ext: str):
+    def __new__(cls, name: str, ext: str):
         """Factory method that creates an Enum member.
 
         Args:
             name (str): The id for the enum member, i.e  PICKLE
-            value (str): The label or value for the enum member, i.e. `pickle`
             ext (str): The file extension for the file format, i.e. `.pkl
 
         """
         obj = object.__new__(cls)
         obj._value_ = name
-        obj.value = value
         obj.ext = ext
         return obj
 

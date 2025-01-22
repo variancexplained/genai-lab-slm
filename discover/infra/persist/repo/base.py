@@ -10,110 +10,56 @@
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Monday December 23rd 2024 02:33:35 pm                                               #
-# Modified   : Tuesday December 31st 2024 04:12:50 pm                                              #
+# Created    : Sunday September 22nd 2024 05:39:55 pm                                              #
+# Modified   : Wednesday January 22nd 2025 02:43:56 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
-import logging
-from typing import Dict, List, Union
+"""Object Persistence Base Module"""
 
-import pandas as pd
+from abc import ABC, abstractmethod
 
 from discover.asset.base.asset import Asset
-from discover.asset.base.repo import Repo
-from discover.infra.persist.object.base import DAO
 
 
 # ------------------------------------------------------------------------------------------------ #
-class AssetRepo(Repo):
-    """Repository for managing assets with data persistence and logging.
+#                               DATA ACCESS LAYER                                                  #
+# ------------------------------------------------------------------------------------------------ #
+class DAL(ABC):
+    """Abstract base class for the Data Access Layer."""
 
-    This class provides a high-level interface for interacting with assets stored
-    in a data access object (DAO). It supports adding, retrieving, checking,
-    removing, and resetting assets, while maintaining logs of critical operations.
+    @abstractmethod
+    def create(self, asset: Asset, **kwargs) -> None:
+        """Saves an asset to the data store.
+        Args:
+            asset (Asset): Asset object
+            **kwargs: Arbitrary keyword arguments.
+        """
 
-    Args:
-        dao (DAO): The data access object used for persistence of asset data.
-    """
-
-    def __init__(self, dao: DAO) -> None:
-        self._dao = dao
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    def add(self, asset: Asset) -> None:
-        """Adds an asset to the repository.
+    @abstractmethod
+    def read(self, asset_id: str, **kwargs) -> Asset:
+        """Reads the asset from the data store.
 
         Args:
-            asset (Asset): The asset object to be added to the repository.
+            asset_id (str): Asset identifier.
+            **kwargs: Arbitrary keyword arguments.
         """
-        self._dao.create(asset=asset)
 
-    def get(self, asset_id: str) -> Asset:
-        """Retrieves an asset by its ID.
+    @abstractmethod
+    def exists(self, asset_id: str, **kwargs) -> bool:
+        """Evaluates existence of an asset in the data store.
 
         Args:
-            asset_id (str): The unique identifier of the asset to retrieve.
-
-        Returns:
-            Asset: The retrieved asset object.
+            asset_id (str): Asset identifier.
+            **kwargs: Arbitrary keyword arguments.
         """
-        return self._dao.read(asset_id=asset_id)
 
-    def get_all(self, keys_only: bool = False) -> Union[List[str], Dict[str, Asset]]:
-        """Retrieves all assets in the repository.
-
-        Returns:
-            Dict[str, Asset]: A dictionary of all assets, where keys are asset IDs
-            and values are Asset objects.
-        """
-        return self._dao.read_all(keys_only=keys_only)
-
-    def remove(self, asset_id: str) -> None:
-        """Removes an asset by its ID.
+    @abstractmethod
+    def delete(self, asset_id: str, **kwargs) -> None:
+        """Deletes the asset from the data store.
 
         Args:
-            asset_id (str): The unique identifier of the asset to remove.
+            asset_id (str): Asset identifier.
+            **kwargs: Arbitrary keyword arguments.
         """
-        self._dao.delete(asset_id=asset_id)
-
-    def exists(self, asset_id: str) -> bool:
-        """Checks if an asset exists in the repository.
-
-        Args:
-            asset_id (str): The unique identifier of the asset to check.
-
-        Returns:
-            bool: True if the asset exists, False otherwise.
-        """
-        return self._dao.exists(asset_id=asset_id)
-
-    def registry(self) -> pd.DataFrame:
-        """Creates a registry of all assets in the repository as a DataFrame.
-
-        Returns:
-            pd.DataFrame: A DataFrame where each row represents an asset and columns
-            are the asset's attributes.
-        """
-        assets = self.get_all()
-        asset_list = [v.as_dict() for v in assets.values()]
-        return pd.DataFrame(data=asset_list)
-
-    def reset(self) -> None:
-        """Resets the repository, removing all assets.
-
-        The reset operation is irreversible and requires confirmation from the user.
-
-        Raises:
-            Warning: Logs a warning if the repository is reset.
-            Info: Logs information if the reset operation is aborted.
-        """
-        proceed = input(
-            "Resetting the repository is irreversible. To proceed, type 'YES'."
-        )
-        if proceed == "YES":
-            self._dao.reset()
-            self._logger.warning(f"{self.__class__.__name__} has been reset.")
-        else:
-            self._logger.info(f"{self.__class__.__name__} reset has been aborted.")

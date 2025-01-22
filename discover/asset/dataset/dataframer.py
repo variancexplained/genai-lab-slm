@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 16th 2025 02:49:20 pm                                              #
-# Modified   : Tuesday January 21st 2025 09:34:18 am                                               #
+# Modified   : Wednesday January 22nd 2025 01:10:32 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -178,6 +178,7 @@ class PandasDataFramer(DataFramer):
         }
         title = "AppVoCAI Dataset Summary"
         printer.print_dict(title=title, data=d)
+        return d
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -313,6 +314,7 @@ class PySparkDataFramer(DataFramer):
         # Print summary
         title = "AppVoCAI Dataset Summary"
         self._printer.print_dict(title=title, data=d)
+        return d
 
     def _estimate_column_size(self, df: DataFrame, column: str) -> int:
         """Estimates the in-memory size of a Spark DataFrame column in bytes.

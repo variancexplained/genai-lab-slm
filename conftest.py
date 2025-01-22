@@ -11,24 +11,20 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday January 21st 2025 06:31:25 pm                                               #
+# Modified   : Tuesday January 21st 2025 08:26:50 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 import os
 import sys
-from datetime import datetime
 
 import pytest
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
-from discover.asset.dataset.builder import DatasetBuilder
-from discover.asset.dataset.identity import DatasetConfig, DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
-from discover.core.flow import PhaseDef, StageDef, TestStageDef
 from discover.infra.config.app import AppConfigReader
 from discover.infra.persist.cloud.aws import S3Handler
 from discover.infra.utils.file.fileset import FileFormat
@@ -252,22 +248,6 @@ def flowstate(container):
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                         PASSPORT                                                 #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def ds_passport():
-    return DatasetPassport(
-        asset_id="dataset_test_dataset_v1.0",
-        phase=PhaseDef.TESTING,
-        stage=TestStageDef.SMOKE_TEST,
-        name="test_dataset",
-        version="v1.0",
-        creator="PyTest",
-        created=datetime.now(),
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
 #                                          FILEPATH                                                #
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session")
@@ -286,52 +266,4 @@ def filepath_parquet(workspace, ds_passport):
         asset_id=ds_passport.asset_id,
         phase=ds_passport.phase,
         file_format=FileFormat.PARQUET,
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     DATASETS                                                     #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def dataset_pandas_csv(ds_passport, pandas_df):
-    return (
-        DatasetBuilder().passport(ds_passport).from_dataframe(pandas_df).build().dataset
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def dataset_pandas_parquet(ds_passport, pandas_df):
-    return (
-        DatasetBuilder().passport(ds_passport).from_dataframe(pandas_df).build().dataset
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def dataset_spark_csv(ds_passport, spark_df):
-    return (
-        DatasetBuilder().passport(ds_passport).from_dataframe(spark_df).build().dataset
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def dataset_spark_parquet(ds_passport, spark_df):
-    return (
-        DatasetBuilder().passport(ds_passport).from_dataframe(spark_df).build().dataset
-    )
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                        FEATURE ENGINEERING SOURCE DATASET CONFIG                                 #
-# ------------------------------------------------------------------------------------------------ #
-@pytest.fixture(scope="session")
-def clean_dataset_config():
-    return DatasetConfig(
-        phase=PhaseDef.DATAPREP,
-        stage=StageDef.CLEAN,
-        name="review",
-        file_format=FileFormat.PARQUET,
-        dftype=DFType.SPARKNLP,
     )

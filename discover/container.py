@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Tuesday January 21st 2025 06:22:29 pm                                               #
+# Modified   : Wednesday January 22nd 2025 02:47:56 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,16 +25,15 @@ import logging.config
 
 from dependency_injector import containers, providers
 
-from discover.asset.dataset.identity import IDGen
 from discover.infra.config.app import AppConfigReader
-from discover.infra.persist.dataframe.factory import DataFrameIOFactory
-from discover.infra.persist.file.fao import FAO
-from discover.infra.persist.object.dao import ShelveDAO
-from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
-from discover.infra.persist.repo.experiment import ExperimentRepo
-from discover.infra.persist.repo.model import ModelRepo
+from discover.infra.persist.repo.file.factory import DataFrameIOFactory
+from discover.infra.persist.repo.file.fao import FAO
+from discover.infra.persist.repo.object.dao import DAO
+from discover.infra.persist.repo.object.flowstate import FlowState
+from discover.infra.persist.repo.object.rao import RAO
 from discover.infra.service.spark.pool import SparkSessionPool
+from discover.infra.workspace.passport.idgen import IDGen
 from discover.infra.workspace.passport.location import LocationService
 from discover.infra.workspace.passport.version import VersionManager
 from discover.infra.workspace.service import Workspace
@@ -78,32 +77,18 @@ class IOContainer(containers.DeclarativeContainer):
         iofactory=iofactory,
     )
 
-    dataset_dao = providers.Singleton(
-        ShelveDAO,
-        db_path=config.workspace.metadata.datasets,
+    dao = providers.Singleton(DAO, db_path=config.workspace.assets.datasets.metadata)
+
+    rao = providers.Singleton(
+        RAO, registry_path=config.workspace.assets.datasets.registry
     )
 
-    dataset_repo = providers.Singleton(
+    repo = providers.Singleton(
         DatasetRepo,
-        dao=dataset_dao,
+        rao=rao,
+        dao=dao,
         fao=fao,
     )
-
-    # -------------------------------------------------------------------------------------------- #
-    model_dao = providers.Singleton(
-        ShelveDAO,
-        db_path=config.workspace.metadata.models,
-    )
-
-    model_repo = providers.Singleton(ModelRepo, dao=model_dao)
-
-    # -------------------------------------------------------------------------------------------- #
-    experiment_dao = providers.Singleton(
-        ShelveDAO,
-        db_path=config.workspace.metadata.experiments,
-    )
-
-    experiment_repo = providers.Singleton(ExperimentRepo, dao=experiment_dao)
 
     # -------------------------------------------------------------------------------------------- #
     flowstate = providers.Singleton(FlowState, db_path=config.workspace.ops.flowstate)
@@ -123,7 +108,7 @@ class WorkspaceContainer(containers.DeclarativeContainer):
     )
 
     location_service = providers.Singleton(
-        LocationService, files_location=config.workspace.files
+        LocationService, files_location=config.workspace.assets.datasets.files
     )
 
     idgen = providers.Singleton(IDGen, version_manager=version_manager)
