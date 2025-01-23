@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Tuesday January 21st 2025 10:51:21 pm                                               #
+# Modified   : Thursday January 23rd 2025 01:22:49 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -23,24 +23,6 @@ env: dev
 setup:
   dataset:
     filepath: data/stage/dev/reviews
-
-# ------------------------------------------------------------------------------------------------ #
-#                                   WORKSPACE                                                      #
-# ------------------------------------------------------------------------------------------------ #
-workspace:
-  id: dev
-  name: Development Workspace
-  location: workspace/dev
-  assets:
-    datasets:
-      files: workspace/dev/datasets/files/
-      metadata: workspace/dev/datasets/metadata
-      registry: workspace/dev/datasets/registry
-    models: workspace/dev/models/
-  ops:
-    version: workspace/dev/ops/version/version
-    tempdir: workspace/dev/ops/tempdir/
-    flowstate: workspace/dev/ops/flow/flowstate
 
 # ------------------------------------------------------------------------------------------------ #
 #                                      LOGGING                                                     #
@@ -73,17 +55,22 @@ logging:
     - file
     level: INFO # Default, possibly overridden in environment config
   version: 1
-
+# ------------------------------------------------------------------------------------------------ #
+#                                          IO                                                      #
+# ------------------------------------------------------------------------------------------------ #
+io:
+  pandas:
+    parquet:
+      write_kwargs:
+        row_group_size: 536870912 # 512 MB
 # ------------------------------------------------------------------------------------------------ #
 #                                    REPOSITORY                                                    #
 # ------------------------------------------------------------------------------------------------ #
 repository:
   dataset:
-    fao:
-      centralized:
-        write_kwargs:
-          row_group_size: 1073741824 # 1 GB
-
+    fal: workspace/dev/datasets/fal/
+    dal: workspace/dev/datasets/dal/
+    ral: workspace/dev/datasets/ral/
 
 
 # ------------------------------------------------------------------------------------------------ #

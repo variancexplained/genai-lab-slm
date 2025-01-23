@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Wednesday January 22nd 2025 02:42:49 am                                             #
+# Modified   : Thursday January 23rd 2025 02:47:54 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,6 +21,7 @@ import logging
 import os
 import shelve
 import shutil
+from typing import Optional
 
 import pandas as pd
 
@@ -64,10 +65,99 @@ class RAO(DAL):
         Returns:
             int: Number of assets in the registry.
         """
-        return len(self.read())
+        return len(self._read())
 
     def create(self, asset: Asset) -> None:
-        """Creates a new asset in the registry.
+        """Creates a new registration for the asset.
+
+        Args:
+            asset (Asset): The asset to be registered.
+
+        Raises:
+            ObjectDatabaseNotFoundError: If the database file is not found.
+            ObjectIOException: If an unknown exception occurs during creation.
+        """
+        self._update(asset=asset)
+
+    def read(self, asset_id: str) -> Optional[pd.DataFrame]:
+        """Reads the registry and returns the entry for the designated asset, if it exists.
+
+        Args:
+            asset_id (str): Asset identifier
+
+        Returns:
+            Optional[pd.DataFrame]. Returns the registry entry of the asset if it exists.
+
+        """
+        registry = self._read()
+        return registry.loc[registry["asset_id"] == asset_id]
+
+    def read_all(self, asset_id: str) -> Optional[pd.DataFrame]:
+        """Reads and returns the entire registry if it exists.
+
+        Returns:
+            Optional[pd.DataFrame]. Returns the registry if it exists.
+
+        """
+        return self._read()
+
+    def update(self, asset: Asset) -> None:
+        """Updates the registry for the given asset.
+
+        Args:
+            asset (Asset): The asset to be added.
+
+        """
+        self._update(asset=asset)
+
+    def exists(self, asset_id: str) -> bool:
+        """Checks if an asset exists in the database.
+
+        Args:
+            asset_id (str): The unique identifier of the asset to check.
+
+        Returns:
+            bool: True if the asset exists, False otherwise.
+
+        Raises:
+            ObjectDatabaseNotFoundError: If the database file is not found.
+            ObjectIOException: If an unknown exception occurs during the check.
+        """
+        return len(self._read_asset(asset_id=asset_id)) > 0
+
+    def delete(self, asset_id: str) -> None:
+        """Deletes an asset by its asest_id from the registry
+
+        Args:
+            asset_id (str): The unique identifier of the asset to delete.
+        """
+        # Get the registry
+        registry = self._read()
+        # Filter the asset
+        registry = registry.loc[registry["asset_id" != asset_id]]
+        # Persist the registry
+        self._write(registry=registry)
+
+    def reset(self, verified: bool = False) -> None:
+        """Resets the registry by deleting all its contents.
+
+        Args:
+            verified (bool): If True, performs the reset immediately. If False,
+                prompts the user for confirmation.
+
+        Logs:
+            Warning: Logs a warning if the reset is performed.
+            Info: Logs information if the reset operation is aborted.
+        """
+        if verified:
+            self._write(registry=None)
+            shutil.rmtree(os.path.dirname(self._registry_path))
+            self._logger.warning(f"{self.__class__.__name__} has been reset.")
+        else:
+            self._logger.info(f"{self.__class__.__name__} reset has been aborted.")
+
+    def _update(self, asset: Asset) -> None:
+        """Updates the asset registry with the current state and registration information.
 
         Args:
             asset (Asset): The asset to be added.
@@ -76,21 +166,21 @@ class RAO(DAL):
             ObjectDatabaseNotFoundError: If the database file is not found.
             ObjectIOException: If an unknown exception occurs during creation.
         """
-        # Set state of the Dataset to `PUBLISHED` and obtain the registration entry
-        entry = asset.publish()
+        # Obtain the registration entry
+        entry = asset.get_registration()
         entry = pd.DataFrame.from_dict(entry)
 
-        # Obtain the registry if available.
-        registry = self.read()
+        # Obtain the existing registry if available.
+        registry = self._read()
 
         # Drop the old registration if it exists and insert the new  entry into the registry.
         registry = registry.loc[registry["asset_id" != asset.asset_id]]
         registry = pd.concat([registry, entry], axis=0)
 
         # Save the registry.
-        self.write(registry)
+        self._write(registry)
 
-    def read(self) -> pd.DataFrame:
+    def _read(self) -> pd.DataFrame:
         """Reads an asset by its ID from the database.
 
         Returns:
@@ -117,48 +207,7 @@ class RAO(DAL):
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
 
-    def read_asset(self, asset_id: str) -> pd.DataFrame:
-        """Reads the registry and returns the entry for the designated asset, if it exists.
-
-        Args:
-            asset_id (str): Asset identifier
-
-        Returns:
-            Optional[pd.DataFrame]. Returns the registry entry of the asset if it exists.
-
-        """
-        registry = self.read()
-        return registry.loc[registry["asset_id"] == asset_id]
-
-    def exists(self, asset_id: str) -> bool:
-        """Checks if an asset exists in the database.
-
-        Args:
-            asset_id (str): The unique identifier of the asset to check.
-
-        Returns:
-            bool: True if the asset exists, False otherwise.
-
-        Raises:
-            ObjectDatabaseNotFoundError: If the database file is not found.
-            ObjectIOException: If an unknown exception occurs during the check.
-        """
-        return len(self.read_asset(asset_id=asset_id)) > 0
-
-    def delete(self, asset_id: str) -> None:
-        """Deletes an asset by its asest_id from the registry
-
-        Args:
-            asset_id (str): The unique identifier of the asset to delete.
-        """
-        # Get the registry
-        registry = self.read()
-        # Filter the asset
-        registry = registry.loc[registry["asset_id" != asset_id]]
-        # Persist the registry
-        self.write(registry=registry)
-
-    def write(self, registry: pd.DataFrame) -> None:
+    def _write(self, registry: pd.DataFrame) -> None:
         """Writes the registry to the database.
 
         Args:
@@ -178,21 +227,3 @@ class RAO(DAL):
             msg = f"Unknown exception occurred while writing to thee registry at {self._registry_path}.\n{e}"
             self._logger.exception(msg)
             raise ObjectIOException(msg, e) from e
-
-    def reset(self, verified: bool = False) -> None:
-        """Resets the registry by deleting all its contents.
-
-        Args:
-            verified (bool): If True, performs the reset immediately. If False,
-                prompts the user for confirmation.
-
-        Logs:
-            Warning: Logs a warning if the reset is performed.
-            Info: Logs information if the reset operation is aborted.
-        """
-        if verified:
-            self.write(registry=None)
-            shutil.rmtree(os.path.dirname(self._registry_path))
-            self._logger.warning(f"{self.__class__.__name__} has been reset.")
-        else:
-            self._logger.info(f"{self.__class__.__name__} reset has been aborted.")

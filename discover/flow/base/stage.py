@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Tuesday January 21st 2025 09:18:41 pm                                               #
+# Modified   : Thursday January 23rd 2025 06:31:05 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -25,12 +25,13 @@ from git import Union
 from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.dataset.builder import DatasetBuilder
+from discover.asset.dataset.config import DatasetConfig
 from discover.asset.dataset.dataset import Dataset
+from discover.asset.dataset.state import DatasetState
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
 from discover.infra.exception.object import ObjectNotFoundError
-from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.service.logging.stage import stage_logger
 
@@ -79,7 +80,6 @@ class Stage(ABC):
         source_config: DatasetConfig,
         target_config: DatasetConfig,
         tasks: List[Task],
-        state: FlowState,
         repo: DatasetRepo,
         dataset_builder: DatasetBuilder,
         spark: Optional[SparkSession] = None,
@@ -98,12 +98,13 @@ class Stage(ABC):
         self._source_config = source_config
         self._target_config = target_config
         self._tasks = tasks
-        self._state = state
         self._repo = repo
         self._dataset_builder = dataset_builder
         self._spark = spark
 
-        self._source = None
+        self._source = Optional[Dataset] = None
+        self._target = Optional[Dataset] = None
+
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -159,25 +160,47 @@ class Stage(ABC):
         Returns:
             Dataset: The resulting dataset after stage execution.
         """
-        # If the target exists and we're not forcing execution, return the target
-        if (
-            self._state.exists(
-                phase=self._target_config.phase,
-                stage=self._target_config.stage,
-                name=self._target_config.name,
-            )
-            and not force
-        ):
+        # Determine whether to obtain the target from cache or run the pipeline.
+        if self._fresh_cache_exists() and not force:
             return self._get_target()
-        # If the state exists, and we're forcing remove the target
-        elif self._state.exists(
+        else:
+            return self._run()
+
+    def _fresh_cache_exists(self) -> bool:
+        """Returns a boolean indicating whether a fresh cache of the target is extant.
+
+        A fresh cache is the condition in which the source has been consumed,
+        the target exists, implying that the target reflects the source
+        and the transformations executed in this stage.
+
+        Returns:
+            bool: True if the above condition is met, False otherwise.
+
+        """
+        # Get the source asset id
+        source_asset_id = self._repo.get_asset_id(
+            phase=self._source_config.phase,
+            stage=self._source_config.stage,
+            name=self._source_config.name,
+        )
+
+        # Get the metadata for the source dataset
+        source_meta = self._repo.get_meta(asset_id=source_asset_id)
+
+        # If the source has not been consumed, return False
+        if not source_meta.status == DatasetState.CONSUMED:
+            return False
+
+        # If the target dataset does not exist, return False
+        target_asset_id = self._repo.get_asset_id(
             phase=self._target_config.phase,
             stage=self._target_config.stage,
             name=self._target_config.name,
-        ):
-            self._remove_target()
-        # Run the stage pipeline.
-        return self._run()
+        )
+        if not self._repo.exists(asset_id=target_asset_id):
+            return False
+        else:
+            return True
 
     def _run(self) -> Dataset:
         """Internal method to execute tasks and save the resulting dataset.
@@ -188,8 +211,15 @@ class Stage(ABC):
         Returns:
             Dataset: The processed dataset.
         """
-        source = self.get_source_dataset()
+        # Get the source dataset
+        source = self._get_dataset(
+            phase=self._source_config.phase,
+            stage=self._source_config.stage,
+            name=self._source_config.name,
+        )
+        # Extract the underlying dataframe
         dataframe = source.dataframe
+        # Process
         for task in self._tasks:
             try:
                 dataframe = task.run(dataframe)
@@ -198,127 +228,69 @@ class Stage(ABC):
                 self._logger.error(msg)
                 raise RuntimeError(msg)
 
-        self._target = self.save_target_dataset(source=source, dataframe=dataframe)
-        return self._target
-
-    def get_source_dataset(self) -> Dataset:
-        """Retrieves the source dataset based on the configuration.
-
-        This method extracts the phase and stage from the source configuration,
-        reads the corresponding dataset passport from the flow state, and retrieves
-        the dataset from the repository.
-
-        Returns:
-            Dataset: The source dataset.
-
-        Example:
-            >>> source_dataset = stage.get_source_dataset()
-        """
-        passport = self._state.read(
-            phase=self._source_config.phase,
-            stage=self._source_config.stage,
-            name=self._source_config.name,
+        # Create target dataset and publish to repository
+        target = self._create_dataset(
+            source=source, config=self._target_config, dataframe=dataframe
         )
-        return self._repo.get(
-            asset_id=passport.asset_id, spark=self._spark, dftype=self.dftype
-        )
+        target = self._repo.add(dataset=target)
 
-    def save_target_dataset(
-        self, source: Dataset, dataframe: Union[pd.DataFrame, DataFrame]
+        # Mark the source dataset as consumed and persist
+        source.consume()
+        self._repo.update(dataset=source)
+
+        return target
+
+    def _create_dataset(
+        self,
+        source: Dataset,
+        config: DatasetConfig,
+        dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
     ) -> Dataset:
-        """Saves the target dataset after processing.
-
-        Constructs the dataset passport, builds the dataset, and adds it to the repository.
-        This method ensures the processed data is stored and can be retrieved in subsequent stages.
+        """Creates a Dataset object based on a configuration and given dataframe.
 
         Args:
             source (Dataset): The source dataset.
-            dataframe (Union[pd.DataFrame, DataFrame]): The processed dataframe.
+            config (DatasetConfig): Configuration for the dataset
+            dataframe (Union[pd.DataFrame, DataFrame]): The dataframe content
 
         Returns:
-            Dataset: The saved target dataset.
-
-        Example:
-            >>> target_dataset = stage.save_target_dataset(source, dataframe)
+            Dataset: The Datset object
         """
-        passport = (
-            DatasetPassportBuilder()
-            .phase(self._target_config.phase)
-            .stage(self._target_config.stage)
-            .source(source.passport)
-            .creator(self.__class__.__name__)
-            .name(self._target_config.name)
+        return (
+            self._dataset_builder.from_config(config=config)
+            .creator(creawtor=self.__class__.__name__)
+            .source(source=source.passport)
+            .dataframe(dataframe=dataframe)
             .build()
-            .passport
         )
-        target = (
-            self._dataset_builder.from_dataframe(dataframe)
-            .passport(passport)
-            .to_parquet()
-            .build()
-            .dataset
-        )
-        self._repo.add(asset=target, dftype=self.dftype)
-        self._state.create(passport=target.passport)
-        return target
 
-    def _get_target(self) -> Dataset:
+    def _get_dataset(self, phase: PhaseDef, stage: StageDef, name: str) -> Dataset:
         """Retrieves the target dataset from the state and repository.
 
-        Reads the dataset passport from the flow state and retrieves the dataset
-        from the repository. Handles exceptions related to data integrity and
-        unexpected errors.
+        Args:
+            phase (PhaseDef): The phase for the Dataset.
+            stage (StageDef): The stage for the Dataset.
+            name (str): The name of the Dataset
 
         Returns:
             Dataset: The target dataset.
 
         Raises:
-            ObjectNotFoundError: If the dataset is not found in the repository despite
-                being registered in the state.
-            Exception: For other unknown exceptions during retrieval.
+            ObjectNotFoundError: If the dataset is not found.
 
         Example:
             >>> target_dataset = stage._get_target()
         """
-        passport = self._state.read(
-            phase=self._target_config.phase,
-            stage=self._target_config.stage,
-            name=self._target_config.name,
+        # Get the asset id
+        asset_id = self._repo.get_asset_id(
+            phase=phase,
+            stage=stage,
+            name=name,
         )
-        try:
-            return self._repo.get(
-                asset_id=passport.asset_id, dftype=self.dftype, spark=self._spark
-            )
-        except ObjectNotFoundError as e:
-            msg = f"Data Integrity Error encountered while reading target dataset {self._target_config}. Flow state exists, but dataset does not exist in the repository.\n{e}"
+        dataset = self._repo.get(asset_id=asset_id)
+        if not isinstance(dataset, Dataset):
+            msg = f"Expected a Dataset object for dataset {asset_id}. Received a {type(dataset)} object."
             self._logger.error(msg)
-            raise
-        except Exception as e:
-            msg = f"Unknown exception occurred while reading target dataset {self._target_config}.\n{e}"
-            self._logger.exception(msg)
-            raise
+            raise ObjectNotFoundError(msg)
 
-    def _remove_target(self) -> None:
-        """Removes a stage target from flow state and the dataset repository"""
-        # Obtain the passport containing the asset id for the target
-        passport = self._state.read(
-            phase=self._target_config.phase,
-            stage=self._target_config.stage,
-            name=self._target_config.name,
-        )
-        # Remove the dataset from the repository if it exists
-        try:
-            self._repo.remove(asset_id=passport.asset_id)
-        except (ObjectNotFoundError, FileNotFoundError) as e:
-            msg = f"Dataset and/or files not found for asset {passport.asset_id}.\n{e}"
-            self._logger.warning(msg)
-        except Exception as e:
-            msg = f"Unknown exception occurred while removing dataset {passport.asset_id} from the repository.\n{e}"
-            self._logger.exception(msg)
-            raise RuntimeError(msg)
-        # Delete the passport from flow state
-        self._state.delete(
-            phase=self._target_config.phase,
-            stage=self._target_config.stage,
-            name=self._target_config.name,
-        )
+        return dataset

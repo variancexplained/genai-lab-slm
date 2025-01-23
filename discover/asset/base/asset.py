@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Tuesday January 21st 2025 09:09:42 pm                                               #
+# Modified   : Thursday January 23rd 2025 05:35:21 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,13 +25,45 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Union
 
+from pydantic.dataclasses import dataclass
+
 from discover.asset.base.identity import AssetPassport
 from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from discover.core.flow import PhaseDef, StageDef
+from discover.infra.utils.file.fileset import FileFormat
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                        ASSET                                                     #
+#                                    ASSET CONFIG                                                  #
+# ------------------------------------------------------------------------------------------------ #
+@dataclass
+class AssetConfig:
+    """Base class for asset configurations.
+
+    Represents the configuration details of an asset, including its
+    phase, stage, name, and file format.
+
+    Args:
+        phase (PhaseDef): The phase associated with the asset.
+        stage (StageDef): The stage associated with the asset.
+        name (str): The name of the asset.
+        file_format (FileFormat): The file format of the asset.
+
+    Attributes:
+        phase (PhaseDef): The phase associated with the asset.
+        stage (StageDef): The stage associated with the asset.
+        name (str): The name of the asset.
+        file_format (FileFormat): The file format of the asset.
+    """
+
+    phase: PhaseDef
+    stage: StageDef
+    name: str
+    file_format: FileFormat
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     ASSET TYPE                                                   #
 # ------------------------------------------------------------------------------------------------ #
 class AssetType(Enum):
     """Enumerates the different types of assets.
@@ -72,7 +104,6 @@ class Asset(ABC):
         stage (StageDef): Stage to which the asset belongs.
         name (str): Name of the asset.
         description (str): Description of the asset.
-        created (datetime): Timestamp when the asset was created.
 
     Methods:
         as_dict() -> Dict[str, Union[str, int, float, datetime, None]]:
@@ -158,11 +189,6 @@ class Asset(ABC):
     def description(self) -> str:
         """str: Description of the asset."""
         return self._passport.description
-
-    @property
-    def created(self) -> datetime:
-        """datetime: Timestamp when the asset was created."""
-        return self._passport.created
 
     def as_dict(self) -> Dict[str, Union[str, int, float, datetime, None]]:
         """

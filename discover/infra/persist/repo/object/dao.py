@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Wednesday January 22nd 2025 03:13:37 am                                             #
+# Modified   : Thursday January 23rd 2025 03:37:05 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,11 +21,12 @@ import logging
 import os
 import shelve
 import shutil
-from typing import Dict
+from typing import Optional
 
 from discover.asset.base.asset import Asset
 from discover.infra.exception.object import (
     ObjectDatabaseNotFoundError,
+    ObjectExistsError,
     ObjectIOException,
     ObjectNotFoundError,
 )
@@ -70,37 +71,20 @@ class DAO(DAL):
         return os.path.getsize(self._db_path)
 
     def create(self, asset: Asset) -> None:
-        """Creates a new asset in the database.
+        """Adds an asset object to the repository if it doesn't already exist.
 
         Args:
-            asset (Asset): The asset to be added.
+            asset (Asset): The asset to add to the repository.
 
         Raises:
-            ObjectDatabaseNotFoundError: If the database file is not found.
-            ObjectIOException: If an unknown exception occurs during creation.
+            ObjectExistsError: If the asset already exiss in the repository.
         """
-
-        df = asset.serialize()
-
-        try:
-            with shelve.open(self._db_path) as db:
-                db[asset.asset_id] = asset
-        except FileNotFoundError as e:
-            msg = f"The object database was not found at {self._db_path}.\n{e}"
-            self._logger.exception(msg)
-            raise ObjectDatabaseNotFoundError(msg)
-        except Exception as e:
-            msg = f"Unknown exception occurred while creating asset_id: {asset.asset_id}.\n{e}"
-            self._logger.exception(msg)
-            raise ObjectIOException(msg, e) from e
-
-        # Ensure that the dataframe is not None before deserializing
-        if df is not None:
-            asset.deserialize(dataframe=df)
+        if not self.exists(asset_id=asset.asset_id):
+            self._write(asset=asset)
         else:
-            self._logger.error(
-                "Attempted to deserialize with a None dataframe. Asset deserialization may be incomplete."
-            )
+            msg = f"Error adding asset {asset.asset_id} to the repository. This asset already exists."
+            self._logger.error(msg)
+            raise ObjectExistsError(msg)
 
     def read(self, asset_id: str) -> Asset:
         """Reads an asset by its ID from the database.
@@ -109,54 +93,29 @@ class DAO(DAL):
             asset_id (str): The unique identifier of the asset to retrieve.
 
         Returns:
-            Asset: The retrieved asset.
+            Optional[Asset]: The retrieved asset if it exists.
 
         Raises:
-            ObjectNotFoundError: If the asset is not found in the database.
             ObjectDatabaseNotFoundError: If the database file is not found.
             ObjectIOException: If an unknown exception occurs during reading.
         """
-        try:
-            with shelve.open(self._db_path) as db:
-                return db[asset_id]
-        except KeyError:
-            msg = f"Asset {asset_id} was not found."
+        return self._read(asset_id=asset_id)
+
+    def update(self, asset: Asset) -> None:
+        """Updates an asset object in the repository.
+
+        Args:
+            asset (Asset): The asset to add to the repository.
+
+        Raises:
+            ObjectNotFoundError: If the asset does not exiss in the repository.
+        """
+        if self.exists(asset_id=asset.asset_id):
+            self._write(asset=asset)
+        else:
+            msg = f"Error updating asset {asset.asset_id}. It does not exist in the repository."
             self._logger.error(msg)
             raise ObjectNotFoundError(msg)
-        except FileNotFoundError as e:
-            msg = f"The object database was not found at {self._db_path}.\n{e}"
-            self._logger.exception(msg)
-            raise ObjectDatabaseNotFoundError(msg, e) from e
-        except Exception as e:
-            msg = f"Unknown exception occurred while reading asset_id: {asset_id} from the object database.\n{e}"
-            self._logger.exception(msg)
-            raise ObjectIOException(msg, e) from e
-
-    def read_all(self, keys_only: bool = False) -> Dict[str, Asset]:
-        """Reads all assets from the database.
-
-        Returns:
-            Dict[str, Asset]: A dictionary of all assets, with keys as asset IDs
-            and values as Asset objects.
-
-        Raises:
-            ObjectDatabaseNotFoundError: If the database file is not found.
-            ObjectIOException: If an unknown exception occurs during reading.
-        """
-        try:
-            with shelve.open(self._db_path) as db:
-                if keys_only:
-                    return list(db.keys())
-                else:
-                    return dict(db.items())
-        except FileNotFoundError as e:
-            msg = f"The object database found at {self._db_path}.\n{e}"
-            self._logger.exception(msg)
-            raise ObjectDatabaseNotFoundError(msg, e) from e
-        except Exception as e:
-            msg = f"Unknown exception occurred while reading from object database.\n{e}"
-            self._logger.exception(msg)
-            raise ObjectIOException(msg, e) from e
 
     def exists(self, asset_id: str) -> bool:
         """Checks if an asset exists in the database.
@@ -167,27 +126,15 @@ class DAO(DAL):
         Returns:
             bool: True if the asset exists, False otherwise.
 
-        Raises:
-            ObjectDatabaseNotFoundError: If the database file is not found.
-            ObjectIOException: If an unknown exception occurs during the check.
         """
-        try:
-            with shelve.open(self._db_path) as db:
-                return asset_id in db
-        except FileNotFoundError as e:
-            msg = f"The object database was not found at {self._db_path}.\n{e}"
-            self._logger.exception(msg)
-            raise ObjectDatabaseNotFoundError(msg, e) from e
-        except Exception as e:
-            msg = f"Unknown exception occurred while checking existence of asset_id: {asset_id}."
-            self._logger.exception(msg)
-            raise ObjectIOException(msg, e) from e
+        return self._read(asset_id=asset_id) is not None
 
-    def delete(self, asset_id: str) -> None:
+    def delete(self, asset_id: str, not_exists_ok: bool = False) -> None:
         """Deletes an asset by its ID from the database.
 
         Args:
             asset_id (str): The unique identifier of the asset to delete.
+            not_exists_ok (bool): Whether ObjectNotFoundError should be ignored. Default is False.
 
         Raises:
             ObjectNotFoundError: If the asset is not found in the database.
@@ -198,9 +145,10 @@ class DAO(DAL):
             with shelve.open(self._db_path, writeback=True) as db:
                 del db[asset_id]
         except KeyError:
-            msg = f"asset_id: {asset_id} was not found."
-            self._logger.error(msg)
-            raise ObjectNotFoundError(msg)
+            if not not_exists_ok:
+                msg = f"asset_id: {asset_id} was not found."
+                self._logger.error(msg)
+                raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
             msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)
@@ -233,3 +181,61 @@ class DAO(DAL):
                 self._logger.warning(f"{self.__class__.__name__} has been reset.")
             else:
                 self._logger.info(f"{self.__class__.__name__} reset has been aborted.")
+
+    def _read(self, asset_id: str) -> Optional[Asset]:
+        """Reads an asset by its ID from the database.
+
+        Args:
+            asset_id (str): The unique identifier of the asset to retrieve.
+
+        Returns:
+            Optional[Asset]: The retrieved asset if it exists.
+
+        Raises:
+            ObjectDatabaseNotFoundError: If the database file is not found.
+            ObjectIOException: If an unknown exception occurs during reading.
+        """
+        try:
+            with shelve.open(self._db_path) as db:
+                return db.get(asset_id, None)
+        except FileNotFoundError as e:
+            msg = f"The object database was not found at {self._db_path}.\n{e}"
+            self._logger.exception(msg)
+            raise ObjectDatabaseNotFoundError(msg, e) from e
+        except Exception as e:
+            msg = f"Unknown exception occurred while reading asset_id: {asset_id} from the object database.\n{e}"
+            self._logger.exception(msg)
+            raise ObjectIOException(msg, e) from e
+
+    def _write(self, asset: Asset) -> None:
+        """Creates a new asset in the database.
+
+        Args:
+            asset (Asset): The asset to be added.
+
+        Raises:
+            ObjectDatabaseNotFoundError: If the database file is not found.
+            ObjectIOException: If an unknown exception occurs during creation.
+        """
+
+        df = asset.serialize()
+
+        try:
+            with shelve.open(self._db_path) as db:
+                db[asset.asset_id] = asset
+        except FileNotFoundError as e:
+            msg = f"The object database was not found at {self._db_path}.\n{e}"
+            self._logger.exception(msg)
+            raise ObjectDatabaseNotFoundError(msg)
+        except Exception as e:
+            msg = f"Unknown exception occurred while creating asset_id: {asset.asset_id}.\n{e}"
+            self._logger.exception(msg)
+            raise ObjectIOException(msg, e) from e
+
+        # Ensure that the dataframe is not None before deserializing
+        if df is not None:
+            asset.deserialize(dataframe=df)
+        else:
+            self._logger.error(
+                "Attempted to deserialize with a None dataframe. Asset deserialization may be incomplete."
+            )

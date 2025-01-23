@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Wednesday January 22nd 2025 12:37:39 am                                             #
+# Modified   : Thursday January 23rd 2025 02:03:24 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -62,8 +62,8 @@ class FAO(DAL):
 
     def create(
         self,
-        dftype: DFType,
         filepath: str,
+        dftype: DFType,
         file_format: FileFormat,
         dataframe: Union[pd.DataFrame, DataFrame],
         overwrite: bool = False,
@@ -72,31 +72,33 @@ class FAO(DAL):
         Writes a dataset to the specified file path with the given format and type.
 
         Args:
+            filepath (str): Path to the file.
             dftype (DFType): The type of the dataframe (e.g., PANDAS, SPARK).
-            filepath (str): The destination file path.
             file_format (FileFormat): The file format (e.g., CSV, PARQUET).
-            created (datetime): The timestamp of the dataset creation.
             data (Union[pd.DataFrame, DataFrame]): The dataset to be written.
             overwrite (bool): Whether to overwrite the file if it already exists.
                 Defaults to False.
 
+        Returns:
+            str: The path to the file
+
         Raises:
             Exception: If the write operation fails due to configuration or IO issues.
         """
+
+        # Ensure base directory exists. A defensive measure.
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        # Obtain the writer based on dataframe type and file format from the io factory
         writer = self._iofactory.get_writer(
             dftype=dftype,
             file_format=file_format,
         )
+        # Persist the dataframe to file.
         writer.write(
             dataframe=dataframe,
             filepath=filepath,
             overwrite=overwrite,
         )
-        if not os.path.exists(filepath):
-            msg = f"Failure to write dataframe to {filepath}."
-            self._logger.error(msg)
-            raise FileNotFoundError(msg)
 
     def read(
         self,

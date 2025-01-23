@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Wednesday January 22nd 2025 02:51:16 am                                             #
+# Modified   : Thursday January 23rd 2025 06:07:59 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,14 +34,14 @@ from discover.asset.dataset.dataframer import (
     PandasDataFramer,
     PySparkDataFramer,
 )
-from discover.asset.dataset.dataset import Dataset
+from discover.asset.dataset.dataset import Dataset, DatasetConfig
 from discover.asset.dataset.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
+from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.persist.repo.file.fao import FAO
 from discover.infra.utils.file.fileset import FileFormat
-from discover.infra.workspace.service import Workspace
 
 
 # ================================================================================================ #
@@ -54,11 +54,11 @@ class DatasetBuilder(AssetBuilder):
     @inject
     def __init__(
         self,
-        workspace: Workspace = Provide[DiscoverContainer.workspace.service],
+        repo: DatasetRepo = Provide[DiscoverContainer.io.repo],
         fao: FAO = Provide[DiscoverContainer.io.fao],
     ) -> None:
         super().__init__()
-        self._workspace = workspace
+        self._repo = repo
         self._fao = fao
 
         self.reset()
@@ -87,19 +87,6 @@ class DatasetBuilder(AssetBuilder):
 
         self._passport = None
         self._dataset = None
-
-    # -------------------------------------------------------------------------------------------- #
-    @property
-    def dataset(self) -> Dataset:
-        """
-        Retrieves the constructed `Dataset` object and resets the builder's state.
-
-        Returns:
-            Dataset: The constructed dataset object.
-        """
-        dataset = self._dataset
-        self.reset()
-        return dataset
 
     # -------------------------------------------------------------------------------------------- #
     #                                  PASSPORT INFO                                               #
@@ -173,23 +160,27 @@ class DatasetBuilder(AssetBuilder):
     # -------------------------------------------------------------------------------------------- #
     #                                 DATA SOURCE                                                  #
     # -------------------------------------------------------------------------------------------- #
-    def from_file(
-        self, filepath: str, file_format: FileFormat = FileFormat.PARQUET
-    ) -> DatasetBuilder:
+    def from_config(self, config: DatasetConfig) -> DatasetBuilder:
         """
-        Initializes the build process from a file data source.
+        Sets the Dataset configuration on the builder.
 
         Args:
-            filepath (str): The path to the data source
+            config (DatasetConfig): The configuration for the dataset.
 
         Returns:
-            DatasetBuilder: The current builder instance.
+            DatasetBuilder: The current builder instance for chaining.
         """
-        self._source_filepath = filepath
+        self._phase = config.phase
+        self._stage = config.stage
+        self._name = config.name
+        self._file_format = config.file_format
+        self._dftype = config.dftype
+        self._creator = config.creator
+        self._dataframe = config.dataframe
         return self
 
     # -------------------------------------------------------------------------------------------- #
-    def from_dataset(self, dataframe: Union[pd.DataFrame, DataFrame]) -> DatasetBuilder:
+    def dataframe(self, dataframe: Union[pd.DataFrame, DataFrame]) -> DatasetBuilder:
         """
         Sets the source as a Pandas or PySpark DataFrame.
 
@@ -300,20 +291,11 @@ class DatasetBuilder(AssetBuilder):
     # -------------------------------------------------------------------------------------------- #
     def _build_passport(self) -> DatasetPassport:
         """Constructs the passport for the dataset."""
-        # Get the asset version for the phase and stage
-        version = self._workspace.get_version(phase=self._phase, stage=self._stage)
-        # Get a unique asset identifier for the asset.
-        asset_id = self._workspace.gen_asset_id(
-            asset_type=self._asset_type,
-            phase=self._phase,
-            stage=self._stage,
-            name=self._name,
-            version=version,
+        # Generate an asset id the dataset.
+        asset_id = self._repo.gen_asset_id(
+            phase=self._phase, stage=self._stage, name=self._name
         )
-        # Get the filepath for asset persistence
-        filepath = self._workspace.get_filepath(
-            asset_id=asset_id, phase=self._phase, file_format=self._file_format
-        )
+
         passport = DatasetPassport(
             assert_type=self._asset_type,
             asset_id=asset_id,
@@ -322,15 +304,11 @@ class DatasetBuilder(AssetBuilder):
             name=self._name,
             description=self._description,
             creator=self._creator,
+            created=datetime.now(),
             source=self._source,
             file_format=self._file_format,
-            filepath=filepath,
             dftype=self._dftype,
-            created=datetime.now(),
-            version=version,
         )
-
-        passport.created()
 
         return passport
 
@@ -404,10 +382,10 @@ class DatasetBuilder(AssetBuilder):
                 f"The `dftype` is a required DFType property. Received a {type(self._dftype)} type."
             )
 
-        # Validate either the source filepath or the DataFrame was set.
+        # Validate the DataFrame
         if not isinstance(
             self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
-        ) and not isinstance(self._source_filepath, str):
+        ):
             errors.append(
                 "A source of the data must be set via the `from_dataframe` or the `from_file` method."
             )

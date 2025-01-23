@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Wednesday January 22nd 2025 02:57:10 am                                             #
+# Modified   : Thursday January 23rd 2025 06:00:55 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Dict, Union
 
 import pandas as pd
@@ -29,10 +30,11 @@ from discover.analytics.dqa import DQA
 from discover.asset.base.asset import Asset
 from discover.asset.dataset.dataframer import DataFramer
 from discover.asset.dataset.identity import DatasetPassport
-from discover.infra.utils.file.fileset import FileAttr, FileSet
+from discover.asset.dataset.state import DatasetState
+from discover.infra.utils.file.fileset import FileSet
 
 # ------------------------------------------------------------------------------------------------ #
-#                                   DATA COMPONENT                                                 #
+#                                       DATASET                                                    #
 # ------------------------------------------------------------------------------------------------ #
 
 
@@ -85,6 +87,13 @@ class Dataset(Asset):
         self._info = None
         self._summary = None
         self._dqa = None
+
+        # Initialize state
+        self._accessed = None
+        self._created = datetime.now()
+        self._status = DatasetState.CREATED
+        self._eventlog = {self._created: "Dataset created."}
+
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def __eq__(self, other: object) -> bool:
@@ -118,10 +127,28 @@ class Dataset(Asset):
         self.__dict__.update(state)
 
     @property
+    def status(self) -> DatasetState:
+        """Returns the status of the Dataset"""
+        return self._status
+
+    @property
+    def created(self) -> datetime:
+        """Returns the datetime the dataset was created."""
+        return self._created
+
+    @property
+    def accessed(self) -> datetime:
+        """Returns the datetime the dataset was last accessed."""
+        return self._accessed
+
+    @property
     def file(self) -> FileSet:
         """Returns the FileSet object for the Dataset"""
-        self._file = self._file or self._get_fileset()
         return self._file
+
+    @file.setter
+    def file(self, file: FileSet) -> None:
+        self._file = file
 
     @property
     def info(self) -> pd.DataFrame:
@@ -163,7 +190,7 @@ class Dataset(Asset):
         """
         self._dataframer.dataframe = dataframe
 
-    def register(self) -> Dict[str, str]:
+    def get_registration(self) -> Dict[str, str]:
         """Returns a dictionary containing metadata and brief descriptive statistics for registration.
 
         Returns:
@@ -171,28 +198,47 @@ class Dataset(Asset):
         """
         passport = self._passport.as_dict()
         passport.update(self.summary)
+        passport["status"] = self._status
         return passport
 
     def access(self) -> None:
-        """Upddates the Dataset datetime last accessed datetime."""
-        self._passport.access()
-
-    def publish(self) -> None:
-        """Adds a publish event to the Dataset event log and changes the state to `PUBLISHED`."""
-        self._passport.publish()
+        """Method called by the repository when the dataset is accessed."""
+        dt = datetime.now()
+        self._eventlog[dt] = "Dataset Accessed"
+        self.accessed = dt
 
     def consume(self) -> None:
-        """Updates the Dataset state to `CONSUMED` and adds an event to the event log."""
-        self._passport.consume()
+        """Method called when the Dataset has been consumed by a data processing or machine learning pipeline."""
+        self._status = DatasetState.CONSUMED
+        self._eventlog[datetime.now()] = "Dataset Consumed"
+
+    def publish(self) -> None:
+        """Method called when the Dataset is being published to the repository."""
+        self._status = DatasetState.PUBLISHED
+        self._eventlog[datetime.now()] = "Dataset Published"
 
     def remove(self) -> None:
-        """Updates the Dataset status to `REMOVED`."""
-        self._passport.remove()
+        """Method called when the Dataset is being removed from the repository"""
+        self._status = DatasetState.REMOVED
+        self._eventlog[datetime.now()] = "Dataset Removed"
 
-    def _get_fileset(self) -> FileSet:
-        """Returns a FileSet object containing the Dataset's file metadata."""
-        return FileAttr.get_fileset(
-            filepath=self._passport.filepath, file_format=self._passport.file_format
+    def add_event(self, event: str) -> None:
+        """Adds an event to the event log
+
+        Args:
+            event (str): Description of the event
+        """
+        dt = datetime.now()
+        self._eventlog[dt] = event
+
+    def is_valid(self, strict: bool = False) -> bool:
+        """Checks the validity of the Dataset and a boolean indicator.
+
+        A Dataset is valid if it contains a valid non-empty DataFrame object.
+        """
+        return isinstance(
+            self._dataframer.dataframe,
+            (pd.DataFrame, pd.core.frame.DataFrame, DataFrame),
         )
 
     def _get_info(self) -> Union[pd.DataFrame, DataFrame]:

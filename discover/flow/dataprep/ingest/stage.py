@@ -11,41 +11,37 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Friday January 17th 2025 10:29:20 pm                                                #
+# Modified   : Thursday January 23rd 2025 06:45:40 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Data Ingestion Stage Module"""
-from typing import List, Optional
+from typing import List, Optional, Union
 
-from pyspark.sql import SparkSession
+import pandas as pd
+from pyspark.sql import DataFrame, SparkSession
 
-from discover.asset.dataset.builder import DatasetBuilder, DatasetPassportBuilder
+from discover.asset.dataset.builder import DatasetBuilder
+from discover.asset.dataset.config import FilesetConfig
 from discover.asset.dataset.dataset import Dataset
 from discover.asset.dataset.identity import DatasetConfig
-from discover.core.dtypes import DFType
-from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task
-from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
+from discover.infra.persist.repo.file.fao import FAO
 
 
 # ------------------------------------------------------------------------------------------------ #
 class IngestStage(Stage):
 
-    __PHASE = PhaseDef.DATAPREP
-    __STAGE = StageDef.INGEST
-    __DFTYPE = DFType.PANDAS
-
     def __init__(
         self,
-        source_config: DatasetConfig,
+        source_config: FilesetConfig,
         target_config: DatasetConfig,
         tasks: List[Task],
-        state: FlowState,
         repo: DatasetRepo,
+        fao: FAO,
         dataset_builder: DatasetBuilder,
         spark: Optional[SparkSession] = None,
     ) -> None:
@@ -53,40 +49,83 @@ class IngestStage(Stage):
             source_config=source_config,
             target_config=target_config,
             tasks=tasks,
-            state=state,
             repo=repo,
             dataset_builder=dataset_builder,
             spark=spark,
         )
+        self._fao = fao
 
-    @property
-    def phase(self) -> PhaseDef:
-        return self.__PHASE
+    def _fresh_cache_exists(self) -> bool:
+        """Returns a boolean indicating whether a fresh cache of the target is extant.
 
-    @property
-    def stage(self) -> StageDef:
-        return self.__STAGE
+        A fresh cache, for the ingest stage, is target that exists.
 
-    @property
-    def dftype(self) -> DFType:
-        return self.__DFTYPE
+        Returns:
+            bool: True if the above condition is met, False otherwise.
 
-    def get_source_dataset(self, **kwargs) -> Dataset:
-        """Logic executed prior at the onset of stage execution"""
-        passport = (
-            DatasetPassportBuilder()
-            .phase(self._source_config.phase)
-            .stage(self._source_config.stage)
-            .creator(self.__class__.__name__)
-            .name(self._source_config.name)
-            .build()
-            .passport
+        """
+        # If the target dataset does not exist, return False
+        target_asset_id = self._repo.get_asset_id(
+            phase=self._target_config.phase,
+            stage=self._target_config.stage,
+            name=self._target_config.name,
         )
-        source = (
-            self._dataset_builder.from_file(self._source_config)
-            .passport(passport)
-            .to_parquet()
-            .build()
-            .dataset
+        if not self._repo.exists(asset_id=target_asset_id):
+            return False
+        else:
+            return True
+
+    def _run(self) -> Dataset:
+        """Internal method to execute tasks and save the resulting dataset.
+
+        This method handles the retrieval of source data, execution of the configured
+        tasks in sequence, and saving of the processed dataset.
+
+        Returns:
+            Dataset: The processed dataset.
+        """
+        # Get the source dataframe from file
+        dataframe = self._fao.read(
+            filepath=self._source_config.filepath,
+            file_format=self._source_config.file_format,
+            dftype=self._source_config.dftype,
+            spark=self._spark,
         )
-        return source
+
+        # Process
+        for task in self._tasks:
+            try:
+                dataframe = task.run(dataframe)
+            except Exception as e:
+                msg = f"Error in task {task.__class__.__name__}: {e}"
+                self._logger.error(msg)
+                raise RuntimeError(msg)
+
+        # Create target dataset and publish to repository
+        target = self._create_dataset(config=self._target_config, dataframe=dataframe)
+        target = self._repo.add(dataset=target)
+
+        return target
+
+    def _create_dataset(
+        self,
+        config: DatasetConfig,
+        dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
+        kwargs,
+    ) -> Dataset:
+        """Creates a Dataset object based on a configuration and given dataframe.
+
+        Args:
+            source (Dataset): The source dataset.
+            config (DatasetConfig): Configuration for the dataset
+            dataframe (Union[pd.DataFrame, DataFrame]): The dataframe content
+
+        Returns:
+            Dataset: The Datset object
+        """
+        return (
+            self._dataset_builder.from_config(config=config)
+            .creator(creawtor=self.__class__.__name__)
+            .dataframe(dataframe=dataframe)
+            .build()
+        )

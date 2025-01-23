@@ -11,29 +11,12 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Tuesday January 21st 2025 10:58:10 pm                                               #
+# Modified   : Thursday January 23rd 2025 01:19:19 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
 # ================================================================================================ #
 env: prod
-# ------------------------------------------------------------------------------------------------ #
-#                                       WORKSPACE                                                  #
-# ------------------------------------------------------------------------------------------------ #
-workspace:
-  id: prod
-  name: Production Workspace
-  location: workspace/prod
-  assets:
-    datasets:
-      files: workspace/prod/datasets/files/
-      metadata: workspace/prod/datasets/metadata
-      registry: workspace/prod/datasets/registry
-    models: workspace/prod/models/
-  ops:
-    version: workspace/prod/ops/version/version
-    tempdir: workspace/prod/ops/tempdir/
-    flowstate: workspace/prod/ops/flow/flowstate
 # ------------------------------------------------------------------------------------------------ #
 #                                        LOGGING                                                   #
 # ------------------------------------------------------------------------------------------------ #
@@ -72,3 +55,11 @@ logging:
 ops:
   basedir: ops/prod  # Base directory for operations data.
   cache: ops/prod/cache
+# ------------------------------------------------------------------------------------------------ #
+#                                    REPOSITORY                                                    #
+# ------------------------------------------------------------------------------------------------ #
+repository:
+  dataset:
+    fal: workspace/prod/datasets/fal/
+    dal: workspace/prod/datasets/dal/
+    ral: workspace/prod/datasets/ral/
