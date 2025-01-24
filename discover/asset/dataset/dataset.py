@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Friday January 24th 2025 08:40:33 am                                                #
+# Modified   : Friday January 24th 2025 04:28:22 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -244,7 +244,7 @@ class Dataset(Asset):
     def serialize(self) -> pd.DataFrame:
         """Prepare the object for serialization by nullifying the dataframe."""
         # Copy the dataframe.
-        df = self._dataframe.copy()
+        df = self._dataframe
 
         # Nullify the dataframe for serialization
         setattr(self, "_dataframe", None)

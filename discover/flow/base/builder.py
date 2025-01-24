@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Friday January 24th 2025 01:26:35 am                                                #
+# Modified   : Friday January 24th 2025 06:28:24 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -158,7 +158,7 @@ class StageBuilder(ABC):
         """
         pass
 
-    def _validate(self) -> None:
+    def _validate(self, *args, **kwargs) -> None:
         """
         Validates the source and target dataset passports.
 

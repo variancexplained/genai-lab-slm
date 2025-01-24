@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Friday January 24th 2025 09:37:27 am                                                #
+# Modified   : Friday January 24th 2025 06:01:20 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -94,10 +94,9 @@ class DatasetRepo(Repo):
             Dataset: The dataset
         """
 
-        self._logger.info(f"Dataset {dataset.asset_id} being published by {entity}")
-
-        # 1.  Update the Dataset's status to `PUBLISHED`
-        dataset.publish(entity=entity)
+        # 1.  Update the Dataset's status to `PUBLISHED` if entity is not None.
+        if isinstance(entity, str):
+            dataset.publish(entity=entity)
 
         # 2. Determine filepath.
         filepath = self._get_filepath(dataset=dataset)
@@ -159,7 +158,8 @@ class DatasetRepo(Repo):
         dataset.deserialize(dataframe=df)
 
         # 5. Mark the dataset as accessed.
-        dataset.access(entity=entity)
+        if isinstance(entity, str):
+            dataset.access(entity=entity)
 
         # 6. Update the Dataset object metadata
         self._dao.update(asset=dataset)
@@ -238,7 +238,7 @@ class DatasetRepo(Repo):
         Returns:
             None
         """
-        self._dao.update(dataset=dataset)
+        self._dao.update(asset=dataset)
         self._rao.update(asset=dataset)
 
     def exists(self, asset_id: str) -> bool:

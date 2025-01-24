@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Friday January 24th 2025 01:32:22 am                                                #
+# Modified   : Friday January 24th 2025 06:43:28 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -310,6 +310,7 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self,
         source_config: Optional[DatasetConfig] = None,
         target_config: Optional[DatasetConfig] = None,
+        strict: bool = True,
     ) -> DataQualityAssessmentStage:
         """
         Builds the ingest stage by validating configurations and assembling tasks.
@@ -321,10 +322,11 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
             target_config (Optional[DatasetConfig]): An optional configuration object for
                 the target dataset. If not provided, the method falls back to the target
                 configuration defined in the stage YAML config.
+            strict (bool): Whether strict, more thorough validation during build process.
         Returns:
             Stage: The DataQualityAssessmentStage object.
         """
-        self._validate()
+        self._validate(strict=strict)
 
         # Obtain a spark session
         self._spark = self._get_spark(dftype=self.dftype)
@@ -340,67 +342,70 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self.reset()
         return stage
 
-    def _validate(self) -> None:
+    def _validate(self, strict: bool = False) -> None:
         """
         Validates the configurations and settings for the Ingest stage.
 
         Ensures that required fields such as the source filepath, encoding, datatypes,
         and datetime conversion tasks are defined.
 
+        Args:
+            strict (bool): Whether strict, more thorough validation during build process.
+
         Raises:
             ValueError: If any required field is missing or invalid.
         """
         super()._validate()
         errors = []
-        if self._detect_control_chars is None:
+        if self._detect_control_chars is None and strict:
             errors.append(
                 "detect_control_chars is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_duplicate_review_ids is None:
+        if self._detect_duplicate_review_ids is None and strict:
             errors.append(
                 "detect_duplicate_review_ids is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_duplicate_reviews is None:
+        if self._detect_duplicate_reviews is None and strict:
             errors.append(
                 "detect_duplicate_reviews is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_duplicate_rows is None:
+        if self._detect_duplicate_rows is None and strict:
             errors.append(
                 "detect_duplicate_rows is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_elongation is None:
+        if self._detect_elongation is None and strict:
             errors.append(
                 "detect_elongation is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_emails is None:
+        if self._detect_emails is None and strict:
             errors.append(
                 "detect_emails is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_excess_whitespace is None:
+        if self._detect_excess_whitespace is None and strict:
             errors.append(
                 "detect_excess_whitespace is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_html is None:
+        if self._detect_html is None and strict:
             errors.append(
                 "detect_html is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_invalid_categories is None:
+        if self._detect_invalid_categories is None and strict:
             errors.append(
                 "detect_invalid_categories is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_invalid_ratings is None:
+        if self._detect_invalid_ratings is None and strict:
             errors.append(
                 "detect_invalid_ratings is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_invalid_review_dates is None:
+        if self._detect_invalid_review_dates is None and strict:
             errors.append(
                 "detect_invalid_review_dates is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_phone_numbers is None:
+        if self._detect_phone_numbers is None and strict:
             errors.append(
                 "detect_phone_numbers is a required step in the DataQualityAssessment Stage."
             )
-        if self._detect_urls is None:
+        if self._detect_urls is None and strict:
             errors.append(
                 "detect_urls is a required step in the DataQualityAssessment Stage."
             )

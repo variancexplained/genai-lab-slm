@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Friday January 24th 2025 08:06:50 am                                                #
+# Modified   : Friday January 24th 2025 06:24:55 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -27,7 +27,6 @@ from pyspark.sql import DataFrame, SparkSession
 from discover.asset.dataset.builder import DatasetBuilder
 from discover.asset.dataset.config import DatasetConfig
 from discover.asset.dataset.dataset import Dataset
-from discover.asset.dataset.state import DatasetState
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
@@ -120,10 +119,13 @@ class Stage(ABC):
 
         Args:
             force (bool): If True, forces re-execution of the stage. Defaults to False.
+            test_mode (bool): Development accommodation. Indicates whether the
+                stage is being run in test mode.
 
         Returns:
             Dataset: The resulting dataset after stage execution.
         """
+
         if self._fresh_cache_exists() and not force:
             dataset = self._get_dataset(
                 phase=self._target_config.phase,
@@ -150,8 +152,8 @@ class Stage(ABC):
         )
         source_meta = self._repo.get_meta(asset_id=source_asset_id)
 
-        if source_meta.status != DatasetState.CONSUMED:
-            msg = f"The source dataset {source_asset_id} status is {source_meta.status} and has not  yet been consumed."
+        if source_meta.consumed:
+            msg = f"The source dataset {source_asset_id} has not  yet been consumed."
             self._logger.debug(msg)
             return False
 
@@ -166,7 +168,7 @@ class Stage(ABC):
             return False
 
         msg = f"A fresh cache for target dataset {target_asset_id} exists."
-        self._logger.debug()
+        self._logger.debug(msg)
         return True
 
     def _run(self) -> Dataset:

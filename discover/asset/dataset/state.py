@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 01:20:36 am                                             #
-# Modified   : Friday January 24th 2025 08:28:23 am                                                #
+# Modified   : Friday January 24th 2025 04:23:55 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -54,44 +54,29 @@ class DatasetStateDef(Enum):
 
 class DatasetState(DataClass):
     """
-    A class representing the state and lifecycle of a dataset. The class tracks
-    the status, creation time, last accessed time, and events related to the dataset.
+    Represents the state of a dataset, including its lifecycle events and timestamps.
+
+    Args:
+        creator (str): The creator of the dataset.
 
     Attributes:
-        status (DatasetStateDef): The current status of the dataset.
-        created (datetime): The timestamp when the dataset was created.
-        published (datetime): The timestamp when the dataset was published.
-        consumed (datetime): The timestamp when the dataset was consumed.
-        accessed (datetime): The timestamp when the dataset was last accessed.
-        modified (datetime): The timestamp when the dataset was last modified.
-        eventlog (list): A log of events related to the dataset.
-
-    Methods:
-        publish(entity: str) -> None:
-            Marks the dataset as published and logs the event.
-        consume(entity: str) -> None:
-            Marks the dataset as consumed and logs the event.
-        access(entity: str) -> None:
-            Records the timestamp of when the dataset was accessed and logs the event.
-        add_event(entity: str, event: str) -> None:
-            Adds an event to the event log.
-        get_events() -> pd.DataFrame:
-            Returns a DataFrame of the event log.
+        _creator (str): The entity responsible for creating the dataset.
+        _status (DatasetStateDef): The current status of the dataset.
+        _created (datetime): The timestamp of when the dataset was created.
+        _published (bool): Boolean indicates whether dataset has been published.
+        _consumed (bool): Boolean indicates whether dataset has been consumed.
+        _accessed (Optional[datetime]): The timestamp of when the dataset was last accessed.
+        _modified (datetime): The timestamp of the last modification to the dataset.
+        _eventlog (list[dict]): A log of events associated with the dataset.
     """
 
     def __init__(self, creator: str) -> None:
-        """
-        Initializes a new DatasetState instance with the creator's name and sets
-        the initial values for the dataset's attributes.
 
-        Args:
-            creator (str): The entity responsible for creating the dataset.
-        """
         self._creator = creator
         self._status = None
         self._created = None
-        self._published = None
-        self._consumed = None
+        self._published = False
+        self._consumed = False
         self._accessed = None
         self._modified = None
         self._eventlog = []
@@ -129,22 +114,22 @@ class DatasetState(DataClass):
         return self._accessed
 
     @property
-    def published(self) -> Optional[datetime]:
+    def published(self) -> bool:
         """
-        Returns the timestamp of when the dataset was published.
+        Indicates whether the dataset was published.
 
         Returns:
-            datetime: The datetime the dataset was published.
+            bool: True if the dataset has been published, False otherwise.
         """
         return self._published
 
     @property
-    def consumed(self) -> Optional[datetime]:
+    def consumed(self) -> bool:
         """
-        Returns the timestamp of when the dataset was consumed.
+        Indicates whether the dataset was consumed.
 
         Returns:
-            datetime: The datetime the dataset was consumed.
+            bool: True if the dataset has been consumed, False otherwise.
         """
         return self._consumed
 
@@ -169,6 +154,7 @@ class DatasetState(DataClass):
         self._modified = datetime.now()
         event = f"{self._status.label} by {entity}"
         self.add_event(entity=entity, event=event)
+        self._published = True
 
     def consume(self, entity: str) -> None:
         """
@@ -181,6 +167,7 @@ class DatasetState(DataClass):
         self._modified = datetime.now()
         event = f"{self._status.label} by {entity}"
         self.add_event(entity=entity, event=event)
+        self._consumed = True
 
     def access(self, entity: str) -> None:
         """
