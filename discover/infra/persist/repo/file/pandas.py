@@ -4,20 +4,22 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persist/dataframe/pandas.py                                         #
+# Filename   : /discover/infra/persist/repo/file/pandas.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Wednesday January 22nd 2025 12:31:50 am                                             #
+# Modified   : Thursday January 23rd 2025 09:38:30 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Pandas File Access Object Module"""
 from __future__ import annotations
+
+import logging
 
 import pandas as pd
 
@@ -35,8 +37,9 @@ class PandasDataFrameParquetReader(BaseDataFrameReader):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def read(self, filepath: str) -> pd.DataFrame:
+    def read(self, filepath: str, **kwargs) -> pd.DataFrame:
         """
         Reads a Parquet file into a Pandas DataFrame.
 
@@ -53,6 +56,8 @@ class PandasDataFrameParquetReader(BaseDataFrameReader):
         """
         try:
             df = pd.read_parquet(filepath, **self._kwargs)
+            msg = f"{self.__class__.__name__} read from {filepath}"
+            self._logger.debug(msg)
             return df.astype(DTYPES)
         except FileNotFoundError as e:
             msg = f"Exception occurred while reading a Parquet file from {filepath}. File does not exist.\n{e}"
@@ -70,8 +75,9 @@ class PandasDataFrameCSVReader(BaseDataFrameReader):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
-    def read(self, filepath: str) -> pd.DataFrame:
+    def read(self, filepath: str, **kwargs) -> pd.DataFrame:
         """
         Reads a CSV file into a Pandas DataFrame.
 
@@ -88,6 +94,8 @@ class PandasDataFrameCSVReader(BaseDataFrameReader):
         """
         try:
             df = pd.read_csv(filepath, **self._kwargs)
+            msg = f"{self.__class__.__name__} read from {filepath}"
+            self._logger.debug(msg)
             return df.astype(DTYPES)
 
         except FileNotFoundError as e:
@@ -106,6 +114,7 @@ class PandasDataFrameParquetWriter(BaseDataFrameWriter):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def write(
         self,
@@ -128,6 +137,8 @@ class PandasDataFrameParquetWriter(BaseDataFrameWriter):
         self.validate_write(filepath=filepath, overwrite=overwrite, **self._kwargs)
         try:
             dataframe.to_parquet(filepath, **self._kwargs)
+            msg = f"{self.__class__.__name__} wrote to {filepath}"
+            self._logger.debug(msg)
         except Exception as e:
             msg = (
                 f"Exception occurred while creating a Parquet file at {filepath}.\n{e}"
@@ -141,6 +152,7 @@ class PandasDataFrameCSVWriter(BaseDataFrameWriter):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def write(
         self,
@@ -163,6 +175,8 @@ class PandasDataFrameCSVWriter(BaseDataFrameWriter):
         self.validate_write(filepath=filepath, overwrite=overwrite, **self._kwargs)
         try:
             dataframe.to_csv(filepath, **self._kwargs)
+            msg = f"{self.__class__.__name__} wrote to {filepath}"
+            self._logger.debug(msg)
         except Exception as e:
             msg = f"Exception occurred while creating a CSV file at {filepath}.\n{e}"
             raise FileIOException(msg, e) from e

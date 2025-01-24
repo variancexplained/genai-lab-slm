@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Sunday January 19th 2025 05:56:56 pm                                                #
+# Modified   : Thursday January 23rd 2025 07:05:44 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,7 +19,6 @@
 """Syntactic Text Quality Analysis Builder Module"""
 from __future__ import annotations
 
-from discover.asset.dataset.identity import DatasetConfig
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
 from discover.flow.feature.tqa.syntactic.stage import TQASyntacticStage

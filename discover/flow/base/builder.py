@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Wednesday January 22nd 2025 10:39:06 pm                                             #
+# Modified   : Thursday January 23rd 2025 05:48:35 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -34,7 +34,6 @@ from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task, TaskBuilder
 from discover.infra.config.flow import FlowConfigReader
 from discover.infra.persist.repo.dataset import DatasetRepo
-from discover.infra.persist.repo.object.flowstate import FlowState
 from discover.infra.service.spark.pool import SparkSessionPool
 
 
@@ -48,7 +47,7 @@ class StageBuilder(ABC):
 
     Args:
         repo (DatasetRepo): Repository for managing dataset operations.
-            Default is injected from `DiscoverContainer.io.dataset_repo`.
+            Default is injected from `DiscoverContainer.io.repo`.
         state (FlowState): State object for tracking the flow of the pipeline.
             Default is injected from `DiscoverContainer.io.flowstate`.
         spark_session_pool (SparkSessionPool): Pool for managing Spark sessions.
@@ -78,8 +77,8 @@ class StageBuilder(ABC):
     @inject
     def __init__(
         self,
-        repo: DatasetRepo = Provide[DiscoverContainer.io.dataset_repo],
-        state: FlowState = Provide[DiscoverContainer.io.flowstate],
+        repo: DatasetRepo = Provide[DiscoverContainer.io.repo],
+        fao: DatasetRepo = Provide[DiscoverContainer.io.fao],
         spark_session_pool: SparkSessionPool = Provide[
             DiscoverContainer.spark.session_pool
         ],
@@ -88,7 +87,7 @@ class StageBuilder(ABC):
         task_builder_cls: Type[TaskBuilder] = TaskBuilder,
     ) -> None:
         self._repo = repo
-        self._state = state
+        self._fao = fao
         self._spark_session_pool = spark_session_pool
         self._config_reader = config_reader_cls()
         self._dataset_builder = dataset_builder_cls()
@@ -152,7 +151,7 @@ class StageBuilder(ABC):
         self._tasks: List[Task] = []
 
     @abstractmethod
-    def build(self) -> Stage:
+    def build(self, *args, **kwargs) -> Stage:
         """
         Abstract method to construct the stage.
 

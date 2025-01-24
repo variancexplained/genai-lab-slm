@@ -11,16 +11,18 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Thursday January 23rd 2025 06:24:53 am                                              #
+# Modified   : Thursday January 23rd 2025 08:50:12 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Repo Module"""
 
+import logging
 from pathlib import Path
 from typing import Optional
 
+import pandas as pd
 from pyspark.sql import SparkSession
 
 from discover.asset.base.asset import AssetType
@@ -30,7 +32,7 @@ from discover.asset.dataset.identity import DatasetPassport
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.config.app import AppConfigReader
-from discover.infra.exception.object import ObjectExistsError
+from discover.infra.exception.object import ObjectExistsError, ObjectNotFoundError
 from discover.infra.persist.repo.file.fao import FAO
 from discover.infra.persist.repo.object.dao import DAO
 from discover.infra.persist.repo.object.rao import RAO
@@ -59,10 +61,13 @@ class DatasetRepo(Repo):
     __ASSET_TYPE = AssetType.DATASET
 
     def __init__(self, location: str, dao: DAO, fao: FAO, rao: RAO) -> None:
-        super().__init__(dao=dao)  # base class assigns the value to self._dao
+        super().__init__()  # base class assigns the value to self._dao
         self._location = location
+        self._dao = dao
         self._fao = fao
         self._rao = rao
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
     def count(self) -> int:
@@ -72,6 +77,11 @@ class DatasetRepo(Repo):
             int: The count of datasets in the repository.
         """
         return self._rao.count
+
+    @property
+    def registry(self) -> pd.DataFrame:
+        """Returns the repository registry."""
+        return self._rao.read_all()
 
     def add(self, dataset: Dataset) -> Dataset:
         """Adds a Dataset dataset to the repository.
@@ -83,30 +93,26 @@ class DatasetRepo(Repo):
             Dataset: The dataset
         """
 
-        # 1. Determine filepath.
-        filepath = self._get_filepath(
-            phase=dataset.phase,
-            asset_id=dataset.asset_id,
-            file_format=dataset.file.format,
-        )
+        # 1.  Update the Dataset's status to `PUBLISHED`
+        dataset.publish()
 
-        # 2. Persist the DataFrame to file.
+        # 2. Determine filepath.
+        filepath = self._get_filepath(dataset=dataset)
+
+        # 3. Persist the DataFrame to file.
         self._fao.create(
             dftype=dataset.passport.dftype,
             filepath=filepath,
             file_format=dataset.passport.file_format,
-            dataframe=dataset.dataframer.dataframe,
+            dataframe=dataset.dataframe,
             overwrite=False,
         )
-
-        # 3.  Update the Dataset's status to `PUBLISHED`
-        dataset.publish()
 
         # 4. Now that the file(s) have been persisted, add the fileset metadata object to the dataset
         dataset = self._set_fileset(filepath=filepath, dataset=dataset)
 
-        # 5. Update the Dataset object metadata
-        self._dao.update(dataset=dataset)
+        # 5. Create the Dataset metadata object.
+        self._dao.create(asset=dataset)
 
         # 6. Add the Dataset to the registry
         self._rao.create(asset=dataset)
@@ -205,10 +211,12 @@ class DatasetRepo(Repo):
 
         """
         asset_id = self.get_asset_id(phase=phase, stage=stage, name=name)
-        if self._dao.exists(asset_id):
+        if self._rao.exists(asset_id):
             msg = f"ObjectExistsError: A Dataset already exists with id {asset_id}."
             self._logger.error(msg)
             raise ObjectExistsError(msg)
+
+        return asset_id
 
     def update(self, dataset: Dataset) -> None:
         """Updates the Dataset (metadata) and registry.
@@ -223,10 +231,11 @@ class DatasetRepo(Repo):
         self._rao.update(asset=dataset)
 
     def exists(self, asset_id: str) -> bool:
-        """Evaluates existence of the asset with the designated asset_id
+        """Evaluates existence of the designated dataset.
 
-        Checks the dataset metadata object and files for existence and returns True iff both dataset metadata
-        and the file(s) exist. If both checks don't agree, a data integrity exception is raised.
+        The registry is the source of truth w.r.t to repository contents. The existence
+         of the dataset components are not physically checked as dataset integrity
+         is handled separately.
 
         Args:
             asset_id (str): The identifier for the asset to check.
@@ -237,19 +246,14 @@ class DatasetRepo(Repo):
         Raises:
             DataIntegrityError if the dataset metadata exists and the file doesn't (or vice-versa).
         """
-        dataset = self._dao.read(asset_id=asset_id)
-        if dataset is not None:
-            if self._fao.exists(filepath=dataset.file.path):
-                return True
-            else:
-                msg = f"DataIntegrityError. Dataset {asset_id} fileset does not exist."
-                self._logger.error(msg)
-                raise FileNotFoundError(msg)
-        else:
-            return False
+        return self._rao.exists(asset_id=asset_id)
 
     def remove(self, asset_id: str) -> None:
         """Removes a dataset and its associated file from the repository.
+
+        This is a fail-safe, idempotent approach  to remove behavior. By avoiding exceptions,
+        non existent files and metadata are handled gracefully, prioritizing stability
+        and resilience.
 
         Args:
             asset_id (str): The unique identifier of the dataset to remove.
@@ -261,19 +265,37 @@ class DatasetRepo(Repo):
             ValueError: If the file or directory specified by the dataset's filepath
             does not exist or cannot be identified.
         """
-        # Get the datasets filepath from its file object.
-        dataset_meta = self.get_metadata(asset_id=asset_id)
-        # Delete the files from the respository
-        self._fao.delete(filepath=dataset_meta.passport.filepath)
-        # Update the registry before deleting the object
-        dataset_meta.remove()
-        self._rao.update(asset=dataset_meta)
-        # Remove the Dataset object and metadata from the repository
-        self._dao.delete(asset_id=asset_id)
 
-        self._logger.debug(
-            f"Dataset {dataset_meta.asset_id}, including its file at {dataset_meta.file.path} has been removed from the repository."
-        )
+        dataset_meta = None
+        try:
+            # Get the dataset metadata containing the dataframe's filepath.
+            dataset_meta = self.get_meta(asset_id=asset_id)
+        except ObjectNotFoundError:
+            msg = f"Attempting to remove a dataset {asset_id}, that does not exist."
+            self._logger.warning(msg)
+        except Exception as e:
+            msg = f"An unknown exception occurred while removing dataset {asset_id} metadata from the repository.\n{e}"
+            self._logger.exception(msg)
+
+        if dataset_meta is not None:
+            # Delete the files from the respository
+            try:
+                self._fao.delete(filepath=dataset_meta.file.path)
+            except FileNotFoundError:
+                msg = f"No files for dataset {asset_id} were found to remove."
+                self._logger.warning(msg)
+            except Exception as e:
+                msg = f"An unknown exception occurred while removing dataset {asset_id} files from the repository.\n{e}"
+                self._logger.exception(msg)
+
+            # Remove the dataset metadata object from the repository
+            self._dao.delete(asset_id=asset_id)
+
+            # Remove the dataset from the registry
+            self._rao.delete(asset_id=asset_id)
+            self._logger.debug(
+                f"Dataset {dataset_meta.asset_id}, including its file at {dataset_meta.file.path} has been removed from the repository."
+            )
 
     def reset(self) -> None:
         """Resets the repository by removing all datasets and their associated files.

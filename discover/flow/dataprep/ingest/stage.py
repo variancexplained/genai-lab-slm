@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Thursday January 23rd 2025 06:45:40 am                                              #
+# Modified   : Thursday January 23rd 2025 08:17:46 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,9 +23,10 @@ import pandas as pd
 from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.dataset.builder import DatasetBuilder
-from discover.asset.dataset.config import FilesetConfig
+from discover.asset.dataset.config import DatasetConfig, FilesetConfig
 from discover.asset.dataset.dataset import Dataset
-from discover.asset.dataset.identity import DatasetConfig
+from discover.core.dtypes import DFType
+from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task
 from discover.infra.persist.repo.dataset import DatasetRepo
@@ -34,6 +35,10 @@ from discover.infra.persist.repo.file.fao import FAO
 
 # ------------------------------------------------------------------------------------------------ #
 class IngestStage(Stage):
+
+    __PHASE = PhaseDef.DATAPREP
+    __STAGE = StageDef.INGEST
+    __DFTYPE = DFType.PANDAS
 
     def __init__(
         self,
@@ -54,6 +59,36 @@ class IngestStage(Stage):
             spark=spark,
         )
         self._fao = fao
+
+    @property
+    def phase(self) -> PhaseDef:
+        """
+        Defines the phase of the pipeline.
+
+        Returns:
+            PhaseDef: The phase associated with the pipeline.
+        """
+        return self.__PHASE
+
+    @property
+    def stage(self) -> StageDef:
+        """
+        Defines the stage of the pipeline.
+
+        Returns:
+            StageDef: The stage associated with the pipeline.
+        """
+        return self.__STAGE
+
+    @property
+    def dftype(self) -> DFType:
+        """
+        Defines the dataframe type of the pipeline.
+
+        Returns:
+            DFType: The dataframe type used in the pipeline.
+        """
+        return self.__DFTYPE
 
     def _fresh_cache_exists(self) -> bool:
         """Returns a boolean indicating whether a fresh cache of the target is extant.
@@ -111,7 +146,7 @@ class IngestStage(Stage):
         self,
         config: DatasetConfig,
         dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
-        kwargs,
+        **kwargs,
     ) -> Dataset:
         """Creates a Dataset object based on a configuration and given dataframe.
 
@@ -125,7 +160,7 @@ class IngestStage(Stage):
         """
         return (
             self._dataset_builder.from_config(config=config)
-            .creator(creawtor=self.__class__.__name__)
+            .creator(creator=self.__class__.__name__)
             .dataframe(dataframe=dataframe)
             .build()
         )

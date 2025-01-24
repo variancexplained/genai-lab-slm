@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Wednesday January 22nd 2025 07:28:55 pm                                             #
+# Modified   : Thursday January 23rd 2025 07:27:02 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,11 +26,12 @@ class StageDef(Enum):
     """Defines all workflow stages."""
 
     # Data prep phase
-    INGEST = ("ingest", 0, "Data Ingestion Stage")
-    DQA = ("dqa", 1, "Data Quality Assessment Stage")
-    SEMICLEAN = ("semiclean", 2, "Semi-Clean Data Stage")
-    DQV = ("dqv", 3, "Data Quality Verification Stage")
-    CLEAN = ("clean", 4, "Clean Data Stage")
+    RAW = ("raw", 0, "Raw Data Stage")
+    INGEST = ("ingest", 1, "Data Ingestion Stage")
+    DQA = ("dqa", 2, "Data Quality Assessment Stage")
+    SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
+    DQV = ("dqv", 4, "Data Quality Verification Stage")
+    CLEAN = ("clean", 5, "Clean Data Stage")
     # Feature Engineering Phase
     TQA_SYNTACTIC = ("tqa_syntactic", 0, "Syntactic Text Quality Analysis Stage")
     TQA_SENTIMENT = ("tqa_sentiment", 1, "Sentiment Text Quality Analysis Stage")
@@ -103,12 +104,3 @@ class PhaseDef(Enum):
             if member.value == value:
                 return member
         raise ValueError(f"No matching {cls.__name__} for value: {value}")
-
-
-# ------------------------------------------------------------------------------------------------ #
-class FlowStateDef(Enum):
-    CREATED = "created"
-    PENDING = "pending"
-    STARTED = "started"
-    EXCEPTION = "exception"
-    COMPLETED = "complete"

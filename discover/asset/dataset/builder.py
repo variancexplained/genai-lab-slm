@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Thursday January 23rd 2025 06:07:59 am                                              #
+# Modified   : Thursday January 23rd 2025 09:29:22 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Union
+from typing import Optional, Union
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
@@ -29,12 +29,13 @@ from pyspark.sql import DataFrame
 
 from discover.asset.base.asset import AssetType
 from discover.asset.base.builder import AssetBuilder
+from discover.asset.dataset.config import DatasetConfig
 from discover.asset.dataset.dataframer import (
     DataFramer,
     PandasDataFramer,
     PySparkDataFramer,
 )
-from discover.asset.dataset.dataset import Dataset, DatasetConfig
+from discover.asset.dataset.dataset import Dataset
 from discover.asset.dataset.identity import DatasetPassport
 from discover.container import DiscoverContainer
 from discover.core.dtypes import DFType
@@ -86,7 +87,6 @@ class DatasetBuilder(AssetBuilder):
         self._dataframer = None
 
         self._passport = None
-        self._dataset = None
 
     # -------------------------------------------------------------------------------------------- #
     #                                  PASSPORT INFO                                               #
@@ -175,8 +175,6 @@ class DatasetBuilder(AssetBuilder):
         self._name = config.name
         self._file_format = config.file_format
         self._dftype = config.dftype
-        self._creator = config.creator
-        self._dataframe = config.dataframe
         return self
 
     # -------------------------------------------------------------------------------------------- #
@@ -276,7 +274,7 @@ class DatasetBuilder(AssetBuilder):
     # -------------------------------------------------------------------------------------------- #
     #                                      BUILD                                                   #
     # -------------------------------------------------------------------------------------------- #
-    def build(self) -> DatasetBuilder:
+    def build(self) -> Dataset:
 
         self._validate()
 
@@ -284,9 +282,7 @@ class DatasetBuilder(AssetBuilder):
 
         self._dataframer = self._build_dataframer()
 
-        self._dataset = Dataset(passport=self._passport, dataframer=self._dataframer)
-
-        return self
+        return Dataset(passport=self._passport, dataframer=self._dataframer)
 
     # -------------------------------------------------------------------------------------------- #
     def _build_passport(self) -> DatasetPassport:
@@ -310,10 +306,12 @@ class DatasetBuilder(AssetBuilder):
             dftype=self._dftype,
         )
 
+        self._logger.debug(passport)
+
         return passport
 
     # -------------------------------------------------------------------------------------------- #
-    def _build_dataframer(self) -> DataFramer:
+    def _build_dataframer(self) -> Optional[DataFramer]:
         """Constructs the DataFramer object"""
         # If no dataframe were provided,read it from file.
         if not isinstance(
@@ -323,30 +321,35 @@ class DatasetBuilder(AssetBuilder):
 
         # Instantiate the DataFramer for the DataFrame type
         if self._dftype == DFType.PANDAS:
+            self._logger.debug("Constructing PandasDataFramer")
             return PandasDataFramer(df=self._dataframe)
-        else:
+        elif self._dftype in (DFType.SPARK or DFType.SPARKNLP):
+            self._logger.debug("Constructing PySparkDataFramer")
             return PySparkDataFramer(df=self._dataframe)
+        else:
+            msg = f"Unrecognized DataFrame Type. Expected DFTYPE.PANDAS, DFTYPE.SPARK, or DFTYPE.SPARKNLP. Encountered {type(self._dftype)}"
+            self._logger.error(msg)
+            raise TypeError(msg)
 
     # -------------------------------------------------------------------------------------------- #
     def _read_data(self) -> Union[pd.DataFrame, DataFrame]:
         """Reads a PySpark or Pandas DataFrame from file."""
+
+        spark = None
 
         if self._dftype in (DFType.SPARK, DFType.SPARKNLP):
             try:
                 spark = self._workspace.spark.session_pool().get_spark_session(
                     dftype=self._dftype
                 )
-                return self._fao.read(
-                    filepath=self._source_filepath,
-                    dftype=self._dftype,
-                    spark=spark,
-                )
             except Exception as e:
-                msg = f"Exception encountered while reading from {self._source_filepath}.\n{e}"
+                msg = f"Exception encountered while obtaining a spark session. The DFType is {self._dftype}\n{e}"
                 self._logger.error(msg)
                 raise Exception(msg) from e
-        else:
-            return self._fao.read(filepath=self._source_filepath, dftype=self._dftype)
+
+        return self._fao.read(
+            filepath=self._source_filepath, dftype=self._dftype, spark=spark
+        )
 
     # -------------------------------------------------------------------------------------------- #
     def _validate(self) -> None:
@@ -376,12 +379,6 @@ class DatasetBuilder(AssetBuilder):
                 f"File format is a required FileFormat property. Received a {type(self._file_format)} type."
             )
 
-        # Validate DFType
-        if not isinstance(self._dftype, DFType):
-            errors.append(
-                f"The `dftype` is a required DFType property. Received a {type(self._dftype)} type."
-            )
-
         # Validate the DataFrame
         if not isinstance(
             self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame, DataFrame)
@@ -389,6 +386,27 @@ class DatasetBuilder(AssetBuilder):
             errors.append(
                 "A source of the data must be set via the `from_dataframe` or the `from_file` method."
             )
+
+        else:
+            # Set dftype if None
+            if not self._dftype:
+                if isinstance(self._dataframe, DataFrame):
+                    self._dftype == DFType.SPARK  # Defaults to SPARK vs SPARKNLP
+                else:
+                    self._dftype == DFType.PANDAS
+            # Otherwise ensure dftype and dataframe type agree.
+            else:
+                if (
+                    self._dftype == DFType.PANDAS
+                    and not isinstance(
+                        self._dataframe, (pd.DataFrame, pd.core.frame.DataFrame)
+                    )
+                ) | (
+                    self._dftype in (DFType.SPARK, DFType.SPARKNLP)
+                    and not isinstance(self._dataframe, DataFrame)
+                ):
+                    msg = f"DataIntegrityError: DataFrame type `dftype` is {self._dftype}, yet the dataframe is {type(self._dataframe)} type."
+                    errors.append(msg)
 
         if errors:
             self._report_validation_errors(errors=errors)

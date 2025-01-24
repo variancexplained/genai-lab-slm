@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Tuesday January 21st 2025 08:26:50 pm                                               #
+# Modified   : Thursday January 23rd 2025 02:15:24 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,7 +32,12 @@ from discover.infra.utils.file.fileset import FileFormat
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
-collect_ignore_glob = ["discover/core/*.*"]
+collect_ignore_glob = [
+    "discover/core/*.*",
+    "discover/flow/dataprep/clean/*.*",
+    "discover/flow/dataprep/dqa/*.*",
+    "discover/flow/dataprep/feature/*.*",
+]
 collect_ignore = ["discover/core/*.*"]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
@@ -46,7 +51,13 @@ collect_ignore = ["discover/core/*.*"]
 def container():
     container = DiscoverContainer()
     container.init_resources()
-    container.wire(packages=["discover.asset.dataset", "discover.flow"])
+    container.wire(
+        packages=[
+            "discover.asset.dataset",
+            "discover.flow.base",
+            "discover.flow.dataprep.ingest",
+        ]
+    )
     return container
 
 

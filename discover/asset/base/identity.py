@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday January 21st 2025 03:21:59 am                                               #
-# Modified   : Wednesday January 22nd 2025 01:42:49 am                                             #
+# Modified   : Thursday January 23rd 2025 09:31:44 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -64,8 +64,6 @@ class AssetPassport(DataClass):
     file_format: FileFormat = FileFormat.PARQUET
     creator: Optional[str] = field(default=None)
     created: Optional[datetime] = field(default=None)
-    accessed: Optional[datetime] = field(default=None)
-    version: Optional[str] = field(default=None)
 
     @classmethod
     def _export_config(

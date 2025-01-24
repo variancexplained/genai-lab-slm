@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Thursday January 23rd 2025 02:03:24 am                                              #
+# Modified   : Thursday January 23rd 2025 06:10:17 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -128,20 +128,7 @@ class FAO(DAL):
             dftype=dftype,
             file_format=file_format,
         )
-
-        if dftype == DFType.PANDAS:
-            return reader.read(
-                filepath=filepath,
-            )
-        else:
-            if spark is None:
-                msg = "Unable to read spark dataframe. Spark session is None. When reading spark dataframes a spark session must be provided."
-                self._logger.error(msg)
-                raise RuntimeError(msg)
-            return reader.read(
-                filepath=filepath,
-                spark=spark,
-            )
+        return reader.read(filepath=filepath, spark=spark)
 
     def exists(self, filepath: str) -> bool:
         """

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:54:25 am                                              #
-# Modified   : Sunday January 19th 2025 01:30:28 pm                                                #
+# Modified   : Thursday January 23rd 2025 05:12:21 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -194,12 +194,9 @@ class ConvertDateTimeNStoMS(Task):
         return data
 
     def _convert_datetime_ns_to_ms(self, datetime_series):
-        if not isinstance(datetime_series, pd.Series):
-            raise TypeError("Input must be a pandas Series")
 
-        if pd.api.types.is_datetime64ns_dtype(datetime_series):
+        try:
             return datetime_series.astype("datetime64[ms]")
-        elif pd.api.types.is_datetime64ms_dtype(datetime_series):
-            return datetime_series  # already in milliseconds
-        else:
-            return datetime_series  # return original if not datetime64[ns] or [ms]
+        except Exception as e:
+            msg = f"Error converting datetime64 from nanosecond to millisecond precision.\n{e}"
+            raise Exception(msg)

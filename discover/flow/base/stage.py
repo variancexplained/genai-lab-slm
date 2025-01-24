@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Thursday January 23rd 2025 06:31:05 am                                              #
+# Modified   : Thursday January 23rd 2025 05:17:35 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -102,8 +102,8 @@ class Stage(ABC):
         self._dataset_builder = dataset_builder
         self._spark = spark
 
-        self._source = Optional[Dataset] = None
-        self._target = Optional[Dataset] = None
+        self._source: Optional[Dataset] = None
+        self._target: Optional[Dataset] = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -258,7 +258,7 @@ class Stage(ABC):
         """
         return (
             self._dataset_builder.from_config(config=config)
-            .creator(creawtor=self.__class__.__name__)
+            .creator(creator=self.__class__.__name__)
             .source(source=source.passport)
             .dataframe(dataframe=dataframe)
             .build()

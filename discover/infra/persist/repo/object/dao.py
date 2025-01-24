@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Thursday January 23rd 2025 03:37:05 am                                              #
+# Modified   : Thursday January 23rd 2025 07:04:22 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -127,7 +127,11 @@ class DAO(DAL):
             bool: True if the asset exists, False otherwise.
 
         """
-        return self._read(asset_id=asset_id) is not None
+        try:
+            _ = self._read(asset_id=asset_id)
+            return True
+        except ObjectNotFoundError:
+            return False
 
     def delete(self, asset_id: str, not_exists_ok: bool = False) -> None:
         """Deletes an asset by its ID from the database.
@@ -197,7 +201,10 @@ class DAO(DAL):
         """
         try:
             with shelve.open(self._db_path) as db:
-                return db.get(asset_id, None)
+                return db[asset_id]
+        except KeyError:
+            msg = f"Dataset {asset_id} was not found."
+            raise ObjectNotFoundError(msg)
         except FileNotFoundError as e:
             msg = f"The object database was not found at {self._db_path}.\n{e}"
             self._logger.exception(msg)

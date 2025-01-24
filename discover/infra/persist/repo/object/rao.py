@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 07:41:04 pm                                              #
-# Modified   : Thursday January 23rd 2025 02:47:54 am                                              #
+# Modified   : Thursday January 23rd 2025 09:52:52 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -90,9 +90,13 @@ class RAO(DAL):
 
         """
         registry = self._read()
-        return registry.loc[registry["asset_id"] == asset_id]
+        try:
+            return registry.loc[registry["asset_id"] == asset_id]
+        except KeyError:
+            # An empty dataframe is being returned.
+            return None
 
-    def read_all(self, asset_id: str) -> Optional[pd.DataFrame]:
+    def read_all(self) -> Optional[pd.DataFrame]:
         """Reads and returns the entire registry if it exists.
 
         Returns:
@@ -123,10 +127,14 @@ class RAO(DAL):
             ObjectDatabaseNotFoundError: If the database file is not found.
             ObjectIOException: If an unknown exception occurs during the check.
         """
-        return len(self._read_asset(asset_id=asset_id)) > 0
+        try:
+            return len(self.read(asset_id=asset_id)) > 0
+        except TypeError:
+            # TypeErrors indicate a None type return.
+            return False
 
     def delete(self, asset_id: str) -> None:
-        """Deletes an asset by its asest_id from the registry
+        """Deletes an asset by its asest_id from the registry, if it exists.
 
         Args:
             asset_id (str): The unique identifier of the asset to delete.
@@ -134,9 +142,12 @@ class RAO(DAL):
         # Get the registry
         registry = self._read()
         # Filter the asset
-        registry = registry.loc[registry["asset_id" != asset_id]]
-        # Persist the registry
-        self._write(registry=registry)
+        try:
+            registry = registry.loc[registry["asset_id"] != asset_id]
+            self._write(registry=registry)
+        except KeyError:
+            msg = f"Unable to delete {asset_id}. The dataset repository registry is empty."
+            self._logger.warning(msg)
 
     def reset(self, verified: bool = False) -> None:
         """Resets the registry by deleting all its contents.
@@ -168,14 +179,18 @@ class RAO(DAL):
         """
         # Obtain the registration entry
         entry = asset.get_registration()
-        entry = pd.DataFrame.from_dict(entry)
+        entry = pd.DataFrame(entry, index=[0])
 
         # Obtain the existing registry if available.
         registry = self._read()
 
         # Drop the old registration if it exists and insert the new  entry into the registry.
-        registry = registry.loc[registry["asset_id" != asset.asset_id]]
-        registry = pd.concat([registry, entry], axis=0)
+        try:
+            registry = registry.loc[registry["asset_id"] != asset.asset_id]
+            registry = pd.concat([registry, entry], axis=0)
+        except KeyError:
+            # Registry is empty
+            registry = entry
 
         # Save the registry.
         self._write(registry)

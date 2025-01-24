@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:26:44 am                                                #
-# Modified   : Monday January 20th 2025 08:49:24 pm                                                #
+# Modified   : Thursday January 23rd 2025 07:05:44 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -34,12 +34,10 @@ from sparknlp.base import Pipeline
 
 from discover.asset.dataset.builder import DatasetBuilder
 from discover.asset.dataset.dataset import Dataset
-from discover.asset.dataset.identity import DatasetConfig
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.stage import Stage
 from discover.flow.base.task import Task
-from discover.infra.persist.object.flowstate import FlowState
 from discover.infra.persist.repo.dataset import DatasetRepo
 
 
@@ -83,7 +81,6 @@ class TQASyntacticStage(Stage):
         source_config: DatasetConfig,
         target_config: DatasetConfig,
         tasks: List[Task],
-        state: FlowState,
         repo: DatasetRepo,
         dataset_builder: DatasetBuilder,
         column: str = "content",
@@ -93,7 +90,6 @@ class TQASyntacticStage(Stage):
             source_config=source_config,
             target_config=target_config,
             tasks=tasks,
-            state=state,
             repo=repo,
             dataset_builder=dataset_builder,
             spark=spark,

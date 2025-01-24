@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 16th 2025 02:49:20 pm                                              #
-# Modified   : Wednesday January 22nd 2025 01:10:32 am                                             #
+# Modified   : Thursday January 23rd 2025 10:00:14 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -111,7 +111,7 @@ class PandasDataFramer(DataFramer):
         super().__init__(df=df)
 
     def info(self) -> pd.DataFrame:
-        """Generates a DataFrame with quantitative summaries of the dataset and its columns.
+        """Generates a dictionary with quantitative summaries of the dataset and its columns.
 
         This method returns a DataFrame containing quantitative information about each column,
         including data type, number of complete cases, number of missing values, completeness,
@@ -153,8 +153,8 @@ class PandasDataFramer(DataFramer):
         ave_reviews_per_app = round(n / n_apps, 2)
 
         review_lengths = self._df["content"].parallel_apply(lambda n: len(n.split()))
-        min_review_length = min(review_lengths)
-        max_review_length = max(review_lengths)
+        min_review_length = np.min(review_lengths)
+        max_review_length = np.max(review_lengths)
         avg_review_length = np.mean(review_lengths)
 
         mem = self._df.memory_usage(deep=True).sum().sum()

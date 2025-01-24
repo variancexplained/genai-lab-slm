@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Thursday January 16th 2025 04:03:09 pm                                              #
+# Modified   : Thursday January 23rd 2025 07:02:42 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -43,7 +43,7 @@ def load_data(
     # TODO: Replace DatasetFactory with DatasetBuilder
     # Create dataset if it doesn't already exist.
     # asset_id = workspace.get_asset_id(**dataset_config)
-    # if not workspace.dataset_repo.exists(asset_id=asset_id):
+    # if not workspace.repo.exists(asset_id=asset_id):
     #     dataset = DatasetFactory().from_parquet_file(**dataset_config)
     #     print(f"Dataset {dataset.asset_id} | {dataset.description} created.")
 

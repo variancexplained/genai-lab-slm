@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/infra/persist/dataframe/spark.py                                          #
+# Filename   : /discover/infra/persist/repo/file/spark.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Wednesday January 22nd 2025 12:31:50 am                                             #
+# Modified   : Thursday January 23rd 2025 09:41:35 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,6 +36,7 @@ class SparkDataFrameParquetReader(BaseDataFrameReader):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def read(
         self,
@@ -59,7 +60,8 @@ class SparkDataFrameParquetReader(BaseDataFrameReader):
         """
         try:
             dataframe = spark.read.parquet(filepath, **self._kwargs)
-            logging.debug(f"Read Spark DataFrame from parquet file {filepath}")
+            msg = f"{self.__class__.__name__} read from{filepath}"
+            self._logger.debug(msg)
             if "__index_level_0__" in dataframe.columns:
                 dataframe = dataframe.drop("__index_level_0__")
             return dataframe
@@ -79,6 +81,7 @@ class SparkDataFrameCSVReader(BaseDataFrameReader):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def read(
         self,
@@ -102,7 +105,8 @@ class SparkDataFrameCSVReader(BaseDataFrameReader):
         """
         try:
             dataframe = spark.read.csv(filepath, **self._kwargs)
-            logging.debug(f"Read Spark DataFrame from csv file {filepath}")
+            msg = f"{self.__class__.__name__} read from{filepath}"
+            self._logger.debug(msg)
             if "__index_level_0__" in dataframe.columns:
                 dataframe = dataframe.drop("__index_level_0__")
             return dataframe
@@ -122,6 +126,7 @@ class SparkDataFrameParquetWriter(BaseDataFrameWriter):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def write(
         self,
@@ -153,20 +158,24 @@ class SparkDataFrameParquetWriter(BaseDataFrameWriter):
         try:
             if mode and partition_cols:
                 dataframe.write.mode(mode).partitionBy(partition_cols).parquet(filepath)
-                logging.debug(
+                self._logger.debug(
                     f"Writing spark DataFrame to partitioned parquet file at {filepath}"
                 )
             elif mode:
                 dataframe.write.mode(mode).parquet(filepath)
-                logging.debug(f"Writing spark DataFrame to parquet file at {filepath}")
+                self._logger.debug(
+                    f"Writing spark DataFrame to parquet file at {filepath}"
+                )
             elif partition_cols:
                 dataframe.write.partitionBy(partition_cols).parquet(filepath)
-                logging.debug(
+                self._logger.debug(
                     f"Writing spark DataFrame to partitioned parquet file at {filepath}"
                 )
             else:
                 dataframe.write.parquet(filepath)
-                logging.debug(f"Writing spark DataFrame to parquet file at {filepath}")
+                self._logger.debug(
+                    f"Writing spark DataFrame to parquet file at {filepath}"
+                )
         except Exception as e:
             msg = f"Exception occurred while writing a Parquet file at {filepath}.\nKeyword Arguments: {self._kwargs}"
             raise FileIOException(msg, e) from e
@@ -178,6 +187,7 @@ class SparkDataFrameCSVWriter(BaseDataFrameWriter):
 
     def __init__(self, kwargs: dict) -> None:
         self._kwargs = kwargs
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def write(
         self,
@@ -200,7 +210,7 @@ class SparkDataFrameCSVWriter(BaseDataFrameWriter):
         self.validate_write(filepath=filepath, overwrite=overwrite)
         try:
             dataframe.repartition(1).write.csv(filepath, **self._kwargs)
-            logging.debug(f"Writing partitioned spark csv file to {filepath}")
+            self._logger.debug(f"Writing partitioned spark csv file to {filepath}")
         except Exception as e:
             msg = f"Exception occurred while writing a CSV file to {filepath}.\nKeyword Arguments: {self._kwargs}"
             raise FileIOException(msg, e) from e

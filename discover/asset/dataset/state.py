@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 01:20:36 am                                             #
-# Modified   : Wednesday January 22nd 2025 01:23:03 am                                             #
+# Modified   : Thursday January 23rd 2025 08:28:05 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -26,4 +26,3 @@ class DatasetState(Enum):
     CONSUMED = (
         "consumed"  # Consumed by the a data processing, analysis, or modeling pipeline.
     )
-    REMOVED = "removed"  # The dataset is removed from the repository.

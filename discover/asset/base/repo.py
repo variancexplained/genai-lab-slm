@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/asset/repo.py                                                             #
+# Filename   : /discover/asset/base/repo.py                                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 03:00:19 pm                                               #
-# Modified   : Thursday December 26th 2024 02:34:27 pm                                             #
+# Modified   : Thursday January 23rd 2025 07:15:23 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -134,7 +134,6 @@ class Repo(ABC):
         """
         pass
 
-    @abstractmethod
     def get_all(self, *args: Any, **kwargs: Dict[str, Any]) -> dict:
         """Retrieves all assets in the repository.
 

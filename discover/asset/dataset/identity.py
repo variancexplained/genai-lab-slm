@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:42:37 am                                               #
-# Modified   : Thursday January 23rd 2025 05:33:42 am                                              #
+# Modified   : Thursday January 23rd 2025 09:33:05 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -66,8 +66,9 @@ class DatasetPassport(AssetPassport):
         Returns:
             str: A default description for the dataset.
         """
-        self.description = f"Dataset {self.name} created "
+        description = f"Dataset {self.name} created "
         if self.source:
-            self.description += f"from {self.source.asset_id} "
-        self.description += f"in the {self.phase.label} - {self.stage.label} "
-        self.description += f"on {self.created.strftime('%Y-%m-%d')} at {self.created.strftime('%H:%M:%S')}"
+            description += f"from {self.source.asset_id} "
+        description += f"in the {self.phase.label} - {self.stage.label} "
+        description += f"on {self.created.strftime('%Y-%m-%d')} at {self.created.strftime('%H:%M:%S')}"
+        return description

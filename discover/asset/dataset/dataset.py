@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Thursday January 23rd 2025 06:00:55 am                                              #
+# Modified   : Thursday January 23rd 2025 10:01:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -153,13 +153,15 @@ class Dataset(Asset):
     @property
     def info(self) -> pd.DataFrame:
         """Returns a quantitative summary of the DataFrame structure and properties."""
-        self._info = self._info or self._get_info()
+        if self._info is None:
+            self._info = self._get_info()
         return self._info
 
     @property
     def summary(self) -> Dict[str, str]:
         """Prints descriptive and summary statistics on DataFrame columns and observations."""
         self._summary = self._summary or self._get_summary()
+        return self._summary
 
     @property
     def dqa(self) -> DQA:
@@ -217,11 +219,6 @@ class Dataset(Asset):
         self._status = DatasetState.PUBLISHED
         self._eventlog[datetime.now()] = "Dataset Published"
 
-    def remove(self) -> None:
-        """Method called when the Dataset is being removed from the repository"""
-        self._status = DatasetState.REMOVED
-        self._eventlog[datetime.now()] = "Dataset Removed"
-
     def add_event(self, event: str) -> None:
         """Adds an event to the event log
 
@@ -243,11 +240,11 @@ class Dataset(Asset):
 
     def _get_info(self) -> Union[pd.DataFrame, DataFrame]:
         """Returns a DataFrame containing DataFrame structural information"""
-        self._dataframer.info()
+        return self._dataframer.info()
 
-    def _get_summary(self) -> None:
+    def _get_summary(self) -> pd.DataFrame:
         """Prints a qualitative and descriptive summary of the Dataset."""
-        self._dataframer.summary()
+        return self._dataframer.summary()
 
     def _get_dqa(self) -> DQA:
         """Returns the Data Quality Analysis for the Dataset."""

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Thursday January 23rd 2025 06:39:07 am                                              #
+# Modified   : Thursday January 23rd 2025 05:52:17 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -165,9 +165,21 @@ class IngestStageBuilder(StageBuilder):
         self._datetime = self._task_configs["datetime"]
         return self
 
-    def build(self) -> IngestStageBuilder:
+    def build(
+        self,
+        source_config: Optional[DatasetConfig] = None,
+        target_config: Optional[DatasetConfig] = None,
+    ) -> IngestStageBuilder:
         """
         Builds the ingest stage by validating configurations and assembling tasks.
+
+        Args:
+            source_config (Optional[DatasetConfig]): An optional configuration object for
+                the source dataset. If not provided, the method falls back to the source
+                configuration defined in the stage YAML config.
+            target_config (Optional[DatasetConfig]): An optional configuration object for
+                the target dataset. If not provided, the method falls back to the target
+                configuration defined in the stage YAML config.
 
         Returns:
             IngestStageBuilder: The builder instance with the constructed stage.
@@ -178,8 +190,8 @@ class IngestStageBuilder(StageBuilder):
         self._validate()
         self._tasks = self._build_tasks()
         stage = IngestStage(
-            source_config=self._source_config,
-            target_config=self._target_config,
+            source_config=source_config or self._source_config,
+            target_config=target_config or self._target_config,
             tasks=self._tasks,
             repo=self._repo,
             fao=self._fao,

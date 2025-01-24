@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Tuesday January 21st 2025 01:02:06 am                                               #
+# Modified   : Thursday January 23rd 2025 07:07:20 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,7 +19,7 @@
 """Data Cleaning Stage Builder Module"""
 from __future__ import annotations
 
-from discover.asset.dataset.identity import DatasetConfig
+from discover.asset.dataset.config import DatasetConfig
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
 from discover.flow.dataprep.clean.stage import DataCleaningStage
