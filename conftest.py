@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Thursday January 23rd 2025 02:15:24 pm                                              #
+# Modified   : Friday January 24th 2025 01:17:00 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -35,7 +35,6 @@ load_dotenv()
 collect_ignore_glob = [
     "discover/core/*.*",
     "discover/flow/dataprep/clean/*.*",
-    "discover/flow/dataprep/dqa/*.*",
     "discover/flow/dataprep/feature/*.*",
 ]
 collect_ignore = ["discover/core/*.*"]
@@ -56,6 +55,7 @@ def container():
             "discover.asset.dataset",
             "discover.flow.base",
             "discover.flow.dataprep.ingest",
+            "discover.flow.dataprep.dqa",
         ]
     )
     return container

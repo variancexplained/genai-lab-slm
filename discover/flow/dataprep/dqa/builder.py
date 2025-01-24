@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Thursday January 23rd 2025 07:05:42 am                                              #
+# Modified   : Friday January 24th 2025 01:32:22 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,6 +19,10 @@
 """Acquire Stage Builder Module"""
 from __future__ import annotations
 
+from typing import Optional
+
+from discover.asset.dataset.config import DatasetConfig
+from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.builder import StageBuilder
 from discover.flow.dataprep.dqa.stage import DataQualityAssessmentStage
@@ -26,63 +30,54 @@ from discover.flow.dataprep.dqa.stage import DataQualityAssessmentStage
 
 # ------------------------------------------------------------------------------------------------ #
 class DataQualityAssessmentStageBuilder(StageBuilder):
-    """Builder class for the Data Quality Assessment (DQA) stage in a data processing pipeline.
-
-    This class extends the `StageBuilder` to specifically handle the construction
-    of a data quality check stage, which includes a variety of data validation and
-    quality assurance tasks. Each detection method corresponds to a specific quality
-    check, which can be configured and added to the stage.
-
-    Attributes:
-        __PHASE (PhaseDef): The phase definition for Data Preparation.
-        __STAGE (StageDef): The stage definition for Data Quality Assessment.
-        _detect_accents (Optional[dict]): Configuration for accent detection.
-        _detect_control_chars (Optional[dict]): Configuration for control character detection.
-        _detect_duplicate_review_ids (Optional[dict]): Configuration for duplicate review ID detection.
-        _detect_duplicate_reviews (Optional[dict]): Configuration for duplicate review detection.
-        _detect_duplicate_rows (Optional[dict]): Configuration for duplicate row detection.
-        _detect_elongation (Optional[dict]): Configuration for elongation detection.
-        _detect_emails (Optional[dict]): Configuration for email detection.
-        _detect_excess_special_chars (Optional[dict]): Configuration for excess special character detection.
-        _detect_excess_whitespace (Optional[dict]): Configuration for excess whitespace detection.
-        _detect_html (Optional[dict]): Configuration for HTML content detection.
-        _detect_invalid_categories (Optional[dict]): Configuration for invalid category detection.
-        _detect_invalid_ratings (Optional[dict]): Configuration for invalid ratings detection.
-        _detect_invalid_review_dates (Optional[dict]): Configuration for invalid review date detection.
-        _detect_less_than_threshold (Optional[dict]): Configuration for threshold-based detection.
-        _detect_non_english_app_names (Optional[dict]): Configuration for non-English app name detection.
-        _detect_non_english_reviews (Optional[dict]): Configuration for non-English review detection.
-        _detect_phone_numbers (Optional[dict]): Configuration for phone number detection.
-        _detect_repeated_chars (Optional[dict]): Configuration for repeated character detection.
-        _detect_repeated_phrases (Optional[dict]): Configuration for repeated phrase detection.
-        _detect_repeated_sequences (Optional[dict]): Configuration for repeated sequence detection.
-        _detect_repeated_words (Optional[dict]): Configuration for repeated word detection.
-        _detect_short_reviews (Optional[dict]): Configuration for short review detection.
-        _detect_urls (Optional[dict]): Configuration for URL detection.
-        _config (dict): Configuration for the DQA stage tasks.
-        _spark (Optional[Any]): Spark session, initialized as None.
-        _tasks (List[Any]): List of tasks built by this stage.
-        _logger (logging.Logger): Logger instance for this class.
-
-    Args:
-        None
-    """
 
     __PHASE = PhaseDef.DATAPREP
     __STAGE = StageDef.DQA
+    __DFTYPE = DFType.SPARK
 
     def __init__(self) -> None:
         super().__init__()
         self.reset()
 
+    @property
+    def phase(self) -> PhaseDef:
+        """
+        The phase of the pipeline associated with the ingest stage.
+
+        Returns:
+            PhaseDef: The phase associated with the pipeline.
+        """
+        return self.__PHASE
+
+    @property
+    def stage(self) -> StageDef:
+        """
+        The stage of the pipeline associated with the ingest stage.
+
+        Returns:
+            StageDef: The stage associated with the pipeline.
+        """
+        return self.__STAGE
+
+    @property
+    def dftype(self) -> DFType:
+        """
+        Defines the dataframe type of the pipeline.
+
+        Returns:
+            DFType: The dataframe type used in the pipeline.
+        """
+        return self.__DFTYPE
+
     def reset(self) -> None:
         super().reset()
+        self._source_config = self._get_dataset_config(
+            phase=self.phase, stage=self.stage, config="source_config"
+        )
+        self._target_config = self._get_dataset_config(
+            phase=self.phase, stage=self.stage, config="target_config"
+        )
 
-        self._stage = None
-
-        self._phase = self.__PHASE
-        self._source_stage = None
-        self._target_stage = None
         self._detect_accents = None
         self._detect_control_chars = None
         self._detect_duplicate_review_ids = None
@@ -111,18 +106,6 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                 SOURCE AND TARGET DATASETS                                   #
-    # -------------------------------------------------------------------------------------------- #
-    def source(self, source_config: DatasetConfig) -> DataQualityAssessmentStageBuilder:
-        self._source_config = source_config
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def target(self, target_config: DatasetConfig) -> DataQualityAssessmentStageBuilder:
-        self._target_config = target_config
-        return self
 
     # -------------------------------------------------------------------------------------------- #
     def detect_privacy_issues(self) -> DataQualityAssessmentStageBuilder:
@@ -323,25 +306,39 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_short_reviews))
         return self
 
-    def build(self) -> DataQualityAssessmentStageBuilder:
+    def build(
+        self,
+        source_config: Optional[DatasetConfig] = None,
+        target_config: Optional[DatasetConfig] = None,
+    ) -> DataQualityAssessmentStage:
         """
-        Builds the Ingest stage by validating configurations, constructing datasets,
-        and assembling tasks.
+        Builds the ingest stage by validating configurations and assembling tasks.
 
+        Args:
+            source_config (Optional[DatasetConfig]): An optional configuration object for
+                the source dataset. If not provided, the method falls back to the source
+                configuration defined in the stage YAML config.
+            target_config (Optional[DatasetConfig]): An optional configuration object for
+                the target dataset. If not provided, the method falls back to the target
+                configuration defined in the stage YAML config.
         Returns:
-            DataQualityAssessmentStageBuilder: The builder instance with the constructed stage.
+            Stage: The DataQualityAssessmentStage object.
         """
         self._validate()
-        self._stage = DataQualityAssessmentStage(
-            source_config=self._source_config,
-            target_config=self._target_config,
+
+        # Obtain a spark session
+        self._spark = self._get_spark(dftype=self.dftype)
+
+        stage = DataQualityAssessmentStage(
+            source_config=source_config or self._source_config,
+            target_config=target_config or self._target_config,
             tasks=self._tasks,
-            state=self._state,
             repo=self._repo,
             dataset_builder=self._dataset_builder,
             spark=self._spark,
         )
-        return self
+        self.reset()
+        return stage
 
     def _validate(self) -> None:
         """

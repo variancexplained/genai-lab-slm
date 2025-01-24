@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+# ================================================================================================ #
+# Project    : AppVoCAI-Discover                                                                   #
+# Version    : 0.1.0                                                                               #
+# Python     : 3.10.14                                                                             #
+# Filename   : /tests/test_core/test_flow.py                                                       #
+# ------------------------------------------------------------------------------------------------ #
+# Author     : John James                                                                          #
+# Email      : john@variancexplained.com                                                           #
+# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# ------------------------------------------------------------------------------------------------ #
+# Created    : Friday January 24th 2025 07:09:48 am                                                #
+# Modified   : Friday January 24th 2025 07:12:29 am                                                #
+# ------------------------------------------------------------------------------------------------ #
+# License    : MIT License                                                                         #
+# Copyright  : (c) 2025 John James                                                                 #
+# ================================================================================================ #
+import inspect
+import logging
+from datetime import datetime
+
+import pytest
+
+from discover.asset.dataset.state import DatasetStateDef
+from discover.core.flow import StageDef
+
+# ------------------------------------------------------------------------------------------------ #
+# pylint: disable=missing-class-docstring, line-too-long
+# mypy: ignore-errors
+# ------------------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------------------ #
+logger = logging.getLogger(__name__)
+# ------------------------------------------------------------------------------------------------ #
+double_line = f"\n{100 * '='}"
+single_line = f"\n{100 * '-'}"
+
+
+@pytest.mark.flowenum
+class TestFlowEnums:  # pragma: no cover
+    # ============================================================================================ #
+    def test_flow_enums(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        assert StageDef.CLEAN == StageDef.from_value("clean")
+        logging.info(StageDef.from_value("clean"))
+
+        assert DatasetStateDef.PUBLISHED == DatasetStateDef.from_value("published")
+        logging.info(DatasetStateDef.from_value("published"))
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)

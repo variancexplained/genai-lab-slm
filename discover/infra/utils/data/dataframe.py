@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 20th 2024 04:35:45 pm                                              #
-# Modified   : Sunday November 10th 2024 07:12:20 pm                                               #
+# Modified   : Friday January 24th 2025 05:08:35 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ from typing import Tuple, Union
 
 import pandas as pd
 import psutil
+from pyspark.sql import DataFrame
 from pyspark.sql import DataFrame as SparkDataFrame
 
 
@@ -88,6 +89,71 @@ def split_dataframe(data, n):
         chunks.append(data.iloc[n * chunk_size :])
 
     return chunks
+
+
+# ------------------------------------------------------------------------------------------------ #
+class PySparkDataFrameMemoryFootprintEstimator:
+    """
+    Estimates the memory footprint of a PySpark DataFrame using a log-based sampling strategy.
+    """
+
+    def estimate_memory_size(self, df: DataFrame) -> int:
+        """
+        Estimates the total memory footprint of a PySpark DataFrame in bytes.
+
+        Args:
+            df (DataFrame): The PySpark DataFrame to estimate the memory size for.
+
+        Returns:
+            int: The estimated memory size in bytes.
+        """
+        # Get total row count in the DataFrame
+        total_rows = df.count()
+
+        # Calculate optimal sample size based on total rows
+        sample_size = self._calculate_sample_size(total_rows=total_rows)
+
+        # Calculate sampling fraction to achieve desired sample size
+        sample_fraction = min(sample_size / total_rows, 1.0)
+
+        # Take sample from the DataFrame
+        sample_df = df.sample(withReplacement=False, fraction=sample_fraction)
+
+        # Calculate the average row size (in bytes)
+        sample_row_count = sample_df.count()
+        avg_row_size = (
+            sample_df.rdd.map(lambda row: len(str(row))).mean()
+            if sample_row_count > 0
+            else 0
+        )
+
+        # Estimate total size based on the average row size
+        estimated_size = avg_row_size * total_rows
+
+        return int(estimated_size)
+
+    def _calculate_sample_size(
+        self,
+        total_rows: int,
+        base: int = 10,
+        scaling_factor: int = 500,
+        min_sample_rows: int = 1000,
+    ) -> int:
+        """
+        Calculates a log-based sample size.
+
+        Args:
+            total_rows (int): Total number of rows in the DataFrame.
+            base (int): Base of the logarithm. Defaults to 10.
+            scaling_factor (int): Multiplier to scale the sample size. Defaults to 500.
+            min_sample_rows (int): Minimum sample size. Defaults to 1000.
+
+        Returns:
+            int: The calculated sample size.
+        """
+        log_rows = math.log(max(total_rows, 1), base)  # Avoid log(0) by using max(1)
+        sample_size = max(int(log_rows * scaling_factor), min_sample_rows)
+        return sample_size
 
 
 # ------------------------------------------------------------------------------------------------ #

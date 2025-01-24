@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:42:37 am                                               #
-# Modified   : Thursday January 23rd 2025 09:33:05 pm                                              #
+# Modified   : Friday January 24th 2025 09:13:57 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,13 +20,12 @@
 from __future__ import annotations
 
 from dataclasses import field
+from datetime import datetime
 from typing import Optional
 
 from pydantic.dataclasses import dataclass
 
 from discover.asset.base.identity import AssetPassport
-from discover.asset.dataset.state import DatasetState
-from discover.core.dtypes import DFType
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -41,19 +40,15 @@ class DatasetPassport(AssetPassport):
 
     Inherits from `AssetPassport`
 
-    Attributes:
-        source (Optional[DatasetPassport]): A reference to the source dataset.
-        dftype (Optional[DFType]): The DataFrame type. Defaults to `DFType.SPARK`.
-        filepath (str): The location of the data file.
-
+    Args:
+        source (DatasetPassport): The source dataset passport.
     """
 
-    status: Optional[DatasetState] = DatasetState.CREATED
     source: Optional[DatasetPassport] = field(default=None)
-    dftype: Optional[DFType] = DFType.SPARK
 
     def __post_init__(self) -> None:
         """Sets the description if not already set."""
+        self.created = datetime.now()
         self.description = self.description or self._generate_default_description()
 
     def _generate_default_description(self) -> str:
@@ -69,6 +64,7 @@ class DatasetPassport(AssetPassport):
         description = f"Dataset {self.name} created "
         if self.source:
             description += f"from {self.source.asset_id} "
-        description += f"in the {self.phase.label} - {self.stage.label} "
-        description += f"on {self.created.strftime('%Y-%m-%d')} at {self.created.strftime('%H:%M:%S')}"
+        description += (
+            f"in the {self.phase.label} - {self.stage.label} by {self.creator}."
+        )
         return description

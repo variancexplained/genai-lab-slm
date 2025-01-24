@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 04:10:40 pm                                             #
-# Modified   : Thursday January 23rd 2025 06:10:17 pm                                              #
+# Modified   : Friday January 24th 2025 08:38:17 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,15 +23,12 @@ import shutil
 from typing import Optional, Union
 
 import pandas as pd
-import pyspark
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 
 from discover.core.dtypes import DFType
 from discover.infra.persist.repo.base import DAL
 from discover.infra.persist.repo.file.factory import DataFrameIOFactory
 from discover.infra.utils.file.fileset import FileFormat
-
-DataFrame = Union[pd.DataFrame, pyspark.sql.DataFrame]
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -63,9 +60,8 @@ class FAO(DAL):
     def create(
         self,
         filepath: str,
-        dftype: DFType,
         file_format: FileFormat,
-        dataframe: Union[pd.DataFrame, DataFrame],
+        dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
         overwrite: bool = False,
     ) -> None:
         """
@@ -88,6 +84,10 @@ class FAO(DAL):
 
         # Ensure base directory exists. A defensive measure.
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
+        # Get the DataFrame type for the IO factory
+        dftype = DFType.SPARK if isinstance(dataframe, DataFrame) else DFType.PANDAS
+
         # Obtain the writer based on dataframe type and file format from the io factory
         writer = self._iofactory.get_writer(
             dftype=dftype,

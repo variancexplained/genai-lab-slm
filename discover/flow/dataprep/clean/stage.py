@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Thursday January 23rd 2025 07:20:22 am                                              #
+# Modified   : Friday January 24th 2025 09:40:49 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -122,7 +122,9 @@ class DataCleaningStage(Stage):
         )
 
         # Add the dataset to the repository
-        self._repo.add(asset=clean_dataset, dftype=DFType.PANDAS)
+        self._repo.add(
+            asset=clean_dataset, dftype=DFType.PANDAS, entity=self.__class__.__name__
+        )
 
         # Update the flow state
         self._state.create(passport=passport)

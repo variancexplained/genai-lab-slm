@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Thursday January 23rd 2025 05:48:35 pm                                              #
+# Modified   : Friday January 24th 2025 01:26:35 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -139,14 +139,9 @@ class StageBuilder(ABC):
         self._target_config = self._get_dataset_config(
             phase=self.phase, stage=self.stage, config="target_config"
         )
-        self._spark = (
-            None
-            if self._source_config.dftype == DFType.PANDAS
-            else self._get_spark(dftype=self._source_config.dftype)
-        )
 
         self._task_configs = self._get_config(
-            phase=self.phase, stage=self.staeg, config="tasks"
+            phase=self.phase, stage=self.stage, config="tasks"
         )
         self._tasks: List[Task] = []
 

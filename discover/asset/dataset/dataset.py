@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Thursday January 23rd 2025 10:01:13 pm                                              #
+# Modified   : Friday January 24th 2025 08:40:33 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,16 +21,15 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import pandas as pd
 from pyspark.sql import DataFrame
 
 from discover.analytics.dqa import DQA
 from discover.asset.base.asset import Asset
-from discover.asset.dataset.dataframer import DataFramer
 from discover.asset.dataset.identity import DatasetPassport
-from discover.asset.dataset.state import DatasetState
+from discover.asset.dataset.state import DatasetState, DatasetStateDef
 from discover.infra.utils.file.fileset import FileSet
 
 # ------------------------------------------------------------------------------------------------ #
@@ -39,60 +38,108 @@ from discover.infra.utils.file.fileset import FileSet
 
 
 class Dataset(Asset):
-    """A Dataset object represents a reviews dataset, its identifying properties, and metadata.
+    """
+    Represents a dataset in the asset repository.
 
-    This class encapsulates the data files, metadata (passport), and a data manipulation object (DataFramer) associated with a dataset.
-
-    Args:
-        passport (DatasetPassport): Key identifying information and metadata such as the dataset asset_id,
-            phase, stage, name, description, file format, and dataframe type.
-        dataframer (DataFramer): Wrapper for the DataFrame, encapsulating its data as well as
-            metadata and basic descriptive statistics.
+    This class encapsulates the dataset's metadata (via `DatasetPassport`),
+    its underlying data (as a DataFrame), its state, and event log. The dataset
+    can be accessed, consumed, published, and have events logged, with tracking
+    of its status throughout its lifecycle.
 
     Attributes:
-        _ passport (DatasetPassport): The dataset's passport containing metadata.
-        _ file (FileSet): File metadata
-        _ dataframer (DataFramer): Object encapsulating the DataFrame and select metadata and basic summary statistics.
-        _logger (logging.Logger): A logger object for recording dataset events.
-        _dqa (DQA, optional): The Data Quality Analysis object associated with the dataset, if it has undergone data quality assessment.
+        _passport (DatasetPassport): The passport containing the metadata for the dataset.
+        _dataframe (Union[pd.DataFrame, DataFrame]): The actual data contained within the dataset.
+        _state (DatasetState): The state of the dataset, tracking its current status.
+        _dataset_summarizer_factory (DatasetSummarizerFactory): Factory used to generate summarizers.
+        _file (Optional[FileSet]): The file set associated with the dataset, if available.
+        _info (Optional[pd.DataFrame]): Information summary of the dataset's structure.
+        _summary (Optional[Dict[str, str]]): A summary of the dataset's descriptive statistics.
+        _dqa (Optional[DQA]): The data quality analysis for the dataset.
+        _accessed (Optional[datetime]): The timestamp when the dataset was last accessed.
+        _created (datetime): The timestamp when the dataset was created.
+        _status (DatasetState): The current status of the dataset.
+        _eventlog (Dict[datetime, str]): A log of events associated with the dataset, with timestamps.
 
     Methods:
-        __eq__(self, other) -> bool: Compares two Dataset objects for equality.
-        __getstate__(self) -> dict: Prepares the object's state for serialization.
-        __setstate__(self, state) -> None: Restores the object's state during deserialization.
-        @property
-        def file(self) -> FileSet: Provides access to the FileSet object.
-        @property
-        def info(self) -> pd.DataFrame: Returns the data files' information.
-        @property
-        def summary(self) -> None: Prints a summary of the data files.
-        @property
-        def dqa(self) -> DQA: Gets the Data Quality Analysis object, if it exists. Raises an error if not available.
-        @property
-        def dataframe(self) -> Union[pd.DataFrame, DataFrame]: Gets the underlying pandas DataFrame from the DataFramer object.
-        def serialize(self) -> pd.DataFrame: Prepares the object for serialization by nullifying the dataframe.
-        def deserialize(self, dataframe: Union[pd.DataFrame, DataFrame]) -> None: Restores the dataframe during deserialization.
+        __eq__(self, other: object) -> bool:
+            Checks equality between two Dataset objects based on their asset ID and file path.
+
+        __getstate__(self) -> dict:
+            Prepares the object's state for serialization.
+
+        __setstate__(self, state) -> None:
+            Restores the object's state during deserialization.
+
+        status(self) -> DatasetState:
+            Returns the current status of the dataset.
+
+        eventlog(self) -> pd.DataFrame:
+            Returns the dataset's event log as a DataFrame.
+
+        file(self) -> FileSet:
+            Returns or sets the file set associated with the dataset.
+
+        info(self) -> pd.DataFrame:
+            Returns a summary of the dataset's structure and properties.
+
+        summary(self) -> Dict[str, str]:
+            Returns a summary of the dataset's descriptive statistics.
+
+        dqa(self) -> DQA:
+            Returns the data quality analysis object for the dataset.
+
+        dataframe(self) -> Union[pd.DataFrame, DataFrame]:
+            Returns the underlying DataFrame object containing the dataset's data.
+
+        serialize(self) -> pd.DataFrame:
+            Prepares the dataset for serialization by nullifying the DataFrame.
+
+        deserialize(self, dataframe: Union[pd.DataFrame, DataFrame]) -> None:
+            Restores the dataset's DataFrame after deserialization.
+
+        get_registration(self) -> Dict[str, str]:
+            Returns metadata and descriptive statistics for dataset registration.
+
+        access(self, entity: Optional[str] = None) -> None:
+            Marks the dataset as accessed by a specified entity.
+
+        consume(self, entity: Optional[str] = None) -> None:
+            Marks the dataset as consumed by a specified entity.
+
+        publish(self, entity: Optional[str] = None) -> None:
+            Marks the dataset as published to the repository by a specified entity.
+
+        add_event(self, entity: str, event: str) -> None:
+            Adds an event to the dataset's event log.
+
+    Private Methods:
+        _get_info(self) -> Union[pd.DataFrame, DataFrame]:
+            Returns a DataFrame containing structural information of the dataset.
+
+        _get_summary(self) -> pd.DataFrame:
+            Returns a descriptive summary of the dataset.
+
+        _get_dqa(self) -> DQA:
+            Returns the data quality analysis (DQA) for the dataset.
     """
 
     def __init__(
         self,
         passport: DatasetPassport,
-        dataframer: DataFramer,
+        dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
+        state: DatasetState,
+        dataset_summarizer_factory,
     ) -> None:
         super().__init__(passport=passport)
         self._passport = passport
-        self._dataframer = dataframer
+        self._dataframe = dataframe
+        self._state = state
+        self._dataset_summarizer_factory = dataset_summarizer_factory
 
         self._file = None
         self._info = None
         self._summary = None
         self._dqa = None
-
-        # Initialize state
-        self._accessed = None
-        self._created = datetime.now()
-        self._status = DatasetState.CREATED
-        self._eventlog = {self._created: "Dataset created."}
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -127,19 +174,39 @@ class Dataset(Asset):
         self.__dict__.update(state)
 
     @property
-    def status(self) -> DatasetState:
+    def status(self) -> DatasetStateDef:
         """Returns the status of the Dataset"""
-        return self._status
+        return self._state.status
 
     @property
     def created(self) -> datetime:
-        """Returns the datetime the dataset was created."""
-        return self._created
+        """Returns the status of the Dataset"""
+        return self._state.created
 
     @property
-    def accessed(self) -> datetime:
-        """Returns the datetime the dataset was last accessed."""
-        return self._accessed
+    def published(self) -> datetime:
+        """
+        Returns the timestamp of when the dataset was published.
+
+        Returns:
+            datetime: The datetime the dataset was published.
+        """
+        return self._state.published
+
+    @property
+    def consumed(self) -> datetime:
+        """
+        Returns the timestamp of when the dataset was consumed.
+
+        Returns:
+            datetime: The datetime the dataset was consumed.
+        """
+        return self._state.consumed
+
+    @property
+    def eventlog(self) -> pd.DataFrame:
+        """Returns the Datasets event log"""
+        return self._state.get_events()
 
     @property
     def file(self) -> FileSet:
@@ -172,15 +239,15 @@ class Dataset(Asset):
     @property
     def dataframe(self) -> Union[pd.DataFrame, DataFrame]:
         """Returns the underlying DataFrame object."""
-        return self._dataframer.dataframe
+        return self._dataframe
 
     def serialize(self) -> pd.DataFrame:
         """Prepare the object for serialization by nullifying the dataframe."""
         # Copy the dataframe.
-        df = self._dataframer.dataframe
+        df = self._dataframe.copy()
 
         # Nullify the dataframe for serialization
-        self._dataframer.dataframe = None
+        setattr(self, "_dataframe", None)
 
         return df
 
@@ -190,7 +257,7 @@ class Dataset(Asset):
         Args:
             dataframe (Union[pd.DataFrame, DataFrame]): The DataFrame contents.
         """
-        self._dataframer.dataframe = dataframe
+        setattr(self, "_dataframe", dataframe)
 
     def get_registration(self) -> Dict[str, str]:
         """Returns a dictionary containing metadata and brief descriptive statistics for registration.
@@ -198,53 +265,52 @@ class Dataset(Asset):
         Returns:
             Dict[str,str]: Dictionary containing metadata and descriptive statistics for the Dataset registry.
         """
-        passport = self._passport.as_dict()
-        passport.update(self.summary)
-        passport["status"] = self._status
-        return passport
+        entry = self._passport.as_dict()
+        entry.update(self._state.as_dict())
+        return entry
 
-    def access(self) -> None:
-        """Method called by the repository when the dataset is accessed."""
-        dt = datetime.now()
-        self._eventlog[dt] = "Dataset Accessed"
-        self.accessed = dt
+    def access(self, entity: Optional[str] = None) -> None:
+        """Method called by the repository when the dataset is accessed.
 
-    def consume(self) -> None:
-        """Method called when the Dataset has been consumed by a data processing or machine learning pipeline."""
-        self._status = DatasetState.CONSUMED
-        self._eventlog[datetime.now()] = "Dataset Consumed"
+        Args:
+            entity (str): The entity class name requesting access.
+        """
+        self._state.access(entity)
 
-    def publish(self) -> None:
-        """Method called when the Dataset is being published to the repository."""
-        self._status = DatasetState.PUBLISHED
-        self._eventlog[datetime.now()] = "Dataset Published"
+    def consume(self, entity: Optional[str] = None) -> None:
+        """Method called when the Dataset has been consumed by a data processing or machine learning pipeline.
 
-    def add_event(self, event: str) -> None:
+        Args:
+            entity (str): The entity class name consuming the dataset.
+        """
+        self._state.consume(entity=entity)
+
+    def publish(self, entity: Optional[str] = None) -> None:
+        """Method called when the Dataset is being published to the repository.
+
+        Args:
+            entity (str): The entity class name publishing the dataset.
+        """
+        self._state.publish(entity=entity)
+
+    def add_event(self, entity: str, event: str) -> None:
         """Adds an event to the event log
 
         Args:
-            event (str): Description of the event
+            entity (str): The entity responsible for the event.
+            event (str): A description of the event.
         """
-        dt = datetime.now()
-        self._eventlog[dt] = event
-
-    def is_valid(self, strict: bool = False) -> bool:
-        """Checks the validity of the Dataset and a boolean indicator.
-
-        A Dataset is valid if it contains a valid non-empty DataFrame object.
-        """
-        return isinstance(
-            self._dataframer.dataframe,
-            (pd.DataFrame, pd.core.frame.DataFrame, DataFrame),
-        )
+        self._state.add_event(entity=entity, event=event)
 
     def _get_info(self) -> Union[pd.DataFrame, DataFrame]:
         """Returns a DataFrame containing DataFrame structural information"""
-        return self._dataframer.info()
+        summarizer = self._dataset_summarizer_factory.get_summarizer(df=self._dataframe)
+        return summarizer.info(df=self._dataframe)
 
     def _get_summary(self) -> pd.DataFrame:
         """Prints a qualitative and descriptive summary of the Dataset."""
-        return self._dataframer.summary()
+        summarizer = self._dataset_summarizer_factory.get_summarizer(df=self._dataframe)
+        return summarizer.summarize(df=self._dataframe)
 
     def _get_dqa(self) -> DQA:
         """Returns the Data Quality Analysis for the Dataset."""

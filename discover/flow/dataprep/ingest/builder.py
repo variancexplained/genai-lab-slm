@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Thursday January 23rd 2025 05:52:17 pm                                              #
+# Modified   : Friday January 24th 2025 12:21:59 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -58,6 +58,7 @@ class IngestStageBuilder(StageBuilder):
 
     __PHASE = PhaseDef.DATAPREP
     __STAGE = StageDef.INGEST
+    __DFTYPE = DFType.PANDAS
 
     def __init__(self) -> None:
         """
@@ -98,6 +99,16 @@ class IngestStageBuilder(StageBuilder):
         """
         return self.__STAGE
 
+    @property
+    def dftype(self) -> DFType:
+        """
+        Defines the dataframe type of the pipeline.
+
+        Returns:
+            DFType: The dataframe type used in the pipeline.
+        """
+        return self.__DFTYPE
+
     def reset(self) -> None:
         """
         Resets the internal state of the builder by clearing configurations and tasks.
@@ -109,11 +120,6 @@ class IngestStageBuilder(StageBuilder):
         )
         self._target_config = self._get_dataset_config(
             phase=self.phase, stage=self.stage, config="target_config"
-        )
-        self._spark = (
-            None
-            if self._source_config.dftype == DFType.PANDAS
-            else self._get_spark(dftype=self._source_config.dftype)
         )
         self._encoding = None
         self._datatypes = None

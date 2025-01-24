@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Thursday January 23rd 2025 05:35:21 am                                              #
+# Modified   : Friday January 24th 2025 05:36:19 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,9 +21,10 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
+from dataclasses import field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from pydantic.dataclasses import dataclass
 
@@ -54,12 +55,14 @@ class AssetConfig:
         stage (StageDef): The stage associated with the asset.
         name (str): The name of the asset.
         file_format (FileFormat): The file format of the asset.
+        description (str): Description of the asset. Optional
     """
 
     phase: PhaseDef
     stage: StageDef
     name: str
     file_format: FileFormat
+    description: Optional[str] = field(default=None)
 
 
 # ------------------------------------------------------------------------------------------------ #

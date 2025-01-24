@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Thursday January 23rd 2025 05:17:35 pm                                              #
+# Modified   : Friday January 24th 2025 08:06:50 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -31,48 +31,36 @@ from discover.asset.dataset.state import DatasetState
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
-from discover.infra.exception.object import ObjectNotFoundError
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.service.logging.stage import stage_logger
 
 
 # ------------------------------------------------------------------------------------------------ #
 class Stage(ABC):
-    """Abstract base class representing a stage in a data processing flow.
+    """Abstract base class for defining a stage in a data pipeline.
 
-    This class defines the structure and behavior for stages, including handling
-    source data, executing tasks, and saving target datasets. Subclasses should
-    implement specific details for the phase, stage, and dataframe type.
+    This class provides a framework for implementing a data pipeline stage, including
+    configuration, task execution, and dataset management. Subclasses must implement
+    the `phase`, `stage`, and `dftype` properties, as well as any stage-specific logic.
 
     Args:
-        source_config (Dict[str, str]): Configuration details for the source dataset.
-        target_config ((Dict[str, str]): Configuration details for the target dataset.
-        tasks (List[Task]): List of tasks to be executed sequentially.
-        state (FlowState): State management for the flow.
-        repo (DatasetRepo): Repository for dataset storage and retrieval.
-        dataset_builder (DatasetBuilder): Builder for creating and saving datasets.
-        spark (Optional[SparkSession]): Optional Spark session for data processing.
+        source_config (DatasetConfig): Configuration for the source dataset.
+        target_config (DatasetConfig): Configuration for the target dataset.
+        tasks (List[Task]): List of tasks to be executed within this stage.
+        repo (DatasetRepo): Repository for dataset storage and management.
+        dataset_builder (DatasetBuilder): Builder for creating `Dataset` objects.
+        spark (Optional[SparkSession]): Optional Spark session for distributed processing.
 
     Attributes:
-        _source_config (Dict[str, str]): Configuration details for the source dataset.
-        _target_config (Dict[str, str]): Configuration details for the target dataset.
-        _tasks (List[Task]): List of tasks to be executed sequentially.
-        _state (FlowState): State management for the flow.
-        _repo (DatasetRepo): Repository for dataset storage and retrieval.
-        _dataset_builder (DatasetBuilder): Builder for creating and saving datasets.
-        _spark (Optional[SparkSession]): Optional Spark session for data processing.
-        _source (Optional[Dataset]): The source dataset used in the stage.
+        _source_config (DatasetConfig): Stores the configuration for the source dataset.
+        _target_config (DatasetConfig): Stores the configuration for the target dataset.
+        _tasks (List[Task]): List of tasks to execute in the stage.
+        _repo (DatasetRepo): Repository for managing datasets.
+        _dataset_builder (DatasetBuilder): Builder for constructing datasets.
+        _spark (Optional[SparkSession]): Optional Spark session for distributed data processing.
+        _source (Optional[Dataset]): Reference to the source dataset.
+        _target (Optional[Dataset]): Reference to the target dataset.
         _logger (Logger): Logger instance for the stage.
-
-    Methods:
-        phase: Abstract property to define the phase of the stage.
-        stage: Abstract property to define the stage identifier.
-        dftype: Abstract property to define the dataframe type.
-        run(force: bool): Executes the stage, optionally forcing re-execution.
-        _run(): Internal method to run the stage tasks and save results.
-        get_source_dataset(): Retrieves the source dataset based on the configuration.
-        save_target_dataset(source, dataframe): Saves the target dataset after processing.
-        _get_target(): Retrieves the target dataset from the state and repository.
     """
 
     def __init__(
@@ -84,17 +72,6 @@ class Stage(ABC):
         dataset_builder: DatasetBuilder,
         spark: Optional[SparkSession] = None,
     ) -> None:
-        """Initializes a Stage instance with the given configuration and components.
-
-        Args:
-            source_config (Dict[str, str]): Configuration for the source data.
-            target_config ((Dict[str, str]): Configuration details for the target dataset.
-            tasks (List[Task]): List of tasks to execute in the stage.
-            state (FlowState): Flow state management object.
-            repo (DatasetRepo): Dataset repository for storage and retrieval.
-            dataset_builder (DatasetBuilder): Builder for creating datasets.
-            spark (Optional[SparkSession]): Optional Spark session for processing.
-        """
         self._source_config = source_config
         self._target_config = target_config
         self._tasks = tasks
@@ -112,9 +89,6 @@ class Stage(ABC):
     def phase(self) -> PhaseDef:
         """Abstract property to define the phase of the stage.
 
-        Subclasses should implement this to return the phase of the stage,
-        which typically correlates with the step in the overall data pipeline.
-
         Returns:
             PhaseDef: The phase definition of the stage.
         """
@@ -124,9 +98,6 @@ class Stage(ABC):
     @abstractmethod
     def stage(self) -> StageDef:
         """Abstract property to define the stage identifier.
-
-        This should be implemented by subclasses to specify the unique
-        identifier for the stage, used in tracking and state management.
 
         Returns:
             StageDef: The stage definition.
@@ -138,9 +109,6 @@ class Stage(ABC):
     def dftype(self) -> DFType:
         """Abstract property to define the dataframe type.
 
-        Defines the expected type of the dataframe, such as pandas or Spark,
-        which guides how data is processed within the stage.
-
         Returns:
             DFType: The dataframe type used in the stage.
         """
@@ -150,92 +118,89 @@ class Stage(ABC):
     def run(self, force: bool = False) -> Dataset:
         """Executes the stage, optionally forcing re-execution.
 
-        This method checks if the stage target already exists. If `force`
-        is False and the target exists, it retrieves the dataset from the state.
-        Otherwise, it executes the stage's tasks and saves the result.
-
         Args:
             force (bool): If True, forces re-execution of the stage. Defaults to False.
 
         Returns:
             Dataset: The resulting dataset after stage execution.
         """
-        # Determine whether to obtain the target from cache or run the pipeline.
         if self._fresh_cache_exists() and not force:
-            return self._get_target()
+            dataset = self._get_dataset(
+                phase=self._target_config.phase,
+                stage=self._target_config.stage,
+                name=self._target_config.name,
+            )
+            self._logger.debug(
+                f"Obtained target dataset for the {self.stage.label} from cache."
+            )
+            return dataset
         else:
             return self._run()
 
     def _fresh_cache_exists(self) -> bool:
-        """Returns a boolean indicating whether a fresh cache of the target is extant.
-
-        A fresh cache is the condition in which the source has been consumed,
-        the target exists, implying that the target reflects the source
-        and the transformations executed in this stage.
+        """Checks if a fresh cache of the target dataset exists.
 
         Returns:
-            bool: True if the above condition is met, False otherwise.
-
+            bool: True if a fresh cache exists, False otherwise.
         """
-        # Get the source asset id
         source_asset_id = self._repo.get_asset_id(
             phase=self._source_config.phase,
             stage=self._source_config.stage,
             name=self._source_config.name,
         )
-
-        # Get the metadata for the source dataset
         source_meta = self._repo.get_meta(asset_id=source_asset_id)
 
-        # If the source has not been consumed, return False
-        if not source_meta.status == DatasetState.CONSUMED:
+        if source_meta.status != DatasetState.CONSUMED:
+            msg = f"The source dataset {source_asset_id} status is {source_meta.status} and has not  yet been consumed."
+            self._logger.debug(msg)
             return False
 
-        # If the target dataset does not exist, return False
         target_asset_id = self._repo.get_asset_id(
             phase=self._target_config.phase,
             stage=self._target_config.stage,
             name=self._target_config.name,
         )
         if not self._repo.exists(asset_id=target_asset_id):
+            msg = f"The target dataset {target_asset_id} cache does not exist in the repository."
+            self._logger.debug(msg)
             return False
-        else:
-            return True
+
+        msg = f"A fresh cache for target dataset {target_asset_id} exists."
+        self._logger.debug()
+        return True
 
     def _run(self) -> Dataset:
-        """Internal method to execute tasks and save the resulting dataset.
-
-        This method handles the retrieval of source data, execution of the configured
-        tasks in sequence, and saving of the processed dataset.
+        """Executes the stage tasks and saves the resulting dataset.
 
         Returns:
             Dataset: The processed dataset.
         """
-        # Get the source dataset
+        self._remove_dataset(
+            phase=self._target_config.phase,
+            stage=self._target_config.stage,
+            name=self._target_config.name,
+        )
+
         source = self._get_dataset(
             phase=self._source_config.phase,
             stage=self._source_config.stage,
             name=self._source_config.name,
         )
-        # Extract the underlying dataframe
         dataframe = source.dataframe
-        # Process
+
         for task in self._tasks:
             try:
                 dataframe = task.run(dataframe)
             except Exception as e:
-                msg = f"Error in task {task.__class__.__name__}: {e}"
-                self._logger.error(msg)
-                raise RuntimeError(msg)
+                self._logger.error(f"Error in task {task.__class__.__name__}: {e}")
+                raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
 
-        # Create target dataset and publish to repository
         target = self._create_dataset(
             source=source, config=self._target_config, dataframe=dataframe
         )
-        target = self._repo.add(dataset=target)
+        target = self._repo.add(dataset=target, entity=self.__class__.__name__)
 
-        # Mark the source dataset as consumed and persist
-        source.consume()
+        source.consume(entity=self.__class__.__name__)
         self._repo.update(dataset=source)
 
         return target
@@ -246,15 +211,15 @@ class Stage(ABC):
         config: DatasetConfig,
         dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
     ) -> Dataset:
-        """Creates a Dataset object based on a configuration and given dataframe.
+        """Creates a Dataset object based on configuration and a dataframe.
 
         Args:
             source (Dataset): The source dataset.
-            config (DatasetConfig): Configuration for the dataset
-            dataframe (Union[pd.DataFrame, DataFrame]): The dataframe content
+            config (DatasetConfig): Configuration for the dataset.
+            dataframe (Union[pd.DataFrame, DataFrame]): The dataframe content.
 
         Returns:
-            Dataset: The Datset object
+            Dataset: The resulting Dataset object.
         """
         return (
             self._dataset_builder.from_config(config=config)
@@ -265,32 +230,42 @@ class Stage(ABC):
         )
 
     def _get_dataset(self, phase: PhaseDef, stage: StageDef, name: str) -> Dataset:
-        """Retrieves the target dataset from the state and repository.
+        """Retrieves a dataset from the repository.
 
         Args:
-            phase (PhaseDef): The phase for the Dataset.
-            stage (StageDef): The stage for the Dataset.
-            name (str): The name of the Dataset
+            phase (PhaseDef): The phase of the dataset.
+            stage (StageDef): The stage of the dataset.
+            name (str): The name of the dataset.
 
         Returns:
-            Dataset: The target dataset.
+            Dataset: The dataset object.
 
         Raises:
             ObjectNotFoundError: If the dataset is not found.
-
-        Example:
-            >>> target_dataset = stage._get_target()
+            TypeError: If the retrieved object is not a Dataset.
         """
-        # Get the asset id
-        asset_id = self._repo.get_asset_id(
-            phase=phase,
-            stage=stage,
-            name=name,
+        asset_id = self._repo.get_asset_id(phase=phase, stage=stage, name=name)
+        dataset = self._repo.get(
+            asset_id=asset_id,
+            dftype=self.dftype,
+            spark=self._spark,
+            entity=self.__class__.__name__,
         )
-        dataset = self._repo.get(asset_id=asset_id)
         if not isinstance(dataset, Dataset):
-            msg = f"Expected a Dataset object for dataset {asset_id}. Received a {type(dataset)} object."
-            self._logger.error(msg)
-            raise ObjectNotFoundError(msg)
-
+            self._logger.error(
+                f"Expected a Dataset object for {asset_id}. Received {type(dataset)}."
+            )
+            raise TypeError(f"Invalid dataset type for {asset_id}.")
         return dataset
+
+    def _remove_dataset(self, phase: PhaseDef, stage: StageDef, name: str) -> None:
+        """Removes a dataset from the repository if it exists.
+
+        Args:
+            phase (PhaseDef): The phase of the dataset.
+            stage (StageDef): The stage of the dataset.
+            name (str): The name of the dataset.
+        """
+        asset_id = self._repo.get_asset_id(phase=phase, stage=stage, name=name)
+        if self._repo.exists(asset_id=asset_id):
+            self._repo.remove(asset_id=asset_id)

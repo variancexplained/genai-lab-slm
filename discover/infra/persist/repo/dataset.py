@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Thursday January 23rd 2025 08:50:12 pm                                              #
+# Modified   : Friday January 24th 2025 09:37:27 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -83,25 +83,27 @@ class DatasetRepo(Repo):
         """Returns the repository registry."""
         return self._rao.read_all()
 
-    def add(self, dataset: Dataset) -> Dataset:
+    def add(self, dataset: Dataset, entity: str = None) -> Dataset:
         """Adds a Dataset dataset to the repository.
 
         Args:
             dataset (Dataset): The dataset object to be added to the repository.
+            entity (str): The class name adding the dataset.
 
         Returns:
             Dataset: The dataset
         """
 
+        self._logger.info(f"Dataset {dataset.asset_id} being published by {entity}")
+
         # 1.  Update the Dataset's status to `PUBLISHED`
-        dataset.publish()
+        dataset.publish(entity=entity)
 
         # 2. Determine filepath.
         filepath = self._get_filepath(dataset=dataset)
 
         # 3. Persist the DataFrame to file.
         self._fao.create(
-            dftype=dataset.passport.dftype,
             filepath=filepath,
             file_format=dataset.passport.file_format,
             dataframe=dataset.dataframe,
@@ -124,6 +126,7 @@ class DatasetRepo(Repo):
         asset_id: str,
         spark: Optional[SparkSession] = None,
         dftype: Optional[DFType] = None,
+        entity: Optional[str] = None,
     ) -> "Dataset":
         """
         Retrieve a Dataset by its dataset ID and load its data into memory.
@@ -134,6 +137,7 @@ class DatasetRepo(Repo):
             dftype (Optional[DFType]): The dataframe type to return. If not provided, it returns
                 the type designated in the dataset. This allows datasets saved as pandas dataframes to
                 be read using another spark or another dataframe type.
+            entity (str): Class name requesting the dataset.
 
         Returns:
             Dataset: The reconstituted dataset with its data loaded.
@@ -146,7 +150,7 @@ class DatasetRepo(Repo):
         dataset = self._dao.read(asset_id=asset_id)
 
         # 2. If the dftype has not been provided, we'll use the dftype native to the dataset.
-        dftype = dftype or dataset.dftype
+        dftype = dftype or dataset.passport.dftype
 
         # 3. Read the DataFrame from file
         df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
@@ -155,25 +159,31 @@ class DatasetRepo(Repo):
         dataset.deserialize(dataframe=df)
 
         # 5. Mark the dataset as accessed.
-        dataset.access()
+        dataset.access(entity=entity)
 
         # 6. Update the Dataset object metadata
-        self._dao.update(dataset=dataset)
+        self._dao.update(asset=dataset)
 
         # Update the registry accordingly
         self._rao.update(asset=dataset)
         return dataset
 
-    def get_meta(self, asset_id: str) -> DatasetPassport:
+    def get_meta(
+        self,
+        asset_id: str,
+        entity: Optional[str] = None,
+    ) -> DatasetPassport:
         """Returns the dataset's metadata
 
         Args:
             asset_id (str): The identifier of the dataset passport to retrieve.
+            entity (str): Class name requesting the dataset.
 
         Returns:
             DatasetPassport: The dataset's passport
         """
-        return self._dao.read(asset_id=asset_id)
+        dataset_meta = self._dao.read(asset_id=asset_id)
+        return dataset_meta
 
     def get_asset_id(self, phase: PhaseDef, stage: StageDef, name: str) -> str:
         """Returns an asset id given the parameters
@@ -223,6 +233,7 @@ class DatasetRepo(Repo):
 
         Args:
             dataset (Dataset): The dataset object to be updated.
+            entity (str): Class name requesting the dataset.
 
         Returns:
             None
