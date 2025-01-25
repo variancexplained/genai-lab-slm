@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Friday January 24th 2025 04:28:22 pm                                                #
+# Modified   : Saturday January 25th 2025 12:05:29 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -50,10 +50,7 @@ class Dataset(Asset):
         _passport (DatasetPassport): The passport containing the metadata for the dataset.
         _dataframe (Union[pd.DataFrame, DataFrame]): The actual data contained within the dataset.
         _state (DatasetState): The state of the dataset, tracking its current status.
-        _dataset_summarizer_factory (DatasetSummarizerFactory): Factory used to generate summarizers.
         _file (Optional[FileSet]): The file set associated with the dataset, if available.
-        _info (Optional[pd.DataFrame]): Information summary of the dataset's structure.
-        _summary (Optional[Dict[str, str]]): A summary of the dataset's descriptive statistics.
         _dqa (Optional[DQA]): The data quality analysis for the dataset.
         _accessed (Optional[datetime]): The timestamp when the dataset was last accessed.
         _created (datetime): The timestamp when the dataset was created.
@@ -78,12 +75,6 @@ class Dataset(Asset):
 
         file(self) -> FileSet:
             Returns or sets the file set associated with the dataset.
-
-        info(self) -> pd.DataFrame:
-            Returns a summary of the dataset's structure and properties.
-
-        summary(self) -> Dict[str, str]:
-            Returns a summary of the dataset's descriptive statistics.
 
         dqa(self) -> DQA:
             Returns the data quality analysis object for the dataset.
@@ -113,11 +104,6 @@ class Dataset(Asset):
             Adds an event to the dataset's event log.
 
     Private Methods:
-        _get_info(self) -> Union[pd.DataFrame, DataFrame]:
-            Returns a DataFrame containing structural information of the dataset.
-
-        _get_summary(self) -> pd.DataFrame:
-            Returns a descriptive summary of the dataset.
 
         _get_dqa(self) -> DQA:
             Returns the data quality analysis (DQA) for the dataset.
@@ -128,17 +114,13 @@ class Dataset(Asset):
         passport: DatasetPassport,
         dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
         state: DatasetState,
-        dataset_summarizer_factory,
     ) -> None:
         super().__init__(passport=passport)
         self._passport = passport
         self._dataframe = dataframe
         self._state = state
-        self._dataset_summarizer_factory = dataset_summarizer_factory
 
         self._file = None
-        self._info = None
-        self._summary = None
         self._dqa = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
@@ -172,6 +154,11 @@ class Dataset(Asset):
             state (dict): The state dictionary to restore.
         """
         self.__dict__.update(state)
+
+    @property
+    def state(self) -> DatasetState:
+        """Returns the DatasetState object for the Dataset"""
+        return self._state
 
     @property
     def status(self) -> DatasetStateDef:
@@ -216,19 +203,6 @@ class Dataset(Asset):
     @file.setter
     def file(self, file: FileSet) -> None:
         self._file = file
-
-    @property
-    def info(self) -> pd.DataFrame:
-        """Returns a quantitative summary of the DataFrame structure and properties."""
-        if self._info is None:
-            self._info = self._get_info()
-        return self._info
-
-    @property
-    def summary(self) -> Dict[str, str]:
-        """Prints descriptive and summary statistics on DataFrame columns and observations."""
-        self._summary = self._summary or self._get_summary()
-        return self._summary
 
     @property
     def dqa(self) -> DQA:
@@ -301,16 +275,6 @@ class Dataset(Asset):
             event (str): A description of the event.
         """
         self._state.add_event(entity=entity, event=event)
-
-    def _get_info(self) -> Union[pd.DataFrame, DataFrame]:
-        """Returns a DataFrame containing DataFrame structural information"""
-        summarizer = self._dataset_summarizer_factory.get_summarizer(df=self._dataframe)
-        return summarizer.info(df=self._dataframe)
-
-    def _get_summary(self) -> pd.DataFrame:
-        """Prints a qualitative and descriptive summary of the Dataset."""
-        summarizer = self._dataset_summarizer_factory.get_summarizer(df=self._dataframe)
-        return summarizer.summarize(df=self._dataframe)
 
     def _get_dqa(self) -> DQA:
         """Returns the Data Quality Analysis for the Dataset."""

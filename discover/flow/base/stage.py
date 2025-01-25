@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Friday January 24th 2025 06:24:55 pm                                                #
+# Modified   : Friday January 24th 2025 10:38:46 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -25,13 +25,17 @@ from git import Union
 from pyspark.sql import DataFrame, SparkSession
 
 from discover.asset.dataset.builder import DatasetBuilder
-from discover.asset.dataset.config import DatasetConfig
+from discover.asset.dataset.config import DatasetConfig, FilesetConfig
 from discover.asset.dataset.dataset import Dataset
 from discover.core.dtypes import DFType
 from discover.core.flow import PhaseDef, StageDef
 from discover.flow.base.task import Task
 from discover.infra.persist.repo.dataset import DatasetRepo
 from discover.infra.service.logging.stage import stage_logger
+from discover.infra.utils.visual.print import Printer
+
+# ------------------------------------------------------------------------------------------------ #
+printer = Printer()
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -126,18 +130,25 @@ class Stage(ABC):
             Dataset: The resulting dataset after stage execution.
         """
 
-        if self._fresh_cache_exists() and not force:
-            dataset = self._get_dataset(
-                phase=self._target_config.phase,
-                stage=self._target_config.stage,
-                name=self._target_config.name,
-            )
-            self._logger.debug(
-                f"Obtained target dataset for the {self.stage.label} from cache."
-            )
-            return dataset
+        if self._source_exists(config=self._source_config):
+            # Check cache if not forcing execution and return if cache is fresh.
+            if self._fresh_cache_exists() and not force:
+                dataset = self._get_dataset(
+                    phase=self._target_config.phase,
+                    stage=self._target_config.stage,
+                    name=self._target_config.name,
+                )
+                msg = f"Obtained the {self.stage.label} target dataset {dataset.asset_id} from cache."
+                self._logger.debug(msg)
+                msg += "\nTo force execution, run the stage with force=True."
+                printer.print_string(string=msg)
+                return dataset
+            else:
+                return self._run()
         else:
-            return self._run()
+            msg = f"Unable to run {self.__class__.__name__}. The source dataset {self._source_config.name}, from {self._source_config.phase.label}-{self._source_config.stage.label}, does not exist."
+            self._logger.error(msg)
+            raise RuntimeError(msg)
 
     def _fresh_cache_exists(self) -> bool:
         """Checks if a fresh cache of the target dataset exists.
@@ -152,7 +163,7 @@ class Stage(ABC):
         )
         source_meta = self._repo.get_meta(asset_id=source_asset_id)
 
-        if source_meta.consumed:
+        if not source_meta.consumed:
             msg = f"The source dataset {source_asset_id} has not  yet been consumed."
             self._logger.debug(msg)
             return False
@@ -259,6 +270,16 @@ class Stage(ABC):
             )
             raise TypeError(f"Invalid dataset type for {asset_id}.")
         return dataset
+
+    def _source_exists(self, config: Union[FilesetConfig, DatasetConfig]) -> bool:
+        """Checks existence of a dataset, given its configuration."""
+        asset_id = self._repo.get_asset_id(
+            phase=config.phase,
+            stage=config.stage,
+            name=config.name,
+        )
+
+        return self._repo.exists(asset_id=asset_id)
 
     def _remove_dataset(self, phase: PhaseDef, stage: StageDef, name: str) -> None:
         """Removes a dataset from the repository if it exists.

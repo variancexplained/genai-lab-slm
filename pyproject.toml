@@ -71,20 +71,23 @@ target-version = ["py37", "py38", "py39", "py310"]
 include = '\.pyi?$'
 
 [tool.pytest.ini_options]
-log_cli = "true"
+enable_assertion_pass_hook = true
+log_cli = true
 log_cli_level = "DEBUG"
 log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(lineno)s)"
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
-norecursedirs = 'data'
-addopts = """\
-    --cov discover \
-    --cov tests \
-    --cov-report term-missing \
+norecursedirs = ["data"]
+addopts = """
+    --cov=discover \
+    --cov=tests \
+    --cov-report=term-missing \
     --no-cov-on-fail \
+    -s
 """
 filterwarnings = [
     "ignore::pytest.PytestUnknownMarkWarning",
-    ]
+]
+
 
 [tool.coverage.report]
 fail_under = 100

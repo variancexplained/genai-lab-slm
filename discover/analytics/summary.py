@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday January 16th 2025 02:49:20 pm                                              #
-# Modified   : Friday January 24th 2025 08:47:11 am                                                #
+# Modified   : Friday January 24th 2025 11:23:45 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,15 +19,16 @@
 """DataFramer Module"""
 from __future__ import annotations
 
+import logging
 from abc import ABC, abstractmethod
-from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict, Union
 
 import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, countDistinct, length, max, mean, min
+from pyspark.sql.functions import col, count, countDistinct, length, max, mean, min
+from pyspark.sql.functions import round as spark_round
 from pyspark.sql.functions import sum as _sum
 from pyspark.sql.types import (
     BinaryType,
@@ -60,6 +61,8 @@ class DatasetSummarizer(ABC):
         self._df = None
         self._info = None
         self._summary = None
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @abstractmethod
     def is_cache_valid(
@@ -123,8 +126,12 @@ class PandasDatasetSummarizer(DatasetSummarizer):
             return False
 
         # Compare the sum of the key column
+        self._logger.info(
+            "Checking equality of the cached dataframe. This may take some time... "
+        )
         current_sum = df[key_column].sum()
         cached_sum = self._df[key_column].sum()
+        self._logger.info("Equality check complete")
         return current_sum == cached_sum
 
     def info(self, df: Union[pd.DataFrame, pd.core.frame.DataFrame]) -> pd.DataFrame:
@@ -373,90 +380,80 @@ class PySparkDatasetSummarizer(DatasetSummarizer):
         return self._summary
 
     def _summarize(self, df: DataFrame) -> Dict[str, Union[str, float, int]]:
-        """Prints and returns summary of a PySpark DataFrame in dictionary format.
+        """Efficiently generates a summary of a PySpark DataFrame.
 
         Args:
-            df (DataFrame): Dataframe to analyze
+            df (DataFrame): The PySpark DataFrame to summarize.
 
-
-        The summary includes:
-        - Number of reviews, authors, apps, and categories.
-        - Proportion of influential and repeat reviewers.
-        - Average review length and reviews per app.
-        - Date range of the reviews.
+        Returns:
+            Dict[str, Union[str, float, int]]: Summary statistics of the dataset.
         """
-        # Count total number of reviews
-        n = df.count()
+        # Compute all necessary metrics in a single pass where possible
+        agg_result = df.agg(
+            count("*").alias("n_reviews"),  # Total number of reviews
+            countDistinct("author").alias("n_authors"),  # Unique authors
+            countDistinct("app_id").alias("n_apps"),  # Unique apps
+            countDistinct("category").alias("n_categories"),  # Unique categories
+            spark_round(mean(length("content")), 2).alias(
+                "avg_review_length"
+            ),  # Avg review length
+            min(length("content")).alias("min_review_length"),  # Min review length
+            max(length("content")).alias("max_review_length"),  # Max review length
+            min("date").alias("dt_first"),  # First review date
+            max("date").alias("dt_last"),  # Last review date
+        ).collect()[0]
 
-        # Get number of features / columns
-        p = len(df.columns)
+        # Extract metrics from the aggregated result
+        n_reviews = agg_result["n_reviews"]
+        n_authors = agg_result["n_authors"]
+        n_apps = agg_result["n_apps"]
+        n_categories = agg_result["n_categories"]
+        avg_review_length = float(agg_result["avg_review_length"])
+        min_review_length = agg_result["min_review_length"]
+        max_review_length = agg_result["max_review_length"]
+        dt_first = agg_result["dt_first"]
+        dt_last = agg_result["dt_last"]
 
-        # Number of distinct authors
-        n_auth = df.select(countDistinct("author")).collect()[0][0]
-
-        # Number of influential reviewers (with vote_count > 0)
-        n_auth_inf = (
+        # Compute metrics that require filtering or grouping
+        n_influential = (
             df.filter(col("vote_count") > 0)
             .select(countDistinct("author"))
             .collect()[0][0]
         )
+        repeat_authors = df.groupBy("author").count().filter(col("count") > 1).count()
 
-        # Proportion of influential reviewers
-        p_auth_inf = round(n_auth_inf / n_auth * 100, 2) if n_auth > 0 else 0
+        # Derived metrics
+        p_influential = (
+            round((n_influential / n_authors * 100), 2) if n_authors > 0 else 0
+        )
+        p_repeat_authors = (
+            round((repeat_authors / n_authors * 100), 2) if n_authors > 0 else 0
+        )
+        avg_reviews_per_app = round(n_reviews / n_apps, 2) if n_apps > 0 else 0
 
-        # Number of repeat reviewers (authors with more than one review)
-        repeat_auth_df = df.groupBy("author").count().filter(col("count") > 1)
-        n_repeat_auth = repeat_auth_df.count()
-        p_repeat_auth = round(n_repeat_auth / n_auth * 100, 2) if n_auth > 0 else 0
-
-        # Number of distinct apps and categories
-        n_apps = df.select(countDistinct("app_id")).collect()[0][0]
-        n_categories = df.select(countDistinct("category")).collect()[0][0]
-
-        # Average reviews per app
-        ave_reviews_per_app = round(n / n_apps, 2) if n_apps > 0 else 0
-
-        # Review Length
-        df = df.withColumn("review_length", length(col("content")))
-        # Extract min, max and average review lengths
-        min_review_length = df.select(min("review_length")).collect()[0][0]
-        max_review_length = df.select(max("review_length")).collect()[0][0]
-        avg_review_length = df.select(mean("review_length")).collect()[0][0]
-
-        # Round average review length
-        if avg_review_length is not None:
-            avg_review_length = Decimal(avg_review_length).quantize(
-                Decimal("0.00"), rounding=ROUND_HALF_UP
-            )
-
-        # Estimate memory footprint
+        # Estimate memory size
         msize = PySparkDataFrameMemoryFootprintEstimator().estimate_memory_size(df=df)
+        memory_mb = round(msize / (1024 * 1024), 2)
 
-        # Date range of reviews
-        dt_first = df.select(min("date")).collect()[0][0]
-        dt_last = df.select(max("date")).collect()[0][0]
-
-        # Summary data dictionary
-        d = {
-            "Number of Reviews": n,
-            "Number of Reviewers": n_auth,
-            "Number of Repeat Reviewers": f"{n_repeat_auth:,} ({p_repeat_auth:.1f}%)",
-            "Number of Influential Reviewers": f"{n_auth_inf:,} ({p_auth_inf:.1f}%)",
-            "Number of Apps": n_apps,
-            "Average Reviews per App": f"{ave_reviews_per_app:.1f}",
-            "Number of Categories": n_categories,
-            "Features": p,
+        # Create the summary dictionary
+        summary = {
+            "Number of Reviews": f"{n_reviews:,}",
+            "Number of Reviewers": f"{n_authors:,}",
+            "Number of Repeat Reviewers": f"{repeat_authors:,} ({p_repeat_authors:.1f}%)",
+            "Number of Influential Reviewers": f"{n_influential:,} ({p_influential:.1f}%)",
+            "Number of Apps": f"{n_apps:,}",
+            "Average Reviews per App": f"{avg_reviews_per_app:.1f}",
+            "Number of Categories": f"{n_categories:,}",
+            "Features": len(df.columns),
             "Min Review Length": min_review_length,
             "Max Review Length": max_review_length,
-            "Average Review Length": (
-                float(avg_review_length) if avg_review_length is not None else None
-            ),
-            "Memory Size (Mb)": round(msize / (1024 * 1024), 2),
+            "Average Review Length": avg_review_length,
+            "Memory Size (Mb)": memory_mb,
             "Date of First Review": dt_first,
             "Date of Last Review": dt_last,
         }
 
-        return d
+        return summary
 
     def _estimate_column_size(self, df: DataFrame, column: str) -> int:
         """Estimates the in-memory size of a Spark DataFrame column in bytes.

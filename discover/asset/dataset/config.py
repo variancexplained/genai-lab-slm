@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Friday January 24th 2025 05:42:39 am                                                #
+# Modified   : Friday January 24th 2025 10:33:59 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,12 +19,11 @@
 """Dataset Data Module"""
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Optional
 
 from pydantic.dataclasses import dataclass
 
 from discover.asset.base.asset import AssetConfig
-from discover.core.dstruct import DataClass
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.utils.file.fileset import FileFormat
 
@@ -33,21 +32,28 @@ from discover.infra.utils.file.fileset import FileFormat
 #                                   FILESET CONFIG                                                 #
 # ------------------------------------------------------------------------------------------------ #
 @dataclass
-class FilesetConfig(DataClass):
+class FilesetConfig(AssetConfig):
     """Configures filesets, files, such as raw data files, that exist outside of the workspace"""
 
-    filepath: str
-    file_format: FileFormat
+    filepath: Optional[str] = None
+    file_format: Optional[FileFormat] = FileFormat.PARQUET
 
     @classmethod
     def from_dict(cls, config: Dict[str, str]) -> FilesetConfig:
         try:
-            filepath = config["filepath"]
+            phase = PhaseDef.from_value(config["phase"])
+            stage = StageDef.from_value(config["stage"])
+            name = config["name"]
             file_format = FileFormat.from_value(config["file_format"])
+            filepath = config["filepath"]
 
             return cls(
+                phase=phase,
+                stage=stage,
+                name=name,
                 filepath=filepath,
                 file_format=file_format,
+                description=config.get("description", None),
             )
         except (KeyError, ValueError) as e:
             raise ValueError(f"Invalid dataset configuration: {e}")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday January 21st 2025 03:21:59 am                                               #
-# Modified   : Friday January 24th 2025 09:20:56 am                                                #
+# Modified   : Saturday January 25th 2025 12:20:23 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -21,13 +21,11 @@ from __future__ import annotations
 
 from dataclasses import field
 from datetime import datetime
-from enum import Enum
-from typing import Any, Optional
+from typing import Optional
 
 from pydantic.dataclasses import dataclass
 
 from discover.core.dstruct import DataClass
-from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from discover.core.flow import PhaseDef, StageDef
 from discover.infra.utils.file.fileset import FileFormat
 
@@ -67,31 +65,3 @@ class AssetPassport(DataClass):
 
     def __post_init__(self) -> None:
         self.created = datetime.now()
-
-    @classmethod
-    def _export_config(
-        cls,
-        v: Any,
-    ) -> Any:
-        """Returns v with Configs converted to dicts, recursively."""
-        if isinstance(v, IMMUTABLE_TYPES):
-            return v
-        elif isinstance(v, SEQUENCE_TYPES):
-            return type(v)(map(cls._export_config, v))
-        elif isinstance(v, AssetPassport):
-            return v.asset_id
-        elif isinstance(v, dict):
-            return v
-        elif hasattr(v, "as_dict"):
-            return v.as_dict()
-        elif isinstance(v, datetime):
-            return v.isoformat()
-        elif isinstance(v, (PhaseDef, StageDef)):
-            return v.label
-        elif isinstance(v, Enum):
-            if hasattr(v, "label"):
-                return v.label
-            else:
-                return v.value
-        else:
-            return dict()

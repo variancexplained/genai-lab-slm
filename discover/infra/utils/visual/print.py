@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 6th 2024 11:07:56 pm                                                     #
-# Modified   : Sunday December 15th 2024 01:28:16 pm                                               #
+# Modified   : Friday January 24th 2025 08:47:41 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -109,6 +109,18 @@ class Printer:
         breadth = self._width - 4
         trailer = f"\n\n# {breadth * '='} #\n"
         print(trailer)
+
+    def print_string(self, string: str, centered: bool = True) -> None:
+        """Prints a text string.
+
+        Args:
+            string (str): A string of text.
+            centered (bool): Whether to center the string.
+
+        """
+        if centered:
+            string = string.center(self._width, " ")
+        print(string)
 
     def print_dict(self, title: str, data: dict, text_col: str = None) -> None:
         """

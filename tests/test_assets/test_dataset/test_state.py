@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_core/test_flow.py                                                       #
+# Filename   : /tests/test_assets/test_dataset/test_state.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
-# Created    : Friday January 24th 2025 07:09:48 am                                                #
-# Modified   : Saturday January 25th 2025 12:49:39 am                                              #
+# Created    : Saturday January 25th 2025 12:50:12 am                                              #
+# Modified   : Saturday January 25th 2025 01:18:29 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,8 +22,7 @@ from datetime import datetime
 
 import pytest
 
-from discover.asset.dataset.state import DatasetStateDef
-from discover.core.flow import StageDef
+from discover.asset.dataset.state import DatasetState, DatasetStateDef
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -36,23 +35,26 @@ double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
 
-@pytest.mark.flowenum
-class TestFlowEnums:  # pragma: no cover
+@pytest.mark.state
+class TestState:  # pragma: no cover
     # ============================================================================================ #
-    def test_flow_enums(self, caplog) -> None:
+    def test_state(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        assert StageDef.CLEAN == StageDef.from_value("clean")
-        logging.info(StageDef.from_value("clean"))
-
-        assert DatasetStateDef.PUBLISHED == DatasetStateDef.from_value("published")
-        logging.info(DatasetStateDef.from_value("published"))
-        logging.info(f"Dataset value: {DatasetStateDef.CREATED.value}")
-        logging.info(f"Dataset label: {DatasetStateDef.CREATED.label}")
+        state = DatasetState(asset_id="some_asset_id", creator=self.__class__.__name__)
+        assert isinstance(state.asset_id, str)
+        assert isinstance(state.creator, str)
+        assert isinstance(state.status, DatasetStateDef)
+        assert isinstance(state.created, datetime)
+        assert state.accessed is None
+        assert state.modified is None
+        logging.info(state)
+        logging.info(f"Created: {state.created}")
+        logging.info(f"Status: {state.status}")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

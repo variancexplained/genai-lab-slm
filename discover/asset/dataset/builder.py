@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Friday January 24th 2025 08:20:54 am                                                #
+# Modified   : Saturday January 25th 2025 12:03:57 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,7 +26,6 @@ import pandas as pd
 from dependency_injector.wiring import Provide, inject
 from pyspark.sql import DataFrame
 
-from discover.analytics.summary import DatasetSummarizerFactory
 from discover.asset.base.asset import AssetType
 from discover.asset.base.builder import AssetBuilder
 from discover.asset.dataset.config import DatasetConfig
@@ -157,7 +156,7 @@ class DatasetBuilder(AssetBuilder):
         Constructs and returns the final Dataset object.
 
         This method validates the current attributes and builds a dataset using the configured
-        parameters. The dataset includes a passport with metadata and a summarizer for the dataset.
+        parameters. The dataset includes a passport with metadata and a state object.
 
         Returns:
             Dataset: The constructed dataset object.
@@ -166,11 +165,15 @@ class DatasetBuilder(AssetBuilder):
             TypeError: If validation errors occur.
         """
         self._validate()
+
+        passport = self._build_passport()
+
+        state = DatasetState(asset_id=passport.asset_id, creator=self._creator)
+
         return Dataset(
             dataframe=self._dataframe,
-            passport=self._build_passport(),
-            state=DatasetState(creator=self._creator),
-            dataset_summarizer_factory=DatasetSummarizerFactory(),
+            passport=passport,
+            state=state,
         )
 
     def _build_passport(self) -> DatasetPassport:

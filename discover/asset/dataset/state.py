@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 01:20:36 am                                             #
-# Modified   : Friday January 24th 2025 04:23:55 pm                                                #
+# Modified   : Saturday January 25th 2025 01:15:06 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,13 +19,17 @@
 """Dataset State Module"""
 from __future__ import annotations
 
+import logging
+from dataclasses import field
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 import pandas as pd
+from explorify import DataClass
+from pydantic.dataclasses import dataclass
 
-from discover.core.dstruct import DataClass
+from discover.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -52,96 +56,64 @@ class DatasetStateDef(Enum):
 # ------------------------------------------------------------------------------------------------ #
 
 
+@dataclass
 class DatasetState(DataClass):
     """
     Represents the state of a dataset, including its lifecycle events and timestamps.
 
     Args:
+        asset_id (str): The identifier for the dataset.
         creator (str): The creator of the dataset.
 
     Attributes:
-        _creator (str): The entity responsible for creating the dataset.
-        _status (DatasetStateDef): The current status of the dataset.
-        _created (datetime): The timestamp of when the dataset was created.
-        _published (bool): Boolean indicates whether dataset has been published.
-        _consumed (bool): Boolean indicates whether dataset has been consumed.
-        _accessed (Optional[datetime]): The timestamp of when the dataset was last accessed.
-        _modified (datetime): The timestamp of the last modification to the dataset.
+        creator (str): The entity responsible for creating the dataset.
+        status (DatasetStateDef): The current status of the dataset.
+        created (datetime): The timestamp of when the dataset was created.
+        published (bool): Boolean indicates whether dataset has been published.
+        consumed (bool): Boolean indicates whether dataset has been consumed.
+        accessed (Optional[datetime]): The timestamp of when the dataset was last accessed.
+        modified (datetime): The timestamp of the last modification to the dataset.
         _eventlog (list[dict]): A log of events associated with the dataset.
     """
 
-    def __init__(self, creator: str) -> None:
+    asset_id: str
+    creator: str
+    created = None
+    accessed = None
+    modified = None
+    published: bool = False
+    consumed: bool = False
+    status: Optional[DatasetStateDef] = DatasetStateDef.CREATED
+    _eventlog: list = field(default_factory=list)
 
-        self._creator = creator
-        self._status = None
-        self._created = None
-        self._published = False
-        self._consumed = False
-        self._accessed = None
-        self._modified = None
-        self._eventlog = []
+    _logger = logging.getLogger(f"{__name__}.DatasetState")
 
-        self._initialize()
+    def __post_init__(self) -> None:
+        self.created = datetime.now()
+        event = f"{self.status.label} by {self.creator}"
+        self.add_event(entity=self.creator, event=event)
+        self._logger.debug(f"{self.creator} created dataset at {self.created}.")
 
-    @property
-    def status(self) -> DatasetStateDef:
-        """
-        Returns the current status of the dataset.
-
-        Returns:
-            DatasetStateDef: The current status of the dataset.
-        """
-        return self._status
-
-    @property
-    def created(self) -> datetime:
-        """
-        Returns the timestamp of when the dataset was created.
-
-        Returns:
-            datetime: The creation timestamp of the dataset.
-        """
-        return self._created
-
-    @property
-    def accessed(self) -> Optional[datetime]:
-        """
-        Returns the timestamp of when the dataset was last accessed.
-
-        Returns:
-            datetime: The last accessed timestamp of the dataset.
-        """
-        return self._accessed
-
-    @property
-    def published(self) -> bool:
-        """
-        Indicates whether the dataset was published.
-
-        Returns:
-            bool: True if the dataset has been published, False otherwise.
-        """
-        return self._published
-
-    @property
-    def consumed(self) -> bool:
-        """
-        Indicates whether the dataset was consumed.
-
-        Returns:
-            bool: True if the dataset has been consumed, False otherwise.
-        """
-        return self._consumed
-
-    @property
-    def modified(self) -> datetime:
-        """
-        Returns the timestamp of when the dataset was last modified.
-
-        Returns:
-            datetime: The last modified timestamp of the dataset.
-        """
-        return self._modified
+    @classmethod
+    def _export_config(
+        cls,
+        v: Any,
+    ) -> Any:
+        """Returns v with Configs converted to dicts, recursively."""
+        if isinstance(v, IMMUTABLE_TYPES):
+            return v
+        elif isinstance(v, SEQUENCE_TYPES):
+            return type(v)(map(cls._export_config, v))
+        elif isinstance(v, dict):
+            return v
+        elif isinstance(v, datetime):
+            return v.strftime("%Y-%m-%d %H:%M:%S")
+        elif isinstance(v, DatasetStateDef):
+            return v.label
+        elif hasattr(v, "as_dict"):
+            return v.as_dict()
+        else:
+            return dict()
 
     def publish(self, entity: str) -> None:
         """
@@ -150,11 +122,12 @@ class DatasetState(DataClass):
         Args:
             entity (str): The entity that publishes the dataset.
         """
-        self._status = DatasetStateDef.PUBLISHED
-        self._modified = datetime.now()
-        event = f"{self._status.label} by {entity}"
+        self.status = DatasetStateDef.PUBLISHED
+        self.modified = datetime.now()
+        event = f"{self.status.label} by {entity}"
         self.add_event(entity=entity, event=event)
-        self._published = True
+        self.published = True
+        self._logger.debug(f"Dataset published by {entity} at {self.modified}")
 
     def consume(self, entity: str) -> None:
         """
@@ -163,11 +136,12 @@ class DatasetState(DataClass):
         Args:
             entity (str): The entity that consumes the dataset.
         """
-        self._status = DatasetStateDef.CONSUMED
-        self._modified = datetime.now()
-        event = f"{self._status.label} by {entity}"
+        self.status = DatasetStateDef.CONSUMED
+        self.modified = datetime.now()
+        event = f"{self.status.label} by {entity}"
         self.add_event(entity=entity, event=event)
-        self._consumed = True
+        self.consumed = True
+        self._logger.debug(f"Dataset consumed by {entity} at {self.modified}")
 
     def access(self, entity: str) -> None:
         """
@@ -176,9 +150,10 @@ class DatasetState(DataClass):
         Args:
             entity (str): The entity that accessed the dataset.
         """
-        self._accessed = datetime.now()
+        self.accessed = datetime.now()
         event = f"Accessed by {entity}"
         self.add_event(entity=entity, event=event)
+        self._logger.debug(f"Dataset accessed by {entity} at {self.accessed}")
 
     def add_event(self, entity: str, event: str) -> None:
         """
@@ -194,7 +169,8 @@ class DatasetState(DataClass):
             "event": event,
         }
         self._eventlog.append(event_entry)
-        self._modified = datetime.now()
+        self.modified = datetime.now()
+        self._logger.debug(f"Added {event_entry} to the event log at {self.modified}.")
 
     def get_events(self) -> pd.DataFrame:
         """
@@ -205,13 +181,3 @@ class DatasetState(DataClass):
             entities, and event descriptions.
         """
         return pd.DataFrame(self._eventlog)
-
-    def _initialize(self) -> None:
-        """
-        Initializes the dataset's creation timestamp and sets the status to 'created'.
-        Logs the initial event of the dataset creation.
-        """
-        self._created = datetime.now()
-        self._status = DatasetStateDef.CREATED
-        event = f"{self._status.label} by {self._creator}"
-        self.add_event(entity=self._creator, event=event)

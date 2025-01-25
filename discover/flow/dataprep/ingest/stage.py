@@ -11,12 +11,13 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Friday January 24th 2025 09:40:21 am                                                #
+# Modified   : Friday January 24th 2025 10:25:02 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Data Ingestion Stage Module"""
+import os
 from typing import List, Optional, Union
 
 import pandas as pd
@@ -191,3 +192,7 @@ class IngestStage(Stage):
             .dataframe(dataframe=dataframe)
             .build()
         )
+
+    def _source_exists(self, config: FilesetConfig) -> bool:
+        """Checks existence of a dataset, given its configuration."""
+        return os.path.exists(config.filepath)

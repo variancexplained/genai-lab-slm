@@ -4,14 +4,14 @@
 # Project    : AppVoCAI-Discover                                                                   #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /discover/core/data_structure.py                                                    #
+# Filename   : /discover/core/dstruct.py                                                           #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Monday December 30th 2024 03:31:44 pm                                               #
+# Modified   : Saturday January 25th 2025 12:53:04 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -129,15 +129,16 @@ class DataClass(ABC):
             return type(v)(map(cls._export_config, v))
         elif isinstance(v, dict):
             return v
+        elif isinstance(v, datetime):
+            return v.strftime("%Y-%m-%d %H:%M:%S")
+        elif isinstance(v, Enum) and hasattr(v, "description"):
+            return v.description
+        elif isinstance(v, Enum) and hasattr(v, "label"):
+            return v.label
+        elif isinstance(v, Enum) and hasattr(v, "value"):
+            return v.value
         elif hasattr(v, "as_dict"):
             return v.as_dict()
-        elif isinstance(v, Enum):
-            if hasattr(v, "description"):
-                return v.description
-            else:
-                return v.value
-        elif isinstance(v, datetime):
-            return v.isoformat()
         else:
             return dict()
 

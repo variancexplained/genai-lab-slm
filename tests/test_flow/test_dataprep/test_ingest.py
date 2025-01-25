@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Friday January 24th 2025 08:52:46 am                                                #
+# Modified   : Saturday January 25th 2025 12:28:05 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -110,8 +110,6 @@ class TestIngest:  # pragma: no cover
         assert isinstance(target.passport, DatasetPassport)
         assert isinstance(target.file, FileSet)
         assert isinstance(target.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
         assert isinstance(target.status, DatasetStateDef)
         assert isinstance(target.get_registration(), dict)
         assert isinstance(target.eventlog, (pd.DataFrame, pd.core.frame.DataFrame))
@@ -120,7 +118,6 @@ class TestIngest:  # pragma: no cover
         logging.info(target.passport)
         logging.info(target.file)
         logging.info(target.dataframe.head())
-        logging.info(f"\n\n{target.info}\n")
         logging.info(f"\nState\n{target._state}")
         logging.info(f"\nRegistration\n{target.get_registration()}")
         logging.info(f"\nEvents\n{target.eventlog}")
@@ -167,14 +164,11 @@ class TestIngest:  # pragma: no cover
         assert isinstance(target.passport, DatasetPassport)
         assert isinstance(target.file, FileSet)
         assert isinstance(target.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
         assert target.name == self.__class__.__name__
 
         logging.info(target.passport)
         logging.info(target.file)
         logging.info(target.dataframe.head())
-        logging.info(f"\n\n{target.info}\n")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -218,14 +212,11 @@ class TestIngest:  # pragma: no cover
         assert isinstance(target.passport, DatasetPassport)
         assert isinstance(target.file, FileSet)
         assert isinstance(target.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
         assert target.name == self.__class__.__name__
 
         logging.info(target.passport)
         logging.info(target.file)
         logging.info(target.dataframe.head())
-        logging.info(f"\n\n{target.info}\n")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -289,13 +280,10 @@ class TestIngestFromYAML:  # pragma: no cover
         assert isinstance(target.passport, DatasetPassport)
         assert isinstance(target.file, FileSet)
         assert isinstance(target.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
 
         logging.info(target.passport)
         logging.info(target.file)
         logging.info(target.dataframe.head())
-        logging.info(f"\n\n{target.info}\n")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()

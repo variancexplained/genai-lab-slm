@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/appvocai-discover                               #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Friday January 24th 2025 06:45:17 pm                                                #
+# Modified   : Saturday January 25th 2025 12:15:20 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -79,7 +79,10 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_dqa(self, container, spark, caplog) -> None:
+    @pytest.mark.skip(
+        reason="Full pipeline is working. Unless changes, skip and run in non-strict mode in the next method"
+    )
+    def test_dqa_full(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -94,7 +97,7 @@ class TestDQA:  # pragma: no cover
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
         target_config_dict = config["target_config"]
-        target_config_dict["name"] = self.__class__.__name__
+
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
@@ -122,43 +125,41 @@ class TestDQA:  # pragma: no cover
             stage=source_config.stage,
             name=source_config.name,
         )
-        source = repo.get(asset_id=source_asset_id, dftype=DFType.SPARK, spark=spark)
+        source = repo.get(asset_id=source_asset_id, dftype=DFType.PANDAS)
 
         # Source Dataset
         assert isinstance(source, Dataset)
         assert isinstance(source.passport, DatasetPassport)
         assert isinstance(source.file, FileSet)
-        assert isinstance(source.dataframe, DataFrame)
-        assert isinstance(source.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(source.summary, dict)
-        assert source.name == self.__class__.__name__
+        assert isinstance(source.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
+        assert source.name == source_config.name
         assert source.consumed
         assert source.published
 
         logging.info(f"\n\nSource Dataset Information\n{'='*40}")
         logging.info(f"\nSource Passport\n{source.passport}")
+        logging.info(f"\nSource State\n{source.state}")
         logging.info(f"\nSource File\n{source.file}")
-        logging.info(f"\nSource Info\n{source.info}")
-        logging.info(f"\nSource Summary\n{source.summary}")
         logging.info(f"\nSource Event Log{source.eventlog}\n")
         logging.info(f"\nSource Dataframe{source.dataframe.head(5)}\n")
 
         # Target Dataset
+        logging.info("Target Assertion Test: Dataset Type")
         assert isinstance(target, Dataset)
+        logging.info("Target Assertion Test: Passport Type")
         assert isinstance(target.passport, DatasetPassport)
+        logging.info("Target Assertion Test: Fileset Type")
         assert isinstance(target.file, FileSet)
+        logging.info("Target Assertion Test: DataFrame Type")
         assert isinstance(target.dataframe, DataFrame)
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
-        assert target.name == self.__class__.__name__
+        assert target.name == target_config.name
         assert not target.consumed
         assert target.published
 
         logging.info(f"\n\nTarget Dataset Information\n{'='*40}")
         logging.info(f"\nTarget Passport\n{target.passport}")
+        logging.info(f"\nTarget State\n{target.state}")
         logging.info(f"\nTarget File\n{target.file}")
-        logging.info(f"\nTarget Info\n{target.info}")
-        logging.info(f"\nTarget Summary\n{target.summary}")
         logging.info(f"\nTarget Event Log{target.eventlog}\n")
         logging.info(f"\nTarget Dataframe{target.dataframe.head(5)}\n")
 
@@ -172,7 +173,7 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_dqa_cache(self, container, spark, caplog) -> None:
+    def test_dqa_non_strict(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -187,7 +188,88 @@ class TestDQA:  # pragma: no cover
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
         target_config_dict = config["target_config"]
-        target_config_dict["name"] = self.__class__.__name__
+
+        target_config = DatasetConfig.from_dict(target_config_dict)
+
+        stage = (
+            DataQualityAssessmentStageBuilder()
+            .detect_excess_whitespace()
+            .build(
+                source_config=source_config, target_config=target_config, strict=False
+            )
+        )
+        target = stage.run()
+
+        repo = container.io.repo()
+        source_asset_id = repo.get_asset_id(
+            phase=source_config.phase,
+            stage=source_config.stage,
+            name=source_config.name,
+        )
+        source = repo.get(asset_id=source_asset_id, dftype=DFType.PANDAS)
+
+        # Source Dataset
+        assert isinstance(source, Dataset)
+        assert isinstance(source.passport, DatasetPassport)
+        assert isinstance(source.file, FileSet)
+        assert isinstance(source.dataframe, (pd.DataFrame, pd.core.frame.DataFrame))
+        assert source.name == source_config.name
+        assert source.consumed
+        assert source.published
+
+        logging.info(f"\n\nSource Dataset Information\n{'='*40}")
+        logging.info(f"\nSource Passport\n{source.passport}")
+        logging.info(f"\nSource State\n{source.state}")
+        logging.info(f"\nSource File\n{source.file}")
+        logging.info(f"\nSource Event Log{source.eventlog}\n")
+        logging.info(f"\nSource Dataframe{source.dataframe.head(5)}\n")
+
+        # Target Dataset
+        logging.info("Target Assertion Test: Dataset Type")
+        assert isinstance(target, Dataset)
+        logging.info("Target Assertion Test: Passport Type")
+        assert isinstance(target.passport, DatasetPassport)
+        logging.info("Target Assertion Test: Fileset Type")
+        assert isinstance(target.file, FileSet)
+        logging.info("Target Assertion Test: DataFrame Type")
+        assert isinstance(target.dataframe, DataFrame)
+        assert target.name == target_config.name
+        assert not target.consumed
+        assert target.published
+
+        logging.info(f"\n\nTarget Dataset Information\n{'='*40}")
+        logging.info(f"\nTarget Passport\n{target.passport}")
+        logging.info(f"\nTarget State\n{target.state}")
+        logging.info(f"\nTarget File\n{target.file}")
+        logging.info(f"\nTarget Event Log{target.eventlog}\n")
+        logging.info(f"\nTarget Dataframe{target.dataframe.head(5)}\n")
+
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_dqa_cache(self, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        # Obtain the dqa configuration
+        config = FlowConfigReader().get_config(section="phases", namespace=False)[
+            "dataprep"
+        ]["stages"]["dqa"]
+        # Configure the Source and Target Configs
+        source_config = DatasetConfig.from_dict(config["source_config"])
+        # Change the name of the target
+        target_config_dict = config["target_config"]
+
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
@@ -202,49 +284,19 @@ class TestDQA:  # pragma: no cover
         logging.info(f"\n\nTesting Cache. No Task Log\n{'='*40}")
         target = stage.run()
 
-        repo = container.io.repo()
-        source_asset_id = repo.get_asset_id(
-            phase=source_config.phase,
-            stage=source_config.stage,
-            name=source_config.name,
-        )
-        source = repo.get(asset_id=source_asset_id, dftype=DFType.SPARK, spark=spark)
-
-        # Source Dataset
-        assert isinstance(source, Dataset)
-        assert isinstance(source.passport, DatasetPassport)
-        assert isinstance(source.file, FileSet)
-        assert isinstance(source.dataframe, DataFrame)
-        assert isinstance(source.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(source.summary, dict)
-        assert source.name == self.__class__.__name__
-        assert source.consumed
-        assert source.published
-
-        logging.info(f"\n\nSource Dataset Information\n{'='*40}")
-        logging.info(f"\nSource Passport\n{source.passport}")
-        logging.info(f"\nSource File\n{source.file}")
-        logging.info(f"\nSource Info\n{source.info}")
-        logging.info(f"\nSource Summary\n{source.summary}")
-        logging.info(f"\nSource Event Log{source.eventlog}\n")
-        logging.info(f"\nSource Dataframe{source.dataframe.head(5)}\n")
-
         # Target Dataset
         assert isinstance(target, Dataset)
         assert isinstance(target.passport, DatasetPassport)
         assert isinstance(target.file, FileSet)
         assert isinstance(target.dataframe, DataFrame)
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
-        assert target.name == self.__class__.__name__
+        assert target.name == target_config.name
         assert not target.consumed
         assert target.published
 
         logging.info(f"\n\nTarget Dataset Information\n{'='*40}")
         logging.info(f"\nTarget Passport\n{target.passport}")
+        logging.info(f"\nTarget State\n{target.state}")
         logging.info(f"\nTarget File\n{target.file}")
-        logging.info(f"\nTarget Info\n{target.info}")
-        logging.info(f"\nTarget Summary\n{target.summary}")
         logging.info(f"\nTarget Event Log{target.eventlog}\n")
         logging.info(f"\nTarget Dataframe{target.dataframe.head(5)}\n")
 
@@ -258,7 +310,7 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_dqa_force(self, container, spark, caplog) -> None:
+    def test_dqa_force(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -273,7 +325,7 @@ class TestDQA:  # pragma: no cover
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
         target_config_dict = config["target_config"]
-        target_config_dict["name"] = self.__class__.__name__
+
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
@@ -289,52 +341,56 @@ class TestDQA:  # pragma: no cover
         logging.info(f"\n\nTesting Force. Forcing Execution\n{'='*40}")
         target = stage.run(force=True)
 
-        repo = container.io.repo()
-        source_asset_id = repo.get_asset_id(
-            phase=source_config.phase,
-            stage=source_config.stage,
-            name=source_config.name,
-        )
-        source = repo.get(asset_id=source_asset_id, dftype=DFType.SPARK, spark=spark)
-
-        # Source Dataset
-        assert isinstance(source, Dataset)
-        assert isinstance(source.passport, DatasetPassport)
-        assert isinstance(source.file, FileSet)
-        assert isinstance(source.dataframe, DataFrame)
-        assert isinstance(source.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(source.summary, dict)
-        assert source.name == self.__class__.__name__
-        assert source.consumed
-        assert source.published
-
-        logging.info(f"\n\nSource Dataset Information\n{'='*40}")
-        logging.info(f"\nSource Passport\n{source.passport}")
-        logging.info(f"\nSource File\n{source.file}")
-        logging.info(f"\nSource Info\n{source.info}")
-        logging.info(f"\nSource Summary\n{source.summary}")
-        logging.info(f"\nSource Event Log{source.eventlog}\n")
-        logging.info(f"\nSource Dataframe{source.dataframe.head(5)}\n")
-
         # Target Dataset
         assert isinstance(target, Dataset)
         assert isinstance(target.passport, DatasetPassport)
         assert isinstance(target.file, FileSet)
         assert isinstance(target.dataframe, DataFrame)
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
-        assert target.name == self.__class__.__name__
+        assert target.name == target_config.name
         assert not target.consumed
         assert target.published
 
         logging.info(f"\n\nTarget Dataset Information\n{'='*40}")
         logging.info(f"\nTarget Passport\n{target.passport}")
         logging.info(f"\nTarget File\n{target.file}")
-        logging.info(f"\nTarget Info\n{target.info}")
-        logging.info(f"\nTarget Summary\n{target.summary}")
         logging.info(f"\nTarget Event Log{target.eventlog}\n")
         logging.info(f"\nTarget Dataframe{target.dataframe.head(5)}\n")
 
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
+
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+
+    # ============================================================================================ #
+    def test_dqa_strict_exception(self, container, spark, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        # Obtain the dqa configuration
+        config = FlowConfigReader().get_config(section="phases", namespace=False)[
+            "dataprep"
+        ]["stages"]["dqa"]
+        # Configure the Source and Target Configs
+        source_config = DatasetConfig.from_dict(config["source_config"])
+        # Change the name of the target
+        target_config_dict = config["target_config"]
+
+        target_config = DatasetConfig.from_dict(target_config_dict)
+
+        with pytest.raises(ValueError):
+
+            _ = (
+                DataQualityAssessmentStageBuilder()
+                .detect_excess_whitespace()
+                .build(source_config=source_config, target_config=target_config)
+            )
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
         duration = round((end - start).total_seconds(), 1)
@@ -381,7 +437,7 @@ class TestDQAFromYAML:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_dqa(self, container, spark, caplog) -> None:
+    def test_dqa_from_yaml(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -393,8 +449,10 @@ class TestDQAFromYAML:  # pragma: no cover
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
         ]["stages"]["dqa"]
-        # Configure the Source and Target Configs
-        source_config = DatasetConfig.from_dict(config["source_config"])
+
+        # Change the name of the target
+        target_config_dict = config["target_config"]
+        target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
             DataQualityAssessmentStageBuilder()
@@ -405,48 +463,19 @@ class TestDQAFromYAML:  # pragma: no cover
         )
         target = stage.run()
 
-        repo = container.io.repo()
-        source_asset_id = repo.get_asset_id(
-            phase=source_config.phase,
-            stage=source_config.stage,
-            name=source_config.name,
-        )
-        source = repo.get(asset_id=source_asset_id, dftype=DFType.SPARK, spark=spark)
-        # Source Dataset
-        assert isinstance(source, Dataset)
-        assert isinstance(source.passport, DatasetPassport)
-        assert isinstance(source.file, FileSet)
-        assert isinstance(source.dataframe, DataFrame)
-        assert isinstance(source.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(source.summary, dict)
-        assert source.name == self.__class__.__name__
-        assert source.consumed
-        assert source.published
-
-        logging.info(f"\n\nSource Dataset Information\n{'='*40}")
-        logging.info(f"\nSource Passport\n{source.passport}")
-        logging.info(f"\nSource File\n{source.file}")
-        logging.info(f"\nSource Info\n{source.info}")
-        logging.info(f"\nSource Summary\n{source.summary}")
-        logging.info(f"\nSource Event Log{source.eventlog}\n")
-        logging.info(f"\nSource Dataframe{source.dataframe.head(5)}\n")
-
         # Target Dataset
+        logging.info(f"\n\nTarget Dataset Evaluation\n{'='*40}")
         assert isinstance(target, Dataset)
         assert isinstance(target.passport, DatasetPassport)
         assert isinstance(target.file, FileSet)
         assert isinstance(target.dataframe, DataFrame)
-        assert isinstance(target.info, (pd.DataFrame, pd.core.frame.DataFrame))
-        assert isinstance(target.summary, dict)
-        assert target.name == self.__class__.__name__
+        assert target.name == target_config.name
         assert not target.consumed
         assert target.published
 
-        logging.info(f"\n\nTarget Dataset Information\n{'='*40}")
         logging.info(f"\nTarget Passport\n{target.passport}")
+        logging.info(f"\nTarget State\n{target.state}")
         logging.info(f"\nTarget File\n{target.file}")
-        logging.info(f"\nTarget Info\n{target.info}")
-        logging.info(f"\nTarget Summary\n{target.summary}")
         logging.info(f"\nTarget Event Log{target.eventlog}\n")
         logging.info(f"\nTarget Dataframe{target.dataframe.head(5)}\n")
 
