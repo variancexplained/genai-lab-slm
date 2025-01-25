@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "discover"
 version = "0.0.1"
-description = "AppVoCAI-Discover: Opportunity and Unmet Needs Discovery with Generative AI"
+description = "genai-lab-slm: Opportunity and Unmet Needs Discovery with Generative AI"
 authors = [
     "John James <john@variancexplained.com>",
 ]
@@ -9,9 +9,9 @@ license = "MIT"
 requires-python = ">=3.7.1"
 readme = "README.md"
 
-documentation = "https://variancexplained.github.io/appvocai-discover"
-homepage = "https://variancexplained.github.io/appvocai-discover"
-repository = "https://github.com/variancexplained/appvocai-discover"
+documentation = "https://variancexplained.github.io/genai-lab-slm"
+homepage = "https://variancexplained.github.io/genai-lab-slm"
+repository = "https://github.com/variancexplained/genai-lab-slm"
 
 classifiers = [
   "Development Status :: 4 - Beta",

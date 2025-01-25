@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : AppVoCAI-Discover                                                                   #
+# Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /tests/test_flow/test_dataprep/test_dqa.py                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
-# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Saturday January 25th 2025 12:15:20 am                                              #
+# Modified   : Saturday January 25th 2025 04:41:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,15 +22,14 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
+from genailabslm.asset.dataset.config import DatasetConfig
+from genailabslm.asset.dataset.dataset import Dataset
+from genailabslm.asset.dataset.identity import DatasetPassport
+from genailabslm.core.dtypes import DFType
+from genailabslm.flow.dataprep.dqa.builder import DataQualityAssessmentStageBuilder
+from genailabslm.infra.config.flow import FlowConfigReader
+from genailabslm.infra.utils.file.fileset import FileSet
 from pyspark.sql import DataFrame
-
-from discover.asset.dataset.config import DatasetConfig
-from discover.asset.dataset.dataset import Dataset
-from discover.asset.dataset.identity import DatasetPassport
-from discover.core.dtypes import DFType
-from discover.flow.dataprep.dqa.builder import DataQualityAssessmentStageBuilder
-from discover.infra.config.flow import FlowConfigReader
-from discover.infra.utils.file.fileset import FileSet
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

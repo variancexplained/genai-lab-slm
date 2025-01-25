@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : AppVoCAI-Discover                                                                   #
+# Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /tests/test_assets/test_dataset/test_state.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
-# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday January 25th 2025 12:50:12 am                                              #
-# Modified   : Saturday January 25th 2025 01:18:29 am                                              #
+# Modified   : Saturday January 25th 2025 04:41:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -21,8 +21,7 @@ import logging
 from datetime import datetime
 
 import pytest
-
-from discover.asset.dataset.state import DatasetState, DatasetStateDef
+from genailabslm.asset.dataset.state import DatasetState, DatasetStateDef
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

@@ -1,4 +1,4 @@
-name: appvocai-discover
+name: genai-lab-slm
 channels:
   - johnsnowlabs
   - conda-forge
@@ -349,4 +349,4 @@ dependencies:
       - smmap==5.0.1
       - virtualenv==20.26.3
       - watchdog==4.0.1
-prefix: /home/john/miniconda3/envs/appvocai-discover
+prefix: /home/john/miniconda3/envs/genai-lab-slm

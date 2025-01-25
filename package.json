@@ -1,5 +1,5 @@
 {
-  "name": "appvocai-discover",
+  "name": "genai-lab-slm",
   "version": "1.0.0",
   "description": "App (IOS) Analytics and Insight Platform",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/john-james-ai/appvocai-discover.git"
+    "url": "git+https://github.com/john-james-ai/genai-lab-slmslm.git"
   },
   "author": "John James",
   "license": "MIT",
@@ -26,9 +26,9 @@
     "node": ">="
   },
   "bugs": {
-    "url": "https://github.com/john-james-ai/appvocai-discover/issues"
+    "url": "https://github.com/john-james-ai/genai-lab-slm/issues"
   },
-  "homepage": "https://github.com/john-james-ai/appvocai-discover#readme",
+  "homepage": "https://github.com/john-james-ai/genai-lab-slm#readme",
   "dependencies": {
     "@fortawesome/fontawesome-free": "6.5.2",
     "bootstrap": "5.3.3",

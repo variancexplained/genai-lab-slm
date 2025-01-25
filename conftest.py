@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : AppVoCAI-Discover                                                                   #
+# Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
 # Filename   : /conftest.py                                                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
-# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Friday January 24th 2025 01:17:00 am                                                #
+# Modified   : Saturday January 25th 2025 04:40:40 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,13 +21,12 @@ import sys
 
 import pytest
 from dotenv import load_dotenv
+from genailabslm.container import GenAILabSLMContainer
+from genailabslm.core.dtypes import DFType
+from genailabslm.infra.config.app import AppConfigReader
+from genailabslm.infra.persist.cloud.aws import S3Handler
+from genailabslm.infra.utils.file.fileset import FileFormat
 from pyspark.sql import SparkSession
-
-from discover.container import DiscoverContainer
-from discover.core.dtypes import DFType
-from discover.infra.config.app import AppConfigReader
-from discover.infra.persist.cloud.aws import S3Handler
-from discover.infra.utils.file.fileset import FileFormat
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
@@ -48,14 +47,14 @@ collect_ignore = ["discover/core/*.*"]
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session", autouse=True)
 def container():
-    container = DiscoverContainer()
+    container = GenAILabSLMContainer()
     container.init_resources()
     container.wire(
         packages=[
-            "discover.asset.dataset",
-            "discover.flow.base",
-            "discover.flow.dataprep.ingest",
-            "discover.flow.dataprep.dqa",
+            "genailabslm.asset.dataset",
+            "genailabslm.flow.base",
+            "genailabslm.flow.dataprep.preprocess",
+            "genailabslm.flow.dataprep.dqa",
         ]
     )
     return container
@@ -154,7 +153,7 @@ def sparknlp():
     # Assuming the log4j.properties file is in the root directory
     log4j_conf_path = "file:" + os.path.abspath("log4j.properties")
     spark_session = (
-        SparkSession.builder.appName("appvocai-discover-nlp")
+        SparkSession.builder.appName("genai-lab-slm-nlp")
         .master("local[*]")
         .config("spark.driver.memory", memory)
         .config("spark.executor.memory", memory)

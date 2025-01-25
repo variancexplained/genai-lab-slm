@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : AppVoCAI-Discover                                                                   #
+# Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.12                                                                             #
 # Filename   : /config/dev/app.yaml                                                                #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john.james.ai.studio@gmail.com                                                      #
-# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Thursday January 23rd 2025 01:22:49 am                                              #
+# Modified   : Saturday January 25th 2025 05:34:20 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -21,9 +21,13 @@ env: dev
 #                                           SETUP                                                  #
 # ------------------------------------------------------------------------------------------------ #
 setup:
-  dataset:
-    filepath: data/stage/dev/reviews
-
+  data:
+    source_filepath: data/stage/dev/reviews
+    dataset_config:
+      phase: dataprep
+      stage: raw
+      name: review
+      file_format: parquet
 # ------------------------------------------------------------------------------------------------ #
 #                                      LOGGING                                                     #
 # ------------------------------------------------------------------------------------------------ #
@@ -80,10 +84,3 @@ spark:
   parquet_block_size: 536870912 # 512 MB
 
 
-
-# ------------------------------------------------------------------------------------------------ #
-#                                    OPERATIONS                                                    #
-# ------------------------------------------------------------------------------------------------ #
-ops:
-  basedir: ops/dev  # Base directory for operations data.
-  cache: ops/dev/cache

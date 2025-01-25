@@ -1,20 +1,20 @@
 #!/bin/bash
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : AppVoCAI-Discover                                                                   #
+# Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /scripts/redis/uninstall.sh                                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
-# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 02:50:05 pm                                              #
-# Modified   : Sunday September 22nd 2024 03:36:14 pm                                              #
+# Modified   : Saturday January 25th 2025 04:44:32 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
-# Copyright  : (c) 2024 John James                                                                 #
+# Copyright  : (c) 2024-2025 John James                                                            #
 # ================================================================================================ #
 
 # Stop the Redis service if it's running

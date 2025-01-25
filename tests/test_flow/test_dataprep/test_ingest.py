@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : AppVoCAI-Discover                                                                   #
+# Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /tests/test_flow/test_dataprep/test_ingest.py                                       #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
-# URL        : https://github.com/variancexplained/appvocai-discover                               #
+# URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Saturday January 25th 2025 12:28:05 am                                              #
+# Modified   : Saturday January 25th 2025 04:41:13 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,14 +22,13 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
-
-from discover.asset.dataset.config import DatasetConfig, FilesetConfig
-from discover.asset.dataset.dataset import Dataset
-from discover.asset.dataset.identity import DatasetPassport
-from discover.asset.dataset.state import DatasetStateDef
-from discover.flow.dataprep.ingest.builder import IngestStageBuilder
-from discover.infra.config.flow import FlowConfigReader
-from discover.infra.utils.file.fileset import FileSet
+from genailabslm.asset.dataset.config import DatasetConfig, FilesetConfig
+from genailabslm.asset.dataset.dataset import Dataset
+from genailabslm.asset.dataset.identity import DatasetPassport
+from genailabslm.asset.dataset.state import DatasetStateDef
+from genailabslm.flow.dataprep.preprocess.builder import PreprocessStageBuilder
+from genailabslm.infra.config.flow import FlowConfigReader
+from genailabslm.infra.utils.file.fileset import FileSet
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
@@ -42,8 +41,8 @@ double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
 
-@pytest.mark.ingest
-class TestIngest:  # pragma: no cover
+@pytest.mark.preprocess
+class TestPreprocess:  # pragma: no cover
     """Tests with source and target configurations passed to the builder."""
 
     # ============================================================================================ #
@@ -59,7 +58,7 @@ class TestIngest:  # pragma: no cover
         # Get the target configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["ingest"]["target_config"]
+        ]["stages"]["preprocess"]["target_config"]
         config = DatasetConfig.from_dict(config=config)
         # Remove the dataset if it exists
         repo = container.io.repo()
@@ -78,17 +77,17 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_ingest(self, caplog) -> None:
+    def test_preprocess(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the ingest configuration
+        # Obtain the preprocess configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["ingest"]
+        ]["stages"]["preprocess"]
         # Configure the Source and Target Configs
         source_config = FilesetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -97,7 +96,7 @@ class TestIngest:  # pragma: no cover
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            IngestStageBuilder()
+            PreprocessStageBuilder()
             .encoding()
             .datatypes()
             .newlines()
@@ -132,17 +131,17 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_ingest_cache(self, caplog) -> None:
+    def test_preprocess_cache(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the ingest configuration
+        # Obtain the preprocess configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["ingest"]
+        ]["stages"]["preprocess"]
         # Configure the Source and Target Configs
         source_config = FilesetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -151,7 +150,7 @@ class TestIngest:  # pragma: no cover
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            IngestStageBuilder()
+            PreprocessStageBuilder()
             .encoding()
             .datatypes()
             .newlines()
@@ -180,17 +179,17 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_ingest_force(self, caplog) -> None:
+    def test_preprocess_force(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the ingest configuration
+        # Obtain the preprocess configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["ingest"]
+        ]["stages"]["preprocess"]
         # Configure the Source and Target Configs
         source_config = FilesetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -199,7 +198,7 @@ class TestIngest:  # pragma: no cover
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            IngestStageBuilder()
+            PreprocessStageBuilder()
             .encoding()
             .datatypes()
             .newlines()
@@ -228,8 +227,8 @@ class TestIngest:  # pragma: no cover
         logger.info(single_line)
 
 
-@pytest.mark.ingest
-class TestIngestFromYAML:  # pragma: no cover
+@pytest.mark.preprocess
+class TestPreprocessFromYAML:  # pragma: no cover
     """Tests with source and target configurations read from YAML."""
 
     # ============================================================================================ #
@@ -245,7 +244,7 @@ class TestIngestFromYAML:  # pragma: no cover
         # Get the target configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["ingest"]["target_config"]
+        ]["stages"]["preprocess"]["target_config"]
         config = DatasetConfig.from_dict(config=config)
         # Remove the dataset if it exists
         repo = container.io.repo()
@@ -264,7 +263,7 @@ class TestIngestFromYAML:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_ingest(self, caplog) -> None:
+    def test_preprocess(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -272,7 +271,12 @@ class TestIngestFromYAML:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         stage = (
-            IngestStageBuilder().encoding().datatypes().newlines().datetime().build()
+            PreprocessStageBuilder()
+            .encoding()
+            .datatypes()
+            .newlines()
+            .datetime()
+            .build()
         )
         target = stage.run()
 

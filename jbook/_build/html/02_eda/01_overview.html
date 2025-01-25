@@ -176,7 +176,7 @@
                 <ul class="nav bd-sidenav bd-sidenav__home-link">
                   <li class="toctree-l1">
                     <a class="reference internal" href="../00_intro.html">
-                      AppVoCAI-Discover
+                      genai-lab-slm
                     </a>
                   </li>
                 </ul>
@@ -270,7 +270,7 @@
 
 
                           <li><a
-                              href="https://mybinder.org/v2/gh/variancexplained/appvocai-discover/main?urlpath=tree/jbook/02_eda/01_overview.ipynb"
+                              href="https://mybinder.org/v2/gh/variancexplained/genai-lab-slm/main?urlpath=tree/jbook/02_eda/01_overview.ipynb"
                               target="_blank" class="btn btn-sm dropdown-item" title="Launch on Binder"
                               data-bs-placement="left" data-bs-toggle="tooltip">
 
@@ -287,7 +287,7 @@
 
 
                           <li><a
-                              href="https://colab.research.google.com/github/variancexplained/appvocai-discover/blob/main/jbook/02_eda/01_overview.ipynb"
+                              href="https://colab.research.google.com/github/variancexplained/genai-lab-slm/blob/main/jbook/02_eda/01_overview.ipynb"
                               target="_blank" class="btn btn-sm dropdown-item" title="Launch on Colab"
                               data-bs-placement="left" data-bs-toggle="tooltip">
 
@@ -317,7 +317,7 @@
 
 
 
-                          <li><a href="https://github.com/variancexplained/appvocai-discover" target="_blank"
+                          <li><a href="https://github.com/variancexplained/genai-lab-slm" target="_blank"
                               class="btn btn-sm btn-source-repository-button dropdown-item" title="Source repository"
                               data-bs-placement="left" data-bs-toggle="tooltip">
 
@@ -333,7 +333,7 @@
 
 
                           <li><a
-                              href="https://github.com/variancexplained/appvocai-discover/edit/main/jbook/02_eda/01_overview.ipynb"
+                              href="https://github.com/variancexplained/genai-lab-slm/edit/main/jbook/02_eda/01_overview.ipynb"
                               target="_blank" class="btn btn-sm btn-source-edit-button dropdown-item"
                               title="Suggest edit" data-bs-placement="left" data-bs-toggle="tooltip">
 
@@ -349,7 +349,7 @@
 
 
                           <li><a
-                              href="https://github.com/variancexplained/appvocai-discover/issues/new?title=Issue%20on%20page%20%2F02_eda/01_overview.html&body=Your%20issue%20content%20here."
+                              href="https://github.com/variancexplained/genai-lab-slm/issues/new?title=Issue%20on%20page%20%2F02_eda/01_overview.html&body=Your%20issue%20content%20here."
                               target="_blank" class="btn btn-sm btn-source-issues-button dropdown-item"
                               title="Open an issue" data-bs-placement="left" data-bs-toggle="tooltip">
 
@@ -537,9 +537,9 @@
                       <div class="highlight-ipython3 notranslate">
                         <div class="highlight">
                           <pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
-<span class="kn">from</span> <span class="nn">appvocai-discover.utils.repo</span> <span class="kn">import</span> <span class="n">ReviewRepo</span>
-<span class="kn">from</span> <span class="nn">appvocai-discover.analysis.overview</span> <span class="kn">import</span> <span class="n">DatasetOverview</span>
-<span class="kn">from</span> <span class="nn">appvocai-discover.utils.print</span> <span class="kn">import</span> <span class="n">Printer</span>
+<span class="kn">from</span> <span class="nn">appvocai-genailabslm.utils.repo</span> <span class="kn">import</span> <span class="n">ReviewRepo</span>
+<span class="kn">from</span> <span class="nn">appvocai-genailabslm.analysis.overview</span> <span class="kn">import</span> <span class="n">DatasetOverview</span>
+<span class="kn">from</span> <span class="nn">appvocai-genailabslm.utils.print</span> <span class="kn">import</span> <span class="n">Printer</span>
 
 <span class="n">pd</span><span class="o">.</span><span class="n">set_option</span><span class="p">(</span><span class="s2">&quot;max_colwidth&quot;</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
 </pre>
@@ -584,24 +584,24 @@
 <span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="n">repo</span> <span class="o">=</span> <span class="n">ReviewRepo</span><span class="p">()</span>
 <span class="ne">----&gt; </span><span class="mi">2</span> <span class="n">df</span> <span class="o">=</span> <span class="n">repo</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">DIRECTORY</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">FILENAME</span><span class="p">)</span>
 
-<span class="nn">File ~/projects/appvocai-discover/appvocai-discover/utils/repo.py:84,</span> in <span class="ni">ReviewRepo.read</span><span class="nt">(self, directory, filename)</span>
+<span class="nn">File ~/projects/genai-lab-slm/genai-lab-slm/utils/repo.py:84,</span> in <span class="ni">ReviewRepo.read</span><span class="nt">(self, directory, filename)</span>
 <span class="g g-Whitespace">     </span><span class="mi">82</span><span class="w"> </span><span class="sd">&quot;&quot;&quot;Reads data so designated.&quot;&quot;&quot;</span>
 <span class="g g-Whitespace">     </span><span class="mi">83</span> <span class="n">filepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_filepath</span><span class="p">(</span><span class="n">directory</span><span class="o">=</span><span class="n">directory</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">)</span>
 <span class="ne">---&gt; </span><span class="mi">84</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">filepath</span><span class="p">)</span>
 
-<span class="nn">File ~/projects/appvocai-discover/appvocai-discover/utils/file.py:360,</span> in <span class="ni">IOService.read</span><span class="nt">(cls, filepath, **kwargs)</span>
+<span class="nn">File ~/projects/genai-lab-slm/genai-lab-slm/utils/file.py:360,</span> in <span class="ni">IOService.read</span><span class="nt">(cls, filepath, **kwargs)</span>
 <span class="g g-Whitespace">    </span><span class="mi">357</span> <span class="nd">@classmethod</span>
 <span class="g g-Whitespace">    </span><span class="mi">358</span> <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="g g-Whitespace">    </span><span class="mi">359</span>     <span class="n">io</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_io</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
 <span class="ne">--&gt; </span><span class="mi">360</span>     <span class="k">return</span> <span class="n">io</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-<span class="nn">File ~/projects/appvocai-discover/appvocai-discover/utils/file.py:43,</span> in <span class="ni">IO.read</span><span class="nt">(cls, filepath, *args, **kwargs)</span>
+<span class="nn">File ~/projects/genai-lab-slm/genai-lab-slm/utils/file.py:43,</span> in <span class="ni">IO.read</span><span class="nt">(cls, filepath, *args, **kwargs)</span>
 <span class="g g-Whitespace">     </span><span class="mi">41</span> <span class="nd">@classmethod</span>
 <span class="g g-Whitespace">     </span><span class="mi">42</span> <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="ne">---&gt; </span><span class="mi">43</span>     <span class="n">data</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_read</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 <span class="g g-Whitespace">     </span><span class="mi">44</span>     <span class="k">return</span> <span class="n">data</span>
 
-<span class="nn">File ~/projects/appvocai-discover/appvocai-discover/utils/file.py:245,</span> in <span class="ni">PickleIO._read</span><span class="nt">(cls, filepath, **kwargs)</span>
+<span class="nn">File ~/projects/genai-lab-slm/genai-lab-slm/utils/file.py:245,</span> in <span class="ni">PickleIO._read</span><span class="nt">(cls, filepath, **kwargs)</span>
 <span class="g g-Whitespace">    </span><span class="mi">243</span> <span class="nd">@classmethod</span>
 <span class="g g-Whitespace">    </span><span class="mi">244</span> <span class="k">def</span> <span class="nf">_read</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="ne">--&gt; </span><span class="mi">245</span>     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
