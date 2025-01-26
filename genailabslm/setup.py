@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Saturday January 25th 2025 05:50:34 pm                                              #
+# Modified   : Sunday January 26th 2025 06:43:43 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -36,9 +36,11 @@ logger = logging.getLogger(__name__)
 @inject
 def load_data(
     container: GenAILabSLMContainer,
+    force: bool = False,
     config_reader_cls: Type[AppConfigReader] = AppConfigReader,
 ):
     """Reads the data, creates a Dataset object, and loads it into the repository"""
+
     # Obtain repository, file access, and spark dependencies.
     repo = container.io.repo()
     fao = container.io.fao()
@@ -57,6 +59,10 @@ def load_data(
     asset_id = repo.get_asset_id(
         phase=dataset_config.phase, stage=dataset_config.stage, name=dataset_config.name
     )
+    # Remove the existing dataset if it exists and we are forcing an data load.
+    if force and repo.exists(asset_id=asset_id):
+        repo.remove(asset_id=asset_id)
+
     if not repo.exists(asset_id=asset_id):
         # Obtain a spark session which will be used to read the source data
         spark = spark_session_pool.spark

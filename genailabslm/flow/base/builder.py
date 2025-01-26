@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Saturday January 25th 2025 04:40:45 pm                                              #
+# Modified   : Sunday January 26th 2025 06:19:09 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -77,7 +77,6 @@ class StageBuilder(ABC):
     def __init__(
         self,
         repo: DatasetRepo = Provide[GenAILabSLMContainer.io.repo],
-        fao: DatasetRepo = Provide[GenAILabSLMContainer.io.fao],
         spark_session_pool: SparkSessionPool = Provide[
             GenAILabSLMContainer.spark.session_pool
         ],
@@ -86,7 +85,6 @@ class StageBuilder(ABC):
         task_builder_cls: Type[TaskBuilder] = TaskBuilder,
     ) -> None:
         self._repo = repo
-        self._fao = fao
         self._spark_session_pool = spark_session_pool
         self._config_reader = config_reader_cls()
         self._dataset_builder = dataset_builder_cls()

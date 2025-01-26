@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Saturday January 25th 2025 04:40:44 pm                                              #
+# Modified   : Sunday January 26th 2025 05:54:38 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ class StageDef(Enum):
 
     # Data prep phase
     RAW = ("raw", 0, "Raw Data Stage")
-    PREPROCESS = ("preprocess", 1, "Data Preprocession Stage")
+    PREPROCESS = ("preprocess", 1, "Data Preprocessing Stage")
     DQA = ("dqa", 2, "Data Quality Assessment Stage")
     SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
     DQV = ("dqv", 4, "Data Quality Verification Stage")

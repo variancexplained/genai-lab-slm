@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Saturday January 25th 2025 04:41:08 pm                                              #
+# Modified   : Sunday January 26th 2025 06:17:15 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,7 +23,7 @@ import logging
 from typing import Any, Dict, List, Optional, Union
 
 from genailabslm.asset.dataset.builder import DatasetBuilder
-from genailabslm.asset.dataset.config import DatasetConfig, FilesetConfig
+from genailabslm.asset.dataset.config import DatasetConfig
 from genailabslm.core.dtypes import DFType
 from genailabslm.core.flow import PhaseDef, StageDef
 from genailabslm.flow.base.builder import StageBuilder
@@ -199,7 +199,6 @@ class PreprocessStageBuilder(StageBuilder):
             target_config=target_config or self._target_config,
             tasks=self._tasks,
             repo=self._repo,
-            fao=self._fao,
             dataset_builder=DatasetBuilder(),
             spark=self._spark,
         )
@@ -231,7 +230,7 @@ class PreprocessStageBuilder(StageBuilder):
         """
         super()._validate()
         errors = []
-        if not isinstance(self._source_config, FilesetConfig):
+        if not isinstance(self._source_config, DatasetConfig):
             errors.append("Source fileset config is required for the PreprocessStage.")
         if not isinstance(self._target_config, DatasetConfig):
             errors.append("Target dataset config is required for the PreprocessStage.")
@@ -250,7 +249,7 @@ class PreprocessStageBuilder(StageBuilder):
 
     def _get_fileset_config(
         self, phase: PhaseDef, stage: StageDef, config: str
-    ) -> FilesetConfig:
+    ) -> DatasetConfig:
         """
         Retrieves the fileset configuration for the preprocess stage.
 
@@ -260,7 +259,7 @@ class PreprocessStageBuilder(StageBuilder):
             config (str): The configuration key to retrieve.
 
         Returns:
-            FilesetConfig: The retrieved fileset configuration.
+            DatasetConfig: The retrieved fileset configuration.
         """
         fileset_config = self._get_config(phase=phase, stage=stage, config=config)
-        return FilesetConfig.from_dict(config=fileset_config)
+        return DatasetConfig.from_dict(config=fileset_config)

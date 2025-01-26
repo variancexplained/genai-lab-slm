@@ -11,25 +11,22 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Saturday January 25th 2025 04:41:09 pm                                              #
+# Modified   : Sunday January 26th 2025 06:17:32 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
-"""Data Preprocession Stage Module"""
-from typing import List, Optional, Union
+"""Data Preprocessing Stage Module"""
+from typing import List, Optional
 
-import pandas as pd
 from genailabslm.asset.dataset.builder import DatasetBuilder
-from genailabslm.asset.dataset.config import DatasetConfig, FilesetConfig
-from genailabslm.asset.dataset.dataset import Dataset
+from genailabslm.asset.dataset.config import DatasetConfig
 from genailabslm.core.dtypes import DFType
 from genailabslm.core.flow import PhaseDef, StageDef
 from genailabslm.flow.base.stage import Stage
 from genailabslm.flow.base.task import Task
 from genailabslm.infra.persist.repo.dataset import DatasetRepo
-from genailabslm.infra.persist.repo.file.fao import FAO
-from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql import SparkSession
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -47,11 +44,10 @@ class PreprocessStage(Stage):
         dftype (DFType): The dataframe type of the pipeline, set to `DFType.PANDAS`.
 
     Args:
-        source_config (FilesetConfig): Configuration of the source dataset.
+        source_config (DatasetConfig): Configuration of the source dataset.
         target_config (DatasetConfig): Configuration of the target dataset.
         tasks (List[Task]): List of tasks to execute on the dataset.
         repo (DatasetRepo): Repository for managing datasets.
-        fao (FAO): File Access Object for reading and writing data.
         dataset_builder (DatasetBuilder): Builder for creating `Dataset` objects.
         spark (Optional[SparkSession]): Optional Spark session for distributed processing.
     """
@@ -62,11 +58,10 @@ class PreprocessStage(Stage):
 
     def __init__(
         self,
-        source_config: FilesetConfig,
+        source_config: DatasetConfig,
         target_config: DatasetConfig,
         tasks: List[Task],
         repo: DatasetRepo,
-        fao: FAO,
         dataset_builder: DatasetBuilder,
         spark: Optional[SparkSession] = None,
     ) -> None:
@@ -78,7 +73,6 @@ class PreprocessStage(Stage):
             dataset_builder=dataset_builder,
             spark=spark,
         )
-        self._fao = fao
 
     @property
     def phase(self) -> PhaseDef:
@@ -109,84 +103,3 @@ class PreprocessStage(Stage):
             DFType: The dataframe type used in the pipeline.
         """
         return self.__DFTYPE
-
-    def _fresh_cache_exists(self) -> bool:
-        """
-        Determines whether a fresh cache of the target dataset exists.
-
-        A fresh cache, for the preprocess stage, is defined as the existence
-        of the target dataset in the repository.
-
-        Returns:
-            bool: True if the target dataset exists, False otherwise.
-        """
-        target_asset_id = self._repo.get_asset_id(
-            phase=self._target_config.phase,
-            stage=self._target_config.stage,
-            name=self._target_config.name,
-        )
-        return self._repo.exists(asset_id=target_asset_id)
-
-    def _run(self) -> Dataset:
-        """
-        Executes the preprocess stage by reading source data, processing it with tasks,
-        and saving the processed dataset to the target.
-
-        Returns:
-            Dataset: The processed dataset saved in the repository.
-
-        Raises:
-            RuntimeError: If a task fails during execution.
-        """
-        # Remove the target if it exists.
-        self._remove_dataset(
-            phase=self._target_config.phase,
-            stage=self._target_config.stage,
-            name=self._target_config.name,
-        )
-        # Get the source dataframe from file
-        dataframe = self._fao.read(
-            filepath=self._source_config.filepath,
-            file_format=self._source_config.file_format,
-            dftype=self.dftype,
-            spark=self._spark,
-        )
-
-        # Process
-        for task in self._tasks:
-            try:
-                dataframe = task.run(dataframe)
-            except Exception as e:
-                msg = f"Error in task {task.__class__.__name__}: {e}"
-                self._logger.error(msg)
-                raise RuntimeError(msg)
-
-        # Create target dataset and publish to repository
-        target = self._create_dataset(config=self._target_config, dataframe=dataframe)
-        target = self._repo.add(dataset=target, entity=self.__class__.__name__)
-
-        return target
-
-    def _create_dataset(
-        self,
-        config: DatasetConfig,
-        dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
-        **kwargs,
-    ) -> Dataset:
-        """
-        Creates a `Dataset` object based on the given configuration and dataframe.
-
-        Args:
-            config (DatasetConfig): Configuration for the target dataset.
-            dataframe (Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame]):
-                The dataframe content to store in the dataset.
-
-        Returns:
-            Dataset: The created dataset object.
-        """
-        return (
-            self._dataset_builder.from_config(config=config)
-            .creator(creator=self.__class__.__name__)
-            .dataframe(dataframe=dataframe)
-            .build()
-        )

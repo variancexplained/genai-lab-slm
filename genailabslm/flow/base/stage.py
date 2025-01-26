@@ -11,19 +11,18 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Saturday January 25th 2025 04:41:07 pm                                              #
+# Modified   : Sunday January 26th 2025 06:21:32 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 import logging
-import os
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
 import pandas as pd
 from genailabslm.asset.dataset.builder import DatasetBuilder
-from genailabslm.asset.dataset.config import DatasetConfig, FilesetConfig
+from genailabslm.asset.dataset.config import DatasetConfig
 from genailabslm.asset.dataset.dataset import Dataset
 from genailabslm.asset.dataset.identity import DatasetPassport
 from genailabslm.core.dtypes import DFType
@@ -31,7 +30,6 @@ from genailabslm.core.flow import PhaseDef, StageDef
 from genailabslm.flow.base.task import Task
 from genailabslm.infra.exception.object import ObjectNotFoundError
 from genailabslm.infra.persist.repo.dataset import DatasetRepo
-from genailabslm.infra.persist.repo.file.fao import FAO
 from genailabslm.infra.service.logging.stage import stage_logger
 from genailabslm.infra.utils.visual.print import Printer
 from git import Union
@@ -75,7 +73,6 @@ class Stage(ABC):
         target_config: DatasetConfig,
         tasks: List[Task],
         repo: DatasetRepo,
-        fao: FAO,
         dataset_builder: DatasetBuilder,
         spark: Optional[SparkSession] = None,
     ) -> None:
@@ -83,7 +80,6 @@ class Stage(ABC):
         self._target_config = target_config
         self._tasks = tasks
         self._repo = repo
-        self._fao = fao
         self._dataset_builder = dataset_builder
         self._spark = spark
 
@@ -135,10 +131,10 @@ class Stage(ABC):
             Dataset: The resulting dataset after stage execution.
         """
 
-        if self._source_exists(config=self._source_config):
+        if self._dataset_exists(config=self._source_config):
             # Check cache if not forcing execution and return if cache is fresh.
             if self._fresh_cache_exists() and not force:
-                dataset = self._get_dataset(config=target_config)
+                dataset = self._get_dataset(config=self._target_config)
                 msg = f"Obtained the {self.stage.label} target dataset {dataset.asset_id} from cache."
                 self._logger.debug(msg)
                 msg += "\nTo force execution, run the stage with force=True."
@@ -157,29 +153,21 @@ class Stage(ABC):
         Returns:
             bool: True if a fresh cache exists, False otherwise.
         """
-        source_asset_id = self._repo.get_asset_id(
-            phase=self._source_config.phase,
-            stage=self._source_config.stage,
-            name=self._source_config.name,
-        )
-        source_meta = self._repo.get_meta(asset_id=source_asset_id)
+        source_meta = self._get_dataset(config=self._source_config, meta_only=True)
 
         if not source_meta.consumed:
-            msg = f"The source dataset {source_asset_id} has not  yet been consumed."
+            msg = (
+                f"The source dataset {source_meta.asset_id} has not yet been consumed."
+            )
             self._logger.debug(msg)
             return False
 
-        target_asset_id = self._repo.get_asset_id(
-            phase=self._target_config.phase,
-            stage=self._target_config.stage,
-            name=self._target_config.name,
-        )
-        if not self._repo.exists(asset_id=target_asset_id):
-            msg = f"The target dataset {target_asset_id} cache does not exist in the repository."
+        if not self._dataset_exists(config=self._target_config):
+            msg = f"The target dataset cache for {self.phase.description}/{self.stage.description} does not exist in the repository."
             self._logger.debug(msg)
             return False
 
-        msg = f"A fresh cache for target dataset {target_asset_id} exists."
+        msg = f"The target dataset cache for {self.phase.description}/{self.stage.description} exists in the repository."
         self._logger.debug(msg)
         return True
 
@@ -190,18 +178,10 @@ class Stage(ABC):
             Dataset: The processed dataset.
         """
         # Remove existing target dataset if it exists.
-        self._remove_dataset(
-            phase=self._target_config.phase,
-            stage=self._target_config.stage,
-            name=self._target_config.name,
-        )
+        self._remove_dataset(config=self._target_config)
 
         # Obtain the
-        source = self._get_dataset(
-            phase=self._source_config.phase,
-            stage=self._source_config.stage,
-            name=self._source_config.name,
-        )
+        source = self._get_dataset(config=self._source_config)
         dataframe = source.dataframe
 
         for task in self._tasks:
@@ -245,37 +225,31 @@ class Stage(ABC):
             .build()
         )
 
-    def _get_dataset(self, config: Union[DatasetConfig, FilesetConfig]) -> Dataset:
+    def _get_dataset(self, config: DatasetConfig, meta_only: bool = False) -> Dataset:
         """Retrieves a dataset from file or the repository.
 
         Args:
-            config (Union[DatasetConfig, FilesetConfig]): Dataset configuration
+            config (DatasetConfig): Dataset configuration
+            meta_only (bool): Whether to return the metadata only. Default is False
 
         Returns:
             Dataset: The dataset object.
 
         """
-        if isinstance(config, DatasetConfig):
-            return self._get_dataset_from_repo(config=config)
-        elif isinstance(config, FilesetConfig):
-            return self._get_dataset_from_file(config=config)
-        else:
-            msg = f"Invalid dataset or fileset configuration. Expected a DatasetConfig or FilesetConfig object. Received a {type(config)}."
-            self._logger.error(msg)
-            raise TypeError(msg)
-
-    def _get_dataset_from_repo(self, config: DatasetConfig) -> Optional[Dataset]:
         """Retrieves a dataset from the repository if it exists."""
         asset_id = self._repo.get_asset_id(
             phase=config.phase, stage=config.stage, name=config.name
         )
         try:
-            return self._repo.get(
-                asset_id=asset_id,
-                dftype=self.dftype,
-                spark=self._spark,
-                entity=self.__class__.__name__,
-            )
+            if meta_only:
+                return self._repo.get_meta(asset_id=asset_id)
+            else:
+                return self._repo.get(
+                    asset_id=asset_id,
+                    dftype=self.dftype,
+                    spark=self._spark,
+                    entity=self.__class__.__name__,
+                )
         except ObjectNotFoundError as e:
             msg = f"Dataset {asset_id} not found in the repository.\n{e}"
             self._logger.error(msg)
@@ -285,39 +259,17 @@ class Stage(ABC):
             self._logger.exception(msg)
             raise Exception(msg)
 
-    def _get_dataset_from_file(self, config: FilesetConfig) -> Optional[Dataset]:
-        """Retrieves a dataset from file if it exists."""
-        try:
-            dataframe = self._fao.read(
-                filepath=config.filepath,
-                dftype=config.dftype,
-                file_format=config.file_format,
-                spark=self._spark,
-            )
-            return self._create_dataset(config=config, dataframe=dataframe, source=None)
-        except FileNotFoundError:
-            msg = f"Fileset not found at {config.filepath}."
-            self._logger.error(msg)
-            raise FileNotFoundError(msg)
-        except Exception as e:
-            msg = f"Unexpected exception occurred while creating a dataset from filepath {config.filepath}.\n{e}"
-            self._logger.exception(msg)
-            raise Exception(msg)
+    def _dataset_exists(self, config: DatasetConfig) -> bool:
+        """Checks existence of a dataset given a configuration."""
+        asset_id = self._repo.get_asset_id(
+            phase=config.phase,
+            stage=config.stage,
+            name=config.name,
+        )
 
-    def _source_exists(self, config: Union[FilesetConfig, DatasetConfig]) -> bool:
-        """Checks existence of a dataset or fileset, given a configuration."""
-        if isinstance(config, DatasetConfig):
-            asset_id = self._repo.get_asset_id(
-                phase=config.phase,
-                stage=config.stage,
-                name=config.name,
-            )
+        return self._repo.exists(asset_id=asset_id)
 
-            return self._repo.exists(asset_id=asset_id)
-        elif isinstance(config, FilesetConfig):
-            return os.path.exists(config.filepath)
-
-    def _remove_dataset(self, phase: PhaseDef, stage: StageDef, name: str) -> None:
+    def _remove_dataset(self, config: DatasetConfig) -> None:
         """Removes a dataset from the repository if it exists.
 
         Args:
@@ -325,6 +277,8 @@ class Stage(ABC):
             stage (StageDef): The stage of the dataset.
             name (str): The name of the dataset.
         """
-        asset_id = self._repo.get_asset_id(phase=phase, stage=stage, name=name)
+        asset_id = self._repo.get_asset_id(
+            phase=config.phase, stage=config.stage, name=config.name
+        )
         if self._repo.exists(asset_id=asset_id):
             self._repo.remove(asset_id=asset_id)

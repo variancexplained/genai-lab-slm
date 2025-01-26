@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Saturday January 25th 2025 04:41:13 pm                                              #
+# Modified   : Sunday January 26th 2025 05:57:20 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,7 +22,7 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
-from genailabslm.asset.dataset.config import DatasetConfig, FilesetConfig
+from genailabslm.asset.dataset.config import DatasetConfig
 from genailabslm.asset.dataset.dataset import Dataset
 from genailabslm.asset.dataset.identity import DatasetPassport
 from genailabslm.asset.dataset.state import DatasetStateDef
@@ -89,7 +89,7 @@ class TestPreprocess:  # pragma: no cover
             "dataprep"
         ]["stages"]["preprocess"]
         # Configure the Source and Target Configs
-        source_config = FilesetConfig.from_dict(config["source_config"])
+        source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
         target_config_dict = config["target_config"]
         target_config_dict["name"] = self.__class__.__name__
@@ -143,7 +143,7 @@ class TestPreprocess:  # pragma: no cover
             "dataprep"
         ]["stages"]["preprocess"]
         # Configure the Source and Target Configs
-        source_config = FilesetConfig.from_dict(config["source_config"])
+        source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
         target_config_dict = config["target_config"]
         target_config_dict["name"] = self.__class__.__name__
@@ -191,7 +191,7 @@ class TestPreprocess:  # pragma: no cover
             "dataprep"
         ]["stages"]["preprocess"]
         # Configure the Source and Target Configs
-        source_config = FilesetConfig.from_dict(config["source_config"])
+        source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
         target_config_dict = config["target_config"]
         target_config_dict["name"] = self.__class__.__name__
