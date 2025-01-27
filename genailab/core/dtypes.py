@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Sunday January 26th 2025 10:41:24 pm                                                #
+# Modified   : Monday January 27th 2025 04:55:10 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -103,7 +103,6 @@ DTYPES = {
     "content": "string",
     "vote_count": "int64",
     "vote_sum": "int64",
-    "date": "datetime64[ms]",
 }
 
 # ------------------------------------------------------------------------------------------------ #

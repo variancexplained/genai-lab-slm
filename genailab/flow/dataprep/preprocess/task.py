@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:54:25 am                                              #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Monday January 27th 2025 05:09:12 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -161,7 +161,7 @@ class RemoveNewlinesTask(Task):
 
 
 # ------------------------------------------------------------------------------------------------ #
-class ConvertDateTimeNStoMS(Task):
+class ConvertDateTimetoMS(Task):
     """
     A task that converts datetime from nanosecond to  microsecond precision.
 
@@ -189,13 +189,23 @@ class ConvertDateTimeNStoMS(Task):
         Returns:
             pd.DataFrame: The DataFrame with the converted column values in UTC.
         """
+
         data[self._column] = self._convert_datetime_ns_to_ms(data[self._column])
         return data
 
     def _convert_datetime_ns_to_ms(self, datetime_series):
-
         try:
+            # Ensure the series is of datetime type
+            if not pd.api.types.is_datetime64_any_dtype(datetime_series):
+                raise TypeError("Input series is not of datetime type.")
+
+            # Remove timezone if present
+            if datetime_series.dt.tz is not None:
+                datetime_series = datetime_series.dt.tz_localize(None)
+
+            # Convert from nanoseconds to milliseconds
             return datetime_series.astype("datetime64[ms]")
+
         except Exception as e:
             msg = f"Error converting datetime64 from nanosecond to millisecond precision.\n{e}"
             raise Exception(msg)
