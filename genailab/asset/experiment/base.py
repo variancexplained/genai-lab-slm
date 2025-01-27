@@ -4,14 +4,14 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailabslm/asset/experiment/base.py                                               #
+# Filename   : /genailab/asset/experiment/base.py                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday January 21st 2025 10:06:04 am                                               #
-# Modified   : Saturday January 25th 2025 04:40:44 pm                                              #
+# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #

@@ -4,14 +4,14 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailabslm/analytics/tqa.py                                                       #
+# Filename   : /genailab/analytics/tqa.py                                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 29th 2024 08:20:00 pm                                               #
-# Modified   : Saturday January 25th 2025 04:41:12 pm                                              #
+# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #

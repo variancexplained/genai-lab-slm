@@ -4,14 +4,14 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_flow/test_dataprep/test_dqa.py                                          #
+# Filename   : /tests/test_flow/test_dataprep/test_clean.py                                        #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Monday January 27th 2025 01:10:13 am                                                #
+# Modified   : Sunday January 26th 2025 11:57:33 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,12 +22,11 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
-from genailab.analytics.dqa import DQA
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.asset.dataset.dataset import Dataset
 from genailab.asset.dataset.identity import DatasetPassport
 from genailab.core.dtypes import DFType
-from genailab.flow.dataprep.dqa.builder import DataQualityAssessmentStageBuilder
+from genailab.flow.dataprep.clean.builder import DataCleaningStageBuilder
 from genailab.infra.config.flow import FlowConfigReader
 from genailab.infra.utils.file.fileset import FileSet
 from pyspark.sql import DataFrame
@@ -43,8 +42,8 @@ double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
 
-@pytest.mark.dqa
-class TestDQA:  # pragma: no cover
+@pytest.mark.clean
+class TestClean:  # pragma: no cover
     """Tests with source and target configurations passed to the builder."""
 
     # ============================================================================================ #
@@ -56,15 +55,16 @@ class TestDQA:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
         # Remove target dataset if it exists
+
         # Get the target configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]["target_config"]
-        target_config = DatasetConfig.from_dict(config=config)
+        ]["stages"]["clean"]["target_config"]
+        config = DatasetConfig.from_dict(config=config)
         # Remove the dataset if it exists
         repo = container.io.repo()
         asset_id = repo.get_asset_id(
-            phase=target_config.phase, stage=target_config.stage, name=target_config.name
+            phase=config.phase, stage=config.stage, name=config.name
         )
         repo.remove(asset_id=asset_id)
 
@@ -78,17 +78,20 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_dqa_full(self, container, spark, caplog) -> None:
+    @pytest.mark.skip(
+        reason="Full pipeline is working. Unless changes, skip and run in non-strict mode in the next method"
+    )
+    def test_clean_full(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the dqa configuration
+        # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]
+        ]["stages"]["clean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -97,7 +100,7 @@ class TestDQA:  # pragma: no cover
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            DataQualityAssessmentStageBuilder()
+            DataCleaningStageBuilder()
             .detect_non_english()
             .detect_privacy_issues()
             .detect_duplication()
@@ -128,7 +131,7 @@ class TestDQA:  # pragma: no cover
         assert isinstance(source, Dataset)
         assert isinstance(source.passport, DatasetPassport)
         assert isinstance(source.file, FileSet)
-        assert isinstance(source.dataframe, (pd.core.frame.DataFrame, pd.DataFrame))
+        assert isinstance(source.dataframe, DataFrame)
         assert source.name == source_config.name
         assert source.consumed
         assert source.published
@@ -137,9 +140,8 @@ class TestDQA:  # pragma: no cover
         logging.info(f"\nSource Passport\n{source.passport}")
         logging.info(f"\nSource State\n{source.state}")
         logging.info(f"\nSource File\n{source.file}")
-        logging.info(f"\nSource Event Log\n{source.eventlog}\n")
-        logging.info(f"\nSource DFType\n{type(source.dataframe)}\n")
-        logging.info(f"\nSource Dataframe\n{source.dataframe.head(5)}\n")
+        logging.info(f"\nSource Event Log{source.eventlog}\n")
+        logging.info(f"\nSource Dataframe{source.dataframe.head(5)}\n")
 
         # Target Dataset
         df2 = target.dataframe
@@ -159,13 +161,19 @@ class TestDQA:  # pragma: no cover
         logging.info(f"\nTarget Passport\n{target.passport}")
         logging.info(f"\nTarget State\n{target.state}")
         logging.info(f"\nTarget File\n{target.file}")
-        logging.info(f"\nTarget Event Log\n{target.eventlog}\n")
-        logging.info(f"\nTarget Dataframe\n{target.dataframe.head(5)}\n")
+        logging.info(f"\nTarget Event Log{target.eventlog}\n")
+        logging.info(f"\nTarget Dataframe{target.dataframe.head(5)}\n")
 
-        # Load the target as a pandas dataframe and print results
+        # Combine the before and after dataframes
+        # Rename the 'content' column in df2 to 'result'
+        df2 = df2.rename(columns={'content': 'result'})
+
+        # Merge the DataFrames on the 'id' column
+        merged_df = pd.merge(df1, df2, on='id', how='left')
+
+        # Display the result
         logging.info(f"\n\nResults\n")
-        ds = repo.get(asset_id=target.asset_id, dftype=DFType.PANDAS)
-        logging.info(DQA(dataset=ds).summarize_anomalies())
+        logging.info(merged_df[["content", "result"]])
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -177,18 +185,17 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    @pytest.mark.skip(reason="Working, you change something ... you muke!")
-    def test_dqa_non_strict(self, container, spark, caplog) -> None:
+    def test_clean_non_strict(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the dqa configuration
+        # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]
+        ]["stages"]["clean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -197,7 +204,7 @@ class TestDQA:  # pragma: no cover
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            DataQualityAssessmentStageBuilder()
+            DataCleaningStageBuilder()
             .detect_excess_whitespace()
             .build(
                 source_config=source_config, target_config=target_config, strict=False
@@ -259,18 +266,17 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    @pytest.mark.skip(reason="Working, you change something ... you muke!")
-    def test_dqa_cache(self, caplog) -> None:
+    def test_clean_cache(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the dqa configuration
+        # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]
+        ]["stages"]["clean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -279,7 +285,7 @@ class TestDQA:  # pragma: no cover
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            DataQualityAssessmentStageBuilder()
+            DataCleaningStageBuilder()
             .detect_privacy_issues()
             .detect_duplication()
             .detect_excess_whitespace()
@@ -316,18 +322,17 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    @pytest.mark.skip(reason="Working, you change something ... you muke!")
-    def test_dqa_force(self, caplog) -> None:
+    def test_clean_force(self, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the dqa configuration
+        # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]
+        ]["stages"]["clean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -336,7 +341,7 @@ class TestDQA:  # pragma: no cover
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            DataQualityAssessmentStageBuilder()
+            DataCleaningStageBuilder()
             .detect_privacy_issues()
             .detect_duplication()
             .detect_excess_whitespace()
@@ -373,18 +378,17 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    @pytest.mark.skip(reason="Working, you change something ... you muke!")
-    def test_dqa_strict_exception(self, container, spark, caplog) -> None:
+    def test_clean_strict_exception(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
         )
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
-        # Obtain the dqa configuration
+        # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]
+        ]["stages"]["clean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -395,7 +399,7 @@ class TestDQA:  # pragma: no cover
         with pytest.raises(ValueError):
 
             _ = (
-                DataQualityAssessmentStageBuilder()
+                DataCleaningStageBuilder()
                 .detect_excess_whitespace()
                 .build(source_config=source_config, target_config=target_config)
             )
@@ -409,13 +413,11 @@ class TestDQA:  # pragma: no cover
         logger.info(single_line)
 
 
-@pytest.mark.dqa
-@pytest.mark.skip(reason="Working, you change something ... you muke!")
-class TestDQAFromYAML:  # pragma: no cover
+@pytest.mark.clean
+class TestCleanFromYAML:  # pragma: no cover
     """Tests with source and target configurations read from YAML."""
 
     # ============================================================================================ #
-
     def test_setup(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
@@ -428,7 +430,7 @@ class TestDQAFromYAML:  # pragma: no cover
         # Get the target configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]["target_config"]
+        ]["stages"]["clean"]["target_config"]
         config = DatasetConfig.from_dict(config=config)
         # Remove the dataset if it exists
         repo = container.io.repo()
@@ -447,7 +449,7 @@ class TestDQAFromYAML:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    def test_dqa_from_yaml(self, container, spark, caplog) -> None:
+    def test_clean_from_yaml(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -455,17 +457,17 @@ class TestDQAFromYAML:  # pragma: no cover
         logger.info(double_line)
         # ---------------------------------------------------------------------------------------- #
 
-        # Obtain the dqa configuration
+        # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["dqa"]
+        ]["stages"]["clean"]
 
         # Change the name of the target
         target_config_dict = config["target_config"]
         target_config = DatasetConfig.from_dict(target_config_dict)
 
         stage = (
-            DataQualityAssessmentStageBuilder()
+            DataCleaningStageBuilder()
             .detect_privacy_issues()
             .detect_duplication()
             .detect_excess_whitespace()

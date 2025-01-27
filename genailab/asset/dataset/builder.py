@@ -4,14 +4,14 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailabslm/asset/dataset/builder.py                                               #
+# Filename   : /genailab/asset/dataset/builder.py                                                  #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Saturday January 25th 2025 04:53:07 pm                                              #
+# Modified   : Monday January 27th 2025 01:02:14 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -197,6 +197,7 @@ class DatasetBuilder(AssetBuilder):
             description=self._config.description,
             creator=self._creator,
             source=self._source,
+            dftype=self._config.dftype,
             file_format=self._config.file_format,
         )
         self._logger.debug(passport)

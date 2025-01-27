@@ -4,22 +4,25 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailabslm/asset/dataset/config.py                                                #
+# Filename   : /genailab/asset/dataset/config.py                                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Sunday January 26th 2025 05:56:36 am                                                #
+# Modified   : Monday January 27th 2025 01:15:27 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Data Module"""
 from __future__ import annotations
+from dataclasses import field
+from typing import Optional
 
 from genailab.asset.base.asset import AssetConfig
+from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.infra.utils.file.fileset import FileFormat
 from pydantic.dataclasses import dataclass
@@ -36,6 +39,7 @@ class DatasetConfig(AssetConfig):
     for the dataset type.
 
     """
+    dftype: Optional[DFType] = field(default=None)
 
     @classmethod
     def from_dict(cls, config: dict) -> DatasetConfig:
@@ -57,12 +61,14 @@ class DatasetConfig(AssetConfig):
             stage = StageDef.from_value(config["stage"])
             name = config["name"]
             file_format = FileFormat.from_value(config["file_format"])
+            dftype = DFType.from_value(config['dftype'])
 
             return cls(
                 phase=phase,
                 stage=stage,
                 name=name,
                 file_format=file_format,
+                dftype=dftype,
                 description=config.get("description", None),
             )
         except (KeyError, ValueError) as e:

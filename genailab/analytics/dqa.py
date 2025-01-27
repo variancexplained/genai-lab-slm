@@ -4,14 +4,14 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailabslm/analytics/dqa.py                                                       #
+# Filename   : /genailab/analytics/dqa.py                                                          #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Saturday January 25th 2025 04:41:12 pm                                              #
+# Modified   : Monday January 27th 2025 01:29:10 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -45,7 +45,7 @@ class DQA(Analysis):
     ) -> None:
         df = dataset.dataframe
         self._dataset = dataset
-        self._dataset.dqa = self
+
         super().__init__(df=df)
         self._config_reader = config_reader_cls()
         self._config = self._config_reader.get_config(section="dqa", namespace=True)
@@ -225,6 +225,10 @@ class DQA(Analysis):
         df = self.summarize_quality()
         self.plot_quality(df=df)
         return df
+
+    def summarize_anomalies(self) -> pd.DataFrame:
+        cols = list(self._df.columns[self._df.columns.str.startswith("dqa")])
+        return self._compute_frequency_distribution(cols=cols)
 
     def summarize_quality(self) -> pd.DataFrame:
         d = {

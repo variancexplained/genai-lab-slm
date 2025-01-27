@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Sunday January 26th 2025 10:41:24 pm                                                #
+# Modified   : Monday January 27th 2025 01:40:57 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -198,7 +198,8 @@ class RegexFactory:
         if max_repetitions < 1:
             raise ValueError("max_repetitions must be >= 1")
 
-        pattern = rf"\b(\w+)\b\s*(?:(?:\s+\1\b)*){{{threshold - 1},}}"
+
+        pattern = rf"\b(\w+)\b(?:\s+\1\b){{{threshold - 1},}}"
         replacement = r"\1" * min(max_repetitions, threshold)
         return Regex(pattern=pattern, replacement=replacement)
 
