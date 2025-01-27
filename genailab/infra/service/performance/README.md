@@ -76,10 +76,10 @@ Ensure that you have Python installed along with the necessary dependencies.
    Example:
    ```python
    from genailab.repo import ProfileRepo
-   from genailab.container import GenAILabSLMContainer
+   from genailab.container import GenAILabContainer
 
    # Obtain the repository from the container
-   container = GenAILabSLMContainer()
+   container = GenAILabContainer()
    profile_repo = container.persist.profile()
 
    # Add a profile

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Monday January 27th 2025 03:31:49 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,106 +21,51 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Type, Union
 
 import pandas as pd
 from genailab.analytics.dqa import DQA
+from genailab.analytics.eda import EDA
 from genailab.asset.base.asset import Asset
 from genailab.asset.dataset.identity import DatasetPassport
 from genailab.asset.dataset.state import DatasetState, DatasetStateDef
+
 from genailab.infra.utils.file.fileset import FileSet
 from pyspark.sql import DataFrame
+
+from genailab.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #
 #                                       DATASET                                                    #
 # ------------------------------------------------------------------------------------------------ #
+if TYPE_CHECKING:
+    from genailab.asset.dataset.dataset import DatasetRepo
 
+
+# ------------------------------------------------------------------------------------------------ #
 
 class Dataset(Asset):
-    """
-    Represents a dataset in the asset repository.
-
-    This class encapsulates the dataset's metadata (via `DatasetPassport`),
-    its underlying data (as a DataFrame), its state, and event log. The dataset
-    can be accessed, consumed, published, and have events logged, with tracking
-    of its status throughout its lifecycle.
-
-    Attributes:
-        _passport (DatasetPassport): The passport containing the metadata for the dataset.
-        _dataframe (Union[pd.DataFrame, DataFrame]): The actual data contained within the dataset.
-        _state (DatasetState): The state of the dataset, tracking its current status.
-        _file (Optional[FileSet]): The file set associated with the dataset, if available.
-        _dqa (Optional[DQA]): The data quality analysis for the dataset.
-        _accessed (Optional[datetime]): The timestamp when the dataset was last accessed.
-        _created (datetime): The timestamp when the dataset was created.
-        _status (DatasetState): The current status of the dataset.
-        _eventlog (Dict[datetime, str]): A log of events associated with the dataset, with timestamps.
-
-    Methods:
-        __eq__(self, other: object) -> bool:
-            Checks equality between two Dataset objects based on their asset ID and file path.
-
-        __getstate__(self) -> dict:
-            Prepares the object's state for serialization.
-
-        __setstate__(self, state) -> None:
-            Restores the object's state during deserialization.
-
-        status(self) -> DatasetState:
-            Returns the current status of the dataset.
-
-        eventlog(self) -> pd.DataFrame:
-            Returns the dataset's event log as a DataFrame.
-
-        file(self) -> FileSet:
-            Returns or sets the file set associated with the dataset.
-
-        dqa(self) -> DQA:
-            Returns the data quality analysis object for the dataset.
-
-        dataframe(self) -> Union[pd.DataFrame, DataFrame]:
-            Returns the underlying DataFrame object containing the dataset's data.
-
-        serialize(self) -> pd.DataFrame:
-            Prepares the dataset for serialization by nullifying the DataFrame.
-
-        deserialize(self, dataframe: Union[pd.DataFrame, DataFrame]) -> None:
-            Restores the dataset's DataFrame after deserialization.
-
-        get_registration(self) -> Dict[str, str]:
-            Returns metadata and descriptive statistics for dataset registration.
-
-        access(self, entity: Optional[str] = None) -> None:
-            Marks the dataset as accessed by a specified entity.
-
-        consume(self, entity: Optional[str] = None) -> None:
-            Marks the dataset as consumed by a specified entity.
-
-        publish(self, entity: Optional[str] = None) -> None:
-            Marks the dataset as published to the repository by a specified entity.
-
-        add_event(self, entity: str, event: str) -> None:
-            Adds an event to the dataset's event log.
-
-    Private Methods:
-
-        _get_dqa(self) -> DQA:
-            Returns the data quality analysis (DQA) for the dataset.
-    """
 
     def __init__(
         self,
         passport: DatasetPassport,
         dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
         state: DatasetState,
+        repo: DatasetRepo,
+        eda_cls: Type[EDA] = EDA,
     ) -> None:
         super().__init__(passport=passport)
         self._passport = passport
         self._dataframe = dataframe
         self._state = state
+        self._repo = repo
+        self._eda_cls = eda_cls
+        self._eda = None
 
         self._file = None
         self._dqa = None
+        self._profile = None
+        self._summary = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -188,6 +133,21 @@ class Dataset(Asset):
             datetime: The datetime the dataset was consumed.
         """
         return self._state.consumed
+
+    @property
+    def profile(self) -> pd.DataFrame:
+        """Returns a profile of the data, including data types, null values, and uniqueness."""
+        if not self._profile:
+            self._set_profile()
+        return self._profile
+
+    @property
+    def summary(self) -> None:
+        """Prints a Dataset summary."""
+        if not self._summary:
+            self._set_summary()
+        title = f"AppVoCAI Dataset Summary\n{self._passport.asset_id}"
+        Printer().print_dict(title=title, data=self._summary)
 
     @property
     def eventlog(self) -> pd.DataFrame:
@@ -275,6 +235,29 @@ class Dataset(Asset):
         """
         self._state.add_event(entity=entity, event=event)
 
+
+
     def _get_dqa(self) -> DQA:
         """Returns the Data Quality Analysis for the Dataset."""
         return DQA(dataset=self)
+
+    def _set_eda(self) -> EDA:
+        """Returns the EDA object for Dataset analysis."""
+        if isinstance(self._dataframe, DataFrame):
+            from genailab.infra.service.data.convert import Converter
+            df = Converter.to_pandas(df=self._dataframe)
+            self._eda = self._eda_cls(df=df)
+        else:
+            self._eda = self._eda_cls(df=self._dataframe)
+
+    def _set_profile(self) -> None:
+        """Sets the Dataset profile object."""
+        if not isinstance(self._eda, EDA):
+            self._set_eda()
+        self._profile = self._eda.profile
+
+    def _set_summary(self) -> None:
+        """Sets the Dataset summary object."""
+        if not isinstance(self._eda, EDA):
+            self._set_eda()
+        self._summary = self._eda.summarize()

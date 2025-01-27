@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Sunday January 26th 2025 10:41:24 pm                                                #
+# Modified   : Monday January 27th 2025 02:18:39 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -23,7 +23,7 @@ from typing import Type
 from dependency_injector.wiring import inject
 from genailab.asset.dataset.builder import DatasetBuilder
 from genailab.asset.dataset.config import DatasetConfig
-from genailab.container import GenAILabSLMContainer
+from genailab.container import GenAILabContainer
 from genailab.core.dtypes import DFType
 from genailab.infra.config.app import AppConfigReader
 from genailab.infra.utils.file.fileset import FileFormat
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
 @inject
 def load_data(
-    container: GenAILabSLMContainer,
+    container: GenAILabContainer,
     force: bool = False,
     config_reader_cls: Type[AppConfigReader] = AppConfigReader,
 ):
@@ -93,10 +93,10 @@ def load_data(
 
 # ------------------------------------------------------------------------------------------------ #
 def wire_container():
-    container = GenAILabSLMContainer()
+    container = GenAILabContainer()
     container.init_resources()
     container.wire(
-        modules=[__name__],
+        modules=[__name__, "genailab.infra.service.data.convert"],
         packages=[
             "genailab.flow.dataprep",
             "genailab.flow.base",

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Sunday January 26th 2025 10:38:15 pm                                                #
+# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -87,14 +87,14 @@ class IOContainer(containers.DeclarativeContainer):
 # ------------------------------------------------------------------------------------------------ #
 #                                  APPLICATION CONTAINER                                           #
 # ------------------------------------------------------------------------------------------------ #
-class GenAILabSLMContainer(containers.DeclarativeContainer):
+class GenAILabContainer(containers.DeclarativeContainer):
 
     # Provide the Config class instance dynamically
     config_reader = providers.Singleton(AppConfigReader)
 
     # Provide the actual config dictionary by calling get_config()
     config = providers.Factory(
-        lambda: GenAILabSLMContainer.config_reader().get_config(namespace=False),
+        lambda: GenAILabContainer.config_reader().get_config(namespace=False),
     )
 
     # Configure the logs by injecting the config data

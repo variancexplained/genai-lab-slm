@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday January 27th 2025 12:15:24 am                                                #
+# Modified   : Monday January 27th 2025 03:01:07 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,7 +21,7 @@ import sys
 
 import pytest
 from dotenv import load_dotenv
-from genailab.container import GenAILabSLMContainer
+from genailab.container import GenAILabContainer
 from genailab.core.dtypes import DFType
 from genailab.infra.config.app import AppConfigReader
 from genailab.infra.persist.cloud.aws import S3Handler
@@ -47,9 +47,10 @@ collect_ignore = ["genailab/core/*.*"]
 # ------------------------------------------------------------------------------------------------ #
 @pytest.fixture(scope="session", autouse=True)
 def container():
-    container = GenAILabSLMContainer()
+    container = GenAILabContainer()
     container.init_resources()
     container.wire(
+        modules=["genailab.infra.service.data.convert"],
         packages=[
             "genailab.asset.dataset",
             "genailab.flow.base",
@@ -201,7 +202,7 @@ def pandas_df(container):
     Pytest fixture that reads a Parquet file into a pandas DataFrame.
     Modify this to point to the correct Parquet file.
     """
-    FILEPATH = "data/working/reviews"
+    FILEPATH = "data/stage/test/reviews"
     iofactory = container.io.iofactory()
     reader = iofactory.get_reader(dftype=DFType.PANDAS, file_format=FileFormat.PARQUET)
     return reader.read(filepath=FILEPATH)
@@ -214,7 +215,7 @@ def spark_df(spark, container):
     Pytest fixture that converts a pandas DataFrame to a Spark DataFrame.
     Requires the spark fixture and pandas_df_from_csv fixture.
     """
-    FILEPATH = "data/working/reviews"
+    FILEPATH = "data/stage/test/reviews"
     iofactory = container.io.iofactory()
     reader = iofactory.get_reader(dftype=DFType.SPARK, file_format=FileFormat.PARQUET)
     return reader.read(filepath=FILEPATH, spark=spark)

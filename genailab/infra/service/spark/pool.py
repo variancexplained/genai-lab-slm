@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Monday January 27th 2025 06:18:27 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -252,7 +252,7 @@ class SparkSessionPool:
                     .config("spark.driver.maxResultSize", "0")
                     .config(
                         "spark.jars.packages",
-                        "com.johnsnowlabs.nlp:spark-nlp_2.12:5.3.3",
+                        "com.johnsnowlabs.nlp:spark-nlp_2.12:5.5.2",
                     )
                     .config(
                         "spark.driver.extraJavaOptions",

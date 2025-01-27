@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Sunday January 26th 2025 10:38:15 pm                                                #
+# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,12 +22,12 @@ from typing import Callable
 
 import psutil  # For gathering system resource usage
 from genailab.application.ops.utils import find_task
-from genailab.container import GenAILabSLMContainer
+from genailab.container import GenAILabContainer
 from genailab.dynamics.observability.profile import Profile
 
 # ------------------------------------------------------------------------------------------------ #
 # Initialize the repository once at the module level
-container = GenAILabSLMContainer()
+container = GenAILabContainer()
 profile_repo = container.persist.profile()
 # ------------------------------------------------------------------------------------------------ #
 

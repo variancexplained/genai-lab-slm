@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Sunday January 26th 2025 10:41:24 pm                                                #
+# Modified   : Monday January 27th 2025 01:28:56 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,22 +25,24 @@ from enum import Enum
 class StageDef(Enum):
     """Defines all workflow stages."""
 
-    # Data prep phase
+    # Data prep Stages
     RAW = ("raw", 0, "Raw Data Stage")
     PREPROCESS = ("preprocess", 1, "Data Preprocessing Stage")
     DQA = ("dqa", 2, "Data Quality Assessment Stage")
     SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")
-    # Feature Engineering Phase
+    # Feature Engineering Stages
     TQA_SYNTACTIC = ("tqa_syntactic", 0, "Syntactic Text Quality Analysis Stage")
     TQA_SENTIMENT = ("tqa_sentiment", 1, "Sentiment Text Quality Analysis Stage")
     TQA_LEXICAL = ("tqa_lexical", 2, "Lexical Text Quality Analysis Stage")
     TQA_SCORE = ("tqa_score", 3, "Text Quality Analysis Score Stage")
     SENTIMENT = ("sentiment", 4, "Sentiment Classification Stage")
-    # Modeling Phase
+    # Modeling Stages
     ABSA_FT = ("absa_ft", 0, "Fine-Tuned ABSA Modeling Stage")
     ABSA_CUSTOM = ("absa_custom", 1, "Custom ABSA Modeling Stage")
+    # Testing Stages
+    TEST = ("test", 9, "Test Stage")
 
     @classmethod
     def from_value(cls, value) -> StageDef:
@@ -88,7 +90,7 @@ class PhaseDef(Enum):
     DATAPREP = ("dataprep", 0, "Data Preparation Phase")
     FEATURE = ("feature", 1, "Feature Engineering Phase")
     ABSA = ("absa", 2, "ABSA Modeling Phase")
-    TESTING = ("test", 9, "Testing Phase")
+    TEST = ("test", 9, "Testing Phase")
 
     def __new__(cls, name: str, id: int, label: str):
         obj = object.__new__(cls)

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Sunday January 26th 2025 11:06:54 pm                                                #
+# Modified   : Monday January 27th 2025 01:21:32 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
 import pandas as pd
@@ -36,38 +36,25 @@ sns.set_palette("Blues_r")
 
 # ------------------------------------------------------------------------------------------------ #
 class Analysis(ABC):
-    """Abstract base class for analyzing app review datasets.
 
-    This class provides methods to analyze and manipulate a DataFrame containing app review data. It supports basic information
-    display, visualization, and data querying operations.
-
-    Args:
-        df (pd.DataFrame): The input DataFrame containing app review data.
-
-    Attributes:
-        info (None): Displays basic DataFrame information.
-        visualize (Visualizer): A visualizer instance for creating plots and charts.
-    """
-
-    def __init__(self, df: pd.DataFrame) -> None:
-        self._df = df
-        self._df = self._df.convert_dtypes(convert_string=True)
+    def __init__(self, df: Union[pd.core.frame.DataFrame, pd.DataFrame]) -> None:
+        self._df = df.convert_dtypes(convert_string=True)
         self._visualizer = Visualizer()
 
     @property
-    def info(self) -> None:
-        """Displays basic information about the DataFrame, such as data types and non-null counts."""
-        info = pd.DataFrame()
-        info["Column"] = self._df.columns
-        info["DataType"] = self._df.dtypes.values
-        info["Complete"] = self._df.count().values
-        info["Null"] = self._df.isna().sum().values
-        info["Completeness"] = info["Complete"] / len(self._df)
-        info["Unique"] = self._df.nunique().values
-        info["Duplicate"] = len(self._df) - info["Unique"]
-        info["Uniqueness"] = info["Unique"] / len(self._df)
-        info["Size (Bytes)"] = self._df.memory_usage(deep=True, index=False).values
-        return info
+    def profile(self) -> None:
+        """Displays basic profile for the DataFrame, such as data types and non-null counts."""
+        profile = pd.DataFrame()
+        profile["Column"] = self._df.columns
+        profile["DataType"] = self._df.dtypes.values
+        profile["Complete"] = self._df.count().values
+        profile["Null"] = self._df.isna().sum().values
+        profile["Completeness"] = profile["Complete"] / len(self._df)
+        profile["Unique"] = self._df.nunique().values
+        profile["Duplicate"] = len(self._df) - profile["Unique"]
+        profile["Uniqueness"] = profile["Unique"] / len(self._df)
+        profile["Size (Bytes)"] = self._df.memory_usage(deep=True, index=False).values
+        return profile
     @property
     def visualize(self) -> Visualizer:
         """Returns the Visualizer instance for data visualization.
@@ -77,8 +64,11 @@ class Analysis(ABC):
         """
         return self._visualizer
 
-    def summarize(self) -> None:
+    def summarize(self, print: bool = False) -> None:
         """Prints a summary of the app review dataset.
+
+        Args:
+            print (bool): Whether to print the summary.
 
         The summary includes:
         - Number of reviews, authors, apps, and categories.
@@ -121,8 +111,10 @@ class Analysis(ABC):
             "Date of First Review": dt_first,
             "Date of Last Review": dt_last,
         }
-        title = "AppVoCAI Dataset Summary"
-        printer.print_dict(title=title, data=d)
+        if print:
+            title = "AppVoCAI Dataset Summary"
+            printer.print_dict(title=title, data=d)
+        return d
 
     def get(
         self,

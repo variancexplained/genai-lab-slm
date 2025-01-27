@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Monday January 27th 2025 01:07:35 am                                                #
+# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from dependency_injector.wiring import Provide, inject
 from genailab.asset.dataset.builder import DatasetBuilder
 from genailab.asset.dataset.config import DatasetConfig
-from genailab.container import GenAILabSLMContainer
+from genailab.container import GenAILabContainer
 from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.stage import Stage
@@ -46,11 +46,11 @@ class StageBuilder(ABC):
 
     Args:
         repo (DatasetRepo): Repository for managing dataset operations.
-            Default is injected from `GenAILabSLMContainer.io.repo`.
+            Default is injected from `GenAILabContainer.io.repo`.
         state (FlowState): State object for tracking the flow of the pipeline.
-            Default is injected from `GenAILabSLMContainer.io.flowstate`.
+            Default is injected from `GenAILabContainer.io.flowstate`.
         spark_session_pool (SparkSessionPool): Pool for managing Spark sessions.
-            Default is injected from `GenAILabSLMContainer.spark.session_pool`.
+            Default is injected from `GenAILabContainer.spark.session_pool`.
         config_reader_cls (Type[FlowConfigReader]): Class used for reading
             pipeline configurations. Default is `FlowConfigReader`.
         dataset_builder_cls (Type[DatasetBuilder]): Class used for constructing datasets.
@@ -76,9 +76,9 @@ class StageBuilder(ABC):
     @inject
     def __init__(
         self,
-        repo: DatasetRepo = Provide[GenAILabSLMContainer.io.repo],
+        repo: DatasetRepo = Provide[GenAILabContainer.io.repo],
         spark_session_pool: SparkSessionPool = Provide[
-            GenAILabSLMContainer.spark.session_pool
+            GenAILabContainer.spark.session_pool
         ],
         config_reader_cls: Type[FlowConfigReader] = FlowConfigReader,
         dataset_builder_cls: Type[DatasetBuilder] = DatasetBuilder,

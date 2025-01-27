@@ -11,18 +11,20 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Sunday January 26th 2025 11:06:57 pm                                                #
+# Modified   : Monday January 27th 2025 01:38:39 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Exploratory Data Analysis Module"""
 from __future__ import annotations
+from typing import Union
 
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from genailab.analytics.base import Analysis
+
 from genailab.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #
@@ -30,11 +32,10 @@ printer = Printer()
 sns.set_style("whitegrid")
 sns.set_palette("Blues_r")
 
-
 # ------------------------------------------------------------------------------------------------ #
 class EDA(Analysis):
 
-    def __init__(self, df: pd.DataFrame) -> None:
+    def __init__(self, df: Union[pd.DataFrame, pd.core.frame.DataFrame]) -> None:
         super().__init__(df=df)
 
     def distribution(self, x: str) -> plt.Axes:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Monday January 27th 2025 01:02:14 am                                                #
+# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -30,7 +30,7 @@ from genailab.asset.dataset.config import DatasetConfig
 from genailab.asset.dataset.dataset import Dataset
 from genailab.asset.dataset.identity import DatasetPassport
 from genailab.asset.dataset.state import DatasetState
-from genailab.container import GenAILabSLMContainer
+from genailab.container import GenAILabContainer
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.infra.persist.repo.dataset import DatasetRepo
 from genailab.infra.persist.repo.file.fao import FAO
@@ -67,8 +67,8 @@ class DatasetBuilder(AssetBuilder):
     @inject
     def __init__(
         self,
-        repo: DatasetRepo = Provide[GenAILabSLMContainer.io.repo],
-        fao: FAO = Provide[GenAILabSLMContainer.io.fao],
+        repo: DatasetRepo = Provide[GenAILabContainer.io.repo],
+        fao: FAO = Provide[GenAILabContainer.io.fao],
     ) -> None:
         """
         Initializes the DatasetBuilder instance with the provided repository and FAO services.
@@ -172,6 +172,7 @@ class DatasetBuilder(AssetBuilder):
         return Dataset(
             dataframe=self._dataframe,
             passport=passport,
+            repo=self._repo,
             state=state,
         )
 

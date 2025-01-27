@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:26:44 am                                                #
-# Modified   : Sunday January 26th 2025 10:42:45 pm                                                #
+# Modified   : Monday January 27th 2025 06:14:04 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -125,14 +125,21 @@ class TQASyntacticStage(Stage):
         Returns:
             Dataset: The processed target dataset.
         """
-        # Obtain the source dataset
-        source = self.get_source_dataset()
+        # Remove existing target dataset if it exists.
+        self._remove_dataset(config=self._target_config)
+
+        # Obtain the source dataset from the repo.
+        source = self._get_dataset(config=self._source_config)
+
         # Extract the pyspark DataFrame
         dataframe = source.dataframe
+
         # Clean the DataFrame by removing all non-alphanumeric characters.
-        cleaned_df = self._clean_text(data=dataframe, column_name=self._column)
+        cleaned_df = self._clean_text(data=dataframe, column=self._column)
+
         # Process the data through the NLP Pipeline
         data = self.nlp_pipeline.fit(cleaned_df).transform(dataframe)
+
         # Execute the Syntactic Text Quality Analysis Pipeline Tasks
         for task in self._tasks:
             try:
@@ -142,8 +149,11 @@ class TQASyntacticStage(Stage):
                 self._logger.error(msg)
                 raise RuntimeError(msg)
 
-        self._target = self.save_target_dataset(source=source, dataframe=data)
-        return self._target
+        target = self._create_dataset(
+            source=source.passport, config=self._target_config, dataframe=dataframe
+        )
+        target = self._repo.add(dataset=target, entity=self.__class__.__name__)
+        return target
 
     def _get_nlp_pipeline(self) -> Pipeline:
         """Constructs and returns the NLP pipeline for syntactic analysis.
