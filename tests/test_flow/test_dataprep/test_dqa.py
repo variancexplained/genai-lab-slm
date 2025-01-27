@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Monday January 27th 2025 01:10:13 am                                                #
+# Modified   : Monday January 27th 2025 03:25:49 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -48,7 +48,7 @@ class TestDQA:  # pragma: no cover
     """Tests with source and target configurations passed to the builder."""
 
     # ============================================================================================ #
-    def test_setup(self, container, spark, caplog) -> None:
+    def test_setup(self, container, spark, spark_df_dirty, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -121,14 +121,14 @@ class TestDQA:  # pragma: no cover
             stage=source_config.stage,
             name=source_config.name,
         )
-        source = repo.get(asset_id=source_asset_id, dftype=DFType.PANDAS)
+        source = repo.get(asset_id=source_asset_id, dftype=DFType.SPARK, spark=spark)
 
         # Source Dataset
         df1 = source.dataframe
         assert isinstance(source, Dataset)
         assert isinstance(source.passport, DatasetPassport)
         assert isinstance(source.file, FileSet)
-        assert isinstance(source.dataframe, (pd.core.frame.DataFrame, pd.DataFrame))
+        assert isinstance(source.dataframe, DataFrame)
         assert source.name == source_config.name
         assert source.consumed
         assert source.published

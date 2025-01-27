@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 04:34:56 pm                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Monday January 27th 2025 04:57:41 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -605,11 +605,11 @@ class DetectOrRepairExcessiveWhitespaceTask(TextAnomalyDetectRepairTask):
         self,
         column: str = "content",
         new_column: str = "contains_excessive_whitespace",
-        replacement: str = " ",
+        replacement: str = "",
         mode: str = "detect",
         strategy_factory_cls: Type[SparkTextStrategyFactory] = SparkTextStrategyFactory,
         detect_strategy: str = "regex",
-        repair_strategy: str = "whitespace",
+        repair_strategy: str = "regex_replace",
         threshold: Union[float, int] = None,
         threshold_type: Literal["count", "proportion"] = None,
         unit: Literal["word", "character"] = None,

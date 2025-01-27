@@ -11,15 +11,17 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Monday January 27th 2025 04:45:28 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Data Cleaning Stage Builder Module"""
 from __future__ import annotations
+from typing import Optional
 
 from genailab.asset.dataset.config import DatasetConfig
+from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.builder import StageBuilder
 from genailab.flow.dataprep.clean.stage import DataCleaningStage
@@ -30,11 +32,40 @@ class DataCleaningStageBuilder(StageBuilder):
 
     __PHASE = PhaseDef.DATAPREP
     __STAGE = StageDef.SEMICLEAN
+    __DFTYPE = DFType.SPARK
 
     def __init__(self) -> None:
         super().__init__()
         self.reset()
+    @property
+    def phase(self) -> PhaseDef:
+        """
+        The phase of the pipeline associated with the preprocess stage.
 
+        Returns:
+            PhaseDef: The phase associated with the pipeline.
+        """
+        return self.__PHASE
+
+    @property
+    def stage(self) -> StageDef:
+        """
+        The stage of the pipeline associated with the preprocess stage.
+
+        Returns:
+            StageDef: The stage associated with the pipeline.
+        """
+        return self.__STAGE
+
+    @property
+    def dftype(self) -> DFType:
+        """
+        Defines the dataframe type of the pipeline.
+
+        Returns:
+            DFType: The dataframe type used in the pipeline.
+        """
+        return self.__DFTYPE
     def reset(self) -> None:
         super().reset()
         self._source_config = None
@@ -100,22 +131,25 @@ class DataCleaningStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._clean_emails))
 
     # -------------------------------------------------------------------------------------------- #
-    def clean_duplicate_review_ids(self) -> DataCleaningStageBuilder:
+    def clean_duplication(self) -> DataCleaningStageBuilder:
+        self.clean_duplicate_review_ids()
+        self.clean_duplicate_reviews()
+        self.clean_duplicate_rows()
+        return self
+
+    def clean_duplicate_review_ids(self) -> None:
         self._clean_duplicate_review_ids = self._task_configs[
             "clean_duplicate_review_ids"
         ]
         self._tasks.append(self._task_builder.build(self._clean_duplicate_review_ids))
-        return self
 
-    def clean_duplicate_reviews(self) -> DataCleaningStageBuilder:
+    def clean_duplicate_reviews(self) -> None:
         self._clean_duplicate_reviews = self._task_configs["clean_duplicate_reviews"]
         self._tasks.append(self._task_builder.build(self._clean_duplicate_reviews))
-        return self
 
-    def clean_duplicate_rows(self) -> DataCleaningStageBuilder:
+    def clean_duplicate_rows(self) -> None:
         self._clean_duplicate_rows = self._task_configs["clean_duplicate_rows"]
         self._tasks.append(self._task_builder.build(self._clean_duplicate_rows))
-        return self
 
     # -------------------------------------------------------------------------------------------- #
     def clean_invalid_characters(self) -> DataCleaningStageBuilder:
@@ -182,7 +216,7 @@ class DataCleaningStageBuilder(StageBuilder):
 
     # -------------------------------------------------------------------------------------------- #
     def clean_elongation(
-        self, threshold: int = 4, max_elongation: int = 3
+        self, threshold: int = 3, max_elongation: int = 2
     ) -> DataCleaningStageBuilder:
         self._clean_elongation = self._task_configs["clean_elongation"]
         self._clean_elongation["params"]["threshold"] = threshold
@@ -286,27 +320,45 @@ class DataCleaningStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._clean_short_reviews))
         return self
 
-    def build(self) -> DataCleaningStageBuilder:
+    def build(
+        self,
+        source_config: Optional[DatasetConfig] = None,
+        target_config: Optional[DatasetConfig] = None,
+        strict: bool = True,
+        ) -> DataCleaningStageBuilder:
         """
         Builds the Preprocess stage by validating configurations, constructing datasets,
         and assembling tasks.
 
+        Args:
+            source_config (Optional[DatasetConfig]): An optional configuration object for
+                the source dataset. If not provided, the method falls back to the source
+                configuration defined in the stage YAML config.
+            target_config (Optional[DatasetConfig]): An optional configuration object for
+                the target dataset. If not provided, the method falls back to the target
+                configuration defined in the stage YAML config.
+            strict (bool): Whether strict, more thorough validation during build process.
+
         Returns:
             DataCleaningStageBuilder: The builder instance with the constructed stage.
         """
-        self._validate()
-        self._stage = DataCleaningStage(
-            source_config=self._source_config,
-            target_config=self._target_config,
+        self._validate(strict=strict)
+
+        # Obtain a spark session
+        self._spark = self._get_spark(dftype=self.dftype)
+
+        stage = DataCleaningStage(
+            source_config=source_config or self._source_config,
+            target_config=target_config or self._target_config,
             tasks=self._tasks,
-            state=self._state,
             repo=self._repo,
             dataset_builder=self._dataset_builder,
             spark=self._spark,
         )
-        return self
+        self.reset()
+        return stage
 
-    def _validate(self) -> None:
+    def _validate(self, strict: bool = True) -> None:
         """
         Validates the configurations and settings for the DataCleaning stage.
 
@@ -318,41 +370,41 @@ class DataCleaningStageBuilder(StageBuilder):
         """
         super()._validate()
         errors = []
-        if self._clean_non_english_app_names is None:
+        if self._clean_non_english_app_names is None and strict is True:
             errors.append(
                 "clean_non_english_app_names is a required step in the DataCleaning Stage."
             )
-        if self._clean_non_english_reviews is None:
+        if self._clean_non_english_reviews is None and strict is True:
             errors.append(
                 "clean_non_english_reviews is a required step in the DataCleaning Stage."
             )
-        if self._clean_accents is None:
+        if self._clean_accents is None and strict is True:
             errors.append("clean_accents is a required step in the DataCleaning Stage.")
-        if self._clean_control_chars is None:
+        if self._clean_control_chars is None and strict is True:
             errors.append(
                 "clean_control_chars is a required step in the DataCleaning Stage."
             )
-        if self._clean_duplicate_review_ids is None:
+        if self._clean_duplicate_review_ids is None and strict is True:
             errors.append(
                 "clean_duplicate_review_ids is a required step in the DataCleaning Stage."
             )
-        if self._clean_elongation is None:
+        if self._clean_elongation is None and strict is True:
             errors.append(
                 "clean_elongation is a required step in the DataCleaning Stage."
             )
-        if self._clean_emails is None:
+        if self._clean_emails is None and strict is True:
             errors.append("clean_emails is a required step in the DataCleaning Stage.")
-        if self._clean_excess_whitespace is None:
+        if self._clean_excess_whitespace is None and strict is True:
             errors.append(
                 "clean_excess_whitespace is a required step in the DataCleaning Stage."
             )
-        if self._clean_html is None:
+        if self._clean_html is None and strict is True:
             errors.append("clean_html is a required step in the DataCleaning Stage.")
-        if self._clean_phone_numbers is None:
+        if self._clean_phone_numbers is None and strict is True:
             errors.append(
                 "clean_phone_numbers is a required step in the DataCleaning Stage."
             )
-        if self._clean_urls is None:
+        if self._clean_urls is None and strict is True:
             errors.append("clean_urls is a required step in the DataCleaning Stage.")
 
         if errors:

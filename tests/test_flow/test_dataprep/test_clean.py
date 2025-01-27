@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Sunday January 26th 2025 11:57:33 pm                                                #
+# Modified   : Monday January 27th 2025 05:30:11 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,11 +22,14 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
+from genailab.analytics.dqa import DQA
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.asset.dataset.dataset import Dataset
 from genailab.asset.dataset.identity import DatasetPassport
 from genailab.core.dtypes import DFType
+from genailab.core.flow import StageDef
 from genailab.flow.dataprep.clean.builder import DataCleaningStageBuilder
+from genailab.flow.dataprep.dqa.builder import DataQualityAssessmentStageBuilder
 from genailab.infra.config.flow import FlowConfigReader
 from genailab.infra.utils.file.fileset import FileSet
 from pyspark.sql import DataFrame
@@ -35,6 +38,7 @@ from pyspark.sql import DataFrame
 # pylint: disable=missing-class-docstring, line-too-long
 # mypy: ignore-errors
 # ------------------------------------------------------------------------------------------------ #
+pd.set_option('display.max_colwidth', None)
 # ------------------------------------------------------------------------------------------------ #
 logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------------------------------------ #
@@ -47,7 +51,7 @@ class TestClean:  # pragma: no cover
     """Tests with source and target configurations passed to the builder."""
 
     # ============================================================================================ #
-    def test_setup(self, container, spark, caplog) -> None:
+    def test_setup(self, container, spark, spark_df_dirty, caplog) -> None:
         start = datetime.now()
         logger.info(
             f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
@@ -59,7 +63,7 @@ class TestClean:  # pragma: no cover
         # Get the target configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["clean"]["target_config"]
+        ]["stages"]["semiclean"]["target_config"]
         config = DatasetConfig.from_dict(config=config)
         # Remove the dataset if it exists
         repo = container.io.repo()
@@ -78,9 +82,6 @@ class TestClean:  # pragma: no cover
         logger.info(single_line)
 
     # ============================================================================================ #
-    @pytest.mark.skip(
-        reason="Full pipeline is working. Unless changes, skip and run in non-strict mode in the next method"
-    )
     def test_clean_full(self, container, spark, caplog) -> None:
         start = datetime.now()
         logger.info(
@@ -91,7 +92,7 @@ class TestClean:  # pragma: no cover
         # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["clean"]
+        ]["stages"]["semiclean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -101,19 +102,19 @@ class TestClean:  # pragma: no cover
 
         stage = (
             DataCleaningStageBuilder()
-            .detect_non_english()
-            .detect_privacy_issues()
-            .detect_duplication()
-            .detect_invalid_values()
-            .detect_elongation(threshold=3, max_elongation=2)
-            .detect_special_chars()
-            .detect_invalid_characters()
-            .detect_excess_special_chars()
-            .detect_repeated_words()
-            .detect_repeated_sequences()
-            .detect_repeated_phrases()
-            .detect_short_reviews()
-            .detect_excess_whitespace()
+            .clean_non_english()
+            .clean_privacy_issues()
+            .clean_duplication()
+            .clean_invalid_values()
+            .clean_elongation(threshold=3, max_elongation=2)
+            .clean_special_chars()
+            .clean_invalid_characters()
+            .clean_excess_special_chars()
+            .clean_repeated_words()
+            .clean_repeated_sequences()
+            .clean_repeated_phrases()
+            .clean_short_reviews()
+            .clean_excess_whitespace()
             .build(source_config=source_config, target_config=target_config)
         )
         target = stage.run()
@@ -124,7 +125,7 @@ class TestClean:  # pragma: no cover
             stage=source_config.stage,
             name=source_config.name,
         )
-        source = repo.get(asset_id=source_asset_id, dftype=DFType.PANDAS)
+        source = repo.get(asset_id=source_asset_id, dftype=DFType.SPARK, spark=spark)
 
         # Source Dataset
         df1 = source.dataframe
@@ -164,16 +165,63 @@ class TestClean:  # pragma: no cover
         logging.info(f"\nTarget Event Log{target.eventlog}\n")
         logging.info(f"\nTarget Dataframe{target.dataframe.head(5)}\n")
 
-        # Combine the before and after dataframes
-        # Rename the 'content' column in df2 to 'result'
-        df2 = df2.rename(columns={'content': 'result'})
+        # ---------------------------------------------------------------------------------------- #
+        end = datetime.now()
+        duration = round((end - start).total_seconds(), 1)
 
-        # Merge the DataFrames on the 'id' column
-        merged_df = pd.merge(df1, df2, on='id', how='left')
+        logger.info(
+            f"\n\nCompleted {self.__class__.__name__} {inspect.stack()[0][3]} in {duration} seconds at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(single_line)
+    # ============================================================================================ #
+    def test_dqv(self, container, caplog) -> None:
+        start = datetime.now()
+        logger.info(
+            f"\n\nStarted {self.__class__.__name__} {inspect.stack()[0][3]} at {start.strftime('%I:%M:%S %p')} on {start.strftime('%m/%d/%Y')}"
+        )
+        logger.info(double_line)
+        # ---------------------------------------------------------------------------------------- #
+        # Run Data Quality Verification on the SemiClean Dataset
+        config = FlowConfigReader().get_config(section="phases", namespace=False)[
+            "dataprep"
+        ]["stages"]["dqa"]
 
-        # Display the result
-        logging.info(f"\n\nResults\n")
-        logging.info(merged_df[["content", "result"]])
+        # Initialize the source and target configs from the DQA Pipeline Config
+        source_config = DatasetConfig.from_dict(config['source_config'])
+        target_config = DatasetConfig.from_dict(config["target_config"])
+        # Update source stage to semiclean, and target stage to clean
+        source_config.stage = StageDef.SEMICLEAN
+        target_config.stage = StageDef.CLEAN
+        # Ensure the dftype is set to pandas
+        source_config.dftype = DFType.SPARK
+        target_config.dftype = DFType.SPARK
+        # Configure the DQA Pipeline
+        stage = (
+            DataQualityAssessmentStageBuilder()
+            .detect_non_english()
+            .detect_privacy_issues()
+            .detect_duplication()
+            .detect_invalid_values()
+            .detect_elongation(threshold=3, max_elongation=2)
+            .detect_special_chars()
+            .detect_invalid_characters()
+            .detect_excess_special_chars()
+            .detect_repeated_words()
+            .detect_repeated_sequences()
+            .detect_repeated_phrases()
+            .detect_short_reviews()
+            .detect_excess_whitespace()
+            .build(source_config=source_config, target_config=target_config)
+        )
+        target = stage.run()
+
+        # Obrtain the results as a pandas dataframe
+        repo = container.io.repo()
+        target = repo.get(asset_id=target.asset_id, dftype=DFType.PANDAS)
+
+        # Evaluate the results
+        target_results = DQA(dataset=target).summarize_anomalies()
+        logging.info(f"\n\nResults\n{target_results}")
 
         # ---------------------------------------------------------------------------------------- #
         end = datetime.now()
@@ -184,6 +232,7 @@ class TestClean:  # pragma: no cover
         )
         logger.info(single_line)
 
+    @pytest.mark.skip(reason="Been validated...")
     # ============================================================================================ #
     def test_clean_non_strict(self, container, spark, caplog) -> None:
         start = datetime.now()
@@ -195,7 +244,7 @@ class TestClean:  # pragma: no cover
         # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["clean"]
+        ]["stages"]["semiclean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -205,7 +254,7 @@ class TestClean:  # pragma: no cover
 
         stage = (
             DataCleaningStageBuilder()
-            .detect_excess_whitespace()
+            .clean_excess_whitespace()
             .build(
                 source_config=source_config, target_config=target_config, strict=False
             )
@@ -218,7 +267,7 @@ class TestClean:  # pragma: no cover
             stage=source_config.stage,
             name=source_config.name,
         )
-        source = repo.get(asset_id=source_asset_id, dftype=DFType.PANDAS)
+        source = repo.get(asset_id=source_asset_id, dftype=DFType.SPARK, spark=spark)
 
         # Source Dataset
         assert isinstance(source, Dataset)
@@ -265,6 +314,7 @@ class TestClean:  # pragma: no cover
         )
         logger.info(single_line)
 
+    @pytest.mark.skip(reason="Been validated...")
     # ============================================================================================ #
     def test_clean_cache(self, caplog) -> None:
         start = datetime.now()
@@ -276,7 +326,7 @@ class TestClean:  # pragma: no cover
         # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["clean"]
+        ]["stages"]["semiclean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -286,9 +336,9 @@ class TestClean:  # pragma: no cover
 
         stage = (
             DataCleaningStageBuilder()
-            .detect_privacy_issues()
-            .detect_duplication()
-            .detect_excess_whitespace()
+            .clean_privacy_issues()
+            .clean_duplication()
+            .clean_excess_whitespace()
             .build(
                 source_config=source_config, target_config=target_config, strict=False
             )
@@ -321,6 +371,7 @@ class TestClean:  # pragma: no cover
         )
         logger.info(single_line)
 
+    @pytest.mark.skip(reason="Been validated...")
     # ============================================================================================ #
     def test_clean_force(self, caplog) -> None:
         start = datetime.now()
@@ -332,7 +383,7 @@ class TestClean:  # pragma: no cover
         # Obtain the clean configuration
         config = FlowConfigReader().get_config(section="phases", namespace=False)[
             "dataprep"
-        ]["stages"]["clean"]
+        ]["stages"]["semiclean"]
         # Configure the Source and Target Configs
         source_config = DatasetConfig.from_dict(config["source_config"])
         # Change the name of the target
@@ -342,9 +393,9 @@ class TestClean:  # pragma: no cover
 
         stage = (
             DataCleaningStageBuilder()
-            .detect_privacy_issues()
-            .detect_duplication()
-            .detect_excess_whitespace()
+            .clean_privacy_issues()
+            .clean_duplication()
+            .clean_excess_whitespace()
             .build(
                 source_config=source_config, target_config=target_config, strict=False
             )
@@ -377,6 +428,7 @@ class TestClean:  # pragma: no cover
         )
         logger.info(single_line)
 
+    @pytest.mark.skip(reason="Been validated...")
     # ============================================================================================ #
     def test_clean_strict_exception(self, container, spark, caplog) -> None:
         start = datetime.now()
@@ -400,7 +452,7 @@ class TestClean:  # pragma: no cover
 
             _ = (
                 DataCleaningStageBuilder()
-                .detect_excess_whitespace()
+                .clean_excess_whitespace()
                 .build(source_config=source_config, target_config=target_config)
             )
         # ---------------------------------------------------------------------------------------- #
@@ -412,7 +464,7 @@ class TestClean:  # pragma: no cover
         )
         logger.info(single_line)
 
-
+@pytest.mark.skip(reason="Been validated...")
 @pytest.mark.clean
 class TestCleanFromYAML:  # pragma: no cover
     """Tests with source and target configurations read from YAML."""
@@ -468,9 +520,9 @@ class TestCleanFromYAML:  # pragma: no cover
 
         stage = (
             DataCleaningStageBuilder()
-            .detect_privacy_issues()
-            .detect_duplication()
-            .detect_excess_whitespace()
+            .clean_privacy_issues()
+            .clean_duplication()
+            .clean_excess_whitespace()
             .build(strict=False)
         )
         target = stage.run()

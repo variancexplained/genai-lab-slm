@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Monday January 27th 2025 03:51:59 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -28,6 +28,8 @@ from genailab.flow.base.stage import Stage
 from genailab.flow.base.task import Task
 from genailab.infra.persist.repo.dataset import DatasetRepo
 from pyspark.sql import SparkSession
+
+from genailab.infra.utils.file.fileset import FileFormat
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -111,21 +113,23 @@ class DataCleaningStage(Stage):
             list(dataset.dataframe.filter(regex="dqa_")), axis=1
         )
 
-        # Create the new dataset with the cleaned dataframe
-        clean_dataset = (
-            self._dataset_builder.from_dataframe(dataframe=df)
-            .passport(passport)
-            .to_parquet()
-            .build()
-            .dataset
+        # Create a configuration for the clean dataset
+        config = DatasetConfig(phase=self.phase,
+                               stage=StageDef.CLEAN,
+                               name="review",
+                               file_format=FileFormat.PARQUET,
+                               dftype=DFType.SPARK)
+        clean_dataset = (DatasetBuilder()
+                         .from_config(config)
+                         .dataframe(dataframe=df)
+                         .source(dataset.passport)
+                         .creator(self.__class__.__name__)
+                         .build()
         )
 
         # Add the dataset to the repository
         self._repo.add(
-            asset=clean_dataset, dftype=DFType.PANDAS, entity=self.__class__.__name__
+            asset=clean_dataset, entity=self.__class__.__name__
         )
-
-        # Update the flow state
-        self._state.create(passport=passport)
 
         return clean_dataset

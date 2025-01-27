@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Monday January 27th 2025 01:40:57 am                                                #
+# Modified   : Monday January 27th 2025 05:01:16 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -98,7 +98,7 @@ class RegexFactory:
         },
         # Excessive whitespace
         "whitespace": {
-            "pattern": r"\s{2,}",
+            "pattern": r"[ \t\u00A0]{2,}",
             "replacement": " ",
         },
         # Accented characters
@@ -167,7 +167,7 @@ class RegexFactory:
 
         Args:
             threshold (int): Minimum number of consecutive repeated characters to consider elongation.
-            max_elongation (int): Maximum number of consecutive repeated characters to normalize to.
+            max_elongation (int): Maximum number of consecutive repeated characters allowed.
 
         Returns:
             Pattern: Regex pattern and replacement logic.

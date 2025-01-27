@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Monday January 27th 2025 12:05:06 am                                                #
+# Modified   : Monday January 27th 2025 02:40:23 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -180,7 +180,7 @@ class Stage(ABC):
         # Remove existing target dataset if it exists.
         self._remove_dataset(config=self._target_config)
 
-        # Obtain the
+        # Obtain the source dataset from the repo.
         source = self._get_dataset(config=self._source_config)
         dataframe = source.dataframe
 
@@ -244,12 +244,15 @@ class Stage(ABC):
             if meta_only:
                 return self._repo.get_meta(asset_id=asset_id)
             else:
-                return self._repo.get(
+                dataset = self._repo.get(
                     asset_id=asset_id,
-                    dftype=self.dftype,
+                    dftype=config.dftype,
                     spark=self._spark,
                     entity=self.__class__.__name__,
                 )
+                # Verify dataframe type is as requested
+                self._validate_dataframe_type(config=config,dataframe=dataset.dataframe)
+                return dataset
         except ObjectNotFoundError as e:
             msg = f"Dataset {asset_id} not found in the repository.\n{e}"
             self._logger.error(msg)
@@ -282,3 +285,9 @@ class Stage(ABC):
         )
         if self._repo.exists(asset_id=asset_id):
             self._repo.remove(asset_id=asset_id)
+
+    def _validate_dataframe_type(self, config: DatasetConfig, dataframe: Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]) -> None:
+        if ((config.dftype == DFType.PANDAS and isinstance(dataframe, DataFrame)) or (config.dftype in(DFType.SPARK, DFType.SPARKNLP) and not isinstance(dataframe, DataFrame))):
+            msg = f"DataFrame type returned from the repository is invalid. Expected {config.dftype.value}. Received {type(dataframe)}"
+            self._logger.error(msg)
+            raise TypeError(msg)
