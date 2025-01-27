@@ -42,12 +42,12 @@ phases:
         tasks:
           encoding:
             class_name: VerifyEncodingTask
-            module: genailabslm.flow.dataprep.preprocess.task
+            module: genailab.flow.dataprep.preprocess.task
             params:
               column: content
           datatypes:
             class_name: CastDataTypeTask
-            module: genailabslm.flow.dataprep.preprocess.task
+            module: genailab.flow.dataprep.preprocess.task
             params:
               datatypes:
                 id: string
@@ -63,12 +63,12 @@ phases:
                 date: datetime64[ms]
           newlines:
             class_name: RemoveNewlinesTask
-            module: genailabslm.flow.dataprep.preprocess.task
+            module: genailab.flow.dataprep.preprocess.task
             params:
               column: content
           datetime:
             class_name: ConvertDateTimeNStoMS
-            module: genailabslm.flow.dataprep.preprocess.task
+            module: genailab.flow.dataprep.preprocess.task
             params:
               column: date
 
@@ -91,70 +91,70 @@ phases:
         tasks:
           detect_urls:
             class_name: DetectOrRepairURLTask
-            module: genailabslm.flow.dataprep.quality.privacy
+            module: genailab.flow.dataprep.quality.privacy
             params:
               column: content
               new_column: dqa_privacy_contains_url
               mode: detect
           detect_emails:
             class_name: DetectOrRepairEmailAddressTask
-            module: genailabslm.flow.dataprep.quality.privacy
+            module: genailab.flow.dataprep.quality.privacy
             params:
               column: content
               new_column: dqa_privacy_contains_email
               mode: detect
           detect_phone_numbers:
             class_name: DetectOrRepairPhoneNumberTask
-            module: genailabslm.flow.dataprep.quality.privacy
+            module: genailab.flow.dataprep.quality.privacy
             params:
               column: content
               new_column: dqa_privacy_contains_phone
               mode: detect
           detect_control_chars:
             class_name: DetectOrRepairControlCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_ctrl_chars
               mode: detect
           detect_accents:
             class_name: DetectOrRepairAccentedCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_accents
               mode: detect
           detect_html:
             class_name: DetectOrRepairHTMLCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_html_chars
               mode: detect
           detect_excess_whitespace:
             class_name: DetectOrRepairExcessiveWhitespaceTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_whitespace
               mode: detect
           detect_non_english_app_names:
             class_name: DetectOrRepairNonEnglishTask
-            module: genailabslm.flow.dataprep.quality.relevance
+            module: genailab.flow.dataprep.quality.relevance
             params:
               column: app_name
               new_column: dqa_relevance_contains_non_english_app_name
               mode: detect
           detect_non_english_reviews:
             class_name: DetectOrRepairNonEnglishTask
-            module: genailabslm.flow.dataprep.quality.relevance
+            module: genailab.flow.dataprep.quality.relevance
             params:
               column: content
               new_column: dqa_relevance_contains_non_english_text
               mode: detect
           detect_special_chars:
             class_name: DetectOrRepairSpecialCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_irrelevant_special_chars
@@ -162,7 +162,7 @@ phases:
               mode: detect
           detect_excess_special_chars:
             class_name: DetectOrRepairExcessiveSpecialCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_special_chars
@@ -172,7 +172,7 @@ phases:
               mode: detect
           detect_duplicate_rows:
             class_name: DetectOrRepairUniquenessTask
-            module: genailabslm.flow.dataprep.quality.unique
+            module: genailab.flow.dataprep.quality.unique
             params:
               column:
                 - id
@@ -189,7 +189,7 @@ phases:
               mode: detect
           detect_duplicate_review_ids:
             class_name: DetectOrRepairUniquenessTask
-            module: genailabslm.flow.dataprep.quality.unique
+            module: genailab.flow.dataprep.quality.unique
             params:
               column:
                 - id
@@ -197,7 +197,7 @@ phases:
               mode: detect
           detect_duplicate_reviews:
             class_name: DetectOrRepairUniquenessTask
-            module: genailabslm.flow.dataprep.quality.unique
+            module: genailab.flow.dataprep.quality.unique
             params:
               column:
                 - app_id
@@ -207,7 +207,7 @@ phases:
               mode: detect
           detect_elongation:
             class_name: DetectOrRepairElongationTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               threshold: 3
@@ -216,7 +216,7 @@ phases:
               mode: detect
           detect_repeated_sequences:
             class_name: DetectOrRepairRepeatedSequenceTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               length_of_sequence: 2
@@ -226,7 +226,7 @@ phases:
               mode: detect
           detect_repeated_words:
             class_name: DetectOrRepairRepeatedWordsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_word_repetition
@@ -235,7 +235,7 @@ phases:
               mode: detect
           detect_repeated_phrases:
             class_name: DetectOrRepairRepeatedPhraseTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_phrase_repetition
@@ -245,7 +245,7 @@ phases:
               mode: detect
           detect_short_reviews:
             class_name: DetectOrRepairShortReviewsTask
-            module: genailabslm.flow.dataprep.quality.relevance
+            module: genailab.flow.dataprep.quality.relevance
             params:
               column: content
               new_column: dqa_relevance_short_review
@@ -254,7 +254,7 @@ phases:
               mode: detect
           detect_invalid_categories:
             class_name: DetectOrRepairCategoryAnomalyTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: category
               new_column: dqa_validity_invalid_category
@@ -276,7 +276,7 @@ phases:
                 - 'Utilities'
           detect_invalid_ratings:
             class_name: DetectOrRepairRatingAnomalyTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: rating
               new_column: dqa_validity_invalid_rating
@@ -285,7 +285,7 @@ phases:
               range_max: 5
           detect_invalid_review_dates:
             class_name: DetectOrRepairReviewDateAnomalyTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: date
               new_column: dqa_validity_invalid_review_date
@@ -312,68 +312,68 @@ phases:
         tasks:
           clean_urls:
             class_name: DetectOrRepairURLTask
-            module: genailabslm.flow.dataprep.quality.privacy
+            module: genailab.flow.dataprep.quality.privacy
             params:
               column: content
               new_column: dqa_privacy_contains_url
               mode: repair
           clean_emails:
             class_name: DetectOrRepairEmailAddressTask
-            module: genailabslm.flow.dataprep.quality.privacy
+            module: genailab.flow.dataprep.quality.privacy
             params:
               column: content
               new_column: dqa_privacy_contains_email
               mode: repair
           clean_phone_numbers:
             class_name: DetectOrRepairPhoneNumberTask
-            module: genailabslm.flow.dataprep.quality.privacy
+            module: genailab.flow.dataprep.quality.privacy
             params:
               column: content
               new_column: dqa_privacy_contains_phone
               mode: repair
           clean_control_chars:
             class_name: DetectOrRepairControlCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_ctrl_chars
               mode: repair
           clean_accents:
             class_name: DetectOrRepairAccentedCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_accents
               mode: repair
           clean_html:
             class_name: DetectOrRepairHTMLCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_html_chars
               mode: repair
           clean_excess_whitespace:
             class_name: DetectOrRepairExcessiveWhitespaceTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_whitespace
               mode: repair
           clean_non_english_app_names:
             class_name: DetectOrRepairNonEnglishTask
-            module: genailabslm.flow.dataprep.quality.relevance
+            module: genailab.flow.dataprep.quality.relevance
             params:
               indicator_column: dqa_relevance_contains_non_english_app_name
               mode: repair
           clean_non_english_reviews:
             class_name: DetectOrRepairNonEnglishTask
-            module: genailabslm.flow.dataprep.quality.relevance
+            module: genailab.flow.dataprep.quality.relevance
             params:
               indicator_column: dqa_relevance_contains_non_english_text
               mode: repair
           clean_special_chars:
             class_name: DetectOrRepairSpecialCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_irrelevant_special_chars
@@ -381,7 +381,7 @@ phases:
               mode: repair
           clean_excess_special_chars:
             class_name: DetectOrRepairExcessiveSpecialCharsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_special_chars
@@ -391,7 +391,7 @@ phases:
               mode: repair
           clean_duplicate_review_ids:
             class_name: DetectOrRepairUniquenessTask
-            module: genailabslm.flow.dataprep.quality.unique
+            module: genailab.flow.dataprep.quality.unique
             params:
               column:
                 - id
@@ -399,7 +399,7 @@ phases:
               mode: repair
           clean_duplicate_reviews:
             class_name: DetectOrRepairUniquenessTask
-            module: genailabslm.flow.dataprep.quality.unique
+            module: genailab.flow.dataprep.quality.unique
             params:
               column:
                 - app_id
@@ -409,7 +409,7 @@ phases:
               mode: repair
           clean_elongation:
             class_name: DetectOrRepairElongationTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               threshold: 3
@@ -418,13 +418,13 @@ phases:
               mode: repair
           clean_punctuation:
             class_name: NormalizePunctuationTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               mode: repair
           clean_repeated_sequences:
             class_name: DetectOrRepairRepeatedSequenceTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               length_of_sequence: 2
@@ -434,7 +434,7 @@ phases:
               mode: repair
           clean_repeated_words:
             class_name: DetectOrRepairRepeatedWordsTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_word_repetition
@@ -443,7 +443,7 @@ phases:
               mode: repair
           clean_repeated_phrases:
             class_name: DetectOrRepairRepeatedPhraseTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: content
               new_column: dqa_validity_contains_excess_phrase_repetition
@@ -453,7 +453,7 @@ phases:
               mode: repair
           clean_short_reviews:
             class_name: DetectOrRepairShortReviewsTask
-            module: genailabslm.flow.dataprep.quality.relevance
+            module: genailab.flow.dataprep.quality.relevance
             params:
               column: content
               new_column: dqa_relevance_short_review
@@ -462,7 +462,7 @@ phases:
               mode: repair
           clean_invalid_categories:
             class_name: DetectOrRepairCategoryAnomalyTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: category
               new_column: dqa_validity_invalid_category
@@ -484,7 +484,7 @@ phases:
                 - 'Utilities'
           clean_invalid_ratings:
             class_name: DetectOrRepairRatingAnomalyTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: rating
               new_column: dqa_validity_invalid_rating
@@ -493,7 +493,7 @@ phases:
               range_max: 5
           clean_invalid_review_dates:
             class_name: DetectOrRepairReviewDateAnomalyTask
-            module: genailabslm.flow.dataprep.quality.validity
+            module: genailab.flow.dataprep.quality.validity
             params:
               column: date
               new_column: dqa_validity_invalid_review_date
@@ -525,35 +525,35 @@ phases:
         tasks:
           noun_phrase_count:
             class_name: NounPhraseCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_syntactic_noun_phrases
               new_column: tqa_syntactic_noun_phrase_count
               normalized: True
           adjective_noun_pair_count:
             class_name: AdjectiveNounPairCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_syntactic_adjective_noun_pairs
               new_column: tqa_syntactic_adjective_noun_pair_count
               normalized: True
           aspect_verb_pair_count:
             class_name: AspectVerbPairCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_syntactic_aspect_verb_pairs
               new_column: tqa_syntactic_aspect_related_verb_count
               normalized: True
           adverb_phrase_count:
             class_name: AdverbPhraseCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_syntactic_adverb_phrases
               new_column: tqa_syntactic_adverb_phrase_count
               normalized: True
           noun_count:
             class_name: NounCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_pos
               new_column: tqa_syntactic_noun_count
@@ -561,7 +561,7 @@ phases:
               normalized: True
           verb_count:
             class_name: VerbCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_pos
               new_column: tqa_syntactic_verb_count
@@ -569,7 +569,7 @@ phases:
               normalized: True
           adverb_count:
             class_name: AdverbCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_pos
               new_column: tqa_syntactic_adverb_count
@@ -577,7 +577,7 @@ phases:
               normalized: True
           adjective_count:
             class_name: AdjectiveCount
-            module: genailabslm.flow.feature.tqa.syntactic.task
+            module: genailab.flow.feature.tqa.syntactic.task
             params:
               column: tqa_pos
               new_column: tqa_syntactic_adjective_count

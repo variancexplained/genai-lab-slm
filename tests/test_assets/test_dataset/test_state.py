@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday January 25th 2025 12:50:12 am                                              #
-# Modified   : Saturday January 25th 2025 04:41:13 pm                                              #
+# Modified   : Sunday January 26th 2025 10:38:15 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -21,7 +21,7 @@ import logging
 from datetime import datetime
 
 import pytest
-from genailabslm.asset.dataset.state import DatasetState, DatasetStateDef
+from genailab.asset.dataset.state import DatasetState, DatasetStateDef
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long

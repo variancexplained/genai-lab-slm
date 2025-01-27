@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Saturday January 25th 2025 04:40:40 pm                                              #
+# Modified   : Sunday January 26th 2025 10:41:21 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,22 +21,22 @@ import sys
 
 import pytest
 from dotenv import load_dotenv
-from genailabslm.container import GenAILabSLMContainer
-from genailabslm.core.dtypes import DFType
-from genailabslm.infra.config.app import AppConfigReader
-from genailabslm.infra.persist.cloud.aws import S3Handler
-from genailabslm.infra.utils.file.fileset import FileFormat
+from genailab.container import GenAILabSLMContainer
+from genailab.core.dtypes import DFType
+from genailab.infra.config.app import AppConfigReader
+from genailab.infra.persist.cloud.aws import S3Handler
+from genailab.infra.utils.file.fileset import FileFormat
 from pyspark.sql import SparkSession
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()
 # ------------------------------------------------------------------------------------------------ #
 collect_ignore_glob = [
-    "discover/core/*.*",
-    "discover/flow/dataprep/clean/*.*",
-    "discover/flow/dataprep/feature/*.*",
+    "genailab/core/*.*",
+    "genailab/flow/dataprep/clean/*.*",
+    "genailab/flow/dataprep/feature/*.*",
 ]
-collect_ignore = ["discover/core/*.*"]
+collect_ignore = ["genailab/core/*.*"]
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=redefined-outer-name, no-member
 # ------------------------------------------------------------------------------------------------ #
@@ -51,10 +51,10 @@ def container():
     container.init_resources()
     container.wire(
         packages=[
-            "genailabslm.asset.dataset",
-            "genailabslm.flow.base",
-            "genailabslm.flow.dataprep.preprocess",
-            "genailabslm.flow.dataprep.dqa",
+            "genailab.asset.dataset",
+            "genailab.flow.base",
+            "genailab.flow.dataprep.preprocess",
+            "genailab.flow.dataprep.dqa",
         ]
     )
     return container

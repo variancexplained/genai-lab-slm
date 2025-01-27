@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Saturday January 25th 2025 04:41:13 pm                                              #
+# Modified   : Sunday January 26th 2025 10:38:15 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,13 +22,13 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
-from genailabslm.asset.dataset.config import DatasetConfig
-from genailabslm.asset.dataset.dataset import Dataset
-from genailabslm.asset.dataset.identity import DatasetPassport
-from genailabslm.core.dtypes import DFType
-from genailabslm.flow.dataprep.dqa.builder import DataQualityAssessmentStageBuilder
-from genailabslm.infra.config.flow import FlowConfigReader
-from genailabslm.infra.utils.file.fileset import FileSet
+from genailab.asset.dataset.config import DatasetConfig
+from genailab.asset.dataset.dataset import Dataset
+from genailab.asset.dataset.identity import DatasetPassport
+from genailab.core.dtypes import DFType
+from genailab.flow.dataprep.dqa.builder import DataQualityAssessmentStageBuilder
+from genailab.infra.config.flow import FlowConfigReader
+from genailab.infra.utils.file.fileset import FileSet
 from pyspark.sql import DataFrame
 
 # ------------------------------------------------------------------------------------------------ #

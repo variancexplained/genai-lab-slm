@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "discover"
+name = "genailab"
 version = "0.0.1"
-description = "genai-lab-slm: Opportunity and Unmet Needs Discovery with Generative AI"
+description = "GenAI-Lab: Rethinking Generative AI LLMs - The Emergent Small Language Model (SLM) Cost Performance**"
 authors = [
     "John James <john@variancexplained.com>",
 ]
@@ -28,7 +28,7 @@ classifiers = [
 ]
 
 packages = [
-    { include = "discover"}
+    { include = "genailab"}
 ]
 
 [tool.poetry.dependencies]
@@ -64,7 +64,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.isort]
 profile = "black"
-src_paths = ["discover", "tests"]
+src_paths = ["genailab", "tests"]
 
 [tool.black]
 target-version = ["py37", "py38", "py39", "py310"]
@@ -78,7 +78,7 @@ log_cli_format = "%(asctime)s [%(levelname)8s] %(message)s (%(filename)s:%(linen
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 norecursedirs = ["data"]
 addopts = """
-    --cov=discover \
+    --cov=genailab \
     --cov=tests \
     --cov-report=term-missing \
     --no-cov-on-fail \

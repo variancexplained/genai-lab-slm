@@ -1,0 +1,162 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"psi-header.config": {
+			"forceToTop": true,
+			"blankLinesAfter": 1,
+			"spacesBetweenYears": false,
+			"license": "MIT",
+			"author": "John James",
+			"initials": "J2",
+			"authorEmail": "john@variancexplained.com",
+			"company": "VarianceXplained",
+			"copyrightHolder": "John James",
+			"creationDateZero": "asIs"
+		},
+		"psi-header.changes-tracking": {
+
+			"isActive": true,
+			"modAuthor": "Modified By:",
+			"modDate": "Modified:",
+			"modDateFormat": "dddd MMMM Do YYYY hh:mm:ss a",
+			"include": [
+				"python",
+				"shellscript",
+				"yaml",
+				"sql",
+				"ini",
+				"cpp"
+			],
+			"includeGlob": [
+				"./**/*/.py"
+			],
+			"exclude": [
+				"markdown",
+				"json",
+				"jsonc",
+				"sh",
+				"sql",
+				".bash_profile"
+			],
+			"excludeGlob": [
+				"./**/*/ignoreme.*"
+			],
+			"autoHeader": "autoSave",
+			"enforceHeader": true,
+			"replace": [
+				"Filename",
+				"Project"
+			],
+			"updateLicenseVariables": false
+		},
+		"psi-header.variables": [
+			[
+				"projectCreationYear",
+				"2024"
+			],
+			[
+				"url",
+				"https://github.com/variancexplained/genai-lab-slm"
+			],
+			[
+				"projectname",
+				"GenAI-Lab-SLM"
+			],
+			[
+				"version",
+				"0.1.0"
+			],
+			[
+				"pythonversion",
+				"3.10.14"
+			]
+		],
+		"psi-header.lang-config": [
+			{
+				"language": "python",
+				"begin": "# ================================================================================================ #",
+				"prefix": "# ",
+				"suffix": " #",
+				"lineLength": 100,
+				"end": "# ================================================================================================ #",
+				"forceToTop": true,
+				"blankLinesAfter": 0,
+				"beforeHeader": [
+					"#!/usr/bin/env python3",
+					"# -*- coding:utf-8 -*-"
+				],
+				"afterHeader": [],
+				"rootDirFileName": "setup.cfg",
+				"modAuthor": "Modified By:",
+				"modDate": "Modified",
+				"modDateFormat": "dddd MMMM Do YYYY hh:mm:ss a",
+				"replace": [
+					"Filename   :",
+					"URL        :",
+					"Project    :",
+					"Version    :"
+				],
+				"ignoreLines": []
+			},
+			{
+				"language": "yaml",
+				"mapTo": "python"
+			},
+			{
+				"language": "shellscript",
+				"mapTo": "python"
+			},
+			{
+				"language": "ini",
+				"mapTo": "python"
+			}
+		],
+		"psi-header.templates": [
+			{
+				"language": "python",
+				"template": [
+					"Project    : <<projectname>>",
+					"Version    : <<version>>",
+					"Python     : <<pythonversion>>",
+					"Filename   : <<filerelativepath>>",
+					"------------------------------------------------------------------------------------------------",
+					"Author     : <<author>>",
+					"Email      : <<authoremail>>",
+					"URL        : <<url>>",
+					"------------------------------------------------------------------------------------------------",
+					"Created    : <<filecreated('dddd MMMM Do YYYY hh:mm:ss a')>>",
+					"Modified   : <<dateformat('dddd MMMM Do YYYY hh:mm:ss a')>>",
+					"------------------------------------------------------------------------------------------------",
+					"License    : <<licensename>>",
+					"Copyright  : (c) <<yeartoyear(fc, now)>> <<copyrightHolder>>"
+				]
+			},
+			{
+				"language": "yaml",
+				"mapTo": "python"
+			},
+			{
+				"language": "shellscript",
+				"mapTo": "python"
+			},
+			{
+				"language": "ini",
+				"mapTo": "python"
+			}
+		],
+		"yaml.schemas": {
+			"https://json.schemastore.org/yamllint.json": [
+				"file:///home/john/projects/genailab/config/base/flow.yaml",
+				"file:///home/john/projects/genailab/config/dev/flow.yaml",
+				"file:///home/john/projects/genailab/config/test/flow.yaml",
+				"file:///home/john/projects/genailab/config/flow.yaml",
+				"file:///home/john/projects/genailab/config/prod/flow.yaml"
+			]
+		},
+		"notebook.output.textLineLimit": 50
+	}
+}

@@ -4,14 +4,14 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /tests/test_flow/test_dataprep/test_ingest.py                                       #
+# Filename   : /tests/test_flow/test_dataprep/test_preprocss.py                                    #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Sunday January 26th 2025 05:57:20 am                                                #
+# Modified   : Sunday January 26th 2025 10:38:15 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,13 +22,13 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
-from genailabslm.asset.dataset.config import DatasetConfig
-from genailabslm.asset.dataset.dataset import Dataset
-from genailabslm.asset.dataset.identity import DatasetPassport
-from genailabslm.asset.dataset.state import DatasetStateDef
-from genailabslm.flow.dataprep.preprocess.builder import PreprocessStageBuilder
-from genailabslm.infra.config.flow import FlowConfigReader
-from genailabslm.infra.utils.file.fileset import FileSet
+from genailab.asset.dataset.config import DatasetConfig
+from genailab.asset.dataset.dataset import Dataset
+from genailab.asset.dataset.identity import DatasetPassport
+from genailab.asset.dataset.state import DatasetStateDef
+from genailab.flow.dataprep.preprocess.builder import PreprocessStageBuilder
+from genailab.infra.config.flow import FlowConfigReader
+from genailab.infra.utils.file.fileset import FileSet
 
 # ------------------------------------------------------------------------------------------------ #
 # pylint: disable=missing-class-docstring, line-too-long
