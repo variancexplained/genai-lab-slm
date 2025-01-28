@@ -11,13 +11,13 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Monday January 27th 2025 01:29:10 am                                                #
+# Modified   : Tuesday January 28th 2025 06:17:37 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
-
+from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Type, Union
 
 import pandas as pd
@@ -219,11 +219,41 @@ class DQA(Analysis):
         return self._privacy
 
     # -------------------------------------------------------------------------------------------- #
+    #                                  COMPARISON                                                  #
+    # -------------------------------------------------------------------------------------------- #
+    def compare(self, other: Dataset) -> pd.DataFrame:
+        df_stacked = self._stack_df(dataset=other)
+        df_pivot = self._pivot_df(df=df_stacked)
+        # Rename columns
+        df_pivot.rename(columns={"self": self._dataset.stage.label, "other": other.stage.label}, inplace=True)
+        self._plot_comparison(df=df_stacked,x="Dimension", groupvar="Dataset")
+        return df_pivot.round(decimals=2)
+
+    def _stack_df(self, dataset: Dataset) -> pd.DataFrame:
+        other_df = dataset.dqa.analyze_quality(plot=False)
+        other_df['Dataset'] = "other"
+        self_df = self.analyze_quality(plot=False)
+        self_df['Dataset'] = "self"
+        return  pd.concat([other_df, self_df], ignore_index=True, axis=0)
+
+    def _pivot_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        df_pivot = df.pivot(index="Dimension", columns="Dataset", values="Score").reset_index()
+        df_pivot["% Difference"] =  ((df_pivot["self"] - df_pivot["other"]) / df_pivot["other"]) * 100
+        return df_pivot
+
+
+
+    def _plot_comparison(self, df: pd.DataFrame, x: str, groupvar: str) -> None:
+        viz.barplot(data=df, x=x, hue=groupvar, title="Data Quality Scores", palette="blues_r")
+
+
+    # -------------------------------------------------------------------------------------------- #
     #                                 QUALITY SCORE                                                #
     # -------------------------------------------------------------------------------------------- #
-    def analyze_quality(self) -> pd.DataFrame:
+    def analyze_quality(self, plot: bool = True) -> pd.DataFrame:
         df = self.summarize_quality()
-        self.plot_quality(df=df)
+        if plot:
+            self.plot_quality(df=df)
         return df
 
     def summarize_anomalies(self) -> pd.DataFrame:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Tuesday January 28th 2025 01:13:51 am                                               #
+# Modified   : Tuesday January 28th 2025 06:23:45 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -119,6 +119,13 @@ class DataCleaningStage(Stage):
                                name="review",
                                file_format=FileFormat.PARQUET,
                                dftype=DFType.SPARK)
+
+        # Remove the Dataset if it already exists
+        asset_id = self._repo.get_asset_id(phase=config.phase, stage=config.stage, name=config.name)
+        if self._repo.exists(asset_id=asset_id):
+            self._repo.remove(asset_id=asset_id)
+
+        # Create the clean dataset
         clean_dataset = (DatasetBuilder()
                          .from_config(config)
                          .dataframe(dataframe=df)
@@ -127,13 +134,9 @@ class DataCleaningStage(Stage):
                          .build()
         )
 
-        # Delete the dataset if it already exists
-        if self._repo.exists(asset_id=clean_dataset.asset_id):
-            self._repo.remove(asset_id=clean_dataset.asset_id)
-
-        # Add the dataset to the repository
+        # Publish to repository
         self._repo.add(
-            asset=clean_dataset, entity=self.__class__.__name__
+            dataset=clean_dataset, entity=self.__class__.__name__
         )
 
         return clean_dataset

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday January 3rd 2025 12:57:17 am                                                 #
-# Modified   : Tuesday January 28th 2025 03:17:06 am                                               #
+# Modified   : Tuesday January 28th 2025 03:58:17 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -92,31 +92,6 @@ class DetectOrRepairURLTask(TextAnomalyDetectRepairTask):
             **kwargs,
         )
 
-        def repair(self, data: Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]) -> Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]:
-            """
-            Repairs the input data by calling the superclass's repair method and then filtering out rows
-            where a specified column (_new_column) is marked as True.
-
-            This method first invokes the `repair` method from the parent class, and then removes any rows
-            from the dataset where the value of `_new_column` is `True`.
-
-            Args:
-                data (Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]): The input dataset to be repaired.
-                    It can be either a Pandas DataFrame or a PySpark DataFrame.
-
-            Returns:
-                Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]: The repaired dataset with rows
-                where the '_new_column' is `True` removed.
-            """
-
-            # Call the parent class's repair method
-            data = super().repair(data=data)
-
-            # Run detect on the data to flag residual rows.
-            data = super().detect(data=data)
-
-            # Filter out rows where '_new_column' is True
-            return data.filter(F.col(self._new_column) == False)
 
 
 # ------------------------------------------------------------------------------------------------ #

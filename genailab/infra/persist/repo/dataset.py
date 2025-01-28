@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 23rd 2024 02:46:53 pm                                               #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Tuesday January 28th 2025 06:23:32 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -34,7 +34,7 @@ from genailab.infra.exception.object import ObjectExistsError, ObjectNotFoundErr
 from genailab.infra.persist.repo.file.fao import FAO
 from genailab.infra.persist.repo.object.dao import DAO
 from genailab.infra.persist.repo.object.rao import RAO
-from genailab.infra.utils.file.fileset import FileAttr
+from genailab.infra.utils.file.fileset import FileAttr, FileFormat
 from pyspark.sql import SparkSession
 
 
@@ -107,7 +107,9 @@ class DatasetRepo(Repo):
             dataset.publish(entity=entity)
 
         # 2. Determine filepath.
-        filepath = self._get_filepath(dataset=dataset)
+        filepath = self._get_filepath(asset_id=dataset.asset_id,
+                                      file_format=dataset.passport.file_format,
+                                      phase=dataset.phase)
 
         # 3. Persist the DataFrame to file.
         self._fao.create(
@@ -267,6 +269,7 @@ class DatasetRepo(Repo):
         """
         return self._rao.exists(asset_id=asset_id)
 
+    #TODO Create a way to remove orphan datasets
     def remove(self, asset_id: str) -> None:
         """Removes a dataset and its associated file from the repository.
 
@@ -346,36 +349,25 @@ class DatasetRepo(Repo):
             self._logger.error(msg)
             raise RuntimeError(msg)
 
-    def _get_filepath(self, dataset: Dataset) -> str:
-        """Assigns and returns the filepath  for the dataset.
+    def _get_filepath(self, asset_id: str, file_format: FileFormat, phase: PhaseDef) -> str:
 
-        Args:
-            dataset (Dataset): The dataset object.
-
-        Returns:
-            str: The path to the file containing the dataset's dataframe
-
-        Raises:
-            TypeError: If any required arguments are missing or invalid.
-            Exception: If an unknown exception occurs.
-        """
         try:
             # Construct the file extension and filename
-            filext = dataset.passport.file_format.ext.lstrip(
+            filext = file_format.ext.lstrip(
                 "."
             )  # Remove leading dot if present
-            filename = f"{dataset.asset_id}.{filext}"
+            filename = f"{asset_id}.{filext}"
 
             # Use Path to construct the full file path and convert it to string
-            filepath = str(Path(self._location) / dataset.phase.value / filename)
-            self._logger.debug(f"Set Dataset {dataset.asset_id} filepath to {filepath}")
+            filepath = str(Path(self._location) / phase.value / filename)
+            self._logger.debug(f"Set Dataset {asset_id} filepath to {filepath}")
             return filepath
 
         except AttributeError as e:
             msg = "An TypeError occurred while creating the filepath."
-            msg += f"asset_id: Expected a string type, received a {type(dataset.asset_id)} object.\n"
-            msg += f"phase: Expected a PhaseDef type, received a {type(dataset.phase)} object.\n"
-            msg += f"file_format: Expected a FileFormat type, received a {type(dataset.passport.file_format)} object.\n{e}"
+            msg += f"asset_id: Expected a string type, received a {type(asset_id)} object.\n"
+            msg += f"phase: Expected a PhaseDef type, received a {type(phase)} object.\n"
+            msg += f"file_format: Expected a FileFormat type, received a {type(file_format)} object.\n{e}"
             raise TypeError(msg)
         except Exception as e:
             msg = f"Un expected exception occurred while creating filepath.\n{e}"
