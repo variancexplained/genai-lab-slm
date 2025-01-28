@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Monday January 27th 2025 03:51:59 am                                                #
+# Modified   : Tuesday January 28th 2025 01:13:51 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -126,6 +126,10 @@ class DataCleaningStage(Stage):
                          .creator(self.__class__.__name__)
                          .build()
         )
+
+        # Delete the dataset if it already exists
+        if self._repo.exists(asset_id=clean_dataset.asset_id):
+            self._repo.remove(asset_id=clean_dataset.asset_id)
 
         # Add the dataset to the repository
         self._repo.add(

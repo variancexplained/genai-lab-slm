@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Monday January 27th 2025 03:31:49 pm                                                #
+# Modified   : Tuesday January 28th 2025 01:39:15 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -146,7 +146,7 @@ class Dataset(Asset):
         """Prints a Dataset summary."""
         if not self._summary:
             self._set_summary()
-        title = f"AppVoCAI Dataset Summary\n{self._passport.asset_id}"
+        title = f"AppVoCAI Dataset Summary\n{self._passport.phase.label}\n{self._passport.stage.label}"
         Printer().print_dict(title=title, data=self._summary)
 
     @property

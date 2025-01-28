@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:27:43 am                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Tuesday January 28th 2025 02:51:11 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,7 +19,9 @@
 """Data Prep Cleaning Task Base Module"""
 from typing import Literal, Type, Union
 
-from genailab.core.dtypes import DFType
+import pandas as pd
+from pyspark.sql import DataFrame
+
 from genailab.flow.base.task import Task
 from genailab.flow.dataprep.quality.strategy.categorical import (
     CategoricalStrategyFactory,
@@ -78,30 +80,30 @@ class AnomalyDetectRepairTask(Task):
         self._kwargs = kwargs
 
     @task_logger
-    def run(self, data: DFType) -> DFType:
+    def run(self, data: Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]) -> Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]:
         """
         Executes the specified mode of the anomaly task.
 
         Args:
-            data (DFType): The dataset to process.
+            data (Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]): The dataset to process.
 
         Returns:
-            DFType: The processed dataset after running the specified mode.
+            Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]: The processed dataset after running the specified mode.
 
         Raises:
             KeyError: If the mode is not supported or improperly mapped.
         """
         return self._mode_map[self._mode](data=data)
 
-    def detect(self, data: DFType) -> DFType:
+    def detect(self, data: Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]) -> Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]:
         """
         Detects anomalies in the dataset.
 
         Args:
-            data (DFType): The dataset to analyze for anomalies.
+            data (Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]): The dataset to analyze for anomalies.
 
         Returns:
-            DFType: The dataset with anomalies flagged in the detection column.
+            Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]: The dataset with anomalies flagged in the detection column.
 
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.
@@ -114,15 +116,15 @@ class AnomalyDetectRepairTask(Task):
         )
         return strategy.detect(data=data)
 
-    def repair(self, data: DFType) -> DFType:
+    def repair(self, data: Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]) -> Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]:
         """
         Repairs anomalies in the dataset.
 
         Args:
-            data (DFType): The dataset with detected anomalies to repair.
+            data (Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]): The dataset with detected anomalies to repair.
 
         Returns:
-            DFType: The dataset with anomalies repaired.
+            Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]: The dataset with anomalies repaired.
 
         Raises:
             NotImplementedError: If the method is not implemented by a subclass.

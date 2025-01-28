@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Tuesday January 28th 2025 02:23:36 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -194,6 +194,13 @@ class RegexReplaceStrategy(RepairStrategy):
             data = data.withColumn(
                 self._column,
                 F.regexp_replace(F.col(self._column), regex_info.pattern, replacement),
+            )
+            data = data.withColumn(
+                self._column,
+                F.when(
+                    F.col(self._column).rlike(regex_info.pattern),  # Detect match
+                    F.regexp_replace(F.col(self._column), regex_info.pattern, replacement)  # Apply replacement
+                ).otherwise(F.col(self._column))  # Leave untouched if no match
             )
         except Exception as e:
             raise ValueError(f"Failed to apply regex replacement: {e}")

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Monday January 27th 2025 04:45:28 am                                                #
+# Modified   : Tuesday January 28th 2025 12:20:47 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -265,14 +265,15 @@ class DataCleaningStageBuilder(StageBuilder):
     # -------------------------------------------------------------------------------------------- #
     def clean_repeated_phrases(
         self,
-        threshold: int = 1,
+        length_of_phrase: int = 2,
+        threshold: int = 2,
         threshold_type: str = "count",
-        min_repetitions: int = 2,
+        max_repetitions: int = 1,
     ) -> DataCleaningStageBuilder:
         self._clean_repeated_phrases = self._task_configs["clean_repeated_phrases"]
         self._clean_repeated_phrases["params"]["threshold"] = threshold
         self._clean_repeated_phrases["params"]["threshold_type"] = threshold_type
-        self._clean_repeated_phrases["params"]["min_repetitions"] = min_repetitions
+        self._clean_repeated_phrases["params"]["max_repetitions"] = max_repetitions
         self._tasks.append(self._task_builder.build(self._clean_repeated_phrases))
 
         return self
@@ -281,7 +282,7 @@ class DataCleaningStageBuilder(StageBuilder):
     def clean_repeated_sequences(
         self,
         length_of_sequence: int = 3,
-        min_repetitions: int = 3,
+        max_repetitions: int = 1,
         threshold: int = 3,
         threshold_type: str = "count",
         unit: str = "character",
@@ -290,7 +291,7 @@ class DataCleaningStageBuilder(StageBuilder):
         self._clean_repeated_sequences["params"][
             "length_of_sequence"
         ] = length_of_sequence
-        self._clean_repeated_sequences["params"]["min_repetitions"] = min_repetitions
+        self._clean_repeated_sequences["params"]["max_repetitions"] = max_repetitions
         self._clean_repeated_sequences["params"]["threshold"] = threshold
         self._clean_repeated_sequences["params"]["threshold_type"] = threshold_type
         self._clean_repeated_sequences["params"]["unit"] = unit
@@ -301,14 +302,14 @@ class DataCleaningStageBuilder(StageBuilder):
     # -------------------------------------------------------------------------------------------- #
     def clean_repeated_words(
         self,
-        threshold: int = 1,
+        threshold: int = 3,
         threshold_type: str = "count",
-        min_repetitions: int = 3,
+        max_repetitions: int = 1,
     ) -> DataCleaningStageBuilder:
         self._clean_repeated_words = self._task_configs["clean_repeated_words"]
         self._clean_repeated_words["params"]["threshold"] = threshold
         self._clean_repeated_words["params"]["threshold_type"] = threshold_type
-        self._clean_repeated_words["params"]["min_repetitions"] = min_repetitions
+        self._clean_repeated_words["params"]["max_repetitions"] = max_repetitions
         self._tasks.append(self._task_builder.build(self._clean_repeated_words))
 
         return self

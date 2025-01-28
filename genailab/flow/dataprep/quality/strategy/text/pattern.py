@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Monday January 27th 2025 05:01:16 am                                                #
+# Modified   : Tuesday January 28th 2025 03:56:43 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -59,7 +59,7 @@ class RegexFactory:
             "replacement": "EMAIL",
         },
         "url": {
-            "pattern": r"(https?:\/\/)?(www\.)?[\w\-_]+(\.[\w\-_]+)+([\/\w\-_\.]*)*",
+            "pattern":  r"(https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,6}(\/[^\s]*)?(\?[^=\s]+=[^\s&]+(&[^=\s]+=[^\s&]+)*)?",
             "replacement": "URL",
         },
         "phone": {

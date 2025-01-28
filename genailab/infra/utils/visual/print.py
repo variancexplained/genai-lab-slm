@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 6th 2024 11:07:56 pm                                                     #
-# Modified   : Sunday January 26th 2025 10:41:24 pm                                                #
+# Modified   : Tuesday January 28th 2025 01:37:23 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -133,7 +133,9 @@ class Printer:
         """
         text = None
         breadth = int(self._width / 2)
-        s = f"\n\n{title.center(self._width, ' ')}"
+        title_lines = title.split("\n")
+        title_centered = '\n'.join(title_line.center(self._width, ' ') for title_line in title_lines)
+        s = f"\n\n{title_centered}"
         for k, v in data.items():
             if text_col == k:
                 text = v
