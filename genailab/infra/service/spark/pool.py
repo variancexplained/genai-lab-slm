@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Monday January 27th 2025 06:18:27 am                                                #
+# Modified   : Wednesday January 29th 2025 09:23:10 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -179,6 +179,8 @@ class SparkSessionPool:
                     .config("spark.sql.session.timeZone", "UTC")
                     .config("spark.driver.memory", memory)
                     .config("spark.executor.memory", memory)
+                    .config("spark.sql.codegen.maxFields", 200)
+                    .config("spark.sql.adaptive.enabled", "true")
                     .config("spark.sql.parquet.block.size", parquet_block_size)
                     .config("spark.sql.parquet.outputTimestampType", "TIMESTAMP_MICROS")
                     .config("spark.sql.execution.arrow.pyspark.enabled", "true")
@@ -241,6 +243,8 @@ class SparkSessionPool:
                     .config("spark.driver.memory", memory)
                     .config("spark.executor.memory", memory)
                     .config("spark.sql.parquet.block.size", parquet_block_size)
+                    .config("spark.sql.codegen.maxFields", 200)
+                    .config("spark.sql.adaptive.enabled", "true")
                     .config("spark.sql.execution.arrow.pyspark.enabled", "true")
                     .config(
                         "spark.sql.execution.arrow.pyspark.fallback.enabled", "false"

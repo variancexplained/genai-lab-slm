@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Tuesday January 28th 2025 02:23:36 am                                               #
+# Modified   : Wednesday January 29th 2025 09:27:25 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -190,11 +190,6 @@ class RegexReplaceStrategy(RepairStrategy):
             raise ValueError(f"Invalid replacement value: {replacement}")
 
         try:
-            # Apply regex replacement
-            data = data.withColumn(
-                self._column,
-                F.regexp_replace(F.col(self._column), regex_info.pattern, replacement),
-            )
             data = data.withColumn(
                 self._column,
                 F.when(

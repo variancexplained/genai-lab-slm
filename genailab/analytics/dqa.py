@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Tuesday January 28th 2025 06:17:37 am                                               #
+# Modified   : Tuesday January 28th 2025 12:35:15 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -55,8 +55,6 @@ class DQA(Analysis):
         self._quality_score = None
         # Completeness Measures
         self._completeness = None
-        self._row_completeness = None
-        self._category_completeness = None
 
         # Validity Measures
         self._validity = None
@@ -107,17 +105,6 @@ class DQA(Analysis):
             self._completeness = self._compute_completeness()
         return self._completeness
 
-    @property
-    def row_completeness(self) -> float:
-        if not self._row_completeness:
-            self._row_completeness = self._compute_row_completeness()
-        return self._row_completeness
-
-    @property
-    def category_completeness(self) -> float:
-        if not self._category_completeness:
-            self._category_completeness = self._compute_category_completeness()
-        return self._category_completeness
 
     # -------------------------------------------------------------------------------------------- #
     #                                     VALIDITY                                                 #
@@ -219,35 +206,6 @@ class DQA(Analysis):
         return self._privacy
 
     # -------------------------------------------------------------------------------------------- #
-    #                                  COMPARISON                                                  #
-    # -------------------------------------------------------------------------------------------- #
-    def compare(self, other: Dataset) -> pd.DataFrame:
-        df_stacked = self._stack_df(dataset=other)
-        df_pivot = self._pivot_df(df=df_stacked)
-        # Rename columns
-        df_pivot.rename(columns={"self": self._dataset.stage.label, "other": other.stage.label}, inplace=True)
-        self._plot_comparison(df=df_stacked,x="Dimension", groupvar="Dataset")
-        return df_pivot.round(decimals=2)
-
-    def _stack_df(self, dataset: Dataset) -> pd.DataFrame:
-        other_df = dataset.dqa.analyze_quality(plot=False)
-        other_df['Dataset'] = "other"
-        self_df = self.analyze_quality(plot=False)
-        self_df['Dataset'] = "self"
-        return  pd.concat([other_df, self_df], ignore_index=True, axis=0)
-
-    def _pivot_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        df_pivot = df.pivot(index="Dimension", columns="Dataset", values="Score").reset_index()
-        df_pivot["% Difference"] =  ((df_pivot["self"] - df_pivot["other"]) / df_pivot["other"]) * 100
-        return df_pivot
-
-
-
-    def _plot_comparison(self, df: pd.DataFrame, x: str, groupvar: str) -> None:
-        viz.barplot(data=df, x=x, hue=groupvar, title="Data Quality Scores", palette="blues_r")
-
-
-    # -------------------------------------------------------------------------------------------- #
     #                                 QUALITY SCORE                                                #
     # -------------------------------------------------------------------------------------------- #
     def analyze_quality(self, plot: bool = True) -> pd.DataFrame:
@@ -292,54 +250,10 @@ class DQA(Analysis):
     # -------------------------------------------------------------------------------------------- #
     #                                  COMPLETENESS                                                #
     # -------------------------------------------------------------------------------------------- #
-    def analyze_completeness(self) -> pd.DataFrame:
-        df = self.summarize_completeness()
-        self.plot_completeness(df=df)
-        return df
-
-    def summarize_completeness(self) -> pd.DataFrame:
-        d = {
-            "Component": ["Row Completeness", "Category Balance"],
-            "Score": [
-                self.row_completeness,
-                self.category_completeness,
-            ],
-        }
-        return pd.DataFrame(d)
-
     def _compute_completeness(self) -> float:
-        self._completeness = (
-            self._config.completeness.weights.row * self.row_completeness
-            + self._config.completeness.weights.category * self.category_completeness
-        )
+        self._completeness = self._df.dropna().shape[0] / self._N
         return self._completeness
 
-    def _compute_row_completeness(self) -> float:
-        self._row_completeness = self._df.dropna().shape[0] / self._N
-        return self._row_completeness
-
-    def _compute_category_completeness(self) -> float:
-        column = self._config.completeness.columns.category
-        self._category_completeness = self._compute_class_balance(column=column)
-        return self._category_completeness
-
-    def _compute_class_balance(self, column: str) -> float:
-        # Count the number of records in each class
-        class_counts = self._df[column].value_counts()
-
-        # Number of categories
-        C = len(class_counts)
-
-        # Average number of records per category
-        avg_n_c = self._N / C
-
-        # Deviation sum
-        deviation_sum = sum(abs(count - avg_n_c) for count in class_counts)
-
-        # Category Class Balance formula
-        class_balance = 1 - (deviation_sum / (2 * self._N))
-
-        return class_balance
 
     # -------------------------------------------------------------------------------------------- #
     #                                     VALIDITY                                                 #
