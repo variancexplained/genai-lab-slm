@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
+# Modified   : Wednesday January 29th 2025 02:40:14 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -227,4 +227,5 @@ class StageBuilder(ABC):
         Returns:
             SparkSession: A Spark session instance.
         """
+        self._spark_session_pool.stop()
         return self._spark_session_pool.get_spark_session(dftype=dftype)

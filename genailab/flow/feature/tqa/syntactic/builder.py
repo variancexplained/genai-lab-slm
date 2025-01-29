@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Monday January 27th 2025 06:08:45 am                                                #
+# Modified   : Wednesday January 29th 2025 10:07:44 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -86,18 +86,6 @@ class TQASyntacticStageBuilder(StageBuilder):
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
-
-    # -------------------------------------------------------------------------------------------- #
-    #                                 SOURCE AND TARGET DATASETS                                   #
-    # -------------------------------------------------------------------------------------------- #
-    def source(self, source_config: DatasetConfig) -> TQASyntacticStageBuilder:
-        self._source_config = source_config
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def target(self, target_config: DatasetConfig) -> TQASyntacticStageBuilder:
-        self._target_config = target_config
-        return self
 
     # -------------------------------------------------------------------------------------------- #
     #                                           TASKS                                              #
@@ -181,8 +169,8 @@ class TQASyntacticStageBuilder(StageBuilder):
         self._validate(strict=strict)
 
         stage = TQASyntacticStage(
-            source_config=self._source_config,
-            target_config=self._target_config,
+            source_config=source_config or self._source_config,
+            target_config=target_config or self._target_config,
             tasks=self._tasks,
             repo=self._repo,
             dataset_builder=self._dataset_builder,

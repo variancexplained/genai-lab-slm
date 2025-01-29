@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:26:44 am                                                #
-# Modified   : Monday January 27th 2025 06:14:04 am                                                #
+# Modified   : Wednesday January 29th 2025 02:39:20 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -97,6 +97,7 @@ class TQASyntacticStage(Stage):
         self._column = column
         self._nlp_pipeline = None
 
+
     @property
     def phase(self) -> PhaseDef:
         """Returns the phase of the pipeline."""
@@ -138,7 +139,7 @@ class TQASyntacticStage(Stage):
         cleaned_df = self._clean_text(data=dataframe, column=self._column)
 
         # Process the data through the NLP Pipeline
-        data = self.nlp_pipeline.fit(cleaned_df).transform(dataframe)
+        data = self.nlp_pipeline.fit(cleaned_df).transform(cleaned_df)
 
         # Execute the Syntactic Text Quality Analysis Pipeline Tasks
         for task in self._tasks:

@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Monday January 27th 2025 06:12:56 am                                                #
+# Modified   : Wednesday January 29th 2025 10:08:17 am                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 double_line = f"\n{100 * '='}"
 single_line = f"\n{100 * '-'}"
 
-
+@pytest.mark.tqa
 @pytest.mark.tqa1
 class TestTQASyntactic:  # pragma: no cover
     """Tests with source and target configurations passed to the builder."""
@@ -87,8 +87,6 @@ class TestTQASyntactic:  # pragma: no cover
 
         stage = (
             TQASyntacticStageBuilder()
-            .source(source_config=source_config)
-            .target(target_config=target_config)
             .noun_phrase_count()
             .adjective_noun_pair_count()
             .aspect_verb_pair_count()
@@ -97,7 +95,7 @@ class TestTQASyntactic:  # pragma: no cover
             .verb_count()
             .adverb_count()
             .adjective_count()
-            .build()
+            .build(source_config=source_config, target_config=target_config)
         )
         target = stage.run()
 
