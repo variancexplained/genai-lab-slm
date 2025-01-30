@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Monday January 27th 2025 05:00:29 pm                                                #
+# Modified   : Thursday January 30th 2025 10:54:05 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -523,77 +523,34 @@ phases:
 # ================================================================================================ #
   feature:
     stages:
-      tqa_syntactic:
+      tqa:
         source_config:
           phase: dataprep
           stage: clean
           name: review
-          dftype: sparknlp
+          dftype: pandas
           file_format: parquet
         target_config:
           phase: feature
-          stage: tqa_syntactic
+          stage: tqa
           name: review
-          dftype: sparknlp
+          dftype: pandas
           file_format: parquet
         tasks:
-          noun_phrase_count:
-            class_name: NounPhraseCount
-            module: genailab.flow.feature.tqa.syntactic.task
+          tqa:
+            class_name: TQATask
+            module: genailab.flow.feature.tqa.task
             params:
-              column: tqa_syntactic_noun_phrases
-              new_column: tqa_syntactic_noun_phrase_count
-              normalized: True
-          adjective_noun_pair_count:
-            class_name: AdjectiveNounPairCount
-            module: genailab.flow.feature.tqa.syntactic.task
-            params:
-              column: tqa_syntactic_adjective_noun_pairs
-              new_column: tqa_syntactic_adjective_noun_pair_count
-              normalized: True
-          aspect_verb_pair_count:
-            class_name: AspectVerbPairCount
-            module: genailab.flow.feature.tqa.syntactic.task
-            params:
-              column: tqa_syntactic_aspect_verb_pairs
-              new_column: tqa_syntactic_aspect_related_verb_count
-              normalized: True
-          adverb_phrase_count:
-            class_name: AdverbPhraseCount
-            module: genailab.flow.feature.tqa.syntactic.task
-            params:
-              column: tqa_syntactic_adverb_phrases
-              new_column: tqa_syntactic_adverb_phrase_count
-              normalized: True
-          noun_count:
-            class_name: NounCount
-            module: genailab.flow.feature.tqa.syntactic.task
-            params:
-              column: tqa_pos
-              new_column: tqa_syntactic_noun_count
-              pos: NN
-              normalized: True
-          verb_count:
-            class_name: VerbCount
-            module: genailab.flow.feature.tqa.syntactic.task
-            params:
-              column: tqa_pos
-              new_column: tqa_syntactic_verb_count
-              pos: VB
-              normalized: True
-          adverb_count:
-            class_name: AdverbCount
-            module: genailab.flow.feature.tqa.syntactic.task
-            params:
-              column: tqa_pos
-              new_column: tqa_syntactic_adverb_count
-              pos: RB
-              normalized: True
-          adjective_count:
-            class_name: AdjectiveCount
-            module: genailab.flow.feature.tqa.syntactic.task
-            params:
-              column: tqa_pos
-              new_column: tqa_syntactic_adjective_count
-              pos: JJ
+              coefficients:
+                aspect_verb_pairs: 4.0
+                noun_phrases: 2.5
+                verb_phrases: 2.0
+                adjective_count: 1.5
+                adverb_count: 0.75
+                noun_count: 1.0
+                verb_count: 1.0
+                adverbial_phrases: 0.5
+                review_length: 1.0
+                lexical_density: 1.5
+                dependency_depth: 1.0
               normalized: True

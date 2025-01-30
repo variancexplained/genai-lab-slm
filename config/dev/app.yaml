@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Monday January 27th 2025 02:04:56 am                                                #
+# Modified   : Thursday January 30th 2025 11:51:16 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -79,9 +79,15 @@ repository:
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                      SPARK                                                       #
+#                                 DATA PROCESSING                                                  #
 # ------------------------------------------------------------------------------------------------ #
 spark:
   parquet_block_size: 536870912 # 512 MB
-
-
+# To compute memory limit, allocate 60%-70% of available memory and divide by n_workers to get
+# memory_limit for each worker
+dask:
+  n_partitions: 12
+  n_workers: 6
+  memory_limit:   "6GiB"
+  threads_per_worker: 2
+  n_process: 6

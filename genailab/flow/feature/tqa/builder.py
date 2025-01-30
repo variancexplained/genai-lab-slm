@@ -4,35 +4,36 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailab/flow/feature/tqa/syntactic/builder.py                                     #
+# Filename   : /genailab/flow/feature/tqa/builder.py                                               #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Wednesday January 29th 2025 10:07:44 am                                             #
+# Modified   : Thursday January 30th 2025 10:53:46 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Syntactic Text Quality Analysis Builder Module"""
 from __future__ import annotations
+
 from typing import Optional
 
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.builder import StageBuilder
-from genailab.flow.feature.tqa.syntactic.stage import TQASyntacticStage
+from genailab.flow.feature.tqa.stage import TQAStage
 
 
 # ------------------------------------------------------------------------------------------------ #
-class TQASyntacticStageBuilder(StageBuilder):
+class TQAStageBuilder(StageBuilder):
 
     __PHASE = PhaseDef.FEATURE
-    __STAGE = StageDef.TQA_SYNTACTIC
-    __DFTYPE = DFType.SPARKNLP
+    __STAGE = StageDef.TQA
+    __DFTYPE = DFType.PANDAS
 
     def __init__(self) -> None:
         super().__init__()
@@ -72,73 +73,19 @@ class TQASyntacticStageBuilder(StageBuilder):
         super().reset()
         self._source_config = None
         self._target_config = None
-
-        self._noun_phrase_count = None
-        self._adjective_noun_pair_count = None
-        self._aspect_related_verb_count = None
-        self._adverb_phrase_count = None
-        self._noun_count = None
-        self._verb_count = None
-        self._adverb_count = None
-        self._comparative_adjective_count = None
-        self._superlative_adjective_count = None
-
+        self._tqa_task = None
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
 
     # -------------------------------------------------------------------------------------------- #
-    #                                           TASKS                                              #
+    #                                       TASK                                                   #
     # -------------------------------------------------------------------------------------------- #
-    def noun_phrase_count(self) -> TQASyntacticStageBuilder:
-        self._noun_phrase_count = self._task_configs["noun_phrase_count"]
-        self._tasks.append(self._task_builder.build(self._noun_phrase_count))
+    def tqa(self, normalized: bool = True) -> TQAStageBuilder:
+        self._tqa_task = self._task_configs['tqa']
+        self._tqa_task['params']['normalized'] = normalized
+        self._tasks.append(self._task_builder.build(self._tqa_task))
         return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def adjective_noun_pair_count(self) -> TQASyntacticStageBuilder:
-        self._adjective_noun_pair_count = self._task_configs[
-            "adjective_noun_pair_count"
-        ]
-        self._tasks.append(self._task_builder.build(self._adjective_noun_pair_count))
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def aspect_verb_pair_count(self) -> TQASyntacticStageBuilder:
-        self._aspect_verb_pair_count = self._task_configs["aspect_verb_pair_count"]
-        self._tasks.append(self._task_builder.build(self._aspect_verb_pair_count))
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def adverb_phrase_count(self) -> TQASyntacticStageBuilder:
-        self._adverb_phrase_count = self._task_configs["adverb_phrase_count"]
-        self._tasks.append(self._task_builder.build(self._adverb_phrase_count))
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def noun_count(self) -> TQASyntacticStageBuilder:
-        self._noun_count = self._task_configs["noun_count"]
-        self._tasks.append(self._task_builder.build(self._noun_count))
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def verb_count(self) -> TQASyntacticStageBuilder:
-        self._verb_count = self._task_configs["verb_count"]
-        self._tasks.append(self._task_builder.build(self._verb_count))
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def adverb_count(self) -> TQASyntacticStageBuilder:
-        self._adverb_count = self._task_configs["adverb_count"]
-        self._tasks.append(self._task_builder.build(self._adverb_count))
-        return self
-
-    # -------------------------------------------------------------------------------------------- #
-    def adjective_count(self) -> TQASyntacticStageBuilder:
-        self._adjective_count = self._task_configs["adjective_count"]
-        self._tasks.append(self._task_builder.build(self._adjective_count))
-        return self
-
     # -------------------------------------------------------------------------------------------- #
     #                                      BUILD                                                   #
     # -------------------------------------------------------------------------------------------- #
@@ -146,7 +93,7 @@ class TQASyntacticStageBuilder(StageBuilder):
         source_config: Optional[DatasetConfig] = None,
         target_config: Optional[DatasetConfig] = None,
         strict: bool = True,
-        ) -> TQASyntacticStage:
+        ) -> TQAStage:
         """
         Builds the Text Quality Analysis - Syntactic Stage by validating configurations,
         assembling the tasks and returning the configured stage.
@@ -163,18 +110,15 @@ class TQASyntacticStageBuilder(StageBuilder):
         Returns:
             TQASyntacticStage: The builder instance with the constructed stage.
         """
-        # Obtain a spark session
-        self._spark = self._get_spark(dftype=self.dftype)
 
         self._validate(strict=strict)
 
-        stage = TQASyntacticStage(
+        stage = TQAStage(
             source_config=source_config or self._source_config,
             target_config=target_config or self._target_config,
             tasks=self._tasks,
             repo=self._repo,
             dataset_builder=self._dataset_builder,
-            spark=self._spark,
         )
         self.reset()
         return stage
@@ -188,7 +132,7 @@ class TQASyntacticStageBuilder(StageBuilder):
         """
         super()._validate()
         errors = []
-        if self._spark is None and strict:
+        if self._tqa_task is None:
             errors.append("A Spark session is required for the TQASyntactic Stage.")
 
         if errors:

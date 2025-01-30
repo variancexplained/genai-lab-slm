@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Monday January 27th 2025 01:28:56 pm                                                #
+# Modified   : Thursday January 30th 2025 02:57:24 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,16 +33,13 @@ class StageDef(Enum):
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")
     # Feature Engineering Stages
-    TQA_SYNTACTIC = ("tqa_syntactic", 0, "Syntactic Text Quality Analysis Stage")
-    TQA_SENTIMENT = ("tqa_sentiment", 1, "Sentiment Text Quality Analysis Stage")
-    TQA_LEXICAL = ("tqa_lexical", 2, "Lexical Text Quality Analysis Stage")
-    TQA_SCORE = ("tqa_score", 3, "Text Quality Analysis Score Stage")
-    SENTIMENT = ("sentiment", 4, "Sentiment Classification Stage")
+    TQA = ("tqa", 6, "Text Quality Analysis Stage")
+    SENTIMENT = ("sentiment", 7, "Sentiment Analysis Stage")
     # Modeling Stages
-    ABSA_FT = ("absa_ft", 0, "Fine-Tuned ABSA Modeling Stage")
-    ABSA_CUSTOM = ("absa_custom", 1, "Custom ABSA Modeling Stage")
+    ABSA_FT = ("absa_ft", 8, "Fine-Tuned ABSA Modeling Stage")
+    ABSA_CUSTOM = ("absa_custom", 9, "Custom ABSA Modeling Stage")
     # Testing Stages
-    TEST = ("test", 9, "Test Stage")
+    TEST = ("test", 10, "Test Stage")
 
     @classmethod
     def from_value(cls, value) -> StageDef:
