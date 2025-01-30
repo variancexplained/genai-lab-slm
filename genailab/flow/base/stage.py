@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Monday January 27th 2025 02:40:23 am                                                #
+# Modified   : Wednesday January 29th 2025 08:08:19 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -143,6 +143,7 @@ class Stage(ABC):
             else:
                 return self._run()
         else:
+            self._stop_spark()
             msg = f"Unable to run {self.__class__.__name__}. The source dataset {self._source_config.name}, from {self._source_config.phase.label}-{self._source_config.stage.label}, does not exist."
             self._logger.error(msg)
             raise RuntimeError(msg)

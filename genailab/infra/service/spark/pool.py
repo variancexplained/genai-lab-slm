@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Wednesday January 29th 2025 03:08:51 pm                                             #
+# Modified   : Wednesday January 29th 2025 09:07:51 pm                                             #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,6 +22,7 @@ import os
 import time
 from enum import Enum
 from typing import Dict
+import sparknlp
 
 from genailab.core.dstruct import NestedNamespace
 from genailab.core.dtypes import DFType
@@ -101,12 +102,23 @@ class SparkSessionPool:
             self._sparknlp = self._get_or_create(nlp=True)
         return self._sparknlp
 
+    @property
+    def session(self) -> str:
+        """Returns the name of the current session, if running."""
+        session = ""
+        if self._spark:
+            session += "spark"
+        if self._sparknlp:
+            session += "sparknlp"
+        if session == "":
+            return "No Active Spark Session"
+
     def stop(self) -> None:
         """Stops any active Spark or Spark NLP sessions."""
         if self._sparknlp is not None:
             self._sparknlp.stop()
             self._sparknlp = None
-        elif self._spark is not None:
+        if self._spark is not None:
             self._spark.stop()
             self._spark = None
 
@@ -236,38 +248,39 @@ class SparkSessionPool:
                 self._logger.debug(
                     f"Creating a Spark NLP session. log4j Configuration: {log4j_conf_path}"
                 )
-                spark = (
-                    SparkSession.builder.appName("genai-lab-nlp")
-                    .master("local[*]")
-                    .config("spark.sql.session.timeZone", "UTC")
-                    .config("spark.driver.memory", memory)
-                    .config("spark.executor.memory", memory)
-                    .config("spark.sql.parquet.block.size", parquet_block_size)
-                    .config("spark.sql.codegen.maxFields", 200)
-                    .config("spark.sql.adaptive.enabled", "true")
-                    .config("spark.sql.execution.arrow.pyspark.enabled", "true")
-                    .config(
-                        "spark.sql.execution.arrow.pyspark.fallback.enabled", "false"
-                    )
-                    .config(
-                        "spark.serializer", "org.apache.spark.serializer.KryoSerializer"
-                    )
-                    .config("spark.kryoserializer.buffer.max", "2000M")
-                    .config("spark.driver.maxResultSize", "0")
-                    .config(
-                        "spark.jars.packages",
-                        "com.johnsnowlabs.nlp:spark-nlp_2.12:5.5.2",
-                    )
-                    .config(
-                        "spark.driver.extraJavaOptions",
-                        f"-Dlog4j.configurationFile={log4j_conf_path}",
-                    )
-                    .config(
-                        "spark.executor.extraJavaOptions",
-                        f"-Dlog4j.configurationFile={log4j_conf_path}",
-                    )
-                    .getOrCreate()
-                )
+                spark=sparknlp.start()
+                # spark = (
+                #     SparkSession.builder.appName("genai-lab-nlp")
+                #     .master("local[*]")
+                #     .config("spark.sql.session.timeZone", "UTC")
+                #     .config("spark.driver.memory", memory)
+                #     .config("spark.executor.memory", memory)
+                #     .config("spark.sql.parquet.block.size", parquet_block_size)
+                #     .config("spark.sql.codegen.maxFields", 200)
+                #     .config("spark.sql.adaptive.enabled", "true")
+                #     .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+                #     .config(
+                #         "spark.sql.execution.arrow.pyspark.fallback.enabled", "false"
+                #     )
+                #     .config(
+                #         "spark.serializer", "org.apache.spark.serializer.KryoSerializer"
+                #     )
+                #     .config("spark.kryoserializer.buffer.max", "2000M")
+                #     .config("spark.driver.maxResultSize", "0")
+                #     .config(
+                #         "spark.jars.packages",
+                #         "com.johnsnowlabs.nlp:spark-nlp_2.12:5.5.2",
+                #     )
+                #     .config(
+                #         "spark.driver.extraJavaOptions",
+                #         f"-Dlog4j.configurationFile={log4j_conf_path}",
+                #     )
+                #     .config(
+                #         "spark.executor.extraJavaOptions",
+                #         f"-Dlog4j.configurationFile={log4j_conf_path}",
+                #     )
+                #     .getOrCreate()
+                # )
                 spark.sparkContext.setLogLevel("ERROR")
                 return spark
             except Exception as e:
