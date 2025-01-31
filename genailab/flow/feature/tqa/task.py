@@ -11,43 +11,32 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Friday January 31st 2025 03:54:11 am                                                #
+# Modified   : Friday January 31st 2025 05:23:50 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
-"""Syntactic Text Quality Analysis Task Module"""
+"""Text Quality Analysis Task Module"""
+from __future__ import annotations
+
 import inspect
 import logging
 import multiprocessing
-from abc import abstractmethod
-from typing import Dict, Set
+from abc import ABC
+from typing import Any, Dict, Set
 
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import spacy
 from dask.distributed import Client, LocalCluster
+from pandarallel import pandarallel
 from tqdm import tqdm
 from tqdm.dask import TqdmCallback
 
 from genailab.flow.base.task import Task
-from genailab.infra.config.app import AppConfigReader
 
-# ------------------------------------------------------------------------------------------------ #
-# Set the start method to 'fork' (Linux/Mac) or 'spawn' (Windows)
-multiprocessing.set_start_method('spawn', force=True)
-# ------------------------------------------------------------------------------------------------ #
-dask_config = AppConfigReader().get_config(section="dask", namespace=False)
-# ------------------------------------------------------------------------------------------------ #
-cluster = LocalCluster(n_workers=dask_config["n_workers"],
-                    threads_per_worker=dask_config["threads_per_worker"],
-                    memory_limit=dask_config["memory_limit"],
-                    processes=False,
-                    )
-client = Client(cluster)
-# ------------------------------------------------------------------------------------------------ #
-
+pandarallel.initialize(progress_bar=True, nb_workers=18, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 #                                  DATASET SCHEMA                                                  #
 # ------------------------------------------------------------------------------------------------ #
@@ -86,27 +75,30 @@ DATASET_SCHEMA = {
 #                                    TQA TASK                                                      #
 # ------------------------------------------------------------------------------------------------ #
 class TQATask(Task):
-    """
-    Task for computing syntactic features and generating TQA syntactic scores for reviews.
+    """Class for handling the Text Quality Analysis (TQA) task with Dask or pandas processing.
 
-    This class processes reviews to compute various syntactic features like noun counts,
-    verb counts, adjective counts, dependency depth, and more. The features are then
-    used to compute a TQA syntactic score, which is based on a set of coefficients.
+    This class is responsible for executing the TQA task by using an analyst (either pandas or Dask-based)
+    to process the data, applying coefficients for the TQA score calculation, and optionally normalizing
+    the results. It supports batched processing for large datasets to enhance performance.
 
     Attributes:
-        _coefficients (dict): A dictionary of feature coefficients to compute the TQA score.
-        _normalized (bool): Whether to apply log normalization to the computed features.
-        _logger (logging.Logger): Logger instance for logging events.
-    """
-    def __init__(self,  coefficients: Dict[str, float], normalized: bool = True, batched: bool = True) -> None:
-        super().__init__()
-        self._coefficients = coefficients
-        self._normalized = normalized
-        self._batched  = batched
-        self._dataset_meta = pd.DataFrame(columns=DATASET_SCHEMA.keys()).astype(DATASET_SCHEMA)
-        self._n_partitions = dask_config["n_partitions"]
+        _coefficients (Dict[str, float]): A dictionary of coefficients for the TQA score calculation.
+        _normalized (bool): Whether to normalize the TQA score. Defaults to True.
+        _batched (bool): Whether to process data in batches. Defaults to True.
+        _schema (pd.DataFrame): Metadata schema for the dataset.
+        _npartitions (int): The number of partitions for processing data.
+        _logger (logging.Logger): Logger instance for the task.
 
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+    Args:
+        analyst (Analyst): The analyst object used for data processing (either pandas or Dask).
+        coefficients (Dict[str, float]): The coefficients for TQA score calculation.
+        normalized (bool, optional): Whether to normalize the TQA score. Defaults to True.
+        batched (bool, optional): Whether to process data in batches. Defaults to True.
+    """
+
+    def __init__(self, analyst: Analyst) -> None:
+        self._analyst = analyst
+
 
     def __hash__(self):
         """
@@ -116,22 +108,9 @@ class TQATask(Task):
         Returns:
             int: The hash value of the TQATask object.
         """
-        return hash((tuple(self._coefficients.items()), self._normalized, self._n_partitions))
+        return hash((tuple(self._coefficients.items()), self._normalized, self._npartitions))
 
-    def __eq__(self, other):
-        """
-        Compares two TQATask objects for equality.
 
-        Args:
-            other (TQATask): Another TQATask object to compare.
-
-        Returns:
-            bool: True if both TQATask objects are equal, False otherwise.
-        """
-        if not isinstance(other, TQATask):
-            return False
-        return (self._coefficients == other._coefficients and
-                self._normalized == other._normalized)
 
     def __getstate__(self):
         """
@@ -152,7 +131,6 @@ class TQATask(Task):
         """
         self.__dict__.update(state)
 
-    @abstractmethod
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         Processes a batch of reviews and computes syntactic features and TQA syntactic scores.
@@ -166,7 +144,40 @@ class TQATask(Task):
         Returns:
             pd.DataFrame: A DataFrame with the computed syntactic features and TQA score for each review.
         """
-        pass
+        return self._analyst.analyze(data=data)
+
+
+
+
+# ------------------------------------------------------------------------------------------------ #
+#                                     ANALYST                                                      #
+# ------------------------------------------------------------------------------------------------ #
+class Analyst(ABC):
+
+    def __init__(self, coefficients: Dict[str, float], normalized: bool = True, batched: bool = True) -> None:
+        super().__init__()
+
+        self._coefficients = coefficients
+        self._normalized = normalized
+        self._batched = batched
+
+
+        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    def __eq__(self, other):
+        """
+        Compares two TQATask objects for equality.
+
+        Args:
+            other (TQATask): Another TQATask object to compare.
+
+        Returns:
+            bool: True if both TQATask objects are equal, False otherwise.
+        """
+        if not isinstance(other, Analyst):
+            return False
+        return (self._coefficients == other._coefficients and
+                self._normalized == other._normalized)
 
     def _log_normalize(self, count: int) -> float:
         """
@@ -199,7 +210,6 @@ class TQATask(Task):
         Returns:
             List[pd.DataFrame]: A list of one-row Pandas DataFrames.
         """
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
 
         # Process all reviews in the batch using spaCy's nlp.pipe(), with parallelization
         results = []
@@ -209,7 +219,7 @@ class TQATask(Task):
             result = self._process_row(row, function_words, nlp)
             results.append(result)
 
-        return pd.DataFrame(results, columns=self._dataset_meta.columns)
+        return pd.DataFrame(results, columns=self._schema.columns)
 
 
 
@@ -275,70 +285,128 @@ class TQATask(Task):
         counts["tqa_score"] = sum(self._coefficients[key] * counts[key] for key in self._coefficients)
         return {**row, **counts}
 
-
 # ------------------------------------------------------------------------------------------------ #
 #                                  TQ ANALYST DASK                                                 #
 # ------------------------------------------------------------------------------------------------ #
-class TQAnalystDask:
-    def __init__(self, schema: pd.DataFrame, npartitions: int, batched: bool = True) -> None:
-        self._schema = schema
-        self._npartitions = npartitions
-        self._batched = batched
+class TQAnalystDask(Analyst):
 
-    def tqadask(self, data: dd.DataFrame) -> dd.DataFrame:
+    def __init__(self,
+                 schema: Dict[str,Any],
+                 coefficients: Dict[str,float],
+                 npartitions: int = 72,
+                 normalized: bool = True,
+                 batched: bool = True,
+                 nworkers: int = 6,
+                 memory_limit: str = "11GiB",
+                 threads_per_worker: int = 1,
+                 processes: bool = False,
+                 **kwargs
+                 ) -> None:
+        super().__init__(coefficients=coefficients, normalized=normalized, batched=batched)
+
+        self._schema_dict = schema
+        self._schema_df = pd.DataFrame(columns=schema.keys()).astype(schema)
+        self._schema_tuple = tuple(self._schema_df.dtypes.to_dict().items())
+
+        self._npartitions = npartitions
+        self._nworkers = nworkers
+        self._memory_limit = memory_limit
+        self._threads_per_worker = threads_per_worker
+        self._processes = processes
+
+    def analyze(self, data: pd.DataFrame) -> dd.DataFrame:
+        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
+
+        # ---------------------------------------------------------------------------------------- #
+        multiprocessing.set_start_method('spawn', force=True)
+
+        cluster = LocalCluster(n_workers=self._nworkers,
+                            threads_per_worker=self._threads_per_worker,
+                            memory_limit=self._memory_limit,
+                            processes=self._processes,
+                            dashboard_address=":8787"
+                            )
+        client = Client(cluster)
+        # ---------------------------------------------------------------------------------------- #
         try:
             # Initialize spaCy and Dask DataFrame
             nlp = spacy.load("en_core_web_sm")
             function_words = nlp.Defaults.stop_words
-            ddf = dd.from_pandas(data, npartitions=self._npartitions)
+
+            # Sample Data
+            data = data.sample(n=50)
+
+            # Convert pandas dataframe to dask
+            ddf = self.to_dash(pdf=data)
+            self._logger.debug(f"Converted pandas to {type(ddf)}..")
 
             if self._batched:
+                self._logger.debug("Processing batches..")
                 results = ddf.map_partitions(
                     lambda batch:
                     self._process_batch(
                         batch,
                         function_words=function_words,
                         nlp=nlp,
-                        meta=self._dataset_meta
+                        meta=self._schema_df
                     ),
-                    meta=self._dataset_meta
+                    meta=self._schema_df
                 )
             else:
-                results = ddf.apply(
-                    lambda row: self._process_row(row, function_words, nlp),
+                self._logger.debug("Processing row at a time..")
+                results = ddf.apply(lambda row: self._process_row(row, function_words, nlp),
                     axis=1,
-                    meta=self._dataset_meta  # This defines the expected schema for each row's result
+                    meta=self._schema_tuple  # This defines the expected schema for each row's result
                 )
 
             # Start computation in the background
             results = results.persist()
+            self._logger.debug(f"Persisted results of type {type(results)}.")
 
             with TqdmCallback():
-            # Materialize results into a dask dataframe
+                # Materialize results into a dask dataframe
                 results = results.compute()
+                self._logger.debug(f"Computed results of type {type(results)}.")
 
+            # Convert dask dataframe back to pandas
+            pdf = self.to_pandas(ddf=results)
+            self._logger.debug(f"Converted dask to {type(pdf)}.")
 
-            # Convert to pandas
-            if isinstance(results, dd.DataFrame):
-                df = pd.DataFrame(results, columns=self._dataset_meta.columns)
-            else:
-                df = results.apply(pd.Series)
+            return pdf
 
-            return df
         finally:
             if client:
                 client.close()
             if cluster:
                 cluster.close()
 
+    def to_dash(self, pdf: pd.DataFrame) -> dd.DataFrame:
+        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+        return dd.from_pandas(pdf, npartitions=self._npartitions)
+
+
+    def to_pandas(self, ddf: dd.DataFrame) -> pd.DataFrame:
+        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+        if isinstance(ddf, dd.DataFrame):
+            return pd.DataFrame(ddf, columns=self._schema_df.columns)
+        else:
+            return ddf.apply(pd.Series)
+
+
 # ------------------------------------------------------------------------------------------------ #
 #                                 TQ ANALYST PANDAS                                                #
 # ------------------------------------------------------------------------------------------------ #
-class TQAnalystPandas:
-    def __init__(self, schema: pd.DataFrame, npartitions: int, batched: bool = True) -> None:
-        self._schema = schema
+class TQAnalystPandas(Analyst):
+    def __init__(self,
+                 coefficients: Dict[str,float],
+                 normalized: bool = True,
+                 npartitions: int = 72,
+                 batched: bool = True,
+                 **kwargs
+                 ) -> None:
+        super().__init__(coefficients=coefficients, normalized=normalized, batched=batched)
         self._npartitions = npartitions
-        self._batched = batched
 
     def analyze(self, data: pd.DataFrame) -> pd.DataFrame:
         """
@@ -372,7 +440,7 @@ class TQAnalystPandas:
                         partition,
                         function_words=function_words,
                         nlp=nlp,
-                        meta=self._dataset_meta
+                        meta=self._schema_df
                     )
                     results.append(result_partition)
 
@@ -382,11 +450,9 @@ class TQAnalystPandas:
             else:
                 # Process data row-by-row with a progress bar
                 df = data.apply(
-                    lambda row: self._process_row(row, function_words, nlp),
-                    axis=1,
-                    meta=self._dataset_meta
+                    lambda row: self._process_row(row, function_words, nlp)
                 )
-                df = df.apply(pd.Series)
+                df = df.parallel_apply(pd.Series)
 
             return df
 

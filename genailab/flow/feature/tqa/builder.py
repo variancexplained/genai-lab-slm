@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Thursday January 30th 2025 05:14:46 pm                                              #
+# Modified   : Friday January 31st 2025 03:52:32 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -20,24 +20,33 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Optional
+from typing import Optional, Type
 
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.builder import StageBuilder
 from genailab.flow.feature.tqa.stage import TQAStage
+from genailab.flow.feature.tqa.task import (
+    DATASET_SCHEMA,
+    TQAnalystDask,
+    TQAnalystPandas,
+    TQATask,
+)
+from genailab.infra.config.app import AppConfigReader
 
 
 # ------------------------------------------------------------------------------------------------ #
 class TQAStageBuilder(StageBuilder):
 
     __PHASE = PhaseDef.FEATURE
-    __STAGE = StageDef.TQADASK
-    __DFTYPE = DFType.PANDAS
+    __STAGE = StageDef.TQA
 
-    def __init__(self) -> None:
+
+    def __init__(self, appconfig_reader_cls: Type[AppConfigReader] = AppConfigReader) -> None:
         super().__init__()
+        self._appconfig_reader = appconfig_reader_cls()
+        self._dftype = None
         self.reset()
 
     @property
@@ -68,7 +77,7 @@ class TQAStageBuilder(StageBuilder):
         Returns:
             DFType: The dataframe type used in the pipeline.
         """
-        return self.__DFTYPE
+        return self._dftype
 
     def reset(self) -> None:
         """Resets the builder."""
@@ -76,24 +85,61 @@ class TQAStageBuilder(StageBuilder):
         self._source_config = None
         self._target_config = None
         self._tqa_task = None
+        self._dftype = None
 
-    def with_pandas(self, normalized: bool = True, batched: bool = True) -> TQAStageBuilder:
-        self._tqa_task = self._task_configs['tqapandas_task']
+
+    def with_pandas(self, normalized: bool = True, batched: bool = True, **kwargs) -> TQAStageBuilder:
+        """Constructs a TQAnalyst for Pandas"""
+        # Set the data frame type
+        self._dftype = DFType.PANDAS
+        # Obtain the task configuration
+        self._tqa_task = self._task_configs['tqa']
+        # Update the config
         self._tqa_task['params']['normalized'] = normalized
         self._tqa_task['params']['batched'] = batched
-        self._tasks.append(self._task_builder.build(self._tqa_task))
+        # Obtain the analyst config
+        config = self._appconfig_reader.get_config(section='dask', namespace=True)
+        # Instantiate the analyst
+        analyst = TQAnalystPandas(coefficients=self._tqa_task["params"]["coefficients"],
+                                  normalized=self._tqa_task["params"]["normalized"],
+                                  npartitions=config.npartitions,
+                                  batched=batched, **kwargs)
+        # Construct the TQATask
+        task = TQATask(analyst=analyst)
+        # Append the task to the task list.
+        self._tasks.append(task)
         return self
 
-    def with_dask(self, normalized: bool = True, batched: bool = True) -> TQAStageBuilder:
-        self._tqa_task = self._task_configs['tqadask_task']
+    def with_dask(self, normalized: bool = True, batched: bool = True, **kwargs) -> TQAStageBuilder:
+        """Constructs a TQAnalyst for Dask"""
+        # Set the data frame type
+        self._dftype = DFType.DASK
+        # Obtain the analyst config
+        config = self._appconfig_reader.get_config(section='dask', namespace=True)
+        # Obtain the task configuration
+        self._tqa_task = self._task_configs['tqa']
+        # Update the config
         self._tqa_task['params']['normalized'] = normalized
         self._tqa_task['params']['batched'] = batched
-        self._tasks.append(self._task_builder.build(self._tqa_task))
+        # Construct the analyst
+        analyst = TQAnalystDask(schema=DATASET_SCHEMA,
+                                coefficients=self._tqa_task["params"]["coefficients"],
+                                npartitions=config.npartitions,
+                                normalized=normalized,
+                                batched=batched,
+                                nworkers=config.nworkers,
+                                memory_limit=config.memory_limit,
+                                threads_per_worker=config.threads_per_worker,
+                                processes=config.processes,
+                                kwargs=kwargs
+                               )
+        # Construct the task
+        task = TQATask(analyst=analyst)
+        # Append the task to the task list.
+        self._tasks.append(task)
         return self
+    # -------------------------------------------------------------------------------------------- #
 
-    # -------------------------------------------------------------------------------------------- #
-    #                                      BUILD                                                   #
-    # -------------------------------------------------------------------------------------------- #
     def build(self,
         source_config: Optional[DatasetConfig] = None,
         target_config: Optional[DatasetConfig] = None,

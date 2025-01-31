@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Thursday January 30th 2025 04:01:10 am                                              #
+# Modified   : Friday January 31st 2025 04:29:29 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -86,7 +86,7 @@ class TestTQA:  # pragma: no cover
         target_config = DatasetConfig.from_dict(config["target_config"])
 
         stage = (TQAStageBuilder()
-                 .tqa(normalized=True, n_partitions=18)
+                 .tqa(normalized=True, npartitions=18)
                  .build(source_config=source_config, target_config=target_config))
         target = stage.run()
 

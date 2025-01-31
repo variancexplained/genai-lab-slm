@@ -355,3 +355,1026 @@ None
 [01/31/2025 01:57:03 AM] [DEBUG] [Stage.run] [stage] [wrapper] : Stage Started: 01:56:53
 [01/31/2025 01:57:03 AM] [DEBUG] [Stage.run] [stage] [wrapper] : Stage Completed: 01:57:03
 [01/31/2025 01:57:03 AM] [DEBUG] [Stage.run] [stage] [wrapper] : Stage Runtime: 9.86 seconds
+[01/31/2025 05:21:30 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 05:21:30 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 05:24:59 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 05:24:59 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 05:26:02 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 05:26:02 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 05:26:03 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 5, 26, 3, 844965), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 05:26:03.844969.
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 05:26:03.844954
+[01/31/2025 05:26:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 05:26:03 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 05:26:06 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: 'TQAnalystDask' object has no attribute '_dataset_meta'
+[01/31/2025 05:26:06 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: 'TQAnalystDask' object has no attribute '_dataset_meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 178, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 374, in analyze
+    meta=self._dataset_meta  # This defines the expected schema for each row's result
+AttributeError: 'TQAnalystDask' object has no attribute '_dataset_meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: 'TQAnalystDask' object has no attribute '_dataset_meta'
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 05:29:10 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 05:29:10 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 05:29:11 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 05:29:11 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 5, 29, 11, 96537), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 05:29:11.096542.
+[01/31/2025 05:29:11 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 05:29:11.096525
+[01/31/2025 05:29:11 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 05:29:11 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 05:29:13 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 05:29:13 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 175, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 368, in analyze
+    results = data.apply(
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:04:30 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 06:04:30 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:04:31 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 6, 4, 31, 614482), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 06:04:31.614485.
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 06:04:31.614471
+[01/31/2025 06:04:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 06:04:31 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 06:04:34 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:04:34 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 144, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 364, in analyze
+    results = data.apply(
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:11:01 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 06:11:01 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:11:02 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 6, 11, 2, 728079), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 06:11:02.728082.
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 06:11:02.728072
+[01/31/2025 06:11:02 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 06:11:02 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 06:11:05 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:11:05 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 144, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 364, in analyze
+    results = data.apply(
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:15:53 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 06:15:53 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:15:54 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 6, 15, 54, 358997), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 06:15:54.359000.
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 06:15:54.358985
+[01/31/2025 06:15:54 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 06:15:54 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 06:15:57 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:15:57 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 366, in analyze
+    results = data.apply(
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:44:58 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 06:44:58 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:44:59 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 6, 44, 59, 324745), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 06:44:59.324751.
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 06:44:59.324730
+[01/31/2025 06:44:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 06:44:59 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 06:45:02 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: DataFrame.apply() got multiple values for argument 'axis'
+[01/31/2025 06:45:02 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: DataFrame.apply() got multiple values for argument 'axis'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 366, in analyze
+    results = data.apply(self._process_row, function_words, nlp,
+TypeError: DataFrame.apply() got multiple values for argument 'axis'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: DataFrame.apply() got multiple values for argument 'axis'
+[01/31/2025 06:51:30 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 06:51:30 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:51:31 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 6, 51, 31, 622615), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 06:51:31.622618.
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 06:51:31.622608
+[01/31/2025 06:51:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 06:51:31 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 06:51:34 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: Analyst._process_row() got an unexpected keyword argument 'meta'
+[01/31/2025 06:51:34 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: Analyst._process_row() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 366, in analyze
+    results = data.apply(self._process_row, args=(function_words, nlp),
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: Analyst._process_row() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: Analyst._process_row() got an unexpected keyword argument 'meta'
+[01/31/2025 06:51:48 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 06:51:48 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:51:49 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 6, 51, 49, 653500), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 06:51:49.653502.
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 06:51:49.653489
+[01/31/2025 06:51:49 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 06:51:49 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 06:51:52 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: Analyst._process_row() got an unexpected keyword argument 'meta'
+[01/31/2025 06:51:52 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: Analyst._process_row() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 366, in analyze
+    results = data.apply(self._process_row, args=(function_words, nlp),
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: Analyst._process_row() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: Analyst._process_row() got an unexpected keyword argument 'meta'
+[01/31/2025 06:56:30 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 06:56:30 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 06:56:31 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 6, 56, 31, 275195), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 06:56:31.275199.
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 06:56:31.275185
+[01/31/2025 06:56:31 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 06:56:31 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 06:56:33 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 06:56:33 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 366, in analyze
+    results = data.apply(lambda row:
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 07:02:23 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 07:02:23 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:02:24 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 7, 2, 24, 595335), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 07:02:24.595340.
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 07:02:24.595325
+[01/31/2025 07:02:24 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 07:02:24 AM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 07:02:27 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 07:02:27 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 366, in analyze
+    results = data.apply(lambda row: self._process_row(row, function_words, nlp),
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/frame.py", line 10374, in apply
+    return op.apply().__finalize__(self, method="apply")
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 916, in apply
+    return self.apply_standard()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1063, in apply_standard
+    results, res_index = self.apply_series_generator()
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/pandas/core/apply.py", line 1081, in apply_series_generator
+    results[i] = self.func(v, *self.args, **self.kwargs)
+TypeError: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: TQAnalystDask.analyze.<locals>.<lambda>() got an unexpected keyword argument 'meta'
+[01/31/2025 07:06:38 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 07:06:38 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 07:06:39 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:06:39 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a dask_parquet reader from the DataFrameIOFactory
+[01/31/2025 07:06:39 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 140, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/dataframe/dask_expr/_collection.py", line 5324, in read_parquet
+    raise ValueError(
+ValueError: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 151, in wrapper
+    raise exc from e
+ValueError: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+[01/31/2025 07:06:39 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 140, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/dataframe/dask_expr/_collection.py", line 5324, in read_parquet
+    raise ValueError(
+ValueError: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 151, in wrapper
+    raise exc from e
+ValueError: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 86, in _run
+    source = self._get_dataset(config=self._source_config)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 271, in _get_dataset
+    raise Exception(msg)
+Exception: Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+[01/31/2025 07:10:12 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 07:10:12 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 07:10:13 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:10:13 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a dask_parquet reader from the DataFrameIOFactory
+[01/31/2025 07:10:13 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 140, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/dataframe/dask_expr/_collection.py", line 5324, in read_parquet
+    raise ValueError(
+ValueError: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 151, in wrapper
+    raise exc from e
+ValueError: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+[01/31/2025 07:10:13 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 140, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/dataframe/dask_expr/_collection.py", line 5324, in read_parquet
+    raise ValueError(
+ValueError: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 151, in wrapper
+    raise exc from e
+ValueError: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 86, in _run
+    source = self._get_dataset(config=self._source_config)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 271, in _get_dataset
+    raise Exception(msg)
+Exception: Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+[01/31/2025 07:22:58 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 07:22:59 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 07:22:59 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a dask_parquet reader from the DataFrameIOFactory
+[01/31/2025 07:22:59 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 140, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/dataframe/dask_expr/_collection.py", line 5324, in read_parquet
+    raise ValueError(
+ValueError: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 151, in wrapper
+    raise exc from e
+ValueError: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+[01/31/2025 07:22:59 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 140, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/dataframe/dask_expr/_collection.py", line 5324, in read_parquet
+    raise ValueError(
+ValueError: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.10/site-packages/dask/backends.py", line 151, in wrapper
+    raise exc from e
+ValueError: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 86, in _run
+    source = self._get_dataset(config=self._source_config)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 271, in _get_dataset
+    raise Exception(msg)
+Exception: Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: pyarrow>=15.0.0 is required to use the pyarrow filesystem.
+[01/31/2025 08:01:02 AM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 08:01:02 AM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 08:01:03 AM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 08:01:03 AM] [DEBUG] [root] [factory] [get_reader] : Requesting a dask_parquet reader from the DataFrameIOFactory
+[01/31/2025 08:01:03 AM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/backends.py", line 135, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/io/parquet/core.py", line 519, in read_parquet
+    fs, paths, dataset_options, open_file_options = engine.extract_filesystem(
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/io/parquet/arrow.py", line 457, in extract_filesystem
+    fs = type(pa_fs.FileSystem.from_uri(urlpath[0])[0])(
+  File "pyarrow/_fs.pyx", line 471, in pyarrow._fs.FileSystem.from_uri
+  File "pyarrow/error.pxi", line 154, in pyarrow.lib.pyarrow_internal_check_status
+  File "pyarrow/error.pxi", line 91, in pyarrow.lib.check_status
+pyarrow.lib.ArrowInvalid: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/backends.py", line 137, in wrapper
+    raise type(e)(
+pyarrow.lib.ArrowInvalid: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+[01/31/2025 08:01:03 AM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/backends.py", line 135, in wrapper
+    return func(*args, **kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/io/parquet/core.py", line 519, in read_parquet
+    fs, paths, dataset_options, open_file_options = engine.extract_filesystem(
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/io/parquet/arrow.py", line 457, in extract_filesystem
+    fs = type(pa_fs.FileSystem.from_uri(urlpath[0])[0])(
+  File "pyarrow/_fs.pyx", line 471, in pyarrow._fs.FileSystem.from_uri
+  File "pyarrow/error.pxi", line 154, in pyarrow.lib.pyarrow_internal_check_status
+  File "pyarrow/error.pxi", line 91, in pyarrow.lib.check_status
+pyarrow.lib.ArrowInvalid: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 57, in read
+    df = dd.read_parquet(path=filepath, **self._kwargs)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/backends.py", line 137, in wrapper
+    raise type(e)(
+pyarrow.lib.ArrowInvalid: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 255, in _get_dataset
+    dataset = self._repo.get(
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/dataset.py", line 165, in get
+    df = self._fao.read(filepath=dataset.file.path, dftype=dftype, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/fao.py", line 130, in read
+    return reader.read(filepath=filepath, spark=spark)
+  File "/home/john/projects/genailab/genailab/infra/persist/repo/file/dask.py", line 68, in read
+    raise FileIOException(msg, e) from e
+genailab.infra.exception.file.FileIOException: Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 86, in _run
+    source = self._get_dataset(config=self._source_config)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 271, in _get_dataset
+    raise Exception(msg)
+Exception: Unexpected exception occurred while getting dataset dataprep_clean_dataset_review from the repository.
+Exception occurred while reading a Parquet file from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet.
+An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+Original exception: An error occurred while calling the read_parquet method registered to the pandas backend.
+Original Message: URI has empty scheme: 'workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet'
+[01/31/2025 03:08:37 PM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 03:08:37 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 03:08:38 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 03:08:38 PM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 03:08:39 PM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 03:08:39 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 15, 8, 39, 7263), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 15:08:39.007265.
+[01/31/2025 03:08:39 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 15:08:39.007254
+[01/31/2025 03:08:39 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 03:08:39 PM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 03:08:40 PM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: [E050] Can't find model 'en_core_web_sm'. It doesn't seem to be a Python package or a valid path to a data directory.
+[01/31/2025 03:08:40 PM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: [E050] Can't find model 'en_core_web_sm'. It doesn't seem to be a Python package or a valid path to a data directory.
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 335, in analyze
+    nlp = spacy.load("en_core_web_sm")
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/spacy/__init__.py", line 51, in load
+    return util.load_model(
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/spacy/util.py", line 472, in load_model
+    raise IOError(Errors.E050.format(name=name))
+OSError: [E050] Can't find model 'en_core_web_sm'. It doesn't seem to be a Python package or a valid path to a data directory.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: [E050] Can't find model 'en_core_web_sm'. It doesn't seem to be a Python package or a valid path to a data directory.
+[01/31/2025 03:12:55 PM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[01/31/2025 03:12:55 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [run] : Inside TQAStage: run
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : Inside TQAStage: _fresh_cache_exists
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_dataset_exists] : Inside TQAStage: _dataset_exists
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_fresh_cache_exists] : The target dataset cache for Feature Engineering Phase/Text Quality Analysis Stage does not exist in the repository.
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Inside TQAStage: _run
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_remove_dataset] : Inside TQAStage: _remove_dataset
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_get_dataset] : Inside TQAStage: _get_dataset
+[01/31/2025 03:12:56 PM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_clean_dataset_review.parquet
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 1, 31, 15, 12, 56, 670857), 'entity': 'TQAStage', 'event': 'Accessed by TQAStage'} to the event log at 2025-01-31 15:12:56.670860.
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by TQAStage at 2025-01-31 15:12:56.670848
+[01/31/2025 03:12:56 PM] [DEBUG] [genailab.flow.base.stage.TQAStage] [stage] [_validate_dataframe_type] : Inside TQAStage: _validate_dataframe_type
+[01/31/2025 03:12:56 PM] [DEBUG] [asyncio] [selector_events] [__init__] : Using selector: EpollSelector
+[01/31/2025 03:12:59 PM] [ERROR] [genailab.flow.base.stage.TQAStage] [stage] [_run] : Error in task TQATask: Expected iterable of tuples of (name, dtype), got (Empty DataFrame
+Columns: [id, app_id, app_name, category_id, author, rating, content, vote_sum, vote_count, date, category, noun_count, verb_count, adjective_count, adverb_count, aspect_verb_pairs, noun_phrases, verb_phrases, adverbial_phrases, review_length, lexical_density, dependency_depth, tqa_score]
+Index: []
+
+[0 rows x 23 columns],)
+[01/31/2025 03:12:59 PM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task TQATask: Expected iterable of tuples of (name, dtype), got (Empty DataFrame
+Columns: [id, app_id, app_name, category_id, author, rating, content, vote_sum, vote_count, date, category, noun_count, verb_count, adjective_count, adverb_count, aspect_verb_pairs, noun_phrases, verb_phrases, adverbial_phrases, review_length, lexical_density, dependency_depth, tqa_score]
+Index: []
+
+[0 rows x 23 columns],)
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/dispatch.py", line 130, in make_meta
+    return make_meta_dispatch(x, index=index)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/utils.py", line 641, in __call__
+    meth = self.dispatch(type(arg))
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/utils.py", line 635, in dispatch
+    raise TypeError(f"No dispatch for {cls}")
+TypeError: No dispatch for <class 'tuple'>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 94, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 146, in run
+    return self._analyst.analyze(data=data)
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/task.py", line 353, in analyze
+    results = ddf.apply(lambda row: self._process_row(row, function_words, nlp),
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/core.py", line 5919, in apply
+    return map_partitions(M.apply, self, func, args=args, meta=meta, **kwds)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/core.py", line 6880, in map_partitions
+    meta = _get_meta_map_partitions(args, dfs, func, kwargs, meta, parent_meta)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/core.py", line 6994, in _get_meta_map_partitions
+    meta = make_meta(meta, index=meta_index, parent_meta=parent_meta)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/dispatch.py", line 134, in make_meta
+    return func(x, index=index)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/dask/dataframe/backends.py", line 265, in make_meta_object
+    raise ValueError(f"Expected iterable of tuples of (name, dtype), got {x}")
+ValueError: Expected iterable of tuples of (name, dtype), got (Empty DataFrame
+Columns: [id, app_id, app_name, category_id, author, rating, content, vote_sum, vote_count, date, category, noun_count, verb_count, adjective_count, adverb_count, aspect_verb_pairs, noun_phrases, verb_phrases, adverbial_phrases, review_length, lexical_density, dependency_depth, tqa_score]
+Index: []
+
+[0 rows x 23 columns],)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 147, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/feature/tqa/stage.py", line 97, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task TQATask: Expected iterable of tuples of (name, dtype), got (Empty DataFrame
+Columns: [id, app_id, app_name, category_id, author, rating, content, vote_sum, vote_count, date, category, noun_count, verb_count, adjective_count, adverb_count, aspect_verb_pairs, noun_phrases, verb_phrases, adverbial_phrases, review_length, lexical_density, dependency_depth, tqa_score]
+Index: []
+
+[0 rows x 23 columns],)

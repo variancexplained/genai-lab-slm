@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday December 26th 2024 02:21:28 pm                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Friday January 31st 2025 04:37:38 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,10 @@ from genailab.infra.persist.repo.file.base import (
     DataFrameReader,
     DataFrameWriter,
     IOFactory,
+)
+from genailab.infra.persist.repo.file.dask import (
+    DaskDataFrameParquetReader,
+    DaskDataFrameParquetWriter,
 )
 from genailab.infra.persist.repo.file.pandas import (
     PandasDataFrameCSVReader,
@@ -55,6 +59,7 @@ class DataFrameIOFactory(IOFactory):
         "spark_csv": SparkDataFrameCSVReader,
         "spark_parquet": SparkDataFrameParquetReader,
         "sparknlp_parquet": SparkDataFrameParquetReader,
+        "dask_parquet": DaskDataFrameParquetReader,
     }
     __writer_map = {
         "pandas_csv": PandasDataFrameCSVWriter,
@@ -62,6 +67,7 @@ class DataFrameIOFactory(IOFactory):
         "spark_csv": SparkDataFrameCSVWriter,
         "spark_parquet": SparkDataFrameParquetWriter,
         "sparknlp_parquet": SparkDataFrameParquetWriter,
+        "dask_parquet": DaskDataFrameParquetWriter,
     }
 
     def __init__(self, config: dict) -> None:

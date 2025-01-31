@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 20th 2023 01:19:19 pm                                                #
-# Modified   : Friday January 31st 2025 03:03:31 am                                                #
+# Modified   : Friday January 31st 2025 03:14:10 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2023 John James                                                                 #
@@ -32,43 +32,43 @@ setup:
 # ------------------------------------------------------------------------------------------------ #
 #                                          LOGGING                                                 #
 # ------------------------------------------------------------------------------------------------ #
-# logging:
-#   disable_existing_loggers: false
-#   formatters:
-#     console:
-#       datefmt: '%m/%d/%Y %I:%M:%S %p'
-#       format: '[%(asctime)s] [%(levelname)s] [%(name)s] [%(funcName)s] : %(message)s'
-#     file:
-#       datefmt: '%m/%d/%Y %I:%M:%S %p'
-#       format: '[%(asctime)s] [%(levelname)s] [%(name)s] [%(module)s] [%(funcName)s]
-#         : %(message)s'
-#   handlers:
-#     console:
-#       class: logging.StreamHandler
-#       formatter: console
-#       level: DEBUG
-#       stream: ext://sys.stderr
-#     file:
-#       backupCount: 0
-#       class: logging.handlers.TimedRotatingFileHandler
-#       filename: logs/test/log
-#       formatter: file
-#       interval: 1
-#       level: DEBUG # Default, possibly overridden in environment config
-#       when: midnight
-#   loggers:
-#     py4j:  # Add this block to suppress py4j logging
-#       level: ERROR
-#       handlers:
-#         - console
-#         - file
-#       propagate: false  # Prevent py4j logs from being propagated to the root logger
-#   root:
-#     handlers:
-#     - console
-#     - file
-#     level: DEBUG # Default, possibly overridden in environment config
-#   version: 1
+logging:
+  disable_existing_loggers: false
+  formatters:
+    console:
+      datefmt: '%m/%d/%Y %I:%M:%S %p'
+      format: '[%(asctime)s] [%(levelname)s] [%(name)s] [%(funcName)s] : %(message)s'
+    file:
+      datefmt: '%m/%d/%Y %I:%M:%S %p'
+      format: '[%(asctime)s] [%(levelname)s] [%(name)s] [%(module)s] [%(funcName)s]
+        : %(message)s'
+  handlers:
+    console:
+      class: logging.StreamHandler
+      formatter: console
+      level: DEBUG
+      stream: ext://sys.stderr
+    file:
+      backupCount: 0
+      class: logging.handlers.TimedRotatingFileHandler
+      filename: logs/test/log
+      formatter: file
+      interval: 1
+      level: DEBUG # Default, possibly overridden in environment config
+      when: midnight
+  loggers:
+    py4j:  # Add this block to suppress py4j logging
+      level: ERROR
+      handlers:
+        - console
+        - file
+      propagate: false  # Prevent py4j logs from being propagated to the root logger
+  root:
+    handlers:
+    - console
+    - file
+    level: DEBUG # Default, possibly overridden in environment config
+  version: 1
 # ------------------------------------------------------------------------------------------------ #
 #                                         DATA                                                     #
 # ------------------------------------------------------------------------------------------------ #
@@ -99,10 +99,11 @@ repository:
 # ------------------------------------------------------------------------------------------------ #
 spark:
   parquet_block_size: 536870912 # 512 MB
-# To compute memory limit, allocate 60%-70% of available memory and divide by n_workers to get
+# To compute memory limit, allocate 60%-70% of available memory and divide by nworkers to get
 # memory_limit for each worker
 dask:
-  n_partitions: 32
-  n_workers: 8
+  npartitions: 32
+  nworkers: 8
   memory_limit:   "11GiB"
   threads_per_worker: 1
+  processes: False

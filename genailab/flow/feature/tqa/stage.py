@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:26:44 am                                                #
-# Modified   : Thursday January 30th 2025 04:31:59 pm                                              #
+# Modified   : Friday January 31st 2025 04:44:17 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -35,7 +35,7 @@ from genailab.infra.persist.repo.dataset import DatasetRepo
 class TQAStage(Stage):
 
     __PHASE = PhaseDef.FEATURE
-    __STAGE = StageDef.TQADASK
+    __STAGE = StageDef.TQA
     __DFTYPE = DFType.PANDAS
 
     def __init__(
