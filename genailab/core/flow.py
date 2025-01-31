@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Thursday January 30th 2025 04:03:58 pm                                              #
+# Modified   : Friday January 31st 2025 02:03:00 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -33,8 +33,7 @@ class StageDef(Enum):
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")
     # Feature Engineering Stages
-    TQADASK = ("tqadask", 0, "Text Quality Analysis Stage")
-    TQAPANDAS = ("tqapandas", 1, "Text Quality Analysis Stage")
+    TQA = ("tqa", 0, "Text Quality Analysis Stage")
     SENTIMENT = ("sentiment", 2, "Sentiment Analysis Stage")
     # Modeling Stages
     ABSA_FT = ("absa_ft", 0, "Fine-Tuned ABSA Modeling Stage")

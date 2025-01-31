@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Thursday January 30th 2025 11:37:57 pm                                              #
+# Modified   : Friday January 31st 2025 03:54:11 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -27,12 +27,12 @@ import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import spacy
-from dask.distributed import Client, LocalCluster, progress
+from dask.distributed import Client, LocalCluster
+from tqdm import tqdm
+from tqdm.dask import TqdmCallback
 
 from genailab.flow.base.task import Task
 from genailab.infra.config.app import AppConfigReader
-from genailab.infra.service.logging.task import task_logger
-from genailab.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #
 # Set the start method to 'fork' (Linux/Mac) or 'spawn' (Windows)
@@ -61,9 +61,9 @@ COUNT_SCHEMA = {
     "verb_phrases": float,
     "adverbial_phrases": float,
     "review_length": int,
-    # "lexical_density": float,
-    # "dependency_depth": int,
-    # "tqa_score": float,
+    "lexical_density": float,
+    "dependency_depth": int,
+    "tqa_score": float,
 }
 
 DATASET_SCHEMA = {
@@ -71,13 +71,13 @@ DATASET_SCHEMA = {
     "app_id": str,
     "app_name": str,
     "category_id": "category",
-    "category": "category",
     "author": str,
     "rating": int,
     "content": str,
     "vote_sum": int,
     "vote_count": int,
     "date": "datetime64[ms]",
+    "category": "category",
  **COUNT_SCHEMA,
 
 }
@@ -98,15 +98,13 @@ class TQATask(Task):
         _normalized (bool): Whether to apply log normalization to the computed features.
         _logger (logging.Logger): Logger instance for logging events.
     """
-    def __init__(self, coefficients: Dict[str, float], normalized: bool = True, batched: bool = True) -> None:
+    def __init__(self,  coefficients: Dict[str, float], normalized: bool = True, batched: bool = True) -> None:
         super().__init__()
         self._coefficients = coefficients
         self._normalized = normalized
         self._batched  = batched
         self._dataset_meta = pd.DataFrame(columns=DATASET_SCHEMA.keys()).astype(DATASET_SCHEMA)
-        self._count_meta = pd.DataFrame(columns=COUNT_SCHEMA.keys()).astype(COUNT_SCHEMA)
         self._n_partitions = dask_config["n_partitions"]
-        self._n_process = dask_config["n_process"]
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -184,7 +182,7 @@ class TQATask(Task):
         """
         return np.log1p(count)
 
-    def _process_batch(self, batch_df: pd.DataFrame, function_words: Set[str], nlp: spacy.language.Language, meta: pd.DataFrame) -> dd.DataFrame:
+    def _process_batch(self, batch_df: pd.DataFrame, function_words: Set[str], nlp: spacy.language.Language, meta: pd.DataFrame) -> pd.DataFrame:
         """
         Processes a batch of reviews using spaCy's `nlp.pipe()` for efficiency.
 
@@ -199,12 +197,9 @@ class TQATask(Task):
             meta (pd.DataFrame): The schema (structure) of the dataset that defines the expected output columns.
 
         Returns:
-            dask.dataframe.DataFrame: A Dask DataFrame with computed syntactic features for each review in the batch.
+            List[pd.DataFrame]: A list of one-row Pandas DataFrames.
         """
         self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
-        self._logger.debug(f"\nbatch_df type: {type(batch_df)}")
-        self._logger.debug(f"\nfunction_words type: {type(function_words)}")
-        self._logger.debug(f"\nnlp type: {type(nlp)}")
 
         # Process all reviews in the batch using spaCy's nlp.pipe(), with parallelization
         results = []
@@ -214,8 +209,7 @@ class TQATask(Task):
             result = self._process_row(row, function_words, nlp)
             results.append(result)
 
-        # Convert the list of delayed results into a Dask DataFrame
-        return  dd.from_pandas(pd.DataFrame(results, columns=meta.columns), npartitions=self._n_partitions)
+        return pd.DataFrame(results, columns=self._dataset_meta.columns)
 
 
 
@@ -262,63 +256,43 @@ class TQATask(Task):
 
         # Compute review length, lexical density, and dependency depth
         counts['review_length'] = len(review.split())
-        # tokens = review.split()
-        # content_words = [word for word in tokens if word not in function_words]
-        # counts['lexical_density'] = (len(content_words) / len(tokens)) * 100 if len(tokens) > 0 else 0
+        tokens = review.split()
+        content_words = [word for word in tokens if word not in function_words]
+        counts['lexical_density'] = (len(content_words) / len(tokens)) * 100 if len(tokens) > 0 else 0
 
-        # # Compute dependency depth
-        # max_depth = 0
-        # for sent in doc.sents:
-        #     depth = max([len(list(token.subtree)) for token in sent])
-        #     max_depth = max(max_depth, depth)
-        # counts["dependency_depth"] = max_depth
+        # Compute dependency depth
+        max_depth = 0
+        for sent in doc.sents:
+            depth = max([len(list(token.subtree)) for token in sent])
+            max_depth = max(max_depth, depth)
+        counts["dependency_depth"] = max_depth
 
         # Log normalization if enabled
         if self._normalized:
             for key in counts:
                 counts[key] = self._log_normalize(counts[key])
 
-        # counts["tqa_score"] = sum(self._coefficients[key] * counts[key] for key in self._coefficients)
+        counts["tqa_score"] = sum(self._coefficients[key] * counts[key] for key in self._coefficients)
         return {**row, **counts}
 
 
 # ------------------------------------------------------------------------------------------------ #
-#                                    TQA DASK                                                      #
+#                                  TQ ANALYST DASK                                                 #
 # ------------------------------------------------------------------------------------------------ #
-class TQADaskTask(TQATask):
-    def __init__(self, coefficients: Dict[str, float], normalized: bool = True, batched: bool = True) -> None:
-        super().__init__(coefficients=coefficients, normalized=normalized, batched=batched)
+class TQAnalystDask:
+    def __init__(self, schema: pd.DataFrame, npartitions: int, batched: bool = True) -> None:
+        self._schema = schema
+        self._npartitions = npartitions
+        self._batched = batched
 
-    @task_logger
-    def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Processes a batch of reviews and computes syntactic features and TQA syntactic scores.
-
-        This method uses Dask's delayed computation to process the input DataFrame in parallel. It applies the
-        `_process_review_with_metadata` method to each review and returns the results after computation.
-
-        Args:
-            data (pd.DataFrame): A Pandas DataFrame containing the reviews to process.
-
-        Returns:
-            pd.DataFrame: A DataFrame with the computed syntactic features and TQA score for each review.
-        """
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
-        Printer().print_dict(title=f"{self.__class__.__name__} Configuration", data=dask_config)
-
-        # Temporarily subset the dataframe while debugging
-        data = data.sample(n=50)
-        self._logger.debug(f"Shape of dataset: {data.shape}")
-
+    def tqadask(self, data: dd.DataFrame) -> dd.DataFrame:
         try:
             # Initialize spaCy and Dask DataFrame
             nlp = spacy.load("en_core_web_sm")
             function_words = nlp.Defaults.stop_words
-            ddf = dd.from_pandas(data, npartitions=self._n_partitions)
+            ddf = dd.from_pandas(data, npartitions=self._npartitions)
 
             if self._batched:
-                self._logger.debug("Processing in batches...")
-                # Pass `meta` explicitly to `map_partitions` using kwargs
                 results = ddf.map_partitions(
                     lambda batch:
                     self._process_batch(
@@ -330,8 +304,6 @@ class TQADaskTask(TQATask):
                     meta=self._dataset_meta
                 )
             else:
-                self._logger.debug("Processing row-by-row...")
-                # Process row-by-row (no batching) and pass meta to apply
                 results = ddf.apply(
                     lambda row: self._process_row(row, function_words, nlp),
                     axis=1,
@@ -339,26 +311,19 @@ class TQADaskTask(TQATask):
                 )
 
             # Start computation in the background
-            self._logger.debug(f"Starting computation in the background with results of type {type(results)}")
             results = results.persist()
 
-            # Create a progress bar
-            self._logger.debug(f"Beginning progress bar on result of type {type(results)}")
-            progress(results)
-
+            with TqdmCallback():
             # Materialize results into a dask dataframe
-            self._logger.debug("Beginning to materialize results.")
-            results = results.compute()
+                results = results.compute()
 
 
             # Convert to pandas
-            df = results.apply(pd.Series)
-            #df = pd.DataFrame(results, columns=self._dataset_meta.columns)
-            self._logger.debug(f"Converted the dask expression to a {type(df)} type.\nProfile\n{df.info()}")
+            if isinstance(results, dd.DataFrame):
+                df = pd.DataFrame(results, columns=self._dataset_meta.columns)
+            else:
+                df = results.apply(pd.Series)
 
-            self._logger.debug(f"Results\n{df.to_string(max_rows=None, max_cols=None)}")
-
-            self._logger.debug("Computation complete.")
             return df
         finally:
             if client:
@@ -367,7 +332,64 @@ class TQADaskTask(TQATask):
                 cluster.close()
 
 # ------------------------------------------------------------------------------------------------ #
-#                                    TQA DASK                                                      #
+#                                 TQ ANALYST PANDAS                                                #
 # ------------------------------------------------------------------------------------------------ #
-class TQAPandasTask(TQATask):
-    pass
+class TQAnalystPandas:
+    def __init__(self, schema: pd.DataFrame, npartitions: int, batched: bool = True) -> None:
+        self._schema = schema
+        self._npartitions = npartitions
+        self._batched = batched
+
+    def analyze(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Process a pandas DataFrame with TQDM progress bar and optional batching.
+
+        Args:
+            data (pd.DataFrame): The input DataFrame to process.
+            schema (pd.DataFrame): The schema describing the structure of the output.
+            npartitions (int): Number of partitions to simulate for processing.
+            batched (bool): Whether to process data in batches. Defaults to True.
+
+        Returns:
+            pd.DataFrame: Processed DataFrame with the computed results.
+        """
+        try:
+            # Initialize spaCy
+            nlp = spacy.load("en_core_web_sm")
+            function_words = nlp.Defaults.stop_words
+
+            # Calculate the number of rows per partition
+            partition_size = len(data) // self._npartitions
+            results = []
+
+            if self._batched:
+                # Iterate over partitions with a progress bar
+                for i in tqdm(range(self._npartitions), desc="Processing Partitions", unit="partition"):
+                    start = i * partition_size
+                    end = (i + 1) * partition_size if i != self._npartitions - 1 else len(data)
+                    partition = data.iloc[start:end]
+                    result_partition = self._process_batch(
+                        partition,
+                        function_words=function_words,
+                        nlp=nlp,
+                        meta=self._dataset_meta
+                    )
+                    results.append(result_partition)
+
+                # Concatenate the results
+                df = pd.concat(results, ignore_index=True)
+
+            else:
+                # Process data row-by-row with a progress bar
+                df = data.apply(
+                    lambda row: self._process_row(row, function_words, nlp),
+                    axis=1,
+                    meta=self._dataset_meta
+                )
+                df = df.apply(pd.Series)
+
+            return df
+
+        except Exception as e:
+            logging.error(f"Error during processing: {e}")
+            raise

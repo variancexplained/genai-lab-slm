@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday August 26th 2024 10:17:42 pm                                                 #
-# Modified   : Thursday January 30th 2025 10:01:20 pm                                              #
+# Modified   : Friday January 31st 2025 03:27:48 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -41,6 +41,7 @@ class DFType(Enum):
     PANDAS = "pandas"
     SPARK = "spark"
     SPARKNLP = "sparknlp"
+    DASK = "dask"
 
     @classmethod
     def from_value(cls, value) -> DFType:
