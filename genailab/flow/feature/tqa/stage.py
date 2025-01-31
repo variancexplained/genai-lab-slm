@@ -11,12 +11,13 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:26:44 am                                                #
-# Modified   : Thursday January 30th 2025 04:29:48 am                                              #
+# Modified   : Thursday January 30th 2025 04:31:59 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """TQA Stage Module"""
+import inspect
 import re
 from typing import List
 
@@ -34,7 +35,7 @@ from genailab.infra.persist.repo.dataset import DatasetRepo
 class TQAStage(Stage):
 
     __PHASE = PhaseDef.FEATURE
-    __STAGE = StageDef.TQA
+    __STAGE = StageDef.TQADASK
     __DFTYPE = DFType.PANDAS
 
     def __init__(
@@ -77,7 +78,7 @@ class TQAStage(Stage):
         Returns:
             Dataset: The processed dataset.
         """
-
+        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
         # Remove existing target dataset if it exists.
         self._remove_dataset(config=self._target_config)
 

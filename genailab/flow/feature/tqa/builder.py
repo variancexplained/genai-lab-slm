@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Thursday January 30th 2025 10:53:46 am                                              #
+# Modified   : Thursday January 30th 2025 05:14:46 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,6 +19,7 @@
 """Syntactic Text Quality Analysis Builder Module"""
 from __future__ import annotations
 
+from copy import deepcopy
 from typing import Optional
 
 from genailab.asset.dataset.config import DatasetConfig
@@ -32,7 +33,7 @@ from genailab.flow.feature.tqa.stage import TQAStage
 class TQAStageBuilder(StageBuilder):
 
     __PHASE = PhaseDef.FEATURE
-    __STAGE = StageDef.TQA
+    __STAGE = StageDef.TQADASK
     __DFTYPE = DFType.PANDAS
 
     def __init__(self) -> None:
@@ -70,22 +71,26 @@ class TQAStageBuilder(StageBuilder):
         return self.__DFTYPE
 
     def reset(self) -> None:
+        """Resets the builder."""
         super().reset()
         self._source_config = None
         self._target_config = None
         self._tqa_task = None
-        self._task_configs = self._get_config(
-            phase=self.__PHASE, stage=self.__STAGE, config="tasks"
-        )
 
-    # -------------------------------------------------------------------------------------------- #
-    #                                       TASK                                                   #
-    # -------------------------------------------------------------------------------------------- #
-    def tqa(self, normalized: bool = True) -> TQAStageBuilder:
-        self._tqa_task = self._task_configs['tqa']
+    def with_pandas(self, normalized: bool = True, batched: bool = True) -> TQAStageBuilder:
+        self._tqa_task = self._task_configs['tqapandas_task']
         self._tqa_task['params']['normalized'] = normalized
+        self._tqa_task['params']['batched'] = batched
         self._tasks.append(self._task_builder.build(self._tqa_task))
         return self
+
+    def with_dask(self, normalized: bool = True, batched: bool = True) -> TQAStageBuilder:
+        self._tqa_task = self._task_configs['tqadask_task']
+        self._tqa_task['params']['normalized'] = normalized
+        self._tqa_task['params']['batched'] = batched
+        self._tasks.append(self._task_builder.build(self._tqa_task))
+        return self
+
     # -------------------------------------------------------------------------------------------- #
     #                                      BUILD                                                   #
     # -------------------------------------------------------------------------------------------- #
@@ -116,7 +121,7 @@ class TQAStageBuilder(StageBuilder):
         stage = TQAStage(
             source_config=source_config or self._source_config,
             target_config=target_config or self._target_config,
-            tasks=self._tasks,
+            tasks=deepcopy(self._tasks),
             repo=self._repo,
             dataset_builder=self._dataset_builder,
         )
@@ -130,10 +135,10 @@ class TQAStageBuilder(StageBuilder):
         Raises:
             ValueError: If any required field is missing or invalid.
         """
-        super()._validate()
+        # super()._validate()
         errors = []
         if self._tqa_task is None:
-            errors.append("A Spark session is required for the TQASyntactic Stage.")
+            errors.append("No TQA Task was set.")
 
         if errors:
             self.reset()

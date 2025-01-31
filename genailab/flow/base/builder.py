@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Wednesday January 29th 2025 08:08:38 pm                                             #
+# Modified   : Thursday January 30th 2025 03:00:34 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,6 +23,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Type, Union
 
 from dependency_injector.wiring import Provide, inject
+from pyspark.sql import SparkSession
+
 from genailab.asset.dataset.builder import DatasetBuilder
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.container import GenAILabContainer
@@ -33,7 +35,6 @@ from genailab.flow.base.task import Task, TaskBuilder
 from genailab.infra.config.flow import FlowConfigReader
 from genailab.infra.persist.repo.dataset import DatasetRepo
 from genailab.infra.service.spark.pool import SparkSessionPool
-from pyspark.sql import SparkSession
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -191,6 +192,11 @@ class StageBuilder(ABC):
             return self._config_reader.get_config(section="phases", namespace=False)[
                 phase.value
             ]["stages"][stage.value][config]
+        except AttributeError:
+            return self._config_reader.get_config(section="phases", namespace=False)[
+                phase.value
+            ]["stages"][stage][config]
+
         except KeyError as e:
             msg = f"Configuration Error. Unable to obtain the {config} configuration from phase {phase.value} and stage {stage.value}. Check your config.yaml file.\n{e}"
             self._logger.error(msg)
