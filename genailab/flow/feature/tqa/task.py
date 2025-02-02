@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Friday January 31st 2025 05:23:50 pm                                                #
+# Modified   : Sunday February 2nd 2025 12:13:31 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -32,7 +32,6 @@ import spacy
 from dask.distributed import Client, LocalCluster
 from pandarallel import pandarallel
 from tqdm import tqdm
-from tqdm.dask import TqdmCallback
 
 from genailab.flow.base.task import Task
 
@@ -41,30 +40,30 @@ pandarallel.initialize(progress_bar=True, nb_workers=18, verbose=0)
 #                                  DATASET SCHEMA                                                  #
 # ------------------------------------------------------------------------------------------------ #
 COUNT_SCHEMA = {
-    "noun_count": float,
-    "verb_count": float,
-    "adjective_count": float,
-    "adverb_count": float,
-    "aspect_verb_pairs": float,
-    "noun_phrases": float,
-    "verb_phrases": float,
-    "adverbial_phrases": float,
-    "review_length": int,
-    "lexical_density": float,
-    "dependency_depth": int,
-    "tqa_score": float,
+    "noun_count": np.float64,
+    "verb_count": np.float64,
+    "adjective_count": np.float64,
+    "adverb_count": np.float64,
+    "aspect_verb_pairs": np.float64,
+    "noun_phrases": np.float64,
+    "verb_phrases": np.float64,
+    "adverbial_phrases": np.float64,
+    "review_length": 'int64',
+    "lexical_density": np.float64,
+    "dependency_depth": 'int64',
+    "tqa_score": np.float64,
 }
 
 DATASET_SCHEMA = {
-    "id": str,
-    "app_id": str,
-    "app_name": str,
+    "id": 'str',
+    "app_id": 'str',
+    "app_name": 'str',
     "category_id": "category",
-    "author": str,
-    "rating": int,
-    "content": str,
-    "vote_sum": int,
-    "vote_count": int,
+    "author": 'str',
+    "rating": 'int64',
+    "content": 'str',
+    "vote_sum": 'int64',
+    "vote_count": 'int64',
     "date": "datetime64[ms]",
     "category": "category",
  **COUNT_SCHEMA,
@@ -214,12 +213,20 @@ class Analyst(ABC):
         # Process all reviews in the batch using spaCy's nlp.pipe(), with parallelization
         results = []
 
-        # Process reviews using spaCy and create delayed results
-        for i, row in batch_df.iterrows():
-            result = self._process_row(row, function_words, nlp)
-            results.append(result)
+        try:
 
-        return pd.DataFrame(results, columns=self._schema.columns)
+            # Process reviews using spaCy and create delayed results
+            for i, row in batch_df.iterrows():
+                result = self._process_row(row, function_words, nlp)
+                results.append(result)
+
+            batch_result = pd.DataFrame(results, columns=self._schema_df.columns)
+            self._logger.debug(f"Batch result type, expected Pandas Dataframe. Returned: {type(batch_result)}")
+            return batch_result
+        except Exception as e:
+            msg = f"Exception occurred.\n{e}"
+            self._logger.exception(msg)
+            raise
 
 
 
@@ -236,6 +243,7 @@ class Analyst(ABC):
         Returns:
             Dict[str, float]: A dictionary with the computed syntactic features and TQA score for the review.
         """
+        self._logger.debug(f"Row should be a series. Actual type: {type(row)}\n{row}")
         review = row["content"]
         counts = {key: 0 for key in COUNT_SCHEMA.keys() if key != "tqa_score"}
 
@@ -283,7 +291,9 @@ class Analyst(ABC):
                 counts[key] = self._log_normalize(counts[key])
 
         counts["tqa_score"] = sum(self._coefficients[key] * counts[key] for key in self._coefficients)
-        return {**row, **counts}
+        row_result = pd.Series({**row.to_dict(), **counts})
+        self._logger.debug(f"Row result should be a series. Actual type: {type(row_result)}\n{row_result}")
+        return row_result
 
 # ------------------------------------------------------------------------------------------------ #
 #                                  TQ ANALYST DASK                                                 #
@@ -307,6 +317,9 @@ class TQAnalystDask(Analyst):
         self._schema_dict = schema
         self._schema_df = pd.DataFrame(columns=schema.keys()).astype(schema)
         self._schema_tuple = tuple(self._schema_df.dtypes.to_dict().items())
+        self._logger.debug(f"Type of schema_dict: {type(self._schema_dict)}\n{self._schema_dict}")
+        self._logger.debug(f"Type of schema_df: {type(self._schema_df)}\n{self._schema_df}")
+        self._logger.debug(f"Type of schema_tuple: {type(self._schema_tuple)}\n{self._schema_tuple}")
 
         self._npartitions = npartitions
         self._nworkers = nworkers
@@ -335,7 +348,7 @@ class TQAnalystDask(Analyst):
             function_words = nlp.Defaults.stop_words
 
             # Sample Data
-            data = data.sample(n=50)
+            # data = data.sample(n=50)
 
             # Convert pandas dataframe to dask
             ddf = self.to_dash(pdf=data)
@@ -355,31 +368,33 @@ class TQAnalystDask(Analyst):
                 )
             else:
                 self._logger.debug("Processing row at a time..")
-                results = ddf.apply(lambda row: self._process_row(row, function_words, nlp),
-                    axis=1,
-                    meta=self._schema_tuple  # This defines the expected schema for each row's result
-                )
+                results = ddf.apply(self._process_row, axis=1, meta=self._schema_df, args=(function_words, nlp))
+                self._logger.debug(f"Result type: {type(results)}")
 
             # Start computation in the background
             results = results.persist()
             self._logger.debug(f"Persisted results of type {type(results)}.")
 
-            with TqdmCallback():
-                # Materialize results into a dask dataframe
-                results = results.compute()
-                self._logger.debug(f"Computed results of type {type(results)}.")
+            # Materialize results into a dask dataframe
+            results = results.compute()
+            self._logger.debug(f"Computed results of type {type(results)}.")
+            self._logger.debug(f"Result type: {results}")
 
             # Convert dask dataframe back to pandas
             pdf = self.to_pandas(ddf=results)
             self._logger.debug(f"Converted dask to {type(pdf)}.")
 
             return pdf
-
+        except Exception as e:
+            msg = f"Exception occurred.\n{e}"
+            self._logger.exception(msg)
+            raise
         finally:
             if client:
                 client.close()
             if cluster:
                 cluster.close()
+
 
     def to_dash(self, pdf: pd.DataFrame) -> dd.DataFrame:
         self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
