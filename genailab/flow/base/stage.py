@@ -11,12 +11,11 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Thursday January 30th 2025 04:27:12 pm                                              #
+# Modified   : Monday February 3rd 2025 04:52:49 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
-import inspect
 import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
@@ -132,7 +131,7 @@ class Stage(ABC):
         Returns:
             Dataset: The resulting dataset after stage execution.
         """
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
 
         if self._dataset_exists(config=self._source_config):
             # Check cache if not forcing execution and return if cache is fresh.
@@ -157,7 +156,7 @@ class Stage(ABC):
         Returns:
             bool: True if a fresh cache exists, False otherwise.
         """
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
         source_meta = self._get_dataset(config=self._source_config, meta_only=True)
 
         if not source_meta.consumed:
@@ -182,7 +181,7 @@ class Stage(ABC):
         Returns:
             Dataset: The processed dataset.
         """
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
         # Remove existing target dataset if it exists.
         self._remove_dataset(config=self._target_config)
 
@@ -223,7 +222,7 @@ class Stage(ABC):
         Returns:
             Dataset: The resulting Dataset object.
         """
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
         return (
             self._dataset_builder.from_config(config=config)
             .creator(creator=self.__class__.__name__)
@@ -244,7 +243,7 @@ class Stage(ABC):
 
         """
         """Retrieves a dataset from the repository if it exists."""
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
         asset_id = self._repo.get_asset_id(
             phase=config.phase, stage=config.stage, name=config.name
         )
@@ -272,7 +271,7 @@ class Stage(ABC):
 
     def _dataset_exists(self, config: DatasetConfig) -> bool:
         """Checks existence of a dataset given a configuration."""
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
         asset_id = self._repo.get_asset_id(
             phase=config.phase,
             stage=config.stage,
@@ -289,7 +288,7 @@ class Stage(ABC):
             stage (StageDef): The stage of the dataset.
             name (str): The name of the dataset.
         """
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
         asset_id = self._repo.get_asset_id(
             phase=config.phase, stage=config.stage, name=config.name
         )
@@ -297,7 +296,7 @@ class Stage(ABC):
             self._repo.remove(asset_id=asset_id)
 
     def _validate_dataframe_type(self, config: DatasetConfig, dataframe: Union[pd.core.frame.DataFrame, pd.DataFrame, DataFrame]) -> None:
-        self._logger.debug(f"Inside {self.__class__.__name__}: {inspect.currentframe().f_code.co_name}")
+
         if ((config.dftype == DFType.PANDAS and isinstance(dataframe, DataFrame)) or (config.dftype in(DFType.SPARK, DFType.SPARKNLP) and not isinstance(dataframe, DataFrame))):
             msg = f"DataFrame type returned from the repository is invalid. Expected {config.dftype.value}. Received {type(dataframe)}"
             self._logger.error(msg)

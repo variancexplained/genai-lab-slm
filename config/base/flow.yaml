@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Friday January 31st 2025 02:04:08 am                                                #
+# Modified   : Monday February 3rd 2025 05:51:43 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -518,11 +518,9 @@ phases:
               range_max: 2024
               range_type: year
 
-# ================================================================================================ #
-#                                FEATURE ENGINEERING PHASES                                        #
-# ================================================================================================ #
-  feature:
-    stages:
+# ------------------------------------------------------------------------------------------------ #
+#                              TEXT QUALITY ANALYSIS STAGE                                         #
+# ------------------------------------------------------------------------------------------------ #
       tqa:
         source_config:
           phase: dataprep
@@ -531,7 +529,7 @@ phases:
           dftype: pandas
           file_format: parquet
         target_config:
-          phase: feature
+          phase: dataprep
           stage: tqa
           name: review
           dftype: pandas
@@ -539,7 +537,7 @@ phases:
         tasks:
           tqa:
             class_name: TQATask
-            module: genailab.flow.feature.tqa.task
+            module: genailab.flow.dataprep.tqa.task
             params:
               coefficients:
                 aspect_verb_pairs: 4.0

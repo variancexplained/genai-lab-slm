@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 11:07:32 pm                                             #
-# Modified   : Friday January 31st 2025 04:29:29 am                                                #
+# Modified   : Monday February 3rd 2025 05:53:00 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -23,7 +23,7 @@ from datetime import datetime
 import pytest
 
 from genailab.asset.dataset.config import DatasetConfig
-from genailab.flow.feature.tqa.builder import TQAStageBuilder
+from genailab.flow.dataprep.tqa.builder import TQAStageBuilder
 from genailab.infra.config.flow import FlowConfigReader
 
 # ------------------------------------------------------------------------------------------------ #

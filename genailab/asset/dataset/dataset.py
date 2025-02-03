@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Tuesday January 28th 2025 01:39:15 am                                               #
+# Modified   : Monday February 3rd 2025 06:01:19 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,15 +24,14 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Dict, Optional, Type, Union
 
 import pandas as pd
+from pyspark.sql import DataFrame
+
 from genailab.analytics.dqa import DQA
 from genailab.analytics.eda import EDA
 from genailab.asset.base.asset import Asset
 from genailab.asset.dataset.identity import DatasetPassport
 from genailab.asset.dataset.state import DatasetState, DatasetStateDef
-
 from genailab.infra.utils.file.fileset import FileSet
-from pyspark.sql import DataFrame
-
 from genailab.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #
@@ -137,14 +136,14 @@ class Dataset(Asset):
     @property
     def profile(self) -> pd.DataFrame:
         """Returns a profile of the data, including data types, null values, and uniqueness."""
-        if not self._profile:
+        if self._profile is None:
             self._set_profile()
         return self._profile
 
     @property
     def summary(self) -> None:
         """Prints a Dataset summary."""
-        if not self._summary:
+        if self._summary is None:
             self._set_summary()
         title = f"AppVoCAI Dataset Summary\n{self._passport.phase.label}\n{self._passport.stage.label}"
         Printer().print_dict(title=title, data=self._summary)
