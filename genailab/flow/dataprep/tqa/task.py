@@ -4,14 +4,14 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailab/flow/feature/tqa/task.py                                                  #
+# Filename   : /genailab/flow/dataprep/tqa/task.py                                                 #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Monday February 3rd 2025 05:17:34 am                                                #
+# Modified   : Tuesday February 4th 2025 03:50:47 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -29,12 +29,10 @@ import numpy as np
 import pandas as pd
 import spacy
 from dask.distributed import Client, LocalCluster
-from pandarallel import pandarallel
 from tqdm import tqdm
 
 from genailab.flow.base.task import Task
 
-pandarallel.initialize(progress_bar=True, nb_workers=18, verbose=0)
 # ------------------------------------------------------------------------------------------------ #
 #                                  DATASET SCHEMA                                                  #
 # ------------------------------------------------------------------------------------------------ #
@@ -518,7 +516,7 @@ class TQAnalystPandas(Analyst):
                 df = data.apply(
                     lambda row: self._process_row(row, function_words, nlp)
                 )
-                df = df.parallel_apply(pd.Series)
+                df = df.apply(pd.Series)
 
             return df
 

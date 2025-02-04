@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Tuesday February 4th 2025 02:05:44 pm                                               #
+# Modified   : Tuesday February 4th 2025 02:53:02 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -606,6 +606,21 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
             KeyError: If the specified column does not exist in the DataFrame.
             ValueError: If the detection strategy fails to process the data.
         """
+        @pandas_udf(StringType())
+        def repair_text(texts: pd.Series) -> pd.Series:
+            """
+            Abstract method to define custom text repair logic as a Pandas UDF.
+
+            Subclasses must implement this method to specify how text in rows flagged
+            as anomalies should be repaired.
+
+            Args:
+                texts (pd.Series): A Pandas Series of input texts to repair.
+
+            Returns:
+                pd.Series: The repaired texts as a Pandas Series.
+            """
+            pass
         # Ensure the column exists
         if self._column not in data.columns:
             raise KeyError(f"Column '{self._column}' does not exist in the DataFrame.")
@@ -622,7 +637,7 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
         # Apply the repair logic to rows flagged as anomalies
         data = data.withColumn(
             self._column,
-            F.when(F.col(self._new_column), self.repair_text(F.col(self._column))).otherwise(
+            F.when(F.col(self._new_column), repair_text(F.col(self._column))).otherwise(
                 F.col(self._column)
             ),
         )
@@ -630,21 +645,7 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
         return data
 
 
-    @pandas_udf(StringType())
-    def repair_text(texts: pd.Series) -> pd.Series:
-        """
-        Abstract method to define custom text repair logic as a Pandas UDF.
 
-        Subclasses must implement this method to specify how text in rows flagged
-        as anomalies should be repaired.
-
-        Args:
-            texts (pd.Series): A Pandas Series of input texts to repair.
-
-        Returns:
-            pd.Series: The repaired texts as a Pandas Series.
-        """
-        pass
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -664,19 +665,7 @@ class ExcessWhitespaceRepairStrategy(CustomRegexRepairStrategy):
         self._kwargs = kwargs
 
 
-    @pandas_udf(StringType())
-    def repair_text(texts: pd.Series) -> pd.Series:
-        """
-        Cleans excessive whitespace from text, including non-breaking spaces
-        and other invisible characters.
 
-        Args:
-            texts (pd.Series): A Pandas Series of input texts to clean.
-
-        Returns:
-            pd.Series: Cleaned text with normalized whitespace.
-        """
-        return texts.str.replace(r"[\s\u00A0\u200B]+", " ", regex=True).str.strip()
 
     def repair(self, data: DataFrame) -> DataFrame:
         """
@@ -692,9 +681,22 @@ class ExcessWhitespaceRepairStrategy(CustomRegexRepairStrategy):
         Returns:
             DataFrame: A new DataFrame with repaired text in the specified column.
         """
+        @pandas_udf(StringType())
+        def repair_text(texts: pd.Series) -> pd.Series:
+            """
+            Cleans excessive whitespace from text, including non-breaking spaces
+            and other invisible characters.
+
+            Args:
+                texts (pd.Series): A Pandas Series of input texts to clean.
+
+            Returns:
+                pd.Series: Cleaned text with normalized whitespace.
+            """
+            return texts.str.replace(r"[\s\u00A0\u200B]+", " ", regex=True).str.strip()
 
         # Apply the UDF to rows flagged as anomalies
-        data = data.withColumn(self._column, self.repair_text(F.col(self._column)))
+        data = data.withColumn(self._column, repair_text(F.col(self._column)))
 
         return data
 
@@ -736,40 +738,7 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
         self._kwargs = kwargs
 
 
-    @pandas_udf(StringType())
-    def repair_text(series: pd.Series) -> pd.Series:
-        """
-        Removes accents and diacritics from a pandas Series of text strings, including handling special cases.
 
-        Args:
-            series (pd.Series): A pandas Series of text strings.
-
-        Returns:
-            pd.Series: A pandas Series with accents and diacritical marks removed.
-        """
-
-        def remove_accents(text: str) -> str:
-            if not text:
-                return text
-
-            # Normalize to decomposed form (NFD)
-            text_normalized = unicodedata.normalize("NFD", text)
-
-            # Remove diacritics (category 'Mn' means "Mark, Nonspacing")
-            text_without_accents = "".join(
-                char for char in text_normalized if unicodedata.category(char) != "Mn"
-            )
-
-            # Create a translation table from SPECIAL_ACCENT_MAP
-            translation_table = str.maketrans(SPECIAL_ACCENT_MAP)
-
-            # Apply translation using the table
-            text_without_accents = text_without_accents.translate(translation_table)
-
-            # Normalize back to composed form (NFC)
-            return unicodedata.normalize("NFC", text_without_accents)
-
-        return series.apply(remove_accents)
 
     def repair(self, data: DataFrame) -> DataFrame:
         """
@@ -785,9 +754,42 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
         Returns:
             DataFrame: A new DataFrame with repaired text in the specified column.
         """
+        @pandas_udf(StringType())
+        def repair_text(series: pd.Series) -> pd.Series:
+            """
+            Removes accents and diacritics from a pandas Series of text strings, including handling special cases.
 
+            Args:
+                series (pd.Series): A pandas Series of text strings.
+
+            Returns:
+                pd.Series: A pandas Series with accents and diacritical marks removed.
+            """
+
+            def remove_accents(text: str) -> str:
+                if not text:
+                    return text
+
+                # Normalize to decomposed form (NFD)
+                text_normalized = unicodedata.normalize("NFD", text)
+
+                # Remove diacritics (category 'Mn' means "Mark, Nonspacing")
+                text_without_accents = "".join(
+                    char for char in text_normalized if unicodedata.category(char) != "Mn"
+                )
+
+                # Create a translation table from SPECIAL_ACCENT_MAP
+                translation_table = str.maketrans(SPECIAL_ACCENT_MAP)
+
+                # Apply translation using the table
+                text_without_accents = text_without_accents.translate(translation_table)
+
+                # Normalize back to composed form (NFC)
+                return unicodedata.normalize("NFC", text_without_accents)
+
+            return series.apply(remove_accents)
         # Apply the UDF to rows flagged as anomalies
-        data = data.withColumn(self._column, self.repair_text(F.col(self._column)))
+        data = data.withColumn(self._column, repair_text(F.col(self._column)))
 
         return data
 
@@ -827,27 +829,7 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
             pattern=pattern, column=column, new_column=new_column, **kwargs
         )
 
-    @pandas_udf(StringType())
-    def repair_text(series: pd.Series) -> pd.Series:
-        """
-        Converts the text to ASCII by removing or replacing non-ASCII characters.
 
-        This method normalizes the input text to the NFKD form, which separates
-        base characters and diacritics. Non-ASCII characters are then removed
-        while preserving the closest ASCII-compatible representation.
-
-        Args:
-            text (str): The input string with potential non-ASCII characters.
-
-        Returns:
-            str: The text converted to ASCII, with non-ASCII characters removed.
-        """
-        if not series:
-            return series
-
-        return series.apply(lambda text: unicodedata.normalize("NFKD", text)
-                                        .encode("ascii", "ignore")
-                                        .decode("ascii") if isinstance(text, str) else text)
 
     def repair(self, data: DataFrame) -> DataFrame:
         """
@@ -863,6 +845,27 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
         Returns:
             DataFrame: A new DataFrame with repaired text in the specified column.
         """
+        @pandas_udf(StringType())
+        def repair_text(series: pd.Series) -> pd.Series:
+            """
+            Converts the text to ASCII by removing or replacing non-ASCII characters.
+
+            This method normalizes the input text to the NFKD form, which separates
+            base characters and diacritics. Non-ASCII characters are then removed
+            while preserving the closest ASCII-compatible representation.
+
+            Args:
+                text (str): The input string with potential non-ASCII characters.
+
+            Returns:
+                str: The text converted to ASCII, with non-ASCII characters removed.
+            """
+            if not series:
+                return series
+
+            return series.apply(lambda text: unicodedata.normalize("NFKD", text)
+                                            .encode("ascii", "ignore")
+                                            .decode("ascii") if isinstance(text, str) else text)
 
         # Ensure the detection column exists
         if self._new_column not in data.columns:
@@ -877,7 +880,7 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
         # Apply the repair logic to rows flagged as anomalies
         data = data.withColumn(
             self._column,
-            F.when(F.col(self._new_column), self.repair_text(F.col(self._column))).otherwise(
+            F.when(F.col(self._new_column), repair_text(F.col(self._column))).otherwise(
                 F.col(self._column)
             ),
         )
