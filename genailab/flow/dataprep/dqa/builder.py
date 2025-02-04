@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Tuesday February 4th 2025 02:10:49 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -26,6 +26,8 @@ from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.builder import StageBuilder
 from genailab.flow.dataprep.dqa.stage import DataQualityAssessmentStage
+from genailab.flow.dataprep.operators.partition import PartitionTask
+from genailab.flow.dataprep.operators.progress import ProgressTask
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -106,6 +108,10 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
+
+        # Every PySpark Pipeline partitions the data as the first task.
+        partition_task = PartitionTask()
+        self._tasks.append(partition_task)
 
     # -------------------------------------------------------------------------------------------- #
     def detect_privacy_issues(self) -> DataQualityAssessmentStageBuilder:
@@ -195,21 +201,23 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_invalid_review_dates))
 
     # -------------------------------------------------------------------------------------------- #
-    def detect_non_english(self) -> DataQualityAssessmentStageBuilder:
-        self.detect_non_english_app_names()
-        self.detect_non_english_reviews()
+    def detect_non_english(self, fast: bool = True) -> DataQualityAssessmentStageBuilder:
+        self.detect_non_english_app_names(fast=fast)
+        self.detect_non_english_reviews(fast=fast)
         return self
 
-    def detect_non_english_app_names(self) -> None:
+    def detect_non_english_app_names(self, fast: bool = True) -> None:
         self._detect_non_english_app_names = self._task_configs[
             "detect_non_english_app_names"
         ]
+        self._detect_non_english_app_names["params"]["fast"] = fast
         self._tasks.append(self._task_builder.build(self._detect_non_english_app_names))
 
-    def detect_non_english_reviews(self) -> None:
+    def detect_non_english_reviews(self, fast: bool = True) -> None:
         self._detect_non_english_reviews = self._task_configs[
             "detect_non_english_reviews"
         ]
+        self._detect_non_english_reviews["params"]["fast"] = fast
         self._tasks.append(self._task_builder.build(self._detect_non_english_reviews))
 
     # -------------------------------------------------------------------------------------------- #
@@ -330,6 +338,11 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
 
         # Obtain a spark session
         self._spark = self._get_spark(dftype=self.dftype)
+
+        # Add the progress task that triggers the computation and shows progress
+        # partition-wise.
+        task = ProgressTask(spark=self._spark)
+        self._tasks.append(task)
 
         stage = DataQualityAssessmentStage(
             source_config=source_config or self._source_config,

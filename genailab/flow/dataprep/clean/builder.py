@@ -11,13 +11,14 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Tuesday January 28th 2025 12:20:47 am                                               #
+# Modified   : Tuesday February 4th 2025 12:36:22 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Data Cleaning Stage Builder Module"""
 from __future__ import annotations
+
 from typing import Optional
 
 from genailab.asset.dataset.config import DatasetConfig
@@ -25,6 +26,8 @@ from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.builder import StageBuilder
 from genailab.flow.dataprep.clean.stage import DataCleaningStage
+from genailab.flow.dataprep.operators.partition import PartitionTask
+from genailab.flow.dataprep.operators.progress import ProgressTask
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -98,6 +101,10 @@ class DataCleaningStageBuilder(StageBuilder):
         self._task_configs = self._get_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
+
+        # Every PySpark Pipeline partitions the data as the first task.
+        partition_task = PartitionTask()
+        self._tasks.append(partition_task)
 
     # -------------------------------------------------------------------------------------------- #
     #                                 SOURCE AND TARGET DATASETS                                   #
@@ -347,6 +354,11 @@ class DataCleaningStageBuilder(StageBuilder):
 
         # Obtain a spark session
         self._spark = self._get_spark(dftype=self.dftype)
+
+        # Add the progress task that triggers the computation and shows progress
+        # partition-wise.
+        task = ProgressTask(spark=self._spark)
+        self._tasks.append(task)
 
         stage = DataCleaningStage(
             source_config=source_config or self._source_config,

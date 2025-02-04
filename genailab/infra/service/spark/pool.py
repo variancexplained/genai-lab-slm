@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Wednesday January 29th 2025 09:07:51 pm                                             #
+# Modified   : Tuesday February 4th 2025 01:12:18 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,11 +22,12 @@ import os
 import time
 from enum import Enum
 from typing import Dict
+
 import sparknlp
+from pyspark.sql import SparkSession
 
 from genailab.core.dstruct import NestedNamespace
 from genailab.core.dtypes import DFType
-from pyspark.sql import SparkSession
 
 # ------------------------------------------------------------------------------------------------ #
 # Set up root logger to only log errors
@@ -150,18 +151,20 @@ class SparkSessionPool:
                 memory=self._spark_config.memory,
                 parquet_block_size=self._spark_config.parquet_block_size,
                 retries=self._spark_config.retries,
+                executor_cores=self._spark_config.executor_cores
             )
         else:
             spark_session = self._create_nlp_session(
                 memory=self._spark_config.memory,
                 parquet_block_size=self._spark_config.parquet_block_size,
                 retries=self._spark_config.retries,
+                executor_cores=self._spark_config.executor_cores
             )
         atexit.register(shutdown, spark_session)
         return spark_session
 
     def _create_session(
-        self, memory: str, parquet_block_size: int, retries: int
+        self, memory: str, parquet_block_size: int, retries: int, executor_cores: str,
     ) -> SparkSession:
         """Creates a Spark session with the specified configuration.
 
@@ -169,6 +172,7 @@ class SparkSessionPool:
             memory (str): Memory allocation for the session.
             parquet_block_size (int): Parquet block size for the session.
             retries (int): Number of retry attempts for session creation.
+            executor_cores (str): Number of cores per executor.
 
         Returns:
             SparkSession: The created Spark session.
@@ -188,9 +192,11 @@ class SparkSessionPool:
                 spark = (
                     SparkSession.builder.appName("genailab")
                     .master("local[*]")
+                    .config("spark.sql.regex.impl", "RE2")
+                    .config("spark.executor.cores", executor_cores)
                     .config("spark.sql.session.timeZone", "UTC")
-                    .config("spark.driver.memory", memory)
-                    .config("spark.executor.memory", memory)
+                    .config("spark.driver.memory", memory.driver)
+                    .config("spark.executor.memory", memory.executor)
                     .config("spark.sql.codegen.maxFields", 200)
                     .config("spark.sql.adaptive.enabled", "true")
                     .config("spark.sql.parquet.block.size", parquet_block_size)
@@ -207,6 +213,7 @@ class SparkSessionPool:
                         "spark.executor.extraJavaOptions",
                         f"-Dlog4j.configurationFile={log4j_conf_path}",
                     )
+                    .config("spark.sql.adaptive.shuffle.targetPostShuffleInputSize","134217728")
                     .getOrCreate()
                 )
                 spark.sparkContext.setLogLevel("ERROR")
@@ -224,7 +231,7 @@ class SparkSessionPool:
         raise RuntimeError(msg)
 
     def _create_nlp_session(
-        self, memory: str, parquet_block_size: int, retries: int
+        self, memory: str, parquet_block_size: int, retries: int, executor_cores: str,
     ) -> SparkSession:
         """Creates a Spark NLP session with the specified configuration.
 
@@ -232,6 +239,7 @@ class SparkSessionPool:
             memory (str): Memory allocation for the session.
             parquet_block_size (int): Parquet block size for the session.
             retries (int): Number of retry attempts for session creation.
+            executor_cores (str): Number of cores per executor.
 
         Returns:
             SparkSession: The created Spark NLP session.
@@ -252,6 +260,8 @@ class SparkSessionPool:
                 # spark = (
                 #     SparkSession.builder.appName("genai-lab-nlp")
                 #     .master("local[*]")
+                #     .config("spark.sql.regex.impl", "RE2")
+                #     .config("spark.executor.cores", executor_cores)
                 #     .config("spark.sql.session.timeZone", "UTC")
                 #     .config("spark.driver.memory", memory)
                 #     .config("spark.executor.memory", memory)

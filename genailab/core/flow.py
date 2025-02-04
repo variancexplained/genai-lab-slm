@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 21st 2024 08:36:22 pm                                            #
-# Modified   : Monday February 3rd 2025 05:24:22 am                                                #
+# Modified   : Tuesday February 4th 2025 02:36:44 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -32,8 +32,8 @@ class StageDef(Enum):
     SEMICLEAN = ("semiclean", 3, "Semi-Clean Data Stage")
     DQV = ("dqv", 4, "Data Quality Verification Stage")
     CLEAN = ("clean", 5, "Clean Data Stage")
-    TQA = ("tqa", 0, "Text Quality Analysis Stage")
-    SENTIMENT = ("sentiment", 2, "Sentiment Analysis Stage")
+    TQA = ("tqa", 6, "Text Quality Analysis Stage")
+    SENTIMENT = ("sentiment", 7, "Sentiment Analysis Stage")
     # Feature Engineering Stage
     INSTANCE = ("instance", 0, "Feature Engineering-Instance Selection Stage")
     # Modeling Stages

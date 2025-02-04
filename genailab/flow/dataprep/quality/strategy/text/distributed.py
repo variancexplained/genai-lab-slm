@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Wednesday January 29th 2025 09:27:25 am                                             #
+# Modified   : Tuesday February 4th 2025 02:05:44 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,8 +20,15 @@ import re
 import unicodedata
 from typing import Dict, Literal, Type, Union
 
+import chardet
 import fasttext
 import pandas as pd
+from lingua import Language, LanguageDetectorBuilder
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+from pyspark.sql.functions import pandas_udf
+from pyspark.sql.types import BooleanType, DoubleType, StringType
+
 from genailab.flow.dataprep.quality.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
@@ -29,11 +36,6 @@ from genailab.flow.dataprep.quality.strategy.factory import (
 )
 from genailab.flow.dataprep.quality.strategy.text import SPECIAL_ACCENT_MAP
 from genailab.flow.dataprep.quality.strategy.text.pattern import RegexFactory
-from lingua import Language, LanguageDetectorBuilder
-from pyspark.sql import DataFrame
-from pyspark.sql import functions as F
-from pyspark.sql.functions import col, pandas_udf, size, split, udf, when
-from pyspark.sql.types import BooleanType, DoubleType, StringType
 
 # ------------------------------------------------------------------------------------------------ #
 languages = [Language.ENGLISH, Language.SPANISH]
@@ -617,32 +619,30 @@ class CustomRegexRepairStrategy(RegexReplaceStrategy):
         )
         data = strategy.detect(data)
 
-        # Define a UDF for the custom repair logic
-        repair_udf = udf(self.repair_text, StringType())
-
         # Apply the repair logic to rows flagged as anomalies
         data = data.withColumn(
             self._column,
-            F.when(F.col(self._new_column), repair_udf(F.col(self._column))).otherwise(
+            F.when(F.col(self._new_column), self.repair_text(F.col(self._column))).otherwise(
                 F.col(self._column)
             ),
         )
 
         return data
 
-    @staticmethod
-    def repair_text(text: str) -> str:
+
+    @pandas_udf(StringType())
+    def repair_text(texts: pd.Series) -> pd.Series:
         """
-        Abstract method to define custom text repair logic.
+        Abstract method to define custom text repair logic as a Pandas UDF.
 
         Subclasses must implement this method to specify how text in rows flagged
         as anomalies should be repaired.
 
         Args:
-            text (str): The input text to repair.
+            texts (pd.Series): A Pandas Series of input texts to repair.
 
         Returns:
-            str: The repaired text.
+            pd.Series: The repaired texts as a Pandas Series.
         """
         pass
 
@@ -663,25 +663,20 @@ class ExcessWhitespaceRepairStrategy(CustomRegexRepairStrategy):
         )
         self._kwargs = kwargs
 
-    @staticmethod
-    def repair_text(text: str) -> str:
+
+    @pandas_udf(StringType())
+    def repair_text(texts: pd.Series) -> pd.Series:
         """
         Cleans excessive whitespace from text, including non-breaking spaces
         and other invisible characters.
 
         Args:
-            text (str): Input text to clean.
+            texts (pd.Series): A Pandas Series of input texts to clean.
 
         Returns:
-            str: Cleaned text with normalized whitespace.
+            pd.Series: Cleaned text with normalized whitespace.
         """
-        # Replace all types of excessive whitespace
-        text = re.sub(r"[\s\u00A0\u200B]+", " ", text)
-
-        # Remove leading and trailing whitespace
-        text = text.strip()
-
-        return text
+        return texts.str.replace(r"[\s\u00A0\u200B]+", " ", regex=True).str.strip()
 
     def repair(self, data: DataFrame) -> DataFrame:
         """
@@ -698,11 +693,8 @@ class ExcessWhitespaceRepairStrategy(CustomRegexRepairStrategy):
             DataFrame: A new DataFrame with repaired text in the specified column.
         """
 
-        # Define a UDF for the repair logic
-        repair_udf = udf(self.repair_text, StringType())
-
         # Apply the UDF to rows flagged as anomalies
-        data = data.withColumn(self._column, F.trim(repair_udf(F.col(self._column))))
+        data = data.withColumn(self._column, self.repair_text(F.col(self._column)))
 
         return data
 
@@ -743,8 +735,9 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
         )
         self._kwargs = kwargs
 
-    @staticmethod
-    def repair_text_pandas(series: pd.Series) -> pd.Series:
+
+    @pandas_udf(StringType())
+    def repair_text(series: pd.Series) -> pd.Series:
         """
         Removes accents and diacritics from a pandas Series of text strings, including handling special cases.
 
@@ -758,19 +751,23 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
         def remove_accents(text: str) -> str:
             if not text:
                 return text
+
             # Normalize to decomposed form (NFD)
             text_normalized = unicodedata.normalize("NFD", text)
-            # Remove diacritics
+
+            # Remove diacritics (category 'Mn' means "Mark, Nonspacing")
             text_without_accents = "".join(
                 char for char in text_normalized if unicodedata.category(char) != "Mn"
             )
-            # Handle special cases
-            for key, value in SPECIAL_ACCENT_MAP.items():
-                text_without_accents = text_without_accents.replace(key, value)
+
+            # Create a translation table from SPECIAL_ACCENT_MAP
+            translation_table = str.maketrans(SPECIAL_ACCENT_MAP)
+
+            # Apply translation using the table
+            text_without_accents = text_without_accents.translate(translation_table)
 
             # Normalize back to composed form (NFC)
-            text_without_accents = unicodedata.normalize("NFC", text_without_accents)
-            return text_without_accents
+            return unicodedata.normalize("NFC", text_without_accents)
 
         return series.apply(remove_accents)
 
@@ -788,11 +785,9 @@ class AccentRepairStrategy(CustomRegexRepairStrategy):
         Returns:
             DataFrame: A new DataFrame with repaired text in the specified column.
         """
-        # Define a Pandas UDF for the repair logic
-        repair_text_udf = pandas_udf(self.repair_text_pandas, StringType())
 
         # Apply the UDF to rows flagged as anomalies
-        data = data.withColumn(self._column, repair_text_udf(F.col(self._column)))
+        data = data.withColumn(self._column, self.repair_text(F.col(self._column)))
 
         return data
 
@@ -832,8 +827,8 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
             pattern=pattern, column=column, new_column=new_column, **kwargs
         )
 
-    @staticmethod
-    def repair_text(text: str) -> str:
+    @pandas_udf(StringType())
+    def repair_text(series: pd.Series) -> pd.Series:
         """
         Converts the text to ASCII by removing or replacing non-ASCII characters.
 
@@ -847,11 +842,12 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
         Returns:
             str: The text converted to ASCII, with non-ASCII characters removed.
         """
-        if not text:
-            return text
-        normalized_text = unicodedata.normalize("NFKD", text)
-        ascii_text = normalized_text.encode("ascii", "ignore").decode("ascii")
-        return ascii_text
+        if not series:
+            return series
+
+        return series.apply(lambda text: unicodedata.normalize("NFKD", text)
+                                        .encode("ascii", "ignore")
+                                        .decode("ascii") if isinstance(text, str) else text)
 
     def repair(self, data: DataFrame) -> DataFrame:
         """
@@ -867,6 +863,7 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
         Returns:
             DataFrame: A new DataFrame with repaired text in the specified column.
         """
+
         # Ensure the detection column exists
         if self._new_column not in data.columns:
             strategy = self._detect_strategy(
@@ -877,13 +874,10 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
             )
             data = strategy.detect(data)
 
-        # Define a UDF for the repair logic
-        repair_udf = udf(self.repair_text, StringType())
-
         # Apply the repair logic to rows flagged as anomalies
         data = data.withColumn(
             self._column,
-            F.when(F.col(self._new_column), repair_udf(F.col(self._column))).otherwise(
+            F.when(F.col(self._new_column), self.repair_text(F.col(self._column))).otherwise(
                 F.col(self._column)
             ),
         )
@@ -894,58 +888,90 @@ class NonAsciiRepairStrategy(CustomRegexRepairStrategy):
 # ------------------------------------------------------------------------------------------------ #
 #                                  NON-ENGLISH  DETCTION AND REPAIR                                #
 # ------------------------------------------------------------------------------------------------ #
-def lm_fasttext(text):
+def lm_fasttext(text: str) -> bool:
     """
-    Determines if a given text is non-English using the FastText model.
+    Detects if the given text is non-English using the FastText model.
 
-    This function predicts the language of the input text and classifies it as non-English if
-    the predicted label is not English (`__label__en`) and the probability of being English
-    is below a threshold of 90%.
+    This function uses the FastText model to predict the language of the input text
+    and classifies it as non-English if the predicted label is not `__label__en`.
+    It returns a boolean indicating whether the text is non-English.
 
     Args:
-    -----
-    text : str
-        The input text to be analyzed.
+        text (str): The input text to be analyzed.
 
     Returns:
-    --------
-    bool
-        True if the text is non-English, False otherwise.
+        bool: `True` if the text is non-English, `False` if it is English.
+
+    Raises:
+        Exception: If there is an error during FastText language detection, it returns `False` and logs the error.
     """
     try:
-        predictions = fasttext_model.predict(text)
-        return predictions[0][0] != "__label__en"
+        return fasttext_model.predict(text)[0][0] != "__label__en" if isinstance(text, str) else False
     except Exception as e:
-        print(f"Error in language detection: {e}")
+        print(f"Error in FastText language detection: {e}")
         return False
 
 
 # ------------------------------------------------------------------------------------------------ #
-def lm_lingua(text):
-    """
-    Re-evaluates potentially non-English text using a secondary language detection method.
 
-    This function uses an additional language detection tool (e.g., `lingua`) to double-check
-    whether the input text is English. The text is classified as non-English (True) if the detection
-    does not return English.
+def lm_lingua(text: str) -> bool:
+    """
+    Detects if the given text is non-English using the Lingua language detection library.
+
+    This function uses the Lingua detector to check if the input text is in English or not.
+    It returns `True` if the text is not in English and `False` if it is.
 
     Args:
-    -----
-    text : str
-        The input text to be re-evaluated.
+        text (str): The input text to be analyzed.
 
     Returns:
-    --------
-    bool
-        True if the text is non-English, False otherwise.
+        bool: `True` if the text is non-English, `False` if it is English.
+
+    Raises:
+        Exception: If there is an error during Lingua language detection, it returns `False` and logs the error.
     """
     try:
-        return detector.detect_language_of(text) != Language.ENGLISH
+        return detector.detect_language_of(text) != Language.ENGLISH if isinstance(text, str) else False
     except Exception as e:
-        print(f"Error in re-evaluation: {e}")
+        print(f"Error in Lingua re-evaluation: {e}")
         return False
+# ------------------------------------------------------------------------------------------------ #
+def fast_non_english(text):
+    """
+    Fast non-English detection (Mandarin, Arabic, Russian, Greek, etc.).
+    Prioritizes speed; some false negatives for Latin languages are acceptable.
+    """
+    if not text:
+        return False  # Treat empty text as English
 
+    try:
+        encoding_result = chardet.detect(text.encode())
+        encoding = encoding_result['encoding']
+        confidence = encoding_result['confidence']
 
+        if confidence < 0.7:  # Lowered confidence threshold slightly
+            return False  # Treat as English
+
+        # Mandarin Check
+        if encoding in ('GBK', 'GB2312', 'UTF-8') and re.search(r'[\u4e00-\u9fff]', text):
+            return True
+
+        # Arabic Check
+        if encoding in ('Arabic', 'UTF-8', 'windows-1256') and re.search(r'[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]', text):
+            return True
+
+        # Russian Check (Cyrillic)
+        if encoding in ('UTF-8', 'Windows-1251', 'KOI8-R') and re.search(r'[\u0400-\u052F]', text):
+            return True
+
+        # Greek Check
+        if encoding in ('UTF-8', 'ISO-8859-7') and re.search(r'[\u0370-\u03FF]', text):
+            return True
+
+        return False  # Default: English (includes Latin languages)
+
+    except Exception as e:
+        return False  # Default to English on error
 # ------------------------------------------------------------------------------------------------ #
 class NonEnglishDetectStrategy(DetectStrategy):
     """Detect Non-English in text.
@@ -969,37 +995,13 @@ class NonEnglishDetectStrategy(DetectStrategy):
         self,
         column: str,
         new_column: str = None,
+        fast: bool = True,
         **kwargs,
     ) -> None:
         super().__init__()
         self._column = column
         self._new_column = new_column
-
-    def _run_fasttext(self, text: str) -> bool:
-        """
-        Primary language detection using FastText.
-
-        Args:
-            text (str): The input text to be checked for language.
-
-        Returns:
-            bool: True if the text is non-English, False otherwise.
-        """
-        # Placeholder for FastText language detection logic
-        return lm_fasttext(text)
-
-    def _run_lingua(self, text: str) -> bool:
-        """
-        Secondary language detection using Lingua.
-
-        Args:
-            text (str): The input text to be checked for language.
-
-        Returns:
-            bool: True if the text is non-English, False otherwise.
-        """
-        # Placeholder for Lingua language detection logic
-        return lm_lingua(text)
+        self._fast = fast
 
     def detect(self, data: DataFrame) -> DataFrame:
         """
@@ -1012,25 +1014,78 @@ class NonEnglishDetectStrategy(DetectStrategy):
             DataFrame: A PySpark DataFrame with an additional boolean column indicating
             whether the text is non-English.
         """
-        # Define UDFs for FastText and Lingua detection
-        fasttext_udf = F.udf(self._run_fasttext, BooleanType())
-        lingua_udf = F.udf(self._run_lingua, BooleanType())
+        @pandas_udf(BooleanType())
+        def fastext_udf(texts: pd.Series) -> pd.Series:
+            """
+            Applies FastText language detection to each row of the input text column.
 
-        # Apply the FastText language detection
-        data = data.withColumn(self._new_column, fasttext_udf(F.col(self._column)))
+            This function strips leading/trailing spaces from the input text and then
+            applies FastText to predict whether the text is in English or non-English.
+            It returns a boolean Series indicating whether each text is non-English.
 
-        # Apply the Lingua language detection only to rows flagged as non-English by FastText
-        data = data.withColumn(
-            self._new_column,
-            F.when(
-                F.col(self._new_column),  # If FastText marked as non-English
-                lingua_udf(
-                    F.col(self._column)
-                ),  # Run Lingua and check if it also returns True
-            ).otherwise(
-                False
-            ),  # Otherwise, set to False
-        )
+            Args:
+                texts (pd.Series): A Pandas Series of input texts to evaluate.
+
+            Returns:
+                pd.Series: A Pandas Series of booleans, where `True` indicates non-English text,
+                and `False` indicates English text.
+            """
+            return texts.str.strip().map(lm_fasttext)
+
+        @pandas_udf(BooleanType())
+        def lingua_udf(texts: pd.Series) -> pd.Series:
+            """
+            Applies Lingua language detection to each row of the input text column.
+
+            This function strips leading/trailing spaces from the input text and then
+            applies Lingua to check if the text is in English or not. It returns a boolean
+            Series indicating whether each text is non-English.
+
+            Args:
+                texts (pd.Series): A Pandas Series of input texts to evaluate.
+
+            Returns:
+                pd.Series: A Pandas Series of booleans, where `True` indicates non-English text,
+                and `False` indicates English text.
+            """
+            return texts.str.strip().map(lm_lingua)
+
+        @pandas_udf(BooleanType())
+        def fast_non_english_udf(texts: pd.Series) -> pd.Series:
+            """
+            Applies fast non-english function to each row of the input text column.
+
+            This function strips leading/trailing spaces from the input text and then
+            applies FastText to predict whether the text is in English or non-English.
+            It returns a boolean Series indicating whether each text is non-English.
+
+            Args:
+                texts (pd.Series): A Pandas Series of input texts to evaluate.
+
+            Returns:
+                pd.Series: A Pandas Series of booleans, where `True` indicates non-English text,
+                and `False` indicates English text.
+            """
+            return texts.str.strip().map(fast_non_english)
+
+        if self._fast:
+            data = data.withColumn(self._new_column, fast_non_english_udf(F.col(self._column)))
+        else:
+            # Apply the FastText language detection
+            data = data.withColumn(self._new_column, fastext_udf(F.col(self._column)))
+
+            # Apply the Lingua language detection only to rows flagged as non-English by FastText
+            data = data.withColumn(
+                self._new_column,
+                F.when(
+                    F.col(self._new_column),  # If FastText marked as non-English
+                    lingua_udf(
+                        F.col(self._column)
+                    ),  # Run Lingua and check if it also returns True
+                ).otherwise(
+                    False
+                ),  # Otherwise, set to False
+            )
 
         return data
 
@@ -1121,19 +1176,19 @@ class ShortReviewDetectStrategy(DetectStrategy):
         """
         # Add a column with the length of the review in words
         data = data.withColumn(
-            "review_word_count", size(split(col(self._column), r"\s+"))
+            "review_word_count", F.size(F.split(F.col(self._column), r"\s+"))
         )
 
         # Add the detection column based on the threshold
         if self._detect_less_than_threshold:
             data = data.withColumn(
                 self._new_column,
-                when(col("review_word_count") < self._threshold, True).otherwise(False),
+                F.when(F.col("review_word_count") < self._threshold, True).otherwise(False),
             )
         else:
             data = data.withColumn(
                 self._new_column,
-                when(col("review_word_count") > self._threshold, True).otherwise(False),
+                F.when(F.col("review_word_count") > self._threshold, True).otherwise(False),
             )
 
         # Drop the intermediate column if desired

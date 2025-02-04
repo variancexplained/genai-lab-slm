@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Monday February 3rd 2025 05:53:00 am                                                #
+# Modified   : Monday February 3rd 2025 10:30:12 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -26,6 +26,7 @@ from genailab.asset.dataset.config import DatasetConfig
 from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.builder import StageBuilder
+from genailab.flow.dataprep.operators.partition import PartitionTask
 from genailab.flow.dataprep.tqa.stage import TQAStage
 from genailab.flow.dataprep.tqa.task import (
     DATASET_SCHEMA,
@@ -87,6 +88,10 @@ class TQAStageBuilder(StageBuilder):
         self._target_config = None
         self._tqa_task = None
         self._dftype = None
+
+                # Every PySpark Pipeline partitions the data as the first task.
+        partition_task = PartitionTask()
+        self._tasks.append(partition_task)
 
     def with_pandas(self, normalized: bool = True, batched: bool = True, **kwargs) -> TQAStageBuilder:
         """Configures the stage to use a Pandas-based TQAnalyst.

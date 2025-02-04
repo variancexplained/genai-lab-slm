@@ -1,0 +1,531 @@
+[02/03/2025 10:26:41 PM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[02/03/2025 10:26:41 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[02/03/2025 10:30:22 PM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[02/03/2025 10:30:22 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[02/03/2025 10:30:24 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session.
+[02/03/2025 10:30:24 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session. log4j Configuration: file:/home/john/projects/genailab/log4j.properties
+[02/03/2025 10:30:33 PM] [DEBUG] [genailab.flow.base.stage.DataQualityAssessmentStage] [stage] [_fresh_cache_exists] : The target dataset cache for Data Preparation Phase/Data Quality Assessment Stage exists in the repository.
+[02/03/2025 10:30:33 PM] [DEBUG] [genailab.infra.persist.repo.file.fao.FAO] [fao] [delete] : Directory dataprep_dqa_dataset_review.parquet successfully removed from the repository.
+[02/03/2025 10:30:33 PM] [DEBUG] [genailab.infra.persist.repo.dataset.DatasetRepo] [dataset] [remove] : Files for Dataset dataprep_dqa_dataset_review removed from repository.
+[02/03/2025 10:30:33 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [delete] : Dataset object dataprep_dqa_dataset_review removed from object storage.
+[02/03/2025 10:30:33 PM] [DEBUG] [genailab.infra.persist.repo.dataset.DatasetRepo] [dataset] [remove] : Dataset dataprep_dqa_dataset_review, including its file at workspace/test/datasets/fal/dataprep/dataprep_dqa_dataset_review.parquet has been removed from the repository.
+[02/03/2025 10:30:33 PM] [DEBUG] [root] [factory] [get_reader] : Requesting a spark_parquet reader from the DataFrameIOFactory
+[02/03/2025 10:30:38 PM] [DEBUG] [genailab.infra.persist.repo.file.spark.SparkDataFrameParquetReader] [spark] [read] : SparkDataFrameParquetReader read fromworkspace/test/datasets/fal/dataprep/dataprep_preprocess_dataset_review.parquet
+[02/03/2025 10:30:38 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 2, 3, 22, 30, 38, 999845), 'entity': 'DataQualityAssessmentStage', 'event': 'Accessed by DataQualityAssessmentStage'} to the event log at 2025-02-03 22:30:38.999848.
+[02/03/2025 10:30:39 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by DataQualityAssessmentStage at 2025-02-03 22:30:38.999834
+[02/03/2025 10:30:42 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Task: PartitionTask
+[02/03/2025 10:30:42 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Started: 22:30:39
+[02/03/2025 10:30:42 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Completed: 22:30:42
+[02/03/2025 10:30:42 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Runtime: 3.76 seconds
+[02/03/2025 10:30:42 PM] [ERROR] [AnomalyDetectRepairTask.run] [task] [wrapper] : Exception occurred in DetectOrRepairNonEnglishTask called with DataFrame[id: string, app_id: string, app_name: string, category_id: string, author: string, rating: smallint, content: string, vote_sum: bigint, vote_count: bigint, date: timestamp_ntz, category: string]
+'staticmethod' object is not callable
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/task.py", line 56, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 96, in run
+    return self._mode_map[self._mode](data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 117, in detect
+    return strategy.detect(data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/strategy/text/distributed.py", line 979, in detect
+    data = data.withColumn(self._new_column, lm_fasttext(F.col(self._column)))
+TypeError: 'staticmethod' object is not callable
+[02/03/2025 10:30:42 PM] [ERROR] [genailab.flow.base.stage.DataQualityAssessmentStage] [stage] [_run] : Error in task DetectOrRepairNonEnglishTask: 'staticmethod' object is not callable
+[02/03/2025 10:30:42 PM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task DetectOrRepairNonEnglishTask: 'staticmethod' object is not callable
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 193, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/infra/service/logging/task.py", line 56, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 96, in run
+    return self._mode_map[self._mode](data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 117, in detect
+    return strategy.detect(data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/strategy/text/distributed.py", line 979, in detect
+    data = data.withColumn(self._new_column, lm_fasttext(F.col(self._column)))
+TypeError: 'staticmethod' object is not callable
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 146, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 196, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task DetectOrRepairNonEnglishTask: 'staticmethod' object is not callable
+[02/03/2025 10:56:18 PM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[02/03/2025 10:56:18 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[02/03/2025 10:56:20 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session.
+[02/03/2025 10:56:20 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session. log4j Configuration: file:/home/john/projects/genailab/log4j.properties
+[02/03/2025 10:56:26 PM] [DEBUG] [genailab.flow.base.stage.DataQualityAssessmentStage] [stage] [_fresh_cache_exists] : The target dataset cache for Data Preparation Phase/Data Quality Assessment Stage does not exist in the repository.
+[02/03/2025 10:56:26 PM] [DEBUG] [root] [factory] [get_reader] : Requesting a spark_parquet reader from the DataFrameIOFactory
+[02/03/2025 10:56:31 PM] [DEBUG] [genailab.infra.persist.repo.file.spark.SparkDataFrameParquetReader] [spark] [read] : SparkDataFrameParquetReader read fromworkspace/test/datasets/fal/dataprep/dataprep_preprocess_dataset_review.parquet
+[02/03/2025 10:56:31 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 2, 3, 22, 56, 31, 676722), 'entity': 'DataQualityAssessmentStage', 'event': 'Accessed by DataQualityAssessmentStage'} to the event log at 2025-02-03 22:56:31.676728.
+[02/03/2025 10:56:31 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by DataQualityAssessmentStage at 2025-02-03 22:56:31.676706
+[02/03/2025 10:56:35 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Task: PartitionTask
+[02/03/2025 10:56:35 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Started: 22:56:31
+[02/03/2025 10:56:35 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Completed: 22:56:35
+[02/03/2025 10:56:35 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Runtime: 3.6 seconds
+[02/03/2025 10:56:35 PM] [ERROR] [AnomalyDetectRepairTask.run] [task] [wrapper] : Exception occurred in DetectOrRepairNonEnglishTask called with DataFrame[id: string, app_id: string, app_name: string, category_id: string, author: string, rating: smallint, content: string, vote_sum: bigint, vote_count: bigint, date: timestamp_ntz, category: string]
+Could not serialize object: TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/serializers.py", line 459, in dumps
+    return cloudpickle.dumps(obj, pickle_protocol)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/cloudpickle/cloudpickle_fast.py", line 73, in dumps
+    cp.dump(obj)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/cloudpickle/cloudpickle_fast.py", line 632, in dump
+    return Pickler.dump(self, obj)
+TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/task.py", line 56, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 96, in run
+    return self._mode_map[self._mode](data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 117, in detect
+    return strategy.detect(data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/strategy/text/distributed.py", line 977, in detect
+    data = data.withColumn(self._new_column, lm_fasttext(F.col(self._column)))
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 423, in wrapper
+    return self(*args)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 400, in __call__
+    judf = self._judf
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 321, in _judf
+    self._judf_placeholder = self._create_judf(self.func)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 330, in _create_judf
+    wrapped_func = _wrap_function(sc, func, self.returnType)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 59, in _wrap_function
+    pickled_command, broadcast_vars, env, includes = _prepare_for_python_RDD(sc, command)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/rdd.py", line 5251, in _prepare_for_python_RDD
+    pickled_command = ser.dumps(command)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/serializers.py", line 469, in dumps
+    raise pickle.PicklingError(msg)
+_pickle.PicklingError: Could not serialize object: TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+[02/03/2025 10:56:35 PM] [ERROR] [genailab.flow.base.stage.DataQualityAssessmentStage] [stage] [_run] : Error in task DetectOrRepairNonEnglishTask: Could not serialize object: TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+[02/03/2025 10:56:35 PM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task DetectOrRepairNonEnglishTask: Could not serialize object: TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+Traceback (most recent call last):
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/serializers.py", line 459, in dumps
+    return cloudpickle.dumps(obj, pickle_protocol)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/cloudpickle/cloudpickle_fast.py", line 73, in dumps
+    cp.dump(obj)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/cloudpickle/cloudpickle_fast.py", line 632, in dump
+    return Pickler.dump(self, obj)
+TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 193, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/infra/service/logging/task.py", line 56, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 96, in run
+    return self._mode_map[self._mode](data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 117, in detect
+    return strategy.detect(data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/strategy/text/distributed.py", line 977, in detect
+    data = data.withColumn(self._new_column, lm_fasttext(F.col(self._column)))
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 423, in wrapper
+    return self(*args)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 400, in __call__
+    judf = self._judf
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 321, in _judf
+    self._judf_placeholder = self._create_judf(self.func)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 330, in _create_judf
+    wrapped_func = _wrap_function(sc, func, self.returnType)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 59, in _wrap_function
+    pickled_command, broadcast_vars, env, includes = _prepare_for_python_RDD(sc, command)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/rdd.py", line 5251, in _prepare_for_python_RDD
+    pickled_command = ser.dumps(command)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/serializers.py", line 469, in dumps
+    raise pickle.PicklingError(msg)
+_pickle.PicklingError: Could not serialize object: TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 146, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 196, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task DetectOrRepairNonEnglishTask: Could not serialize object: TypeError: cannot pickle 'fasttext_pybind.fasttext' object
+[02/03/2025 11:15:17 PM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[02/03/2025 11:15:17 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[02/03/2025 11:15:18 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session.
+[02/03/2025 11:15:18 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session. log4j Configuration: file:/home/john/projects/genailab/log4j.properties
+[02/03/2025 11:15:25 PM] [DEBUG] [genailab.flow.base.stage.DataQualityAssessmentStage] [stage] [_fresh_cache_exists] : The target dataset cache for Data Preparation Phase/Data Quality Assessment Stage does not exist in the repository.
+[02/03/2025 11:15:25 PM] [DEBUG] [root] [factory] [get_reader] : Requesting a spark_parquet reader from the DataFrameIOFactory
+[02/03/2025 11:15:29 PM] [DEBUG] [genailab.infra.persist.repo.file.spark.SparkDataFrameParquetReader] [spark] [read] : SparkDataFrameParquetReader read fromworkspace/test/datasets/fal/dataprep/dataprep_preprocess_dataset_review.parquet
+[02/03/2025 11:15:30 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 2, 3, 23, 15, 30, 5847), 'entity': 'DataQualityAssessmentStage', 'event': 'Accessed by DataQualityAssessmentStage'} to the event log at 2025-02-03 23:15:30.005851.
+[02/03/2025 11:15:30 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by DataQualityAssessmentStage at 2025-02-03 23:15:30.005836
+[02/03/2025 11:15:33 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Task: PartitionTask
+[02/03/2025 11:15:33 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Started: 23:15:30
+[02/03/2025 11:15:33 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Completed: 23:15:33
+[02/03/2025 11:15:33 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Runtime: 3.55 seconds
+[02/03/2025 11:15:33 PM] [ERROR] [AnomalyDetectRepairTask.run] [task] [wrapper] : Exception occurred in DetectOrRepairNonEnglishTask called with DataFrame[id: string, app_id: string, app_name: string, category_id: string, author: string, rating: smallint, content: string, vote_sum: bigint, vote_count: bigint, date: timestamp_ntz, category: string]
+[NOT_COLUMN_OR_STR] Argument `col` should be a Column or str, got NonEnglishDetectStrategy.
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/task.py", line 56, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 96, in run
+    return self._mode_map[self._mode](data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 117, in detect
+    return strategy.detect(data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/strategy/text/distributed.py", line 1017, in detect
+    data = data.withColumn(self._new_column, self.fastext_udf(F.col(self._column)))
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 423, in wrapper
+    return self(*args)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 401, in __call__
+    jPythonUDF = judf.apply(_to_seq(sc, cols, _to_java_column))
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/column.py", line 88, in _to_seq
+    cols = [converter(c) for c in cols]
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/column.py", line 88, in <listcomp>
+    cols = [converter(c) for c in cols]
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/column.py", line 65, in _to_java_column
+    raise PySparkTypeError(
+pyspark.errors.exceptions.base.PySparkTypeError: [NOT_COLUMN_OR_STR] Argument `col` should be a Column or str, got NonEnglishDetectStrategy.
+[02/03/2025 11:15:33 PM] [ERROR] [genailab.flow.base.stage.DataQualityAssessmentStage] [stage] [_run] : Error in task DetectOrRepairNonEnglishTask: [NOT_COLUMN_OR_STR] Argument `col` should be a Column or str, got NonEnglishDetectStrategy.
+[02/03/2025 11:15:33 PM] [ERROR] [Stage.run] [stage] [wrapper] : Exception occurred in Stage.run called with force=True
+Error in task DetectOrRepairNonEnglishTask: [NOT_COLUMN_OR_STR] Argument `col` should be a Column or str, got NonEnglishDetectStrategy.
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 193, in _run
+    dataframe = task.run(dataframe)
+  File "/home/john/projects/genailab/genailab/infra/service/logging/task.py", line 56, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 96, in run
+    return self._mode_map[self._mode](data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/base.py", line 117, in detect
+    return strategy.detect(data=data)
+  File "/home/john/projects/genailab/genailab/flow/dataprep/quality/strategy/text/distributed.py", line 1017, in detect
+    data = data.withColumn(self._new_column, self.fastext_udf(F.col(self._column)))
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 423, in wrapper
+    return self(*args)
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/udf.py", line 401, in __call__
+    jPythonUDF = judf.apply(_to_seq(sc, cols, _to_java_column))
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/column.py", line 88, in _to_seq
+    cols = [converter(c) for c in cols]
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/column.py", line 88, in <listcomp>
+    cols = [converter(c) for c in cols]
+  File "/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/pyspark/sql/column.py", line 65, in _to_java_column
+    raise PySparkTypeError(
+pyspark.errors.exceptions.base.PySparkTypeError: [NOT_COLUMN_OR_STR] Argument `col` should be a Column or str, got NonEnglishDetectStrategy.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/john/projects/genailab/genailab/infra/service/logging/stage.py", line 58, in wrapper
+    result = func(self, *args, **kwargs)
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 146, in run
+    return self._run()
+  File "/home/john/projects/genailab/genailab/flow/base/stage.py", line 196, in _run
+    raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
+RuntimeError: Error in task DetectOrRepairNonEnglishTask: [NOT_COLUMN_OR_STR] Argument `col` should be a Column or str, got NonEnglishDetectStrategy.
+[02/03/2025 11:17:56 PM] [DEBUG] [genailab.infra.persist.repo.object.rao.RAO] [rao] [__init__] : RAO created at workspace/test/datasets/ral/
+[02/03/2025 11:17:56 PM] [DEBUG] [genailab.infra.persist.repo.object.dao.DAO] [dao] [__init__] : DAO created at workspace/test/datasets/dal/
+[02/03/2025 11:17:57 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session.
+[02/03/2025 11:17:57 PM] [DEBUG] [genailab.infra.service.spark.pool.SparkSessionPool] [pool] [_create_session] : Creating a Spark session. log4j Configuration: file:/home/john/projects/genailab/log4j.properties
+[02/03/2025 11:18:04 PM] [DEBUG] [genailab.flow.base.stage.DataQualityAssessmentStage] [stage] [_fresh_cache_exists] : The target dataset cache for Data Preparation Phase/Data Quality Assessment Stage does not exist in the repository.
+[02/03/2025 11:18:04 PM] [DEBUG] [root] [factory] [get_reader] : Requesting a spark_parquet reader from the DataFrameIOFactory
+[02/03/2025 11:18:08 PM] [DEBUG] [genailab.infra.persist.repo.file.spark.SparkDataFrameParquetReader] [spark] [read] : SparkDataFrameParquetReader read fromworkspace/test/datasets/fal/dataprep/dataprep_preprocess_dataset_review.parquet
+[02/03/2025 11:18:08 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 2, 3, 23, 18, 8, 731128), 'entity': 'DataQualityAssessmentStage', 'event': 'Accessed by DataQualityAssessmentStage'} to the event log at 2025-02-03 23:18:08.731131.
+[02/03/2025 11:18:08 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [access] : Dataset accessed by DataQualityAssessmentStage at 2025-02-03 23:18:08.731117
+[02/03/2025 11:18:12 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Task: PartitionTask
+[02/03/2025 11:18:12 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Started: 23:18:08
+[02/03/2025 11:18:12 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Completed: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [PartitionTask.run] [task] [wrapper] : Runtime: 3.55 seconds
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairNonEnglishTask
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.23 seconds
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairNonEnglishTask
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.13 seconds
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairEmailAddressTask
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.04 seconds
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairPhoneNumberTask
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.03 seconds
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairURLTask
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.03 seconds
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairUniquenessTask
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:12
+[02/03/2025 11:18:12 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.17 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairUniquenessTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:12
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.14 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairUniquenessTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.14 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairCategoryAnomalyTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.08 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairRatingAnomalyTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.09 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairReviewDateAnomalyTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.23 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairElongationTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.02 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairSpecialCharsTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.02 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairAccentedCharsTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.03 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairControlCharsTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.03 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairHTMLCharsTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.02 seconds
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairExcessiveSpecialCharsTask
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:13
+[02/03/2025 11:18:13 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.25 seconds
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairRepeatedWordsTask
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:13
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.02 seconds
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairRepeatedSequenceTask
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.07 seconds
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairRepeatedPhraseTask
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.03 seconds
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairShortReviewsTask
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.07 seconds
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Task: DetectOrRepairExcessiveWhitespaceTask
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Started: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Completed: 23:18:14
+[02/03/2025 11:18:14 PM] [DEBUG] [AnomalyDetectRepairTask.run] [task] [wrapper] : Runtime: 0.03 seconds
+[02/03/2025 11:18:14 PM] [DEBUG] [genailab.asset.dataset.builder.DatasetBuilder] [builder] [_build_passport] : 
+
+                        DatasetPassport                         
+                        asset_id | dataprep_dqa_dataset_review
+                           phase | Data Preparation Phase
+                           stage | Data Quality Assessment Stage
+                            name | review
+                     description | Dataset review created from dataprep_preprocess_dataset_review in the Data Preparation Phase - Data Quality Assessment Stage by DataQualityAssessmentStage.
+                     file_format | parquet
+                         creator | DataQualityAssessmentStage
+                         created | 2025-02-03 23:18:14
+                          dftype | spark
+
+
+[02/03/2025 11:18:14 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 2, 3, 23, 18, 14, 211341), 'entity': 'DataQualityAssessmentStage', 'event': 'Dataset Created by DataQualityAssessmentStage'} to the event log at 2025-02-03 23:18:14.211343.
+[02/03/2025 11:18:14 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [__post_init__] : DataQualityAssessmentStage created dataset at 2025-02-03 23:18:14.211335.
+[02/03/2025 11:18:14 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 2, 3, 23, 18, 14, 211723), 'entity': 'DataQualityAssessmentStage', 'event': 'Dataset Published to Repository by DataQualityAssessmentStage'} to the event log at 2025-02-03 23:18:14.211724.
+[02/03/2025 11:18:14 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [publish] : Dataset published by DataQualityAssessmentStage at 2025-02-03 23:18:14.211724
+[02/03/2025 11:18:14 PM] [DEBUG] [genailab.infra.persist.repo.dataset.DatasetRepo] [dataset] [_get_filepath] : Set Dataset dataprep_dqa_dataset_review filepath to workspace/test/datasets/fal/dataprep/dataprep_dqa_dataset_review.parquet
+[02/03/2025 11:18:14 PM] [DEBUG] [root] [factory] [get_writer] : Requesting a spark_parquet writer from the DataFrameIOFactory
+[02/03/2025 11:21:33 PM] [DEBUG] [genailab.infra.persist.repo.file.spark.SparkDataFrameParquetWriter] [spark] [write] : Writing spark DataFrame to partitioned parquet file at workspace/test/datasets/fal/dataprep/dataprep_dqa_dataset_review.parquet
+[02/03/2025 11:21:33 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [add_event] : Added {'timestamp': datetime.datetime(2025, 2, 3, 23, 21, 33, 958171), 'entity': 'DataQualityAssessmentStage', 'event': 'Dataset Consumed by DataQualityAssessmentStage'} to the event log at 2025-02-03 23:21:33.958173.
+[02/03/2025 11:21:33 PM] [DEBUG] [genailab.asset.dataset.state.DatasetState] [state] [consume] : Dataset consumed by DataQualityAssessmentStage at 2025-02-03 23:21:33.958173
+[02/03/2025 11:21:33 PM] [DEBUG] [Stage.run] [stage] [wrapper] : Stage: Data Quality Assessment Stage
+[02/03/2025 11:21:33 PM] [DEBUG] [Stage.run] [stage] [wrapper] : Stage Started: 23:18:04
+[02/03/2025 11:21:33 PM] [DEBUG] [Stage.run] [stage] [wrapper] : Stage Completed: 23:21:33
+[02/03/2025 11:21:33 PM] [DEBUG] [Stage.run] [stage] [wrapper] : Stage Runtime: 3.0 minutes and 29.86 seconds
+[02/03/2025 11:21:33 PM] [DEBUG] [root] [factory] [get_reader] : Requesting a pandas_parquet reader from the DataFrameIOFactory
+[02/03/2025 11:21:34 PM] [DEBUG] [genailab.infra.persist.repo.file.pandas.PandasDataFrameParquetReader] [pandas] [read] : PandasDataFrameParquetReader read from workspace/test/datasets/fal/dataprep/dataprep_dqa_dataset_review.parquet
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.pyplot] [pyplot] [switch_backend] : Loaded backend module://matplotlib_inline.backend_inline version unknown.
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.pyplot] [pyplot] [switch_backend] : Loaded backend module://matplotlib_inline.backend_inline version unknown.
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0.
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf', name='cmtt10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf', name='STIXGeneral', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf', name='STIXGeneral', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf', name='STIXGeneral', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf', name='DejaVu Sans Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf', name='STIXGeneral', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf', name='cmb10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf', name='cmss10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf', name='cmex10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf', name='cmsy10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 2.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf', name='cmr10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf', name='DejaVu Serif Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 2.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf', name='STIXSizeFiveSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf', name='cmmi10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 3.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 3.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-RI.ttf', name='Ubuntu', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Medium.ttf', name='Source Code Pro', style='normal', variant='normal', weight=500, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-ExtraLightIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=200, stretch='normal', size='scalable')) = 11.24
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-B.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-B.ttf', name='Ubuntu', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-SemiboldIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Black.ttf', name='Source Code Pro', style='normal', variant='normal', weight=900, stretch='normal', size='scalable')) = 10.525
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-BI.ttf', name='Ubuntu', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 2.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Regular.ttf', name='Source Code Pro', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-MI.ttf', name='Ubuntu', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-LI.ttf', name='Ubuntu', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-BI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-It.ttf', name='Source Code Pro', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-Th.ttf', name='Ubuntu', style='normal', variant='normal', weight=250, stretch='normal', size='scalable')) = 10.1925
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Inconsolata-Regular.ttf', name='Inconsolata', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-M.ttf', name='Ubuntu', style='normal', variant='normal', weight=500, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-LightIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-MediumIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Light.ttf', name='Source Code Pro', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf', name='Ubuntu', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-C.ttf', name='Ubuntu Condensed', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-MI.ttf', name='Ubuntu', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf', name='Ubuntu', style='normal', variant='normal', weight=500, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-B.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-R.ttf', name='Ubuntu', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-BI.ttf', name='Ubuntu', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-BI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-L.ttf', name='Ubuntu', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-RI.ttf', name='Ubuntu', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf', name='Ubuntu Condensed', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Inconsolata-Bold.ttf', name='Inconsolata', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-Th.ttf', name='Ubuntu', style='normal', variant='normal', weight=250, stretch='normal', size='scalable')) = 10.1925
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-LI.ttf', name='Ubuntu', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-BoldIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Semibold.ttf', name='Source Code Pro', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf', name='Ubuntu', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-L.ttf', name='Ubuntu', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-RI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-RI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-R.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-R.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Bold.ttf', name='Source Code Pro', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-ExtraLight.ttf', name='Source Code Pro', style='normal', variant='normal', weight=200, stretch='normal', size='scalable')) = 10.24
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-BlackIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=900, stretch='normal', size='scalable')) = 11.525
+[02/03/2025 11:21:36 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=10.0 to DejaVu Sans ('/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 2.050000.
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0.
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmtt10.ttf', name='cmtt10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBol.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneral.ttf', name='STIXGeneral', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Bold.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBol.ttf', name='STIXGeneral', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymBol.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralItalic.ttf', name='STIXGeneral', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansDisplay.ttf', name='DejaVu Sans Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXGeneralBolIta.ttf', name='STIXGeneral', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Italic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-BoldItalic.ttf', name='DejaVu Serif', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmb10.ttf', name='cmb10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymBol.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmss10.ttf', name='cmss10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUni.ttf', name='STIXNonUnicode', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmex10.ttf', name='cmex10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmsy10.ttf', name='cmsy10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Bold.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 2.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizOneSymReg.ttf', name='STIXSizeOneSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymBol.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmr10.ttf', name='cmr10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerifDisplay.ttf', name='DejaVu Serif Display', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-BoldOblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFourSymReg.ttf', name='STIXSizeFourSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 2.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizFiveSymReg.ttf', name='STIXSizeFiveSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/cmmi10.ttf', name='cmmi10', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymReg.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono.ttf', name='DejaVu Sans Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXNonUniBolIta.ttf', name='STIXNonUnicode', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSerif-Bold.ttf', name='DejaVu Serif', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizThreeSymReg.ttf', name='STIXSizeThreeSym', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSansMono-Oblique.ttf', name='DejaVu Sans Mono', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/STIXSizTwoSymBol.ttf', name='STIXSizeTwoSym', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-BoldOblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=700, stretch='normal', size='scalable')) = 3.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans-Oblique.ttf', name='DejaVu Sans', style='oblique', variant='normal', weight=400, stretch='normal', size='scalable')) = 3.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-RI.ttf', name='Ubuntu', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Medium.ttf', name='Source Code Pro', style='normal', variant='normal', weight=500, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-ExtraLightIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=200, stretch='normal', size='scalable')) = 11.24
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-B.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-B.ttf', name='Ubuntu', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-SemiboldIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=600, stretch='normal', size='scalable')) = 11.24
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Black.ttf', name='Source Code Pro', style='normal', variant='normal', weight=900, stretch='normal', size='scalable')) = 10.525
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-BI.ttf', name='Ubuntu', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/DejaVuSans.ttf', name='DejaVu Sans', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 2.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Regular.ttf', name='Source Code Pro', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-MI.ttf', name='Ubuntu', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-LI.ttf', name='Ubuntu', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-BI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-It.ttf', name='Source Code Pro', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-Th.ttf', name='Ubuntu', style='normal', variant='normal', weight=250, stretch='normal', size='scalable')) = 10.1925
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Inconsolata-Regular.ttf', name='Inconsolata', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-M.ttf', name='Ubuntu', style='normal', variant='normal', weight=500, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-LightIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-MediumIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Light.ttf', name='Source Code Pro', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-R.ttf', name='Ubuntu', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-C.ttf', name='Ubuntu Condensed', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-MI.ttf', name='Ubuntu', style='italic', variant='normal', weight=500, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-M.ttf', name='Ubuntu', style='normal', variant='normal', weight=500, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-B.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-R.ttf', name='Ubuntu', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-BI.ttf', name='Ubuntu', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-BI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-L.ttf', name='Ubuntu', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-RI.ttf', name='Ubuntu', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf', name='Ubuntu Condensed', style='normal', variant='normal', weight=400, stretch='condensed', size='scalable')) = 10.25
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Inconsolata-Bold.ttf', name='Inconsolata', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-Th.ttf', name='Ubuntu', style='normal', variant='normal', weight=250, stretch='normal', size='scalable')) = 10.1925
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-LI.ttf', name='Ubuntu', style='italic', variant='normal', weight=300, stretch='normal', size='scalable')) = 11.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-BoldIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=700, stretch='normal', size='scalable')) = 11.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Semibold.ttf', name='Source Code Pro', style='normal', variant='normal', weight=600, stretch='normal', size='scalable')) = 10.24
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/Ubuntu-B.ttf', name='Ubuntu', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/Ubuntu-L.ttf', name='Ubuntu', style='normal', variant='normal', weight=300, stretch='normal', size='scalable')) = 10.145
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-RI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-RI.ttf', name='Ubuntu Mono', style='italic', variant='normal', weight=400, stretch='normal', size='scalable')) = 11.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/usr/share/fonts/truetype/ubuntu/UbuntuMono-R.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/UbuntuMono-R.ttf', name='Ubuntu Mono', style='normal', variant='normal', weight=400, stretch='normal', size='scalable')) = 10.05
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-Bold.ttf', name='Source Code Pro', style='normal', variant='normal', weight=700, stretch='normal', size='scalable')) = 10.335
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-ExtraLight.ttf', name='Source Code Pro', style='normal', variant='normal', weight=200, stretch='normal', size='scalable')) = 10.24
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: score(FontEntry(fname='/home/john/miniconda3/envs/appinsight/fonts/SourceCodePro-BlackIt.ttf', name='Source Code Pro', style='italic', variant='normal', weight=900, stretch='normal', size='scalable')) = 11.525
+[02/03/2025 11:21:37 PM] [DEBUG] [matplotlib.font_manager] [font_manager] [_findfont_cached] : findfont: Matching sans\-serif:style=normal:variant=normal:weight=normal:stretch=normal:size=12.0 to DejaVu Sans ('/home/john/miniconda3/envs/genai/lib/python3.8/site-packages/matplotlib/mpl-data/fonts/ttf/DejaVuSans.ttf') with score of 2.050000.

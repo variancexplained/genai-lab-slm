@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday September 22nd 2024 05:36:35 pm                                              #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Tuesday February 4th 2025 03:04:53 am                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,14 +22,11 @@ from __future__ import annotations
 import logging
 
 import pandas as pd
+
 from genailab.core.dtypes import DTYPES
 from genailab.infra.exception.file import FileIOException
-from genailab.infra.persist.repo.file.base import (
-    DataFrameReader as BaseDataFrameReader,
-)
-from genailab.infra.persist.repo.file.base import (
-    DataFrameWriter as BaseDataFrameWriter,
-)
+from genailab.infra.persist.repo.file.base import DataFrameReader as BaseDataFrameReader
+from genailab.infra.persist.repo.file.base import DataFrameWriter as BaseDataFrameWriter
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -59,6 +56,8 @@ class PandasDataFrameParquetReader(BaseDataFrameReader):
         """
         try:
             df = pd.read_parquet(filepath, **self._kwargs)
+            if "Unnamed: 0" in df.columns:
+                df = df.drop("Unnamed: 0")
             msg = f"{self.__class__.__name__} read from {filepath}"
             self._logger.debug(msg)
             return df.astype(DTYPES)
@@ -97,6 +96,8 @@ class PandasDataFrameCSVReader(BaseDataFrameReader):
         """
         try:
             df = pd.read_csv(filepath, **self._kwargs)
+            if "Unnamed: 0" in df.columns:
+                df = df.drop("Unnamed: 0")
             msg = f"{self.__class__.__name__} read from {filepath}"
             self._logger.debug(msg)
             return df.astype(DTYPES)

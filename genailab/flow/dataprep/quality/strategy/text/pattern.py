@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Tuesday January 28th 2025 03:56:43 am                                               #
+# Modified   : Tuesday February 4th 2025 02:17:39 pm                                               #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -175,7 +175,7 @@ class RegexFactory:
         if threshold < 2 or max_elongation < 1:
             raise ValueError("threshold must be >= 2 and max_elongation must be >= 1")
 
-        pattern = rf"(.)\1{{{threshold - 1},}}"
+        pattern = rf"([a-zA-Z0-9])\1{{{threshold - 1},}}"
         replacement = r"\1" * min(max_elongation, threshold)
         return Regex(pattern=pattern, replacement=replacement)
 
