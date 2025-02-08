@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 24th 2024 12:50:08 am                                             #
-# Modified   : Tuesday February 4th 2025 01:12:18 pm                                               #
+# Modified   : Friday February 7th 2025 10:12:10 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -192,6 +192,7 @@ class SparkSessionPool:
                 spark = (
                     SparkSession.builder.appName("genailab")
                     .master("local[*]")
+                    .config("spark.ui.enabled", "true")
                     .config("spark.sql.regex.impl", "RE2")
                     .config("spark.executor.cores", executor_cores)
                     .config("spark.sql.session.timeZone", "UTC")
@@ -261,6 +262,7 @@ class SparkSessionPool:
                 #     SparkSession.builder.appName("genai-lab-nlp")
                 #     .master("local[*]")
                 #     .config("spark.sql.regex.impl", "RE2")
+                #     .config("spark.ui.enabled", "true")
                 #     .config("spark.executor.cores", executor_cores)
                 #     .config("spark.sql.session.timeZone", "UTC")
                 #     .config("spark.driver.memory", memory)

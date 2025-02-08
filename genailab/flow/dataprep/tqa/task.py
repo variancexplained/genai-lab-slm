@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Tuesday February 4th 2025 03:50:47 pm                                               #
+# Modified   : Saturday February 8th 2025 06:39:01 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -191,42 +191,61 @@ class Analyst(ABC):
         return np.log1p(count)
 
     def _process_batch(self, batch_df: pd.DataFrame, function_words: Set[str], nlp: spacy.language.Language, meta: pd.DataFrame) -> pd.DataFrame:
-        """
-        Processes a batch of reviews using spaCy's `nlp.pipe()` for efficiency.
+        texts = batch_df['content'].tolist()  # Extract texts into a list
 
-        This method applies SpaCy's `nlp.pipe()` to process a batch of reviews in parallel.
-        It processes each review and computes the relevant syntactic features such as noun counts,
-        verb counts, dependency depth, and lexical density. The results are returned as a Dask DataFrame.
-
-        Args:
-            batch_df (pd.DataFrame): A batch of reviews from the input DataFrame to process. Each row represents a review.
-            function_words (Set[str]): A set of function words to exclude from lexical density calculations.
-            nlp (spacy.language.Language): The spaCy language model used for processing the reviews.
-            meta (pd.DataFrame): The schema (structure) of the dataset that defines the expected output columns.
-
-        Returns:
-            List[pd.DataFrame]: A list of one-row Pandas DataFrames.
-        """
-
-        # Process all reviews in the batch using spaCy's nlp.pipe(), with parallelization
         results = []
-
-        try:
-
-            # Process reviews using spaCy and create delayed results
-            for i, row in batch_df.iterrows():
-                result = self._process_row(row, function_words, nlp)
+        for doc in nlp.pipe(texts, batch_size=128, n_process=-1): # Use n_process for parallelization
+            if doc:  # Handle potential None docs (e.g., empty strings)
+                result = self._process_doc(doc, function_words) # Process each doc
                 results.append(result)
-
-            batch_result = pd.DataFrame(results, columns=self._schema_df.columns)
-            self._logger.debug(f"Batch result type, expected Pandas Dataframe. Returned: {type(batch_result)}")
-            return batch_result
-        except Exception as e:
-            msg = f"Exception occurred.\n{e}"
-            self._logger.exception(msg)
-            raise
+            else:
+                # Handle empty reviews
+                empty_row = {key: None for key in meta.columns}
+                results.append(empty_row)
 
 
+        batch_result = pd.DataFrame(results, columns=meta.columns)
+        return batch_result
+
+    def _process_doc(self, doc: spacy.tokens.Doc, function_words: Set[str]) -> Dict[str, float]:
+        counts = {key: 0 for key in COUNT_SCHEMA.keys() if key != "tqa_score"}
+        n_tokens = 0
+        for token in doc:
+            n_tokens += 1
+            if token.pos_ == "NOUN":
+                counts["noun_count"] += 1
+                if len(list(token.subtree)) > 1:
+                    counts["noun_phrases"] += 1
+                if token.dep_ in ("nsubj", "dobj") and token.head.pos_ == "VERB":
+                    counts["aspect_verb_pairs"] += 1
+            elif token.pos_ == "VERB":
+                counts["verb_count"] += 1
+                if len(list(token.subtree)) > 1:
+                    counts["verb_phrases"] += 1
+            elif token.pos_ == "ADJ":
+                counts["adjective_count"] += 1
+            elif token.pos_ == "ADV":
+                counts["adverb_count"] += 1
+                if len(list(token.subtree)) > 1:
+                    counts["adverbial_phrases"] += 1
+
+        # Compute review length, lexical density, and dependency depth
+        counts['review_length'] = n_tokens
+        content_words = [word for word in doc if word not in function_words]
+        counts['lexical_density'] = (len(content_words) / n_tokens) * 100 if n_tokens > 0 else 0
+
+        # Compute dependency depth
+        max_depth = 0
+        for sent in doc.sents:
+            depth = max([len(list(token.subtree)) for token in sent])
+            max_depth = max(max_depth, depth)
+        counts["dependency_depth"] = max_depth
+        if self._normalized:
+            for key in counts:
+                counts[key] = self._log_normalize(counts[key])
+
+        counts["tqa_score"] = sum(self._coefficients[key] * counts[key] for key in self._coefficients)
+        return counts
 
     def _process_row(self, row: pd.Series, function_words: Set[str], nlp: spacy.language.Language) -> Dict[str, float]:
         """
@@ -378,7 +397,7 @@ class TQAnalystDask(Analyst):
 
         try:
             # Initialize spaCy and Dask DataFrame
-            nlp = spacy.load("en_core_web_sm")
+            nlp = spacy.load("en_core_web_sm", disable=["ner"])
             function_words = nlp.Defaults.stop_words
 
             # Convert pandas DataFrame to Dask

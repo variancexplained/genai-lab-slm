@@ -11,11 +11,12 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 01:58:22 am                                             #
-# Modified   : Tuesday February 4th 2025 02:17:39 pm                                               #
+# Modified   : Saturday February 8th 2025 01:38:53 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
+import re
 from dataclasses import dataclass
 from typing import Callable, Dict
 
@@ -33,6 +34,9 @@ class Regex:
 
     pattern: str
     replacement: str
+
+    def __post_init__(self) -> None:
+        self.pattern = re.compile(self.pattern)
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -258,6 +262,6 @@ class RegexFactory:
         if max_repetitions < 1:
             raise ValueError("max_repetitions must be >= 1")
 
-        pattern = rf"((?i)(.{{{length_of_sequence},}}))\s*(?:\s*\1){{{threshold - 1},}}"
+        pattern = rf"(?i)(.{length_of_sequence})\s*(?:\s*\1){{{max(0, threshold - 1)},}}"
         replacement = r"\1" * min(max_repetitions, threshold)
         return Regex(pattern=pattern, replacement=replacement)

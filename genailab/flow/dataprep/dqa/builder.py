@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Tuesday February 4th 2025 02:10:49 pm                                               #
+# Modified   : Saturday February 8th 2025 04:50:54 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -28,6 +28,7 @@ from genailab.flow.base.builder import StageBuilder
 from genailab.flow.dataprep.dqa.stage import DataQualityAssessmentStage
 from genailab.flow.dataprep.operators.partition import PartitionTask
 from genailab.flow.dataprep.operators.progress import ProgressTask
+from genailab.flow.dataprep.operators.sample import SampleDataFrameTask
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -109,10 +110,16 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
 
+    def partition_dataset(self)-> DataQualityAssessmentStageBuilder:
         # Every PySpark Pipeline partitions the data as the first task.
         partition_task = PartitionTask()
         self._tasks.append(partition_task)
-
+        return self
+    # -------------------------------------------------------------------------------------------- #
+    def sample_dataset(self, z: float = 1.96, p: float = 0.5, moe: float = 0.01)-> DataQualityAssessmentStageBuilder:
+        task = SampleDataFrameTask(z=z, p=p, moe=moe)
+        self._tasks.append(task)
+        return self
     # -------------------------------------------------------------------------------------------- #
     def detect_privacy_issues(self) -> DataQualityAssessmentStageBuilder:
         self.detect_emails()
@@ -314,6 +321,15 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._tasks.append(self._task_builder.build(self._detect_short_reviews))
         return self
 
+    # -------------------------------------------------------------------------------------------- #
+    def progress(self) -> DataQualityAssessmentStageBuilder:
+        # Add the progress task that triggers the computation and shows progress
+        # partition-wise. This should not be performed on large datasets.
+        task = ProgressTask(spark=self._spark)
+        self._tasks.append(task)
+        return self
+
+    # -------------------------------------------------------------------------------------------- #
     def build(
         self,
         source_config: Optional[DatasetConfig] = None,
@@ -336,13 +352,7 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         """
         self._validate(strict=strict)
 
-        # Obtain a spark session
         self._spark = self._get_spark(dftype=self.dftype)
-
-        # Add the progress task that triggers the computation and shows progress
-        # partition-wise.
-        task = ProgressTask(spark=self._spark)
-        self._tasks.append(task)
 
         stage = DataQualityAssessmentStage(
             source_config=source_config or self._source_config,

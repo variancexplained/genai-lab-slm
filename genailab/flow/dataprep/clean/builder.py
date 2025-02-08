@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Tuesday February 4th 2025 12:36:22 am                                               #
+# Modified   : Friday February 7th 2025 09:51:15 pm                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -327,6 +327,13 @@ class DataCleaningStageBuilder(StageBuilder):
         self._clean_short_reviews["params"]["threshold"] = threshold
         self._tasks.append(self._task_builder.build(self._clean_short_reviews))
         return self
+    # -------------------------------------------------------------------------------------------- #
+    def progress(self) -> DataCleaningStageBuilder:
+        # Add the progress task that triggers the computation and shows progress
+        # partition-wise. This should not be performed on large datasets.
+        task = ProgressTask(spark=self._spark)
+        self._tasks.append(task)
+        return self
 
     def build(
         self,
@@ -352,13 +359,7 @@ class DataCleaningStageBuilder(StageBuilder):
         """
         self._validate(strict=strict)
 
-        # Obtain a spark session
         self._spark = self._get_spark(dftype=self.dftype)
-
-        # Add the progress task that triggers the computation and shows progress
-        # partition-wise.
-        task = ProgressTask(spark=self._spark)
-        self._tasks.append(task)
 
         stage = DataCleaningStage(
             source_config=source_config or self._source_config,

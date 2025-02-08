@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 03:13:48 am                                             #
-# Modified   : Tuesday February 4th 2025 02:53:02 pm                                               #
+# Modified   : Saturday February 8th 2025 04:22:07 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -27,7 +27,7 @@ from lingua import Language, LanguageDetectorBuilder
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.functions import pandas_udf
-from pyspark.sql.types import BooleanType, DoubleType, StringType
+from pyspark.sql.types import ArrayType, BooleanType, DoubleType, StringType
 
 from genailab.flow.dataprep.quality.strategy.factory import (
     DetectStrategy,
@@ -125,9 +125,13 @@ class RegexDetectStrategy(DetectStrategy):
                 pattern=self._pattern, **self._kwargs
             )
 
-            # Apply the regex pattern to detect anomalies
+            @pandas_udf(BooleanType())
+            def regex_match_udf(series: pd.Series) -> pd.Series:
+                return series.str.match(regex_info.pattern)  # Use str.match for compiled regex
+
             data = data.withColumn(
-                self._new_column, F.col(self._column).rlike(regex_info.pattern)
+                self._new_column,
+                regex_match_udf(F.col(self._column).cast("string"))
             )
         except Exception as e:
             raise ValueError(f"Failed to apply regex pattern: {self._pattern}\n{e}")
@@ -192,13 +196,17 @@ class RegexReplaceStrategy(RepairStrategy):
             raise ValueError(f"Invalid replacement value: {replacement}")
 
         try:
+
+            @pandas_udf(returnType=StringType())
+            def regex_replace_udf(series: pd.Series) -> pd.Series:
+                return series.str.replace(regex_info.pattern, replacement, regex=True)
+
             data = data.withColumn(
-                self._column,
-                F.when(
-                    F.col(self._column).rlike(regex_info.pattern),  # Detect match
-                    F.regexp_replace(F.col(self._column), regex_info.pattern, replacement)  # Apply replacement
-                ).otherwise(F.col(self._column))  # Leave untouched if no match
+                self._new_column,
+                regex_replace_udf(F.col(self._column).cast("string"))
             )
+
+
         except Exception as e:
             raise ValueError(f"Failed to apply regex replacement: {e}")
 
@@ -373,13 +381,16 @@ class RegexThresholdDetectStrategy(DetectStrategy):
         )
 
         try:
-            # Apply regex to extract matches
+            @pandas_udf(returnType=ArrayType(StringType()))
+            def regex_matches_udf(series: pd.Series) -> pd.Series:
+                return series.str.findall(regex_info.pattern).apply(lambda x: x if x else None)  # Handle empty lists
+
             data = data.withColumn(
                 "matches",
-                F.expr(f"regexp_extract_all({self._column}, '({regex_info.pattern})')"),
+                regex_matches_udf(F.col(self._column).cast("string"))
             )
         except Exception as e:
-            raise ValueError(f"Failed to apply regex pattern: {self._pattern}\n{e}")
+            raise ValueError(f"Failed to apply regex pattern: {regex_info.pattern}\n{e}")
 
         # Count the number of matches
         data = data.withColumn("match_count", F.size(F.col("matches")))
