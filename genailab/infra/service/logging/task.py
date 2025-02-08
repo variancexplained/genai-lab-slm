@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 16th 2024 01:13:44 pm                                              #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 09:20:10 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -62,6 +62,9 @@ def task_logger(func):
             runtime = (end - start).total_seconds()
             runtime_fmt = dt4mtr.format_duration(seconds=runtime)
 
+            # Note from task
+            note = self.note or ""
+
             # Print task info
             table_printer.print_line(
                 data=(
@@ -69,6 +72,7 @@ def task_logger(func):
                     start_fmt,
                     end_fmt,
                     runtime_fmt,
+                    note,
                 )
             )
 

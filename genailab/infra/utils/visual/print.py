@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday May 6th 2024 11:07:56 pm                                                     #
-# Modified   : Tuesday January 28th 2025 01:37:23 am                                               #
+# Modified   : Saturday February 8th 2025 09:39:44 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -186,14 +186,15 @@ class TablePrinter:
 
     def __init__(
         self,
-        ncols: int = 4,
+        ncols: int = 5,
         columns: tuple = (
             "Task",
             "Started",
             "Ended",
             "Runtime",
+            "Note",
         ),
-        colwidths: tuple = (40, 8, 8, 12),
+        colwidths: tuple = (40, 8, 8, 14, 30),
     ) -> None:
         self.ncols = ncols
         self.columns = columns

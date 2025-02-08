@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Monday February 3rd 2025 06:01:19 am                                                #
+# Modified   : Saturday February 8th 2025 01:59:05 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -28,9 +28,12 @@ from pyspark.sql import DataFrame
 
 from genailab.analytics.dqa import DQA
 from genailab.analytics.eda import EDA
+from genailab.analytics.profile import Profiler, ProfilerFactory
+from genailab.analytics.summary import Summarizer, SummarizerFactory
 from genailab.asset.base.asset import Asset
 from genailab.asset.dataset.identity import DatasetPassport
 from genailab.asset.dataset.state import DatasetState, DatasetStateDef
+from genailab.core.dtypes import DFType
 from genailab.infra.utils.file.fileset import FileSet
 from genailab.infra.utils.visual.print import Printer
 
@@ -59,12 +62,14 @@ class Dataset(Asset):
         self._state = state
         self._repo = repo
         self._eda_cls = eda_cls
-        self._eda = None
+        self._summarizer = None
+        self._profiler = None
 
         self._file = None
         self._dqa = None
         self._profile = None
         self._summary = None
+        self._dftype = None
 
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
@@ -97,6 +102,12 @@ class Dataset(Asset):
             state (dict): The state dictionary to restore.
         """
         self.__dict__.update(state)
+
+    @property
+    def dftype(self) -> DFType:
+        if not isinstance(self._dftype, DFType):
+            self._dftype = DFType.PANDAS if isinstance(self._dataframe, (pd.core.frame.DataFrame, pd.DataFrame)) else DFType.SPARK
+        return self._dftype
 
     @property
     def state(self) -> DatasetState:
@@ -137,14 +148,16 @@ class Dataset(Asset):
     def profile(self) -> pd.DataFrame:
         """Returns a profile of the data, including data types, null values, and uniqueness."""
         if self._profile is None:
-            self._set_profile()
+            self._set_profiler()
+            self._profile = self._profiler.profile(dataframe=self._dataframe)
         return self._profile
 
     @property
     def summary(self) -> None:
         """Prints a Dataset summary."""
         if self._summary is None:
-            self._set_summary()
+            self._set_summarizer()
+            self._summary = self._summarizer.summarize(dataframe=self._dataframe, print=False)
         title = f"AppVoCAI Dataset Summary\n{self._passport.phase.label}\n{self._passport.stage.label}"
         Printer().print_dict(title=title, data=self._summary)
 
@@ -249,14 +262,14 @@ class Dataset(Asset):
         else:
             self._eda = self._eda_cls(df=self._dataframe)
 
-    def _set_profile(self) -> None:
+    def _set_profiler(self) -> None:
         """Sets the Dataset profile object."""
-        if not isinstance(self._eda, EDA):
-            self._set_eda()
-        self._profile = self._eda.profile
+        if not isinstance(self._profiler, Profiler):
+            self._profiler = ProfilerFactory().get_profiler(dftype=self.dftype)
 
-    def _set_summary(self) -> None:
+
+    def _set_summarizer(self) -> None:
         """Sets the Dataset summary object."""
-        if not isinstance(self._eda, EDA):
-            self._set_eda()
-        self._summary = self._eda.summarize()
+        if not isinstance(self._summarizer, Summarizer):
+            self._summarizer = SummarizerFactory().get_summarizer(dftype=self.dftype)
+

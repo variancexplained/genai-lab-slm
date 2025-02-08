@@ -42,6 +42,7 @@ lib64
 # Logs
 logs/
 *.log
+TBD*.*
 
 # Models
 models

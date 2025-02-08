@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:02:14 am                                              #
-# Modified   : Thursday January 30th 2025 03:00:34 pm                                              #
+# Modified   : Saturday February 8th 2025 08:06:01 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -32,6 +32,7 @@ from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.stage import Stage
 from genailab.flow.base.task import Task, TaskBuilder
+from genailab.infra.config.app import AppConfigReader
 from genailab.infra.config.flow import FlowConfigReader
 from genailab.infra.persist.repo.dataset import DatasetRepo
 from genailab.infra.service.spark.pool import SparkSessionPool
@@ -52,7 +53,7 @@ class StageBuilder(ABC):
             Default is injected from `GenAILabContainer.io.flowstate`.
         spark_session_pool (SparkSessionPool): Pool for managing Spark sessions.
             Default is injected from `GenAILabContainer.spark.session_pool`.
-        config_reader_cls (Type[FlowConfigReader]): Class used for reading
+        stage_config_reader_cls (Type[FlowConfigReader]): Class used for reading
             pipeline configurations. Default is `FlowConfigReader`.
         dataset_builder_cls (Type[DatasetBuilder]): Class used for constructing datasets.
             Default is `DatasetBuilder`.
@@ -63,7 +64,7 @@ class StageBuilder(ABC):
         _repo (DatasetRepo): The dataset repository instance.
         _state (FlowState): The flow state object for managing pipeline state.
         _spark_session_pool (SparkSessionPool): Pool for Spark session management.
-        _config_reader (FlowConfigReader): Reader for accessing pipeline configurations.
+        _stage_config_reader (FlowConfigReader): Reader for accessing pipeline configurations.
         _dataset_builder (DatasetBuilder): Builder for creating datasets.
         _task_builder (TaskBuilder): Builder for creating tasks.
         _source_config (DatasetConfig): Configuration for the source dataset.
@@ -81,13 +82,15 @@ class StageBuilder(ABC):
         spark_session_pool: SparkSessionPool = Provide[
             GenAILabContainer.spark.session_pool
         ],
-        config_reader_cls: Type[FlowConfigReader] = FlowConfigReader,
+        stage_config_reader_cls: Type[FlowConfigReader] = FlowConfigReader,
+        app_config_reader_cls: Type[AppConfigReader] = AppConfigReader,
         dataset_builder_cls: Type[DatasetBuilder] = DatasetBuilder,
         task_builder_cls: Type[TaskBuilder] = TaskBuilder,
     ) -> None:
         self._repo = repo
         self._spark_session_pool = spark_session_pool
-        self._config_reader = config_reader_cls()
+        self._stage_config_reader = stage_config_reader_cls()
+        self._app_config_reader = app_config_reader_cls()
         self._dataset_builder = dataset_builder_cls()
         self._task_builder = task_builder_cls()
 
@@ -138,7 +141,7 @@ class StageBuilder(ABC):
             phase=self.phase, stage=self.stage, config="target_config"
         )
 
-        self._task_configs = self._get_config(
+        self._task_configs = self._get_stage_config(
             phase=self.phase, stage=self.stage, config="tasks"
         )
         self._tasks: List[Task] = []
@@ -168,8 +171,34 @@ class StageBuilder(ABC):
             ValueError: If either source or target passports are invalid.
         """
         pass
+    def _get_app_config(self,  section: str) -> Dict[str, Any]:
+        """
+        Retrieves configuration details for a given section of the app config.
 
-    def _get_config(
+        Args:
+            section (str): The specific configuration to retrieve
+                (e.g., `dask`, or `spark`).
+
+        Returns:
+            Dict[str, Any]: The configuration details.
+
+        Raises:
+            KeyError: If the specified configuration is not found.
+            RuntimeError: If an unrecognized error occurs during retrieval.
+        """
+        try:
+            return self._app_config_reader.get_config(section=section, namespace=True)
+
+        except KeyError as e:
+            msg = f"Configuration Error. Unable to obtain the {section} configuration from app config.\n{e}"
+            self._logger.error(msg)
+            raise RuntimeError(msg)
+        except Exception as e:
+            msg = f"Unrecognized error occurred while accessing the {section} configuration from app config.\n{e}"
+            self._logger.error(msg)
+            raise RuntimeError(msg)
+
+    def _get_stage_config(
         self, phase: PhaseDef, stage: StageDef, config: str
     ) -> Dict[str, Any]:
         """
@@ -189,11 +218,11 @@ class StageBuilder(ABC):
             RuntimeError: If an unrecognized error occurs during retrieval.
         """
         try:
-            return self._config_reader.get_config(section="phases", namespace=False)[
+            return self._stage_config_reader.get_config(section="phases", namespace=False)[
                 phase.value
             ]["stages"][stage.value][config]
         except AttributeError:
-            return self._config_reader.get_config(section="phases", namespace=False)[
+            return self._stage_config_reader.get_config(section="phases", namespace=False)[
                 phase.value
             ]["stages"][stage][config]
 
@@ -220,7 +249,7 @@ class StageBuilder(ABC):
         Returns:
             DatasetConfig: The dataset configuration object.
         """
-        dataset_config = self._get_config(phase=phase, stage=stage, config=config)
+        dataset_config = self._get_stage_config(phase=phase, stage=stage, config=config)
         return DatasetConfig.from_dict(config=dataset_config)
 
     def _get_spark(self, dftype: DFType) -> SparkSession:

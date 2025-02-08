@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday February 8th 2025 04:36:44 am                                              #
-# Modified   : Saturday February 8th 2025 04:48:28 am                                              #
+# Modified   : Saturday February 8th 2025 11:37:40 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -45,11 +45,12 @@ class SampleDataFrameTask(Task):
         run(data: DataFrame) -> DataFrame: Samples the input DataFrame.
     """
 
-    def __init__(self, z: float = 1.96, p: float = 0.5, moe: float = 0.01, random_state: int = 55):
+    def __init__(self, z: float = 1.96, p: float = 0.5, moe: float = 0.01, min_sample_size: int = 1024, random_state: int = 55):
         super().__init__()
         self._z = z
         self._p = p
         self._moe = moe
+        self._min_sample_size = min_sample_size
         self._random_state = random_state
 
     @task_logger
@@ -67,15 +68,12 @@ class SampleDataFrameTask(Task):
             ValueError: If the calculated sample size is greater than the
                         actual DataFrame size.
         """
-        n = (self._z**2 * self._p * (1 - self._p)) / self._moe**2
-        n = math.ceil(n)
         N = data.count()
+        n = min(max(self._z**2 * self._p * (1 - self._p)/ self._moe**2, self._min_sample_size), N)
+        n = math.ceil(n)
 
-        if n > N:
-            raise ValueError(
-                f"Calculated sample size ({n}) is greater than the "
-                f"DataFrame size ({N}).  Adjust your parameters (z, p, moe)."
-            )
+        self._note = f"Sampled {n} out of {N} observations" if n < N else None
+
 
         frac = n / N
         return data.sample(withReplacement=False, fraction=frac, seed=self._random_state)

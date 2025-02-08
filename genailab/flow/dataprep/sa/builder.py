@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Tuesday February 4th 2025 02:37:31 am                                               #
+# Modified   : Saturday February 8th 2025 08:01:18 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -61,7 +61,7 @@ class SentimentAnalysisStageBuilder(StageBuilder):
         super().reset()
         self._source_config = None
         self._target_config = None
-        self._task_configs = self._get_config(
+        self._task_configs = self._get_stage_config(
             phase=self.phase, stage=self.stage, config="tasks"
         )
         self._tasks = []

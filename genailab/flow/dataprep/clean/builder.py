@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Friday February 7th 2025 09:51:15 pm                                                #
+# Modified   : Saturday February 8th 2025 09:00:44 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -28,6 +28,7 @@ from genailab.flow.base.builder import StageBuilder
 from genailab.flow.dataprep.clean.stage import DataCleaningStage
 from genailab.flow.dataprep.operators.partition import PartitionTask
 from genailab.flow.dataprep.operators.progress import ProgressTask
+from genailab.infra.utils.data.partition import SparkPartitioner
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -98,14 +99,17 @@ class DataCleaningStageBuilder(StageBuilder):
         self._clean_short_reviews = None
         self._clean_urls = None
 
-        self._task_configs = self._get_config(
+        self._task_configs = self._get_stage_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
 
-        # Every PySpark Pipeline partitions the data as the first task.
-        partition_task = PartitionTask()
-        self._tasks.append(partition_task)
 
+    def partition_dataset(self)-> DataCleaningStageBuilder:
+        config = self._get_app_config(section='spark')
+        partitioner = SparkPartitioner(target_partition_size=config.target_partition_size)
+        task = PartitionTask(partitioner=partitioner)
+        self._tasks.append(task)
+        return self
     # -------------------------------------------------------------------------------------------- #
     #                                 SOURCE AND TARGET DATASETS                                   #
     # -------------------------------------------------------------------------------------------- #

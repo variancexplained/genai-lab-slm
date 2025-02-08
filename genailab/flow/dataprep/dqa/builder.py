@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Saturday February 8th 2025 04:50:54 am                                              #
+# Modified   : Saturday February 8th 2025 09:00:11 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -29,6 +29,7 @@ from genailab.flow.dataprep.dqa.stage import DataQualityAssessmentStage
 from genailab.flow.dataprep.operators.partition import PartitionTask
 from genailab.flow.dataprep.operators.progress import ProgressTask
 from genailab.flow.dataprep.operators.sample import SampleDataFrameTask
+from genailab.infra.utils.data.partition import SparkPartitioner
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -106,14 +107,16 @@ class DataQualityAssessmentStageBuilder(StageBuilder):
         self._detect_short_reviews = None
         self._detect_urls = None
 
-        self._task_configs = self._get_config(
+        self._task_configs = self._get_stage_config(
             phase=self.__PHASE, stage=self.__STAGE, config="tasks"
         )
 
+
     def partition_dataset(self)-> DataQualityAssessmentStageBuilder:
-        # Every PySpark Pipeline partitions the data as the first task.
-        partition_task = PartitionTask()
-        self._tasks.append(partition_task)
+        config = self._get_app_config(section='spark')
+        partitioner = SparkPartitioner(target_partition_size=config.target_partition_size)
+        task = PartitionTask(partitioner=partitioner)
+        self._tasks.append(task)
         return self
     # -------------------------------------------------------------------------------------------- #
     def sample_dataset(self, z: float = 1.96, p: float = 0.5, moe: float = 0.01)-> DataQualityAssessmentStageBuilder:

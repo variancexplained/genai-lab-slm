@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:54:25 am                                              #
-# Modified   : Tuesday February 4th 2025 01:59:15 am                                               #
+# Modified   : Saturday February 8th 2025 09:24:28 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,7 +22,7 @@ from pyspark.sql import DataFrame
 
 from genailab.flow.base.task import Task
 from genailab.infra.service.logging.task import task_logger
-from genailab.infra.utils.data.partition import partition_data
+from genailab.infra.utils.data.partition import Partitioner
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -40,6 +40,10 @@ class PartitionTask(Task):
         run(data: DataFrame) -> DataFrame:
             Partitions the input DataFrame and returns the partitioned DataFrame.
     """
+    def __init__(self, partitioner: Partitioner) -> None:
+        super().__init__()
+        self._partitioner = partitioner
+
 
     @task_logger
     def run(self, data: DataFrame) -> DataFrame:
@@ -56,6 +60,8 @@ class PartitionTask(Task):
         Returns:
             DataFrame: A partitioned PySpark DataFrame, split into smaller chunks for parallel processing.
         """
-        return partition_data(data=data)
+        data = self._partitioner.partition(data=data)
+        self._note = self._partitioner.note
+        return data
 
 

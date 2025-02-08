@@ -4,30 +4,32 @@
 # Project    : GenAI-Lab-SLM                                                                       #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
-# Filename   : /genailabslm/infra/service/logging/__init__.py                                      #
+# Filename   : /genailab/infra/service/logging/__init__.py                                         #
 # ------------------------------------------------------------------------------------------------ #
 # Author     : John James                                                                          #
 # Email      : john@variancexplained.com                                                           #
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday September 13th 2024 05:32:58 pm                                              #
-# Modified   : Saturday January 25th 2025 04:40:41 pm                                              #
+# Modified   : Saturday February 8th 2025 09:41:02 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 PRINTING_PARAMETERS = {
-    "ncols": 4,
+    "ncols": 5,
     "columns": (
         "Task",
         "Start",
         "End",
         "Runtime",
+        "Note"
     ),
     "colwidths": (
         40,
         12,
         12,
-        12,
+        13,
+        23
     ),
 }

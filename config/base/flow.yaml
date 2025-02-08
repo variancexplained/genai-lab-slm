@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday October 12th 2024 05:28:09 am                                              #
-# Modified   : Tuesday February 4th 2025 02:08:23 pm                                               #
+# Modified   : Saturday February 8th 2025 03:48:03 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -543,16 +543,17 @@ phases:
             params:
               coefficients:
                 aspect_verb_pairs: 4.0
+                noun_adjective_pairs: 3.0
                 noun_phrases: 2.5
                 verb_phrases: 2.0
                 adjective_count: 1.5
-                adverb_count: 0.75
+                lexical_density: 1.5
                 noun_count: 1.0
                 verb_count: 1.0
-                adverbial_phrases: 0.5
                 review_length: 1.0
-                lexical_density: 1.5
                 dependency_depth: 1.0
+                adverb_count: 0.75
+                adverbial_phrases: 0.5
               normalized: True
               batched: True
 

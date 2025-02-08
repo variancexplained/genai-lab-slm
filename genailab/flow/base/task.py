@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:33:59 am                                              #
-# Modified   : Sunday January 26th 2025 10:41:24 pm                                                #
+# Modified   : Saturday February 8th 2025 09:11:23 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -50,6 +50,7 @@ class Task(ABC):
     """
 
     def __init__(self):
+        self._note = None
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     @property
@@ -63,6 +64,10 @@ class Task(ABC):
             The name of the task.
         """
         return self.__class__.__name__
+
+    @property
+    def note(self) -> str:
+        return self._note
 
     @abstractmethod
     def run(self, *args, data: Any, **kwargs) -> Any:

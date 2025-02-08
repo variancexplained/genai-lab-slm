@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday September 9th 2024 04:54:25 pm                                               #
-# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
+# Modified   : Saturday February 8th 2025 07:57:15 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,7 @@ import logging
 import logging.config
 
 from dependency_injector import containers, providers
+
 from genailab.infra.config.app import AppConfigReader
 from genailab.infra.persist.repo.dataset import DatasetRepo
 from genailab.infra.persist.repo.file.factory import DataFrameIOFactory
@@ -44,7 +45,6 @@ class LoggingContainer(containers.DeclarativeContainer):
         logging.config.dictConfig,
         config=config.logging,
     )
-
 
 # ------------------------------------------------------------------------------------------------ #
 #                                   SPARK CONTAINER                                                #

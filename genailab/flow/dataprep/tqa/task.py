@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Saturday February 8th 2025 06:39:01 am                                              #
+# Modified   : Saturday February 8th 2025 03:44:23 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,9 +19,7 @@
 """Text Quality Analysis Task Module"""
 from __future__ import annotations
 
-import logging
 import multiprocessing
-from abc import ABC
 from typing import Any, Dict, Set
 
 import dask.dataframe as dd
@@ -29,9 +27,9 @@ import numpy as np
 import pandas as pd
 import spacy
 from dask.distributed import Client, LocalCluster
-from tqdm import tqdm
 
 from genailab.flow.base.task import Task
+from genailab.infra.utils.data.partition import DaskPartitioner
 
 # ------------------------------------------------------------------------------------------------ #
 #                                  DATASET SCHEMA                                                  #
@@ -42,6 +40,7 @@ COUNT_SCHEMA = {
     "adjective_count": np.float64,
     "adverb_count": np.float64,
     "aspect_verb_pairs": np.float64,
+    "noun_adjective_pairs": np.float64,
     "noun_phrases": np.float64,
     "verb_phrases": np.float64,
     "adverbial_phrases": np.float64,
@@ -91,10 +90,31 @@ class TQATask(Task):
         normalized (bool, optional): Whether to normalize the TQA score. Defaults to True.
         batched (bool, optional): Whether to process data in batches. Defaults to True.
     """
+    def __init__(self,
+                 partitioner: DaskPartitioner,
+                 coefficients: Dict[str, float],
+                 schema: Dict[str, Any] = DATASET_SCHEMA,
+                 normalized: bool = True,
+                 batched: bool = True,
+                 nworkers: int = 18,
+                 memory_limit: int = 6442450944,
+                 threads_per_worker: int = 1,
+                 processes: bool = False,
+                 **kwargs
+                 ) -> None:
+        super().__init__()
+        self._partitioner = partitioner
+        self._coefficients = coefficients
+        self._normalized = normalized
+        self._batched = batched
+        self._schema_dict = schema
+        self._schema_df = pd.DataFrame(columns=schema.keys()).astype(schema)
+        self._schema_tuple = tuple(self._schema_df.dtypes.to_dict().items())
 
-    def __init__(self, analyst: Analyst) -> None:
-        self._analyst = analyst
-
+        self._nworkers = nworkers
+        self._memory_limit = memory_limit
+        self._threads_per_worker = threads_per_worker
+        self._processes = processes
 
     def __hash__(self):
         """
@@ -104,7 +124,7 @@ class TQATask(Task):
         Returns:
             int: The hash value of the TQATask object.
         """
-        return hash((tuple(self._coefficients.items()), self._normalized, self._npartitions))
+        return hash((tuple(self._coefficients.items()), self._normalized, self._nworkers, self._memory_limit, self._threads_per_worker, self._processes))
 
 
 
@@ -127,77 +147,82 @@ class TQATask(Task):
         """
         self.__dict__.update(state)
 
+
+
     def run(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        Processes a batch of reviews and computes syntactic features and TQA syntactic scores.
+        """Analyzes text data using spaCy and Dask, performing feature extraction.
 
-        This method uses Dask's delayed computation to process the input DataFrame in parallel. It applies the
-        `_process_review_with_metadata` method to each review and returns the results after computation.
-
-        Args:
-            data (pd.DataFrame): A Pandas DataFrame containing the reviews to process.
-
-        Returns:
-            pd.DataFrame: A DataFrame with the computed syntactic features and TQA score for each review.
-        """
-        return self._analyst.analyze(data=data)
-
-
-
-
-# ------------------------------------------------------------------------------------------------ #
-#                                     ANALYST                                                      #
-# ------------------------------------------------------------------------------------------------ #
-class Analyst(ABC):
-    """Base Class for Text Quality Analysis Classes"""
-
-    def __init__(self, coefficients: Dict[str, float], normalized: bool = True, batched: bool = True) -> None:
-        super().__init__()
-
-        self._coefficients = coefficients
-        self._normalized = normalized
-        self._batched = batched
-
-
-        self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-
-    def __eq__(self, other):
-        """
-        Compares two TQATask objects for equality.
+        This method initializes a Dask cluster, loads spaCy, and applies NLP processing
+        to the provided data. It supports both batched and row-wise processing.
 
         Args:
-            other (TQATask): Another TQATask object to compare.
+            data (pd.DataFrame): Input DataFrame containing text data.
 
         Returns:
-            bool: True if both TQATask objects are equal, False otherwise.
+            dd.DataFrame: Processed results as a Dask DataFrame.
+
+        Raises:
+            Exception: If an error occurs during analysis.
         """
-        if not isinstance(other, Analyst):
-            return False
-        return (self._coefficients == other._coefficients and
-                self._normalized == other._normalized)
+        multiprocessing.set_start_method('spawn', force=True)
 
-    def _log_normalize(self, count: int) -> float:
-        """
-        Applies log normalization (log(x + 1)) to a given count.
+        cluster = LocalCluster(
+            n_workers=self._nworkers,
+            threads_per_worker=self._threads_per_worker,
+            memory_limit=self._memory_limit,
+            processes=self._processes,
+            dashboard_address=":8787"
+        )
+        client = Client(cluster)
 
-        This method is used to log-normalize the feature values to reduce the impact of extreme values and smooth the distribution.
+        try:
+            # Initialize spaCy and Dask DataFrame
+            nlp = spacy.load("en_core_web_sm", disable=["ner"])
+            function_words = nlp.Defaults.stop_words
 
-        Args:
-            count (int): The value to normalize.
+            # Convert pandas DataFrame to an optimally partitioned Dask DataFrame
+            ddf = self.to_dash(pdf=data)
 
-        Returns:
-            float: The log-normalized value.
-        """
-        return np.log1p(count)
+            if self._batched:
+                results = ddf.map_partitions(
+                    lambda batch: self._process_batch(
+                        batch, function_words=function_words, nlp=nlp, meta=self._schema_df
+                    ),
+                    meta=self._schema_df
+                )
+            else:
+                results = ddf.apply(
+                    self._process_row, axis=1, meta=self._schema_df, args=(function_words, nlp)
+                )
+
+            # Start computation in the background
+            results = results.persist()
+
+            # Compute and convert back to pandas
+            pdf = self.to_pandas(ddf=results)
+
+            return pdf
+        except Exception as e:
+            msg = f"Exception occurred.\n{e}"
+            self._logger.exception(msg)
+            raise
+        finally:
+            if client:
+                client.close()
+            if cluster:
+                cluster.close()
+
 
     def _process_batch(self, batch_df: pd.DataFrame, function_words: Set[str], nlp: spacy.language.Language, meta: pd.DataFrame) -> pd.DataFrame:
         texts = batch_df['content'].tolist()  # Extract texts into a list
 
         results = []
-        for doc in nlp.pipe(texts, batch_size=128, n_process=-1): # Use n_process for parallelization
+        for i, doc in enumerate(nlp.pipe(texts, batch_size=128, n_process=-1)): # Use n_process for parallelization
+            original_row = batch_df.iloc[i].to_dict()
             if doc:  # Handle potential None docs (e.g., empty strings)
                 result = self._process_doc(doc, function_words) # Process each doc
-                results.append(result)
+                combined_result = {**original_row, **result} # Merge dictionaries
+                results.append(combined_result)
             else:
                 # Handle empty reviews
                 empty_row = {key: None for key in meta.columns}
@@ -218,12 +243,17 @@ class Analyst(ABC):
                     counts["noun_phrases"] += 1
                 if token.dep_ in ("nsubj", "dobj") and token.head.pos_ == "VERB":
                     counts["aspect_verb_pairs"] += 1
+                for child in token.children:  # Check children of the noun
+                    if child.pos_ == "ADJ":
+                        counts["noun_adjective_pairs"] += 1
             elif token.pos_ == "VERB":
                 counts["verb_count"] += 1
                 if len(list(token.subtree)) > 1:
                     counts["verb_phrases"] += 1
             elif token.pos_ == "ADJ":
                 counts["adjective_count"] += 1
+                if token.head.pos_ == "NOUN":
+                    counts["noun_adjective_pairs"] += 1
             elif token.pos_ == "ADV":
                 counts["adverb_count"] += 1
                 if len(list(token.subtree)) > 1:
@@ -312,126 +342,6 @@ class Analyst(ABC):
         self._logger.debug(f"Row result should be a series. Actual type: {type(row_result)}\n{row_result}")
         return row_result
 
-# ------------------------------------------------------------------------------------------------ #
-#                                  TQ ANALYST DASK                                                 #
-# ------------------------------------------------------------------------------------------------ #
-class TQAnalystDask(Analyst):
-    """Performs text quality analysis using Dask for distributed processing.
-
-    This class leverages Dask and spaCy for scalable text analysis, supporting both
-    batched and row-wise processing. It initializes a Dask LocalCluster for parallel
-    execution and applies NLP techniques to analyze text data.
-
-    Args:
-        schema (Dict[str, Any]): A dictionary mapping column names to data types.
-        coefficients (Dict[str, float]): Coefficients for scoring text features.
-        npartitions (int, optional): Number of Dask partitions. Defaults to 72.
-        normalized (bool, optional): Whether to apply log normalization. Defaults to True.
-        batched (bool, optional): Whether to process data in batches. Defaults to True.
-        nworkers (int, optional): Number of Dask workers. Defaults to 6.
-        memory_limit (str, optional): Memory allocation per worker. Defaults to "11GiB".
-        threads_per_worker (int, optional): Number of threads per worker. Defaults to 1.
-        processes (bool, optional): Whether to use multiprocessing. Defaults to False.
-        **kwargs: Additional keyword arguments for future extensions.
-
-    Attributes:
-        _schema_dict (Dict[str, Any]): Original schema dictionary.
-        _schema_df (pd.DataFrame): DataFrame representation of the schema.
-        _schema_tuple (Tuple): Tuple representation of the schema.
-        _npartitions (int): Number of partitions for Dask computations.
-        _nworkers (int): Number of Dask workers.
-        _memory_limit (str): Memory allocation per worker.
-        _threads_per_worker (int): Number of threads per worker.
-        _processes (bool): Whether multiprocessing is enabled.
-    """
-
-    def __init__(self,
-                 schema: Dict[str, Any],
-                 coefficients: Dict[str, float],
-                 npartitions: int = 72,
-                 normalized: bool = True,
-                 batched: bool = True,
-                 nworkers: int = 6,
-                 memory_limit: str = "11GiB",
-                 threads_per_worker: int = 1,
-                 processes: bool = False,
-                 **kwargs
-                 ) -> None:
-        super().__init__(coefficients=coefficients, normalized=normalized, batched=batched)
-
-        self._schema_dict = schema
-        self._schema_df = pd.DataFrame(columns=schema.keys()).astype(schema)
-        self._schema_tuple = tuple(self._schema_df.dtypes.to_dict().items())
-
-        self._npartitions = npartitions
-        self._nworkers = nworkers
-        self._memory_limit = memory_limit
-        self._threads_per_worker = threads_per_worker
-        self._processes = processes
-
-    def analyze(self, data: pd.DataFrame) -> dd.DataFrame:
-        """Analyzes text data using spaCy and Dask, performing feature extraction.
-
-        This method initializes a Dask cluster, loads spaCy, and applies NLP processing
-        to the provided data. It supports both batched and row-wise processing.
-
-        Args:
-            data (pd.DataFrame): Input DataFrame containing text data.
-
-        Returns:
-            dd.DataFrame: Processed results as a Dask DataFrame.
-
-        Raises:
-            Exception: If an error occurs during analysis.
-        """
-        multiprocessing.set_start_method('spawn', force=True)
-
-        cluster = LocalCluster(
-            n_workers=self._nworkers,
-            threads_per_worker=self._threads_per_worker,
-            memory_limit=self._memory_limit,
-            processes=self._processes,
-            dashboard_address=":8787"
-        )
-        client = Client(cluster)
-
-        try:
-            # Initialize spaCy and Dask DataFrame
-            nlp = spacy.load("en_core_web_sm", disable=["ner"])
-            function_words = nlp.Defaults.stop_words
-
-            # Convert pandas DataFrame to Dask
-            ddf = self.to_dash(pdf=data)
-
-            if self._batched:
-                results = ddf.map_partitions(
-                    lambda batch: self._process_batch(
-                        batch, function_words=function_words, nlp=nlp, meta=self._schema_df
-                    ),
-                    meta=self._schema_df
-                )
-            else:
-                results = ddf.apply(
-                    self._process_row, axis=1, meta=self._schema_df, args=(function_words, nlp)
-                )
-
-            # Start computation in the background
-            results = results.persist()
-
-            # Compute and convert back to pandas
-            pdf = self.to_pandas(ddf=results)
-
-            return pdf
-        except Exception as e:
-            msg = f"Exception occurred.\n{e}"
-            self._logger.exception(msg)
-            raise
-        finally:
-            if client:
-                client.close()
-            if cluster:
-                cluster.close()
-
     def to_dash(self, pdf: pd.DataFrame) -> dd.DataFrame:
         """Converts a Pandas DataFrame to a Dask DataFrame.
 
@@ -441,7 +351,9 @@ class TQAnalystDask(Analyst):
         Returns:
             dd.DataFrame: Dask DataFrame partitioned according to the class settings.
         """
-        return dd.from_pandas(pdf, npartitions=self._npartitions)
+        data_size = pdf.memory_usage().sum()
+        npartitions = self._partitioner.optimal_partitions(data_size=data_size)
+        return dd.from_pandas(pdf, npartitions=npartitions)
 
     def to_pandas(self, ddf: dd.DataFrame) -> pd.DataFrame:
         """Converts a Dask DataFrame back to a Pandas DataFrame.
@@ -456,89 +368,16 @@ class TQAnalystDask(Analyst):
             return pd.DataFrame(ddf, columns=self._schema_df.columns)
         else:
             return ddf.apply(pd.Series)
+    def _log_normalize(self, count: int) -> float:
+        """
+        Applies log normalization (log(x + 1)) to a given count.
 
-
-# ------------------------------------------------------------------------------------------------ #
-#                                 TQ ANALYST PANDAS                                                #
-# ------------------------------------------------------------------------------------------------ #
-class TQAnalystPandas(Analyst):
-    """Performs text quality analysis using Pandas with optional batching and TQDM progress tracking.
-
-    This class applies spaCy-based NLP processing to a Pandas DataFrame, supporting both batched
-    and row-wise execution. It enables efficient processing with partitioning and progress tracking.
-
-    Args:
-        coefficients (Dict[str, float]): Coefficients for scoring text features.
-        normalized (bool, optional): Whether to apply log normalization. Defaults to True.
-        npartitions (int, optional): Number of partitions for batch processing. Defaults to 72.
-        batched (bool, optional): Whether to process data in batches. Defaults to True.
-        **kwargs: Additional keyword arguments for future extensions.
-
-    Attributes:
-        _npartitions (int): Number of partitions for processing.
-    """
-
-    def __init__(self,
-                 coefficients: Dict[str, float],
-                 normalized: bool = True,
-                 npartitions: int = 72,
-                 batched: bool = True,
-                 **kwargs
-                 ) -> None:
-        super().__init__(coefficients=coefficients, normalized=normalized, batched=batched)
-        self._npartitions = npartitions
-
-    def analyze(self, data: pd.DataFrame) -> pd.DataFrame:
-        """Processes a Pandas DataFrame with TQDM progress tracking and optional batching.
-
-        This method applies NLP-based text analysis using spaCy. It supports both batched
-        processing, where data is divided into partitions, and row-wise processing. Progress
-        is tracked using TQDM.
+        This method is used to log-normalize the feature values to reduce the impact of extreme values and smooth the distribution.
 
         Args:
-            data (pd.DataFrame): The input DataFrame to process.
+            count (int): The value to normalize.
 
         Returns:
-            pd.DataFrame: Processed DataFrame with computed text analysis results.
-
-        Raises:
-            Exception: If an error occurs during processing.
+            float: The log-normalized value.
         """
-        try:
-            # Initialize spaCy
-            nlp = spacy.load("en_core_web_sm")
-            function_words = nlp.Defaults.stop_words
-
-            # Calculate the number of rows per partition
-            partition_size = len(data) // self._npartitions
-            results = []
-
-            if self._batched:
-                # Iterate over partitions with a progress bar
-                for i in tqdm(range(self._npartitions), desc="Processing Partitions", unit="partition"):
-                    start = i * partition_size
-                    end = (i + 1) * partition_size if i != self._npartitions - 1 else len(data)
-                    partition = data.iloc[start:end]
-                    result_partition = self._process_batch(
-                        partition,
-                        function_words=function_words,
-                        nlp=nlp,
-                        meta=self._schema_df
-                    )
-                    results.append(result_partition)
-
-                # Concatenate the results
-                df = pd.concat(results, ignore_index=True)
-
-            else:
-                # Process data row-by-row with a progress bar
-                df = data.apply(
-                    lambda row: self._process_row(row, function_words, nlp)
-                )
-                df = df.apply(pd.Series)
-
-            return df
-
-        except Exception as e:
-            logging.error(f"Error during processing: {e}")
-            raise
+        return np.log1p(count)

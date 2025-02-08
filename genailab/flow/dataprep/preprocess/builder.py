@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:01:45 am                                              #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 08:01:18 am                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -22,6 +22,8 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List, Optional, Union
 
+from pyspark.sql import SparkSession
+
 from genailab.asset.dataset.builder import DatasetBuilder
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.core.dtypes import DFType
@@ -29,7 +31,6 @@ from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.builder import StageBuilder
 from genailab.flow.base.task import Task
 from genailab.flow.dataprep.preprocess.stage import PreprocessStage
-from pyspark.sql import SparkSession
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -125,7 +126,7 @@ class PreprocessStageBuilder(StageBuilder):
         self._newlines = None
         self._datetime = None
 
-        self._task_configs = self._get_config(
+        self._task_configs = self._get_stage_config(
             phase=self.phase, stage=self.stage, config="tasks"
         )
         self._tasks = []
@@ -261,5 +262,5 @@ class PreprocessStageBuilder(StageBuilder):
         Returns:
             DatasetConfig: The retrieved fileset configuration.
         """
-        fileset_config = self._get_config(phase=phase, stage=stage, config=config)
+        fileset_config = self._get_stage_config(phase=phase, stage=stage, config=config)
         return DatasetConfig.from_dict(config=fileset_config)

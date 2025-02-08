@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:30:48 am                                              #
-# Modified   : Tuesday January 28th 2025 06:23:45 am                                               #
+# Modified   : Saturday February 8th 2025 12:15:01 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,17 +19,15 @@
 """Data Quality Assessment Stage Module"""
 from typing import List, Optional
 
+from pyspark.sql import SparkSession
+
 from genailab.asset.dataset.builder import DatasetBuilder
 from genailab.asset.dataset.config import DatasetConfig
-from genailab.asset.dataset.dataset import Dataset
 from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.stage import Stage
 from genailab.flow.base.task import Task
 from genailab.infra.persist.repo.dataset import DatasetRepo
-from pyspark.sql import SparkSession
-
-from genailab.infra.utils.file.fileset import FileFormat
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -98,45 +96,4 @@ class DataCleaningStage(Stage):
         """Returns the data frame type used in this stage."""
         return self.__DFTYPE
 
-    def approve(self, dataset: Dataset) -> Dataset:
-        """Approves the cleaned Dataset.
 
-        This method elevates the dataset from `semiclean` to 'clean' status,
-        removes the anomaly detection annotations, updates the flowstate,
-        and persists the dataset in the repository.
-
-        Args:
-            dataset (Dataset): Dataset to approve
-        """
-        # Drop annotation columns from the dataset.
-        df = dataset.dataframe.drop(
-            list(dataset.dataframe.filter(regex="dqa_")), axis=1
-        )
-
-        # Create a configuration for the clean dataset
-        config = DatasetConfig(phase=self.phase,
-                               stage=StageDef.CLEAN,
-                               name="review",
-                               file_format=FileFormat.PARQUET,
-                               dftype=DFType.SPARK)
-
-        # Remove the Dataset if it already exists
-        asset_id = self._repo.get_asset_id(phase=config.phase, stage=config.stage, name=config.name)
-        if self._repo.exists(asset_id=asset_id):
-            self._repo.remove(asset_id=asset_id)
-
-        # Create the clean dataset
-        clean_dataset = (DatasetBuilder()
-                         .from_config(config)
-                         .dataframe(dataframe=df)
-                         .source(dataset.passport)
-                         .creator(self.__class__.__name__)
-                         .build()
-        )
-
-        # Publish to repository
-        self._repo.add(
-            dataset=clean_dataset, entity=self.__class__.__name__
-        )
-
-        return clean_dataset
