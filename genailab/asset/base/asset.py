@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/asset/base/asset.py                                                       #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 18th 2024 03:01:02 pm                                            #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,11 +26,12 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional, Union
 
+from pydantic.dataclasses import dataclass
+
 from genailab.asset.base.identity import AssetPassport
 from genailab.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.infra.utils.file.fileset import FileFormat
-from pydantic.dataclasses import dataclass
 
 
 # ------------------------------------------------------------------------------------------------ #

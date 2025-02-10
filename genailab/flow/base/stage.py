@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/flow/base/stage.py                                                        #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 03:43:30 am                                              #
-# Modified   : Monday February 3rd 2025 06:45:50 pm                                                #
+# Modified   : Sunday February 9th 2025 12:07:16 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -27,7 +27,6 @@ from pyspark.sql import DataFrame, SparkSession
 from genailab.asset.dataset.builder import DatasetBuilder
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.asset.dataset.dataset import Dataset
-from genailab.asset.dataset.identity import DatasetPassport
 from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.flow.base.task import Task
@@ -196,7 +195,7 @@ class Stage(ABC):
                 raise RuntimeError(f"Error in task {task.__class__.__name__}: {e}")
 
         target = self._create_dataset(
-            source=source.passport, config=self._target_config, dataframe=dataframe
+            source=source.asset_id, config=self._target_config, dataframe=dataframe
         )
         target = self._repo.add(dataset=target, entity=self.__class__.__name__)
 
@@ -209,7 +208,7 @@ class Stage(ABC):
         self,
         config: DatasetConfig,
         dataframe: Union[pd.DataFrame, pd.core.frame.DataFrame, DataFrame],
-        source: Optional[DatasetPassport] = None,
+        source: Optional[str] = None,
     ) -> Dataset:
         """Creates a Dataset object based on configuration and a dataframe.
 

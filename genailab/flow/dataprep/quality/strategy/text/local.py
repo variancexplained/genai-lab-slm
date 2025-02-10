@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/flow/dataprep/quality/strategy/text/local.py                              #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 12:34:06 am                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:03 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,6 +21,7 @@ import unicodedata
 from typing import Dict, Literal, Type, Union
 
 import pandas as pd
+
 from genailab.flow.dataprep.quality.strategy.factory import (
     DetectStrategy,
     RepairStrategy,

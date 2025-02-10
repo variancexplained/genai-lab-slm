@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/flow/dataprep/tqa/builder.py                                              #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:14:25 am                                                #
-# Modified   : Saturday February 8th 2025 09:54:03 am                                              #
+# Modified   : Saturday February 8th 2025 10:43:01 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -86,6 +86,7 @@ class TQAStageBuilder(StageBuilder):
         self._normalized = True
         self._batched = True
         self._dask_config = self._get_app_config(section='dask')
+        self._spacy_config = self._get_app_config(section="spacy")
 
     def analyze_text(self) -> TQAStageBuilder:
         """Configures the stage to use a Dask-based TQAnalyst.
@@ -113,10 +114,8 @@ class TQAStageBuilder(StageBuilder):
             schema=DATASET_SCHEMA,
             normalized=self._normalized,
             batched=self._batched,
-            nworkers=self._dask_config.nworkers,
-            memory_limit=self._dask_config.memory_limit,
-            threads_per_worker=self._dask_config.threads_per_worker,
-            processes=self._dask_config.processes,
+            dask_config=self._dask_config,
+            spacy_config=self._spacy_config,
         )
 
         self._tasks.append(task)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/asset/dataset/state.py                                                    #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 22nd 2025 01:20:36 am                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -27,8 +27,9 @@ from typing import Any, Optional
 
 import pandas as pd
 from explorify import DataClass
-from genailab.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 from pydantic.dataclasses import dataclass
+
+from genailab.core.dtypes import IMMUTABLE_TYPES, SEQUENCE_TYPES
 
 
 # ------------------------------------------------------------------------------------------------ #

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
 # Filename   : /genailab/infra/utils/data/convert.py                                               #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday May 29th 2024 12:30:01 am                                                 #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:30 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,8 +24,9 @@ from typing import Optional
 
 import pandas as pd
 import psutil  # For system memory info
-from genailab.infra.service.spark.pool import SparkSessionPool
 from pyspark.sql import DataFrame
+
+from genailab.infra.service.spark.pool import SparkSessionPool
 
 
 # ------------------------------------------------------------------------------------------------ #

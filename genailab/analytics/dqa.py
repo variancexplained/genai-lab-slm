@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/analytics/dqa.py                                                          #
@@ -11,17 +11,19 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 10:43:56 am                                                #
-# Modified   : Tuesday January 28th 2025 12:35:15 pm                                               #
+# Modified   : Saturday February 8th 2025 10:43:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Data Quality Analysis Module"""
 from __future__ import annotations
+
 from typing import TYPE_CHECKING, Optional, Type, Union
 
 import pandas as pd
 from explorify.eda.visualize.visualizer import Visualizer
+
 from genailab.analytics.base import Analysis
 from genailab.infra.config.app import AppConfigReader
 

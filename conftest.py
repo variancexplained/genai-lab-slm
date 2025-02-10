@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.12.3                                                                              #
 # Filename   : /conftest.py                                                                        #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday April 25th 2024 12:55:55 am                                                #
-# Modified   : Monday January 27th 2025 03:01:07 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:00 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,12 +21,13 @@ import sys
 
 import pytest
 from dotenv import load_dotenv
+from pyspark.sql import SparkSession
+
 from genailab.container import GenAILabContainer
 from genailab.core.dtypes import DFType
 from genailab.infra.config.app import AppConfigReader
 from genailab.infra.persist.cloud.aws import S3Handler
 from genailab.infra.utils.file.fileset import FileFormat
-from pyspark.sql import SparkSession
 
 # ------------------------------------------------------------------------------------------------ #
 load_dotenv()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/asset/dataset/identity.py                                                 #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday December 30th 2024 02:42:37 am                                               #
-# Modified   : Monday January 27th 2025 01:13:06 am                                                #
+# Modified   : Sunday February 9th 2025 12:23:52 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,14 +19,13 @@
 """Passport ID Generation Module"""
 from __future__ import annotations
 
-from dataclasses import field
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
 from genailab.asset.base.identity import AssetPassport
-from pydantic.dataclasses import dataclass
-
 from genailab.core.dtypes import DFType
+
 
 # ------------------------------------------------------------------------------------------------ #
 #                                     DATASET PASSPORT                                             #
@@ -41,10 +40,10 @@ class DatasetPassport(AssetPassport):
     Inherits from `AssetPassport`
 
     Args:
-        source (DatasetPassport): The source dataset passport.
+        source (str): The source dataset asset_id.
     """
 
-    source: Optional[DatasetPassport] = field(default=None)
+    source: Optional[str] = field(default=None)
     dftype: Optional[DFType] = field(default=None)
 
     def __post_init__(self) -> None:
@@ -64,7 +63,7 @@ class DatasetPassport(AssetPassport):
         """
         description = f"Dataset {self.name} created "
         if self.source:
-            description += f"from {self.source.asset_id} "
+            description += f"from {self.source} "
         description += (
             f"in the {self.phase.label} - {self.stage.label} by {self.creator}."
         )

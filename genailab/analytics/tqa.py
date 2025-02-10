@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/analytics/tqa.py                                                          #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday October 29th 2024 08:20:00 pm                                               #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -22,8 +22,9 @@ import logging
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from genailab.analytics.base import Analysis
 from scipy.stats import ks_2samp
+
+from genailab.analytics.base import Analysis
 
 # ------------------------------------------------------------------------------------------------ #
 sns.set_style("whitegrid")

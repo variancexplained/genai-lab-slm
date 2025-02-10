@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/flow/dataprep/tqa/task.py                                                 #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday January 19th 2025 11:53:03 am                                                #
-# Modified   : Saturday February 8th 2025 03:44:23 pm                                              #
+# Modified   : Saturday February 8th 2025 11:54:39 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -20,14 +20,16 @@
 from __future__ import annotations
 
 import multiprocessing
-from typing import Any, Dict, Set
+from typing import Any, Dict
 
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
 import spacy
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client, LocalCluster, progress
+from spacy.matcher import Matcher
 
+from genailab.core.dstruct import NestedNamespace
 from genailab.flow.base.task import Task
 from genailab.infra.utils.data.partition import DaskPartitioner
 
@@ -50,6 +52,8 @@ COUNT_SCHEMA = {
     "tqa_score": np.float64,
 }
 
+RATING_SCHEMA ={"tqa_rating": "int64"}
+
 DATASET_SCHEMA = {
     "id": 'str',
     "app_id": 'str',
@@ -65,7 +69,10 @@ DATASET_SCHEMA = {
  **COUNT_SCHEMA,
 
 }
-
+FINAL_DATASET_SCHEMA = {
+    **DATASET_SCHEMA,
+    **RATING_SCHEMA
+}
 # ------------------------------------------------------------------------------------------------ #
 #                                    TQA TASK                                                      #
 # ------------------------------------------------------------------------------------------------ #
@@ -96,13 +103,12 @@ class TQATask(Task):
                  schema: Dict[str, Any] = DATASET_SCHEMA,
                  normalized: bool = True,
                  batched: bool = True,
-                 nworkers: int = 18,
-                 memory_limit: int = 6442450944,
-                 threads_per_worker: int = 1,
-                 processes: bool = False,
+                 dask_config: bool = NestedNamespace,
+                 spacy_config: bool = NestedNamespace,
                  **kwargs
                  ) -> None:
         super().__init__()
+        # Task core config
         self._partitioner = partitioner
         self._coefficients = coefficients
         self._normalized = normalized
@@ -110,11 +116,40 @@ class TQATask(Task):
         self._schema_dict = schema
         self._schema_df = pd.DataFrame(columns=schema.keys()).astype(schema)
         self._schema_tuple = tuple(self._schema_df.dtypes.to_dict().items())
+        self._final_schema_df = pd.DataFrame(columns=FINAL_DATASET_SCHEMA.keys()).astype(FINAL_DATASET_SCHEMA)
 
-        self._nworkers = nworkers
-        self._memory_limit = memory_limit
-        self._threads_per_worker = threads_per_worker
-        self._processes = processes
+        # Dask and Spacy Configurations
+        self._dask_config = dask_config
+        self._spacy_config = spacy_config
+
+        # Spacy Config
+        self._batch_size = spacy_config.batch_size
+        self._n_process = spacy_config.n_process
+        self._processes = spacy_config.processes
+
+        # Dask Config
+        self._nworkers = dask_config.nworkers
+        self._memory_limit = dask_config.memory_limit
+        self._threads_per_worker = dask_config.threads_per_worker
+
+        # Progress bar
+        self._pbar = None
+
+        # Spacy NLP object and function words
+        self._nlp = spacy.load("en_core_web_sm", enable=["tagger", "parser", "attribute_ruler"])
+        self._function_words = self._nlp.Defaults.stop_words
+
+        # Create Spacy Matchers for noun adjective and aspect verb pairs
+        self._matcher = Matcher(self._nlp.vocab)
+        noun_adjective_pattern = [{"POS": "NOUN"}, {"POS": "ADJ", "DEP": "amod"}]
+        aspect_verb_pattern = [
+            {"POS": "NOUN", "DEP": {"IN": ["nsubj", "dobj"]}},
+            {"POS": "VERB"}
+        ]
+
+        self._matcher.add("NounAdjective", [noun_adjective_pattern])
+        self._matcher.add("AspectVerb", [aspect_verb_pattern])
+
 
     def __hash__(self):
         """
@@ -176,30 +211,30 @@ class TQATask(Task):
         client = Client(cluster)
 
         try:
-            # Initialize spaCy and Dask DataFrame
-            nlp = spacy.load("en_core_web_sm", disable=["ner"])
-            function_words = nlp.Defaults.stop_words
-
             # Convert pandas DataFrame to an optimally partitioned Dask DataFrame
             ddf = self.to_dash(pdf=data)
 
             if self._batched:
+
                 results = ddf.map_partitions(
-                    lambda batch: self._process_batch(
-                        batch, function_words=function_words, nlp=nlp, meta=self._schema_df
-                    ),
+                    lambda batch: self._process_batch(batch),
                     meta=self._schema_df
                 )
             else:
-                results = ddf.apply(
-                    self._process_row, axis=1, meta=self._schema_df, args=(function_words, nlp)
-                )
+                results = ddf.apply(self._process_row, axis=1)
+
+            # Assign task_rating to dataframe
+            results = self._assign_tqa_rating(ddf=results)
 
             # Start computation in the background
             results = results.persist()
 
+            # Display progress bar
+            progress(results)
+
             # Compute and convert back to pandas
             pdf = self.to_pandas(ddf=results)
+
 
             return pdf
         except Exception as e:
@@ -212,48 +247,49 @@ class TQATask(Task):
             if cluster:
                 cluster.close()
 
-
-    def _process_batch(self, batch_df: pd.DataFrame, function_words: Set[str], nlp: spacy.language.Language, meta: pd.DataFrame) -> pd.DataFrame:
+    def _process_batch(self, batch_df: pd.DataFrame) -> pd.DataFrame:
         texts = batch_df['content'].tolist()  # Extract texts into a list
 
         results = []
-        for i, doc in enumerate(nlp.pipe(texts, batch_size=128, n_process=-1)): # Use n_process for parallelization
+        for i, doc in enumerate(self._nlp.pipe(texts, batch_size=self._batch_size, n_process=self._n_process)):
             original_row = batch_df.iloc[i].to_dict()
             if doc:  # Handle potential None docs (e.g., empty strings)
-                result = self._process_doc(doc, function_words) # Process each doc
+                result = self._process_doc(doc) # Process each doc
                 combined_result = {**original_row, **result} # Merge dictionaries
                 results.append(combined_result)
             else:
                 # Handle empty reviews
-                empty_row = {key: None for key in meta.columns}
+                empty_row = {key: None for key in self._schema_df.columns}
                 results.append(empty_row)
 
 
-        batch_result = pd.DataFrame(results, columns=meta.columns)
+        batch_result = pd.DataFrame(results, columns=self._schema_df.columns)
         return batch_result
 
-    def _process_doc(self, doc: spacy.tokens.Doc, function_words: Set[str]) -> Dict[str, float]:
+    def _process_doc(self, doc: spacy.tokens.Doc) -> Dict[str, float]:
         counts = {key: 0 for key in COUNT_SCHEMA.keys() if key != "tqa_score"}
         n_tokens = 0
-        for token in doc:
+        # Efficient Noun-Adjective and Aspect-Verb Pair Counting using spaCy's matcher
+        matches = self._matcher(doc)
+
+        for match_id, start, end in matches:
+            if self._nlp.vocab.strings[match_id] == "NounAdjective":
+                counts["noun_adjective_pairs"] += 1
+            elif self._nlp.vocab.strings[match_id] == "AspectVerb":
+                counts["aspect_verb_pairs"] += 1
+
+        for token in doc:  # Iterate through the doc once
             n_tokens += 1
             if token.pos_ == "NOUN":
                 counts["noun_count"] += 1
                 if len(list(token.subtree)) > 1:
                     counts["noun_phrases"] += 1
-                if token.dep_ in ("nsubj", "dobj") and token.head.pos_ == "VERB":
-                    counts["aspect_verb_pairs"] += 1
-                for child in token.children:  # Check children of the noun
-                    if child.pos_ == "ADJ":
-                        counts["noun_adjective_pairs"] += 1
             elif token.pos_ == "VERB":
                 counts["verb_count"] += 1
                 if len(list(token.subtree)) > 1:
                     counts["verb_phrases"] += 1
             elif token.pos_ == "ADJ":
                 counts["adjective_count"] += 1
-                if token.head.pos_ == "NOUN":
-                    counts["noun_adjective_pairs"] += 1
             elif token.pos_ == "ADV":
                 counts["adverb_count"] += 1
                 if len(list(token.subtree)) > 1:
@@ -261,7 +297,7 @@ class TQATask(Task):
 
         # Compute review length, lexical density, and dependency depth
         counts['review_length'] = n_tokens
-        content_words = [word for word in doc if word not in function_words]
+        content_words = [word for word in doc if word not in self._function_words]
         counts['lexical_density'] = (len(content_words) / n_tokens) * 100 if n_tokens > 0 else 0
 
         # Compute dependency depth
@@ -277,7 +313,7 @@ class TQATask(Task):
         counts["tqa_score"] = sum(self._coefficients[key] * counts[key] for key in self._coefficients)
         return counts
 
-    def _process_row(self, row: pd.Series, function_words: Set[str], nlp: spacy.language.Language) -> Dict[str, float]:
+    def _process_row(self, row: pd.Series) -> Dict[str, float]:
         """
         Processes a single review and computes its syntactic features, including
         counts of nouns, verbs, adjectives, adverbs, and dependency depth.
@@ -293,21 +329,30 @@ class TQATask(Task):
         self._logger.debug(f"Row should be a series. Actual type: {type(row)}\n{row}")
         review = row["content"]
         counts = {key: 0 for key in COUNT_SCHEMA.keys() if key != "tqa_score"}
+        n_tokens = 0
 
-        # Tokenize the review text into a spaCy doc
-        doc = nlp(review)
+        # Create a Spacy Document from the review text
+        doc = self._nlp(text=review)
+
+        # Efficient Noun-Adjective and Aspect-Verb Pair Counting using spaCy's matcher
+        matches = self._matcher(doc)
 
         # Handle empty review edge case
         if not review.strip():  # If review is empty or contains only whitespace
             return {**row, **counts}
 
+        for match_id, start, end in matches:
+            if self._nlp.vocab.strings[match_id] == "NounAdjective":
+                counts["noun_adjective_pairs"] += 1
+            elif self._nlp.vocab.strings[match_id] == "AspectVerb":
+                counts["aspect_verb_pairs"] += 1
+
         for token in doc:
+            n_tokens += 1
             if token.pos_ == "NOUN":
                 counts["noun_count"] += 1
                 if len(list(token.subtree)) > 1:
                     counts["noun_phrases"] += 1
-                if token.dep_ in ("nsubj", "dobj") and token.head.pos_ == "VERB":
-                    counts["aspect_verb_pairs"] += 1
             elif token.pos_ == "VERB":
                 counts["verb_count"] += 1
                 if len(list(token.subtree)) > 1:
@@ -320,10 +365,9 @@ class TQATask(Task):
                     counts["adverbial_phrases"] += 1
 
         # Compute review length, lexical density, and dependency depth
-        counts['review_length'] = len(review.split())
-        tokens = review.split()
-        content_words = [word for word in tokens if word not in function_words]
-        counts['lexical_density'] = (len(content_words) / len(tokens)) * 100 if len(tokens) > 0 else 0
+        counts['review_length'] = n_tokens
+        content_words = [word for word in doc if word not in self._function_words]
+        counts['lexical_density'] = (len(content_words) / n_tokens) * 100 if n_tokens > 0 else 0
 
         # Compute dependency depth
         max_depth = 0
@@ -365,7 +409,7 @@ class TQATask(Task):
             pd.DataFrame: Converted Pandas DataFrame.
         """
         if isinstance(ddf, dd.DataFrame):
-            return pd.DataFrame(ddf, columns=self._schema_df.columns)
+            return pd.DataFrame(ddf, columns=self._final_schema_df.columns)
         else:
             return ddf.apply(pd.Series)
     def _log_normalize(self, count: int) -> float:
@@ -381,3 +425,35 @@ class TQATask(Task):
             float: The log-normalized value.
         """
         return np.log1p(count)
+
+    def _assign_tqa_rating(self, ddf: dd.DataFrame, tqa_score_col="tqa_score"):
+        """Assigns a TQA rating (1-5) based on percentiles of the TQA score in a Dask DataFrame.
+
+        Args:
+            ddf: Dask DataFrame with a TQA score column.
+            tqa_score_col: The name of the TQA score column (default: "tqa_score").
+
+        Returns:
+            Dask DataFrame with the added "tqa_rating" column.
+        """
+
+        # 1. Compute Percentiles (using Dask)
+        tqa_scores = ddf[tqa_score_col].compute()  # Compute the column to get numpy array
+        percentiles = np.percentile(tqa_scores, [20, 40, 60, 80])
+
+        # 2. Assign Ratings (using map_partitions for efficiency)
+        def assign_ratings_partition(partition, percentiles):
+            """Assigns ratings within a single partition"""
+            def assign_rating(score):
+                if score < percentiles[0]: return 1
+                elif score < percentiles[1]: return 2
+                elif score < percentiles[2]: return 3
+                elif score < percentiles[3]: return 4
+                else: return 5
+
+            partition["tqa_rating"] = partition[tqa_score_col].apply(assign_rating)
+            return partition
+
+        ddf = ddf.map_partitions(lambda partition: assign_ratings_partition(partition=partition, percentiles=percentiles), meta=self._final_schema_df)
+
+        return ddf

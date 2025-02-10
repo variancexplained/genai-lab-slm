@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/asset/dataset/config.py                                                   #
@@ -11,21 +11,23 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 08:32:52 pm                                               #
-# Modified   : Monday January 27th 2025 01:15:27 am                                                #
+# Modified   : Saturday February 8th 2025 10:43:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
 # ================================================================================================ #
 """Dataset Data Module"""
 from __future__ import annotations
+
 from dataclasses import field
 from typing import Optional
+
+from pydantic.dataclasses import dataclass
 
 from genailab.asset.base.asset import AssetConfig
 from genailab.core.dtypes import DFType
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.infra.utils.file.fileset import FileFormat
-from pydantic.dataclasses import dataclass
 
 
 # ------------------------------------------------------------------------------------------------ #

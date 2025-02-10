@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/flow/dataprep/quality/strategy/numeric.py                                 #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Thursday November 21st 2024 02:58:58 pm                                             #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:01 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -20,14 +20,15 @@
 from abc import abstractmethod
 from typing import Dict, Optional, Type, Union
 
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+
 from genailab.core.dtypes import DFType
 from genailab.flow.dataprep.quality.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
     StrategyFactory,
 )
-from pyspark.sql import DataFrame
-from pyspark.sql import functions as F
 
 
 # ------------------------------------------------------------------------------------------------ #

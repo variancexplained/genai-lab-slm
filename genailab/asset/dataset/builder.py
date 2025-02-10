@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/asset/dataset/builder.py                                                  #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday December 27th 2024 10:20:36 pm                                               #
-# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
+# Modified   : Sunday February 9th 2025 12:10:08 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -24,6 +24,8 @@ from typing import Union
 
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
+from pyspark.sql import DataFrame
+
 from genailab.asset.base.asset import AssetType
 from genailab.asset.base.builder import AssetBuilder
 from genailab.asset.dataset.config import DatasetConfig
@@ -35,7 +37,6 @@ from genailab.core.flow import PhaseDef, StageDef
 from genailab.infra.persist.repo.dataset import DatasetRepo
 from genailab.infra.persist.repo.file.fao import FAO
 from genailab.infra.utils.file.fileset import FileFormat
-from pyspark.sql import DataFrame
 
 
 # ================================================================================================ #
@@ -137,12 +138,12 @@ class DatasetBuilder(AssetBuilder):
         self._dataframe = dataframe
         return self
 
-    def source(self, source: DatasetPassport) -> "DatasetBuilder":
+    def source(self, source: str) -> "DatasetBuilder":
         """
-        Sets the dataset's source using a DatasetPassport object.
+        Sets the dataset's source asset_id.
 
         Args:
-            source (DatasetPassport): Passport containing the source information.
+            source (str): Source dataset asset_id
 
         Returns:
             DatasetBuilder: The current builder instance for chaining.

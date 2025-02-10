@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/flow/dataprep/quality/strategy/interval.py                                #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Sunday November 24th 2024 12:21:51 am                                               #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:00 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -19,14 +19,15 @@
 from datetime import datetime
 from typing import Dict, Literal, Type
 
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+from pyspark.sql.types import DateType
+
 from genailab.flow.dataprep.quality.strategy.factory import (
     DetectStrategy,
     RepairStrategy,
     StrategyFactory,
 )
-from pyspark.sql import DataFrame
-from pyspark.sql import functions as F
-from pyspark.sql.types import DateType
 
 # ------------------------------------------------------------------------------------------------ #
 

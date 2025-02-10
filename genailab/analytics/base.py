@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/analytics/base.py                                                         #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Friday October 18th 2024 11:07:32 am                                                #
-# Modified   : Monday January 27th 2025 01:21:32 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:31 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from explorify.eda.visualize.visualizer import Visualizer
+
 from genailab.infra.utils.visual.print import Printer
 
 # ------------------------------------------------------------------------------------------------ #

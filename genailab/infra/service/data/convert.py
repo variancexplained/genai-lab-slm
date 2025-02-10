@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/infra/service/data/convert.py                                             #
@@ -11,24 +11,26 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Monday January 27th 2025 01:55:39 pm                                                #
-# Modified   : Monday January 27th 2025 03:25:49 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:30 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
 # ================================================================================================ #
 """Data Conversion Module"""
 import os
-from typing import Union
 import tempfile
-from pyspark.sql import DataFrame
-from pyspark.sql.functions import col
+from typing import Union
+
 import pandas as pd
 from dependency_injector.wiring import Provide, inject
-from genailab.container import GenAILabContainer
+from pyspark.sql import DataFrame
+from pyspark.sql.functions import col
 
+from genailab.container import GenAILabContainer
 from genailab.core.dtypes import DFType
 from genailab.infra.persist.repo.file.fao import FAO
 from genailab.infra.utils.file.fileset import FileFormat
+
 
 # ------------------------------------------------------------------------------------------------ #
 class Converter:

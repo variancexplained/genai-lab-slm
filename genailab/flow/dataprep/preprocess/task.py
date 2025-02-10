@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/flow/dataprep/preprocess/task.py                                          #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday January 1st 2025 05:54:25 am                                              #
-# Modified   : Monday January 27th 2025 05:09:12 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:03 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -20,9 +20,10 @@
 
 
 import pandas as pd
+from pandarallel import pandarallel
+
 from genailab.flow.base.task import Task
 from genailab.infra.service.logging.task import task_logger
-from pandarallel import pandarallel
 
 # ------------------------------------------------------------------------------------------------ #
 pandarallel.initialize(progress_bar=False, nb_workers=18, verbose=0)

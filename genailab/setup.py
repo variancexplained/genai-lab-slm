@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/setup.py                                                                  #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Saturday September 14th 2024 06:28:52 am                                            #
-# Modified   : Monday January 27th 2025 02:18:39 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:00 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,6 +21,7 @@ import sys
 from typing import Type
 
 from dependency_injector.wiring import inject
+
 from genailab.asset.dataset.builder import DatasetBuilder
 from genailab.asset.dataset.config import DatasetConfig
 from genailab.container import GenAILabContainer

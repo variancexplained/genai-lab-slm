@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/asset/base/identity.py                                                    #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday January 21st 2025 03:21:59 am                                               #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Sunday February 9th 2025 12:22:46 am                                                #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2025 John James                                                                 #
@@ -19,14 +19,13 @@
 """Workspace Identity Base Module"""
 from __future__ import annotations
 
-from dataclasses import field
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
 from genailab.core.dstruct import DataClass
 from genailab.core.flow import PhaseDef, StageDef
 from genailab.infra.utils.file.fileset import FileFormat
-from pydantic.dataclasses import dataclass
 
 
 # ------------------------------------------------------------------------------------------------ #
@@ -54,11 +53,11 @@ class AssetPassport(DataClass):
     """
 
     asset_id: Optional[str] = field(default=None)
-    phase: Optional[PhaseDef] = field(default=None)
-    stage: Optional[StageDef] = field(default=None)
+    phase: Optional["PhaseDef"] = field(default=None)
+    stage: Optional["StageDef"] = field(default=None)
     name: Optional[str] = field(default=None)
     description: Optional[str] = field(default=None)
-    file_format: FileFormat = FileFormat.PARQUET
+    file_format: "FileFormat" = FileFormat.PARQUET
     creator: Optional[str] = field(default=None)
     created: Optional[datetime] = None
 

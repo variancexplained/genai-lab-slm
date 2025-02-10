@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/infra/service/performance/profiler.py                                     #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Tuesday September 10th 2024 12:36:42 am                                             #
-# Modified   : Monday January 27th 2025 01:56:46 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:30 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -21,6 +21,7 @@ from functools import wraps
 from typing import Callable
 
 import psutil  # For gathering system resource usage
+
 from genailab.application.ops.utils import find_task
 from genailab.container import GenAILabContainer
 from genailab.dynamics.observability.profile import Profile

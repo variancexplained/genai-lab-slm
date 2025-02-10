@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # ================================================================================================ #
-# Project    : GenAI-Lab-SLM                                                                       #
+# Project    : GenAI-Lab                                                                           #
 # Version    : 0.1.0                                                                               #
 # Python     : 3.10.14                                                                             #
 # Filename   : /genailab/infra/utils/file/fileset.py                                               #
@@ -11,7 +11,7 @@
 # URL        : https://github.com/variancexplained/genai-lab-slm                                   #
 # ------------------------------------------------------------------------------------------------ #
 # Created    : Wednesday December 25th 2024 10:50:08 pm                                            #
-# Modified   : Sunday January 26th 2025 10:38:16 pm                                                #
+# Modified   : Saturday February 8th 2025 10:43:03 pm                                              #
 # ------------------------------------------------------------------------------------------------ #
 # License    : MIT License                                                                         #
 # Copyright  : (c) 2024 John James                                                                 #
@@ -25,10 +25,11 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Union
 
+from pydantic.dataclasses import dataclass
+
 from genailab.core.dstruct import DataClass
 from genailab.infra.utils.data.format import format_size
 from genailab.infra.utils.date_time.format import ThirdDateFormatter
-from pydantic.dataclasses import dataclass
 
 # ------------------------------------------------------------------------------------------------ #
 d84mtr = ThirdDateFormatter()
